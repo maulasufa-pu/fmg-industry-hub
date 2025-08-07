@@ -1,5 +1,10 @@
 import Link from "next/link";
 
+export const metadata = {
+  title: "FMG Industry Hub - Home",
+  description: "Platform industri musik digital dan kreatif",
+};
+
 export default function HomePage() {
   return (
     <main className="bg-gray-50 text-gray-900">

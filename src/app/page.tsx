@@ -1,103 +1,190 @@
-import Image from "next/image";
+import Link from "next/link";
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <main className="bg-gray-50 text-gray-900">
+      {/* HERO */}
+      <section className="relative bg-gradient-to-br from-black via-gray-900 to-gray-800 text-white">
+        <div className="max-w-7xl mx-auto px-6 py-24 lg:py-32 text-center">
+          <h1 className="text-4xl md:text-6xl font-extrabold leading-tight">
+            Flemmo Music Industry Hub
+          </h1>
+          <p className="mt-6 text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
+            Solusi digital untuk produksi, publishing, dan distribusi musik
+            dengan teknologi modern & AI.
+          </p>
+          <div className="mt-8 flex justify-center gap-4">
+            <Link
+              href="/client/dashboard"
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-semibold shadow-lg transition"
+            >
+              Mulai Sekarang
+            </Link>
+            <Link
+              href="#services"
+              className="px-6 py-3 bg-white text-gray-900 rounded-lg font-semibold shadow-lg hover:bg-gray-100 transition"
+            >
+              Lihat Layanan
+            </Link>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      </section>
+
+      {/* SERVICES */}
+      <section id="services" className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Layanan Kami
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            {[
+              {
+                title: "Produksi Musik",
+                desc: "Dari aransemen hingga mastering, kami buat musik berkualitas tinggi.",
+                icon: "🎵",
+              },
+              {
+                title: "Publishing & Distribusi",
+                desc: "Rilis musik Anda di platform global dengan mudah.",
+                icon: "🌍",
+              },
+              {
+                title: "AI Music Tools",
+                desc: "Gunakan teknologi AI untuk komposisi, mixing, dan mastering otomatis.",
+                icon: "🤖",
+              },
+            ].map((service, idx) => (
+              <div
+                key={idx}
+                className="p-6 border rounded-xl shadow-sm hover:shadow-lg transition"
+              >
+                <div className="text-5xl mb-4">{service.icon}</div>
+                <h3 className="text-xl font-semibold">{service.title}</h3>
+                <p className="mt-2 text-gray-600">{service.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PORTFOLIO */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Portofolio
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map((item) => (
+              <div
+                key={item}
+                className="rounded-xl overflow-hidden shadow-lg hover:scale-105 transition transform"
+              >
+                <img
+                  src={`https://source.unsplash.com/random/400x300?music,studio&sig=${item}`}
+                  alt="Portfolio"
+                  className="w-full h-56 object-cover"
+                />
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg">
+                    Proyek Musik {item}
+                  </h3>
+                  <p className="text-gray-600 text-sm mt-1">
+                    Contoh karya terbaru kami di industri musik.
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING */}
+      <section id="pricing" className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Paket Harga
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                name: "Basic",
+                price: "Rp 500K",
+                features: ["1 Lagu", "Mixing & Mastering", "File MP3 & WAV"],
+              },
+              {
+                name: "Pro",
+                price: "Rp 1,5Jt",
+                features: [
+                  "3 Lagu",
+                  "Mixing & Mastering",
+                  "Publishing",
+                  "Streaming Platforms",
+                ],
+                popular: true,
+              },
+              {
+                name: "Expert",
+                price: "Rp 5Jt",
+                features: [
+                  "Album Lengkap",
+                  "AI Music Tools",
+                  "Dolby Atmos",
+                  "Global Distribution",
+                ],
+              },
+            ].map((pkg, idx) => (
+              <div
+                key={idx}
+                className={`p-6 rounded-xl border shadow-sm hover:shadow-lg transition ${
+                  pkg.popular ? "bg-indigo-600 text-white" : ""
+                }`}
+              >
+                <h3 className="text-2xl font-bold">{pkg.name}</h3>
+                <p className="text-3xl font-extrabold mt-4">{pkg.price}</p>
+                <ul className="mt-4 space-y-2">
+                  {pkg.features.map((f, i) => (
+                    <li key={i}>✅ {f}</li>
+                  ))}
+                </ul>
+                <button
+                  className={`mt-6 w-full py-2 font-semibold rounded-lg transition ${
+                    pkg.popular
+                      ? "bg-white text-indigo-600 hover:bg-gray-200"
+                      : "bg-indigo-600 text-white hover:bg-indigo-500"
+                  }`}
+                >
+                  Pilih Paket
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ABOUT US */}
+      <section id="about" className="py-20 bg-gray-50">
+        <div className="max-w-5xl mx-auto px-6 text-center">
+          <h2 className="text-3xl font-bold mb-6">Tentang Kami</h2>
+          <p className="text-gray-600 leading-relaxed">
+            Flemmo Music Global adalah perusahaan kreatif yang menyediakan
+            layanan produksi, publishing, dan distribusi musik digital.
+            Menggabungkan teknologi AI dengan kreativitas manusia untuk hasil
+            terbaik bagi para musisi di seluruh dunia.
+          </p>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="bg-black text-white py-8">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center">
+          <p>© 2025 Flemmo Music Global. All rights reserved.</p>
+          <div className="flex gap-4 mt-4 md:mt-0">
+            <a href="#" className="hover:text-indigo-400">Instagram</a>
+            <a href="#" className="hover:text-indigo-400">YouTube</a>
+            <a href="#" className="hover:text-indigo-400">LinkedIn</a>
+          </div>
+        </div>
       </footer>
-    </div>
+    </main>
   );
 }

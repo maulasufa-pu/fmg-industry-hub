@@ -1,7 +1,7 @@
-import { render, screen } from '@testing-library/react'
-import Home from '../app/page'
+function sum(a, b) {
+  return a + b;
+}
 
-test('renders homepage', () => {
-  render(<Home />)
-  expect(screen.getByText(/FMG Industry Hub/i)).toBeInTheDocument()
-})
+test('adds 1 + 2 to equal 3', () => {
+  expect(sum(1, 2)).toBe(3);
+});

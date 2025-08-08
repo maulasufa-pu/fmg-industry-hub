@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export const metadata = {
   title: "FMG Industry Hub - Home",
@@ -38,9 +39,7 @@ export default function HomePage() {
       {/* SERVICES */}
       <section id="services" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Layanan Kami
-          </h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Layanan Kami</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {[
               {
@@ -75,24 +74,22 @@ export default function HomePage() {
       {/* PORTFOLIO */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Portofolio
-          </h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Portofolio</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[1, 2, 3].map((item) => (
               <div
                 key={item}
                 className="rounded-xl overflow-hidden shadow-lg hover:scale-105 transition transform"
               >
-                <img
+                <Image
                   src={`https://source.unsplash.com/random/400x300?music,studio&sig=${item}`}
-                  alt="Portfolio"
+                  alt={`Portofolio proyek musik nomor ${item}`}
+                  width={400}
+                  height={300}
                   className="w-full h-56 object-cover"
                 />
                 <div className="p-4">
-                  <h3 className="font-semibold text-lg">
-                    Proyek Musik {item}
-                  </h3>
+                  <h3 className="font-semibold text-lg">Proyek Musik {item}</h3>
                   <p className="text-gray-600 text-sm mt-1">
                     Contoh karya terbaru kami di industri musik.
                   </p>
@@ -106,9 +103,7 @@ export default function HomePage() {
       {/* PRICING */}
       <section id="pricing" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Paket Harga
-          </h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Paket Harga</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
@@ -152,6 +147,7 @@ export default function HomePage() {
                   ))}
                 </ul>
                 <button
+                  aria-label={`Pilih paket ${pkg.name}`}
                   className={`mt-6 w-full py-2 font-semibold rounded-lg transition ${
                     pkg.popular
                       ? "bg-white text-indigo-600 hover:bg-gray-200"
@@ -171,10 +167,7 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold mb-6">Tentang Kami</h2>
           <p className="text-gray-600 leading-relaxed">
-            Flemmo Music Global adalah perusahaan kreatif yang menyediakan
-            layanan produksi, publishing, dan distribusi musik digital.
-            Menggabungkan teknologi AI dengan kreativitas manusia untuk hasil
-            terbaik bagi para musisi di seluruh dunia.
+            Flemmo Music Global adalah perusahaan kreatif yang menyediakan layanan produksi, publishing, dan distribusi musik digital. Menggabungkan teknologi AI dengan kreativitas manusia untuk hasil terbaik bagi para musisi di seluruh dunia.
           </p>
         </div>
       </section>
@@ -184,9 +177,15 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center">
           <p>© 2025 Flemmo Music Global. All rights reserved.</p>
           <div className="flex gap-4 mt-4 md:mt-0">
-            <a href="#" className="hover:text-indigo-400">Instagram</a>
-            <a href="#" className="hover:text-indigo-400">YouTube</a>
-            <a href="#" className="hover:text-indigo-400">LinkedIn</a>
+            <a href="#" className="hover:text-indigo-400">
+              Instagram
+            </a>
+            <a href="#" className="hover:text-indigo-400">
+              YouTube
+            </a>
+            <a href="#" className="hover:text-indigo-400">
+              LinkedIn
+            </a>
           </div>
         </div>
       </footer>

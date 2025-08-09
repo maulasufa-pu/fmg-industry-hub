@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 // import Bell from "@/public/icons/bell.svg"; // pakai @svgr/webpack
 // import ChevronDown from "@/public/icons/chevron-down.svg";

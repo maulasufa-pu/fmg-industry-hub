@@ -7,7 +7,7 @@ import React, { useState } from "react";
 // import User from "@/public/icons/user.svg";
 
 import { Bell, ChevronDown, Cog, User } from "@/icons";
-import rectangle14Stroke from "./rectangle-14-stroke.svg";
+import rectangle14Stroke from "../icons/rectangle-14-stroke.svg";
 import type { JSX } from "react";
 
 export const HeaderSection = (): JSX.Element => {

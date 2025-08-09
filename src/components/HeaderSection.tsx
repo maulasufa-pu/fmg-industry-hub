@@ -9,6 +9,7 @@ import React, { useState } from "react";
 import { Bell, ChevronDown, Cog, User } from "@/icons";
 import rectangle14Stroke from "../icons/rectangle-14-stroke.svg";
 import type { JSX } from "react";
+import LogoutButton from "@/components/auth/LogoutButton";
 
 export const HeaderSection = (): JSX.Element => {
   const [notificationCount] = useState(9);
@@ -22,7 +23,7 @@ export const HeaderSection = (): JSX.Element => {
   ];
 
   return (
-    <header className="flex w-[1440px] items-center gap-12 px-20 py-4 relative flex-[0_0_auto] mt-[-4.00px] bg-defaultwhite border-b [border-bottom-style:solid] border-coolgray-20">
+  <div className="flex items-center gap-6 px-4 sm:px-6 lg:px-8 py-4 w-full">
       <div className="inline-flex items-start gap-1 relative flex-[0_0_auto]">
         <div className="inline-flex items-center justify-center relative flex-[0_0_auto]">
           <img
@@ -102,7 +103,8 @@ export const HeaderSection = (): JSX.Element => {
           <User className="!relative !w-6 !h-6" />
         </button>
       </div>
-    </header>
+      <LogoutButton />
+    </div>
   );
 };
 

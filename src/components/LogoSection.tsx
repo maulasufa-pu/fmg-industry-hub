@@ -55,8 +55,8 @@ const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 
 
   return (
-    <footer className="flex flex-col w-[1440px] items-start justify-center gap-12 px-20 py-12 relative flex-[0_0_auto] mb-[-4.00px] bg-coolgray-60">
-      <header className="flex items-center gap-12 relative self-stretch w-full flex-[0_0_auto]">
+    <footer className="flex flex-col w-full items-center justify-center gap-10 px-4 sm:px-6 lg:px-8 py-10 bg-coolgray-60">
+      <header className="flex w-full items-center justify-between gap-6">
         <div className="inline-flex flex-col items-start gap-2.5 relative flex-[0_0_auto]">
           <div className="inline-flex items-start gap-1 relative flex-[0_0_auto]">
             <div className="inline-flex items-center justify-center relative flex-[0_0_auto]">
@@ -79,7 +79,7 @@ const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
           </div>
         </div>
 
-        <div className="flex flex-col items-end justify-center gap-4 relative flex-1 grow">
+        <div className="flex items-center justify-end gap-4">
           <form
             onSubmit={handleSubscribe}
             className="inline-flex items-center gap-4 relative flex-[0_0_auto]"
@@ -150,7 +150,7 @@ const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             </div>
           </div>
 
-          <div className="inline-flex flex-col items-start gap-2 relative flex-[0_0_auto] mr-[-142.67px]">
+          <div className="inline-flex flex-col items-start gap-2">
             <div className="inline-flex items-center gap-2 px-0 py-3 relative flex-[0_0_auto]">
               <h2 className="relative w-fit mt-[-1.00px] font-heading-6 font-[number:var(--heading-6-font-weight)] text-defaultwhite text-[length:var(--heading-6-font-size)] tracking-[var(--heading-6-letter-spacing)] leading-[var(--heading-6-line-height)] whitespace-nowrap [font-style:var(--heading-6-font-style)]">
                 Join Us
@@ -158,7 +158,7 @@ const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             </div>
 
             <div
-              className="flex w-[426.67px] items-center gap-4 relative flex-[0_0_auto]"
+              className="flex flex-wrap items-center gap-4"
               role="list"
             >
               {socialIcons.map((social, index) => {
@@ -185,12 +185,12 @@ const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 
       <hr className="relative self-stretch w-full h-px bg-coolgray-30 border-0" />
 
-      <div className="flex items-start gap-12 relative self-stretch w-full flex-[0_0_auto]">
+      <div className="flex w-full items-center justify-between gap-6">
         <p className="relative w-fit mt-[-1.00px] font-body-s font-[number:var(--body-s-font-weight)] text-defaultwhite text-[length:var(--body-s-font-size)] tracking-[var(--body-s-letter-spacing)] leading-[var(--body-s-line-height)] whitespace-nowrap [font-style:var(--body-s-font-style)]">
           CompanyName @ 202X. All rights reserved.
         </p>
 
-        <nav className="flex items-center justify-end gap-4 relative flex-1 grow">
+        <nav className="flex items-center gap-4">
           {bottomLinks.map((link, index) => (
             <div
               key={index}

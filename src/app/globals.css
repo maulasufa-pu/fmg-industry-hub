@@ -219,3 +219,106 @@ html {
     font-weight: 700;
   }
 }
+/* === FMG: Additions for MainContentSection.tsx ========================= */
+
+/* Tambah token yang belum ada */
+:root {
+  /* dipakai oleh hover:bg-primary-10 */
+  --primary-10: rgba(237, 245, 255, 1);
+}
+
+/* Utilitas custom pakai Tailwind layer supaya prioritasnya pas */
+@layer utilities {
+  /* Colors used as utility classes */
+  .bg-defaultwhite { background-color: var(--defaultwhite); }
+  .bg-coolgray-10 { background-color: var(--coolgray-10); }
+  .text-coolgray-60 { color: var(--coolgray-60); }
+  .text-coolgray-90 { color: var(--coolgray-90); }
+  .border-coolgray-20 { border-color: var(--coolgray-20); }
+  .border-coolgray-30 { border-color: var(--coolgray-30); }
+
+  .bg-primary-60 { background-color: var(--primary-60); }
+  .text-primary-60 { color: var(--primary-60); }
+  .text-primary-90 { color: var(--primary-90); }
+  .border-primary-60 { border-color: var(--primary-60); }
+
+  /* Hover helper sesuai class di komponen */
+  .hover\:bg-primary-10:hover { background-color: var(--primary-10); }
+  .hover\:underline:hover { text-decoration: underline; }
+
+  /* Ring shim agar focus:ring-primary-60 bekerja */
+  .ring-primary-60 { --tw-ring-color: var(--primary-60); }
+  .focus\:ring-primary-60:focus { --tw-ring-color: var(--primary-60); }
+
+  /* Typography utilities mapping ke CSS variables yang sudah kamu punya */
+  .font-body-XS {
+    font-family: var(--body-XS-font-family);
+    font-size: var(--body-XS-font-size);
+    line-height: var(--body-XS-line-height);
+    font-weight: var(--body-XS-font-weight);
+    letter-spacing: var(--body-XS-letter-spacing);
+    font-style: var(--body-XS-font-style);
+  }
+
+  .font-body-s {
+    font-family: var(--body-s-font-family);
+    font-size: var(--body-s-font-size);
+    line-height: var(--body-s-line-height);
+    font-weight: var(--body-s-font-weight);
+    letter-spacing: var(--body-s-letter-spacing);
+    font-style: var(--body-s-font-style);
+  }
+
+  .font-body-m {
+    font-family: var(--body-m-font-family);
+    font-size: var(--body-m-font-size);
+    line-height: var(--body-m-line-height);
+    font-weight: var(--body-m-font-weight);
+    letter-spacing: var(--body-m-letter-spacing);
+    font-style: var(--body-m-font-style);
+  }
+
+  .font-body-l {
+    font-family: var(--body-l-font-family);
+    font-size: var(--body-l-font-size);
+    line-height: var(--body-l-line-height);
+    font-weight: var(--body-l-font-weight);
+    letter-spacing: var(--body-l-letter-spacing);
+    font-style: var(--body-l-font-style);
+  }
+
+  .font-button-m {
+    font-family: var(--button-m-font-family);
+    font-size: var(--button-m-font-size);
+    line-height: var(--button-m-line-height);
+    font-weight: var(--button-m-font-weight);
+    letter-spacing: var(--button-m-letter-spacing);
+  }
+
+  .font-heading-2 {
+    font-family: var(--heading-2-font-family);
+    font-size: var(--heading-2-font-size);
+    line-height: var(--heading-2-line-height);
+    font-weight: var(--heading-2-font-weight);
+    letter-spacing: var(--heading-2-letter-spacing);
+    font-style: var(--heading-2-font-style);
+    text-wrap: balance;
+  }
+
+  /* Small utils yang dipakai di komponen */
+  .all-\[unset\] { all: unset; }
+  .box-border { box-sizing: border-box; }
+
+  /* Pastikan tombol tetap kelihatan saat keyboard focus */
+  button.cursor-pointer:focus-visible,
+  a.cursor-pointer:focus-visible {
+    outline: 2px solid var(--primary-60);
+    outline-offset: 2px;
+  }
+}
+html, body { overflow-x: clip; }
+@layer utilities {
+  button.bg-primary-60 {
+    @apply text-white;
+  }
+}

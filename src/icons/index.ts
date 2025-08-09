@@ -1,0 +1,13 @@
+export { default as Apple } from "./apple.svg";
+export { default as Bell } from "./bell.svg";
+export { default as ChevronDown } from "./chevron-down.svg";
+export { default as Cog } from "./cog.svg";
+export { default as Controls } from "./Controls.svg";
+export { default as Envelope } from "./envelope.svg";
+export { default as Facebook } from "./facebook.svg";
+export { default as Google } from "./google.svg";
+export { default as Instagram } from "./instagram.svg";
+export { default as Linkedin } from "./linkedin.svg";
+export { default as Twitter } from "./twitter.svg";
+export { default as User } from "./user.svg";
+export { default as Youtube } from "./youtube.svg";

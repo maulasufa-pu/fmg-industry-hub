@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 // import { Envelope } from "./Envelope";
 // import { Facebook } from "./Facebook";

@@ -1,7 +1,9 @@
+"use client";
+
 import React, { useState } from "react";
 import { Apple, Controls, Google, Twitter } from "@/icons";
 
-import sep from "./sep.svg";
+import sep from "../icons/Sep.svg";
 
 export const MainContentSection = () => {
   const [email, setEmail] = useState("");

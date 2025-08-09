@@ -8,6 +8,8 @@ export { default as Facebook } from "./facebook.svg";
 export { default as Google } from "./google.svg";
 export { default as Instagram } from "./instagram.svg";
 export { default as Linkedin } from "./linkedin.svg";
+export { default as Rectangle14Stroke } from "./rectangle-14-stroke.svg";
+export { default as Sep } from "./Sep.svg";
 export { default as Twitter } from "./twitter.svg";
 export { default as User } from "./user.svg";
 export { default as Youtube } from "./youtube.svg";

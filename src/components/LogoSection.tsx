@@ -9,12 +9,12 @@ import React, { useState } from "react";
 // import { Youtube } from "./Youtube";
 
 import { Envelope, Facebook, Instagram, Linkedin, Twitter, Youtube } from "@/icons";
-import image from "./image.svg";
-import vector3 from "./vector-3.svg";
-import vector4 from "./vector-4.svg";
-import vector5 from "./vector-5.svg";
-import vector6 from "./vector-6.svg";
-import vector7 from "./vector-7.svg";
+import image from "../icons/rectangle-14-stroke.svg";
+// import vector3 from "./vector-3.svg";
+// import vector4 from "./vector-4.svg";
+// import vector5 from "./vector-5.svg";
+// import vector6 from "./vector-6.svg";
+// import vector7 from "./vector-7.svg";
 
 export const LogoSection = () => {
   const [email, setEmail] = useState("");
@@ -147,58 +147,6 @@ const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
               <h2 className="relative w-fit mt-[-1.00px] font-heading-6 font-[number:var(--heading-6-font-weight)] text-defaultwhite text-[length:var(--heading-6-font-size)] tracking-[var(--heading-6-letter-spacing)] leading-[var(--heading-6-line-height)] whitespace-nowrap [font-style:var(--heading-6-font-style)]">
                 Column Four
               </h2>
-            </div>
-
-            <div className="inline-flex items-start gap-2 relative flex-[0_0_auto]">
-              <a
-                href="#"
-                className="relative w-[119.66px] h-10 bg-[url(/group.png)] bg-[100%_100%] block"
-                aria-label="Download from App Store"
-              />
-
-              <a
-                href="#"
-                className="relative w-[135px] h-10 bg-[url(/vector.svg)] bg-[100%_100%] block"
-                aria-label="Get it on Google Play"
-              >
-                <div className="relative h-10 bg-[url(/vector-2.svg)] bg-[100%_100%]">
-                  <div className="absolute top-[3px] left-10 [-webkit-text-stroke:0.2px_#ffffff] [font-family:'Open_Sans-Regular',Helvetica] font-normal text-white text-[8.4px] tracking-[0] leading-[normal]">
-                    GET IT ON
-                  </div>
-
-                  <img
-                    className="absolute w-[85px] h-[17px] top-[17px] left-[41px]"
-                    alt="Google Play"
-                    src={vector3}
-                  />
-
-                  <div className="absolute w-[23px] h-[26px] top-[7px] left-2.5">
-                    <img
-                      className="absolute w-4 h-[13px] top-3 left-0"
-                      alt=""
-                      src={vector4}
-                    />
-
-                    <img
-                      className="absolute w-[13px] h-[11px] top-[7px] left-2.5"
-                      alt=""
-                      src={vector5}
-                    />
-
-                    <img
-                      className="absolute w-[11px] h-[21px] top-0.5 left-0"
-                      alt=""
-                      src={vector6}
-                    />
-
-                    <img
-                      className="absolute w-4 h-[13px] top-0 left-0"
-                      alt=""
-                      src={vector7}
-                    />
-                  </div>
-                </div>
-              </a>
             </div>
           </div>
 

@@ -3,8 +3,11 @@
 import "@/app/globals.css";
 import RequireAuth from "@/components/auth/RequireAuth";
 import { SidebarSection } from "@/components/SidebarSection";
+import { useFocusWarmAuth } from "@/lib/supabase/safe";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
+  useFocusWarmAuth();
+
   return (
     <RequireAuth>
       <div className="flex items-start relative bg-coolgray-10 w-full min-h-screen">

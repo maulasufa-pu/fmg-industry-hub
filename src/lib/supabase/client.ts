@@ -17,17 +17,18 @@ export function getSupabaseClient(): SupabaseClient {
         detectSessionInUrl: true,
       },
       global: {
-        fetch: (input: RequestInfo | URL, init?: RequestInit) =>
-          fetch(input, {
+        fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+          // PENTING: jangan hilangkan header apikey/Authorization dari Supabase
+          const hdrs = new Headers(init?.headers as HeadersInit | undefined);
+          hdrs.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+          hdrs.set("Pragma", "no-cache");
+          hdrs.set("Expires", "0");
+          return fetch(input, {
             ...init,
             cache: "no-store",
-            headers: {
-              ...(init?.headers || {}),
-              "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-              Pragma: "no-cache",
-              Expires: "0",
-            },
-          }),
+            headers: hdrs,
+          });
+        },
       },
       realtime: { params: { eventsPerSecond: 5 } },
     }
@@ -83,9 +84,7 @@ export async function withTimeout<T>(
   }
 }
 
-export function withSignal<Q extends { abortSignal?: (signal: AbortSignal) => Q }>(
-  qb: Q,
-  signal: AbortSignal
-): Q {
-  return typeof qb.abortSignal === "function" ? qb.abortSignal(signal) : qb;
+export function withSignal<T>(qb: T, signal: AbortSignal): T {
+  const m = qb as unknown as { abortSignal?: (s: AbortSignal) => T };
+  return typeof m.abortSignal === "function" ? m.abortSignal(signal) : qb;
 }

@@ -50,40 +50,39 @@ export default function PageContent(): React.JSX.Element {
 
   // ---- LOAD SEKALI SAAT MOUNT ----
   useEffect(() => {
-  let mounted = true;
-  let alive = true;
+    let mounted = true;
+    const ac = new AbortController(); // <-- tambah
+    (async () => {
+      setLoading(true);
+      await ensureFreshSession();
 
-  (async () => {
-    setLoading(true);
-    await ensureFreshSession();
+      const { data, error } = await withSignal(
+        supabase
+          .from("project_summary")
+          .select(
+            "id,project_name,artist_name,genre,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name"
+          )
+          .order("id", { ascending: true }),
+        ac.signal // <-- pasang signal
+      ).returns<ProjectRow[]>();
 
-    const { data, error } = await supabase
-      .from("project_summary")
-      .select(
-        "id,project_name,artist_name,genre,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name"
-      )
-      .order("id", { ascending: true })
-      .returns<ProjectRow[]>(); // ⬅️ penting: pastikan tipe rows
+      if (!mounted) return;
 
-    if (!mounted) return;
-    if (!alive) return;
+      if (error) {
+        console.error("LOAD error", error);
+        setAllRows([]);
+      } else {
+        setAllRows(data ?? []);
+      }
 
-    if (error) {
-      console.error("LOAD error", error);
-      setAllRows([]);
-    } else {
-      setAllRows(data ?? []);
-    }
+      setLoading(false);
+    })();
 
-    setLoading(false);
-  })();
-
-  return () => {
-    mounted = false;
-    alive = false;
-  };
-}, [supabase]);
-
+    return () => {
+      mounted = false;
+      ac.abort("unmount"); // <-- abort request saat unmount / navigasi
+    };
+  }, [supabase]);
 
   // ---- Client-only filter (tab + search) ----
   const filteredRows = useMemo(() => {

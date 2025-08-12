@@ -873,7 +873,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Composer */}
           <Card
-            title="Post an update"
+            title="Post a reference"
             right={
               <span className="text-xs text-gray-500">
                 {isPosting ? "Posting…" : ""}
@@ -884,7 +884,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
               <textarea
                 value={composerText}
                 onChange={(e) => setComposerText(e.target.value)}
-                placeholder="Tulis update…"
+                placeholder="Describe your references..."
                 className="w-full resize-none rounded-md border border-gray-300 p-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
                 rows={3}
               />

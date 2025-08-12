@@ -103,6 +103,43 @@ export default function ProjectDetailPage(): React.JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  type DiscussionMessage = {
+    id: string;
+    project_id: string;
+    author_id: string | null;
+    content: string;
+    created_at: string;
+  };
+
+  type MeetingRow = {
+    id: string;
+    project_id: string;
+    title: string;
+    start_at: string;     // ISO string
+    duration_min: number;
+    link: string | null;
+    notes: string | null;
+    created_by: string | null;
+    created_at: string;
+  };
+
+  // Discussion state
+  const [chatInput, setChatInput] = useState("");
+  const [messages, setMessages] = useState<DiscussionMessage[] | null>(null);
+  const [isSending, setIsSending] = useState(false);
+
+  // Meeting state
+  const [meetings, setMeetings] = useState<MeetingRow[] | null>(null);
+  const [meetingForm, setMeetingForm] = useState({
+    title: "",
+    date: "",     // "2025-08-12"
+    time: "",     // "14:00"
+    durationMin: 60,
+    link: "",
+    notes: "",
+  });
+  const [isCreatingMeeting, setIsCreatingMeeting] = useState(false);
+
   const validTabs: TabKey[] = [
     "All Project",
     "Active",
@@ -183,6 +220,32 @@ export default function ProjectDetailPage(): React.JSX.Element {
       } finally {
         if (mounted) setLoading(false);
       }
+      // Discussion messages background
+      supabase
+        .from("discussion_messages")
+        .select("id,project_id,author_id,content,created_at")
+        .eq("project_id", params.id)
+        .order("created_at", { ascending: false })
+        .limit(100)
+        .returns<DiscussionMessage[]>()
+        .then(({ data, error }) => {
+          if (!mounted) return;
+          if (error) { console.error(error); setMessages([]); return; }
+          setMessages(data ?? []);
+        });
+
+      // Meetings background
+      supabase
+        .from("meetings")
+        .select("id,project_id,title,start_at,duration_min,link,notes,created_by,created_at")
+        .eq("project_id", params.id)
+        .order("start_at", { ascending: false })
+        .returns<MeetingRow[]>()
+        .then(({ data, error }) => {
+          if (!mounted) return;
+          if (error) { console.error(error); setMeetings([]); return; }
+          setMeetings(data ?? []);
+        });
 
       // Drafts background
       supabase
@@ -274,6 +337,115 @@ export default function ProjectDetailPage(): React.JSX.Element {
       mounted = false;
     };
   }, [drafts, supabase]);
+
+  useEffect(() => {
+  // jangan jalan sebelum ada project id
+    if (!project) return;
+
+    const channel = supabase.channel(`realtime:project:${project.id}`);
+
+    // messages
+    channel.on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'discussion_messages', filter: `project_id=eq.${project.id}` },
+      (payload) => {
+        const row = payload.new as DiscussionMessage;
+        setMessages((prev) => prev ? [row, ...prev] : [row]);
+      }
+    );
+
+    // meetings
+    channel.on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'meetings', filter: `project_id=eq.${project.id}` },
+      (payload) => {
+        const row = payload.new as MeetingRow;
+        setMeetings((prev) => prev ? [row, ...prev] : [row]);
+      }
+    );
+
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        // ok
+      }
+    });
+
+    return () => { supabase.removeChannel(channel); };
+  }, [project, supabase]);
+
+  const sendMessage = async (): Promise<void> => {
+    const text = chatInput.trim();
+    if (!text) return;
+    setIsSending(true);
+    try {
+      const { data, error } = await supabase
+        .from("discussion_messages")
+        .insert({
+          project_id: params.id,
+          content: text,
+        })
+        .select("id,project_id,author_id,content,created_at")
+        .single<DiscussionMessage>();
+
+      if (error) throw error;
+      // Optimistic optional; realtime juga akan masuk.
+      setMessages((prev) => prev ? [data, ...prev] : [data]);
+      setChatInput("");
+    } catch (e) {
+      console.error(e);
+      alert("Gagal mengirim pesan.");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const createMeeting = async (): Promise<void> => {
+    const { title, date, time, durationMin, link, notes } = meetingForm;
+    if (!title.trim() || !date || !time) {
+      alert("Isi Title, Date, dan Time.");
+      return;
+    }
+    // gabung date + time ke ISO (anggap local tz)
+    const start = new Date(`${date}T${time}:00`);
+    if (Number.isNaN(start.getTime())) {
+      alert("Tanggal/Jam tidak valid.");
+      return;
+    }
+
+    setIsCreatingMeeting(true);
+    try {
+      const { data, error } = await supabase
+        .from("meetings")
+        .insert({
+          project_id: params.id,
+          title: title.trim(),
+          start_at: start.toISOString(),
+          duration_min: Number(durationMin) || 60,
+          link: link.trim() || null,
+          notes: notes.trim() || null,
+        })
+        .select("id,project_id,title,start_at,duration_min,link,notes,created_by,created_at")
+        .single<MeetingRow>();
+
+      if (error) throw error;
+      // Optimistic; realtime juga akan masuk
+      setMeetings((prev) => prev ? [data, ...prev] : [data]);
+
+      setMeetingForm({
+        title: "",
+        date: "",
+        time: "",
+        durationMin: 60,
+        link: "",
+        notes: "",
+      });
+    } catch (e) {
+      console.error(e);
+      alert("Gagal membuat meeting.");
+    } finally {
+      setIsCreatingMeeting(false);
+    }
+  };
 
   // actions drafts → auto status
   const updateProjectStatus = async (
@@ -856,12 +1028,151 @@ export default function ProjectDetailPage(): React.JSX.Element {
       )}
 
       {activeTab === "discussion" && (
-        <Card title="Discussion / Meeting">
-          <div className="text-sm text-gray-500">
-            Chat & video call placeholder — integrasi real-time bisa via
-            Supabase Realtime / Livekit nanti.
-          </div>
-        </Card>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Chat (2 kolom) */}
+          <Card
+            title="Discussion"
+            right={<span className="text-xs text-gray-500">{isSending ? "Sending…" : ""}</span>}
+          >
+            <div className="flex h-[420px] flex-col">
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto rounded-md border border-gray-200 p-3">
+                {messages === null ? (
+                  <div className="text-sm text-gray-500">Loading…</div>
+                ) : messages.length === 0 ? (
+                  <div className="text-sm text-gray-500">Belum ada pesan.</div>
+                ) : (
+                  <ul className="space-y-3">
+                    {messages.map((m) => (
+                      <li key={m.id} className="rounded-md border border-gray-200 p-2">
+                        <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
+                          <span>{m.author_id ?? "Anon"}</span>
+                          <span>{new Date(m.created_at).toLocaleString("id-ID")}</span>
+                        </div>
+                        <div className="whitespace-pre-wrap text-sm text-gray-800">{m.content}</div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* Composer */}
+              <div className="mt-3 flex gap-2">
+                <input
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Tulis pesan…"
+                  className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={isSending || !chatInput.trim()}
+                  className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </Card>
+
+          {/* Meeting (1 kolom) */}
+          <Card title="Meetings">
+            {/* Create */}
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  value={meetingForm.title}
+                  onChange={(e) => setMeetingForm((p) => ({ ...p, title: e.target.value }))}
+                  placeholder="Title"
+                  className="col-span-2 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                />
+                <input
+                  type="date"
+                  value={meetingForm.date}
+                  onChange={(e) => setMeetingForm((p) => ({ ...p, date: e.target.value }))}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                />
+                <input
+                  type="time"
+                  value={meetingForm.time}
+                  onChange={(e) => setMeetingForm((p) => ({ ...p, time: e.target.value }))}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                />
+                <input
+                  type="number"
+                  min={15}
+                  step={15}
+                  value={meetingForm.durationMin}
+                  onChange={(e) => setMeetingForm((p) => ({ ...p, durationMin: Number(e.target.value) }))}
+                  placeholder="Duration (min)"
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                />
+                <input
+                  value={meetingForm.link}
+                  onChange={(e) => setMeetingForm((p) => ({ ...p, link: e.target.value }))}
+                  placeholder="Meeting link (optional)"
+                  className="col-span-2 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                />
+                <textarea
+                  value={meetingForm.notes}
+                  onChange={(e) => setMeetingForm((p) => ({ ...p, notes: e.target.value }))}
+                  placeholder="Notes (optional)"
+                  rows={2}
+                  className="col-span-2 w-full resize-none rounded-md border border-gray-300 p-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                />
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={createMeeting}
+                  disabled={isCreatingMeeting || !meetingForm.title.trim() || !meetingForm.date || !meetingForm.time}
+                  className="rounded-md bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-700 disabled:opacity-60"
+                >
+                  {isCreatingMeeting ? "Creating…" : "Create Meeting"}
+                </button>
+              </div>
+            </div>
+
+            {/* List */}
+            <div className="mt-4">
+              <div className="mb-2 text-xs font-medium text-gray-700">Upcoming & Past</div>
+              {meetings === null ? (
+                <div className="text-sm text-gray-500">Loading…</div>
+              ) : meetings.length === 0 ? (
+                <div className="text-sm text-gray-500">Belum ada meeting.</div>
+              ) : (
+                <ul className="space-y-3">
+                  {meetings.map((m) => {
+                    const start = new Date(m.start_at);
+                    const end = new Date(start.getTime() + m.duration_min * 60_000);
+                    return (
+                      <li key={m.id} className="rounded-md border border-gray-200 p-3 text-sm">
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium text-gray-800">{m.title}</div>
+                          <div className="text-xs text-gray-500">
+                            {start.toLocaleString("id-ID")} – {end.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                        {m.notes && <div className="mt-1 text-gray-700">{m.notes}</div>}
+                        <div className="mt-2">
+                          {m.link ? (
+                            <a
+                              className="inline-flex items-center rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
+                              href={m.link} target="_blank" rel="noreferrer"
+                            >
+                              Join
+                            </a>
+                          ) : (
+                            <span className="text-xs text-gray-400">No link</span>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </Card>
+        </div>
       )}
     </div>
   );

@@ -45,6 +45,26 @@ type RevisionRow = {
   created_at: string | null;
 };
 
+type DriveFile = {
+  id: string;
+  name: string;
+  webViewLink?: string;
+  webContentLink?: string;
+  mimeType?: string;
+  thumbnailLink?: string;
+  iconLink?: string;
+  sizeBytes?: number;
+};
+
+type ReferencePost = {
+  id: string;
+  project_id: string;
+  author_id: string | null;
+  content: string | null;
+  media: DriveFile[];
+  created_at: string | null;
+};
+
 const Card: React.FC<
   React.PropsWithChildren<{ title: string; right?: React.ReactNode }>
 > = ({ title, right, children }) => (
@@ -109,11 +129,19 @@ export default function ProjectDetailPage(): React.JSX.Element {
   const [project, setProject] = useState<ProjectSummary | null>(null);
   const [drafts, setDrafts] = useState<DraftRow[] | null>(null);
   const [revisions, setRevisions] = useState<RevisionRow[] | null>(null);
-  const [activeTab, setActiveTab] = useState<"drafts" | "references" | "discussion">("drafts");
+  const [activeTab, setActiveTab] = useState<
+    "drafts" | "references" | "discussion"
+  >("drafts");
   const [busyAction, setBusyAction] = useState<{
     draftId: string;
     action: "approve" | "revision" | "publish";
   } | null>(null);
+
+  // References state
+  const [posts, setPosts] = useState<ReferencePost[] | null>(null);
+  const [composerText, setComposerText] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isPosting, setIsPosting] = useState(false);
 
   // util: timeout keras supaya gak pernah stuck
   const raceWithTimeout = <T,>(promiseLike: PromiseLike<T>, ms = 8000): Promise<T> =>
@@ -122,7 +150,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
       new Promise<T>((_, rej) => setTimeout(() => rej(new Error("timeout")), ms)),
     ]);
 
-  // 1) CEPAT: pastikan session aktif → ambil project → matikan spinner
+  // 1) CEPAT: session → project
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -156,7 +184,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
         if (mounted) setLoading(false);
       }
 
-      // 2) SEKUNDER: drafts di background
+      // Drafts background
       supabase
         .from("drafts")
         .select("draft_id,project_id,file_path,uploaded_by,version,created_at")
@@ -172,6 +200,28 @@ export default function ProjectDetailPage(): React.JSX.Element {
           }
           setDrafts(data ?? []);
         });
+
+      // References posts background
+      supabase
+        .from("references_posts")
+        .select("id,project_id,author_id,content,media,created_at")
+        .eq("project_id", params.id)
+        .order("created_at", { ascending: false })
+        .returns<ReferencePost[]>()
+        .then(({ data, error }) => {
+          if (!mounted) return;
+          if (error) {
+            console.error(error);
+            setPosts([]);
+            return;
+          }
+          // Pastikan media selalu array
+          const safe = (data ?? []).map((p) => ({
+            ...p,
+            media: Array.isArray(p.media) ? (p.media as DriveFile[]) : [],
+          }));
+          setPosts(safe);
+        });
     })();
 
     return () => {
@@ -179,6 +229,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
     };
   }, [params.id, router, supabase]);
 
+  // Group revisions per draft (keep hooks before early returns)
   const revByDraft = useMemo(() => {
     const m = new Map<string, RevisionRow[]>();
     (revisions ?? []).forEach((r) => {
@@ -193,7 +244,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
     return m;
   }, [revisions]);
 
-  // Setelah drafts ada, baru fetch revisions sekali
+  // Setelah drafts ada, fetch revisions
   useEffect(() => {
     if (drafts === null) return;
     const draftIds = drafts.map((d) => d.draft_id);
@@ -224,7 +275,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
     };
   }, [drafts, supabase]);
 
-  // actions (dipanggil otomatis dari tombol per draft)
+  // actions drafts → auto status
   const updateProjectStatus = async (
     status: ProjectSummary["status"]
   ): Promise<void> => {
@@ -232,11 +283,10 @@ export default function ProjectDetailPage(): React.JSX.Element {
       const { error } = await supabase
         .from("projects")
         .update({ status })
-        .eq("project_id", params.id) // ganti ke .eq("id", params.id) kalau PK kamu "id"
+        .eq("project_id", params.id) // ganti ke .eq("id", params.id) jika PK = id
         .select("status")
         .single();
       if (error) throw error;
-
       setProject((p) => (p ? { ...p, status } : p));
     } catch (e) {
       console.error(e);
@@ -247,8 +297,6 @@ export default function ProjectDetailPage(): React.JSX.Element {
   const approveDraft = async (draftId: string): Promise<void> => {
     setBusyAction({ draftId, action: "approve" });
     try {
-      // contoh jika ingin tandai draft:
-      // await supabase.from("drafts").update({ status: "approved" }).eq("draft_id", draftId);
       await updateProjectStatus("approved");
     } catch (e) {
       console.error(e);
@@ -272,7 +320,6 @@ export default function ProjectDetailPage(): React.JSX.Element {
 
       await updateProjectStatus("revision");
 
-      // Optimistic update riwayat revisi
       setRevisions((prev) => [
         ...(prev ?? []),
         {
@@ -300,6 +347,72 @@ export default function ProjectDetailPage(): React.JSX.Element {
       alert("Gagal menandai sebagai selesai.");
     } finally {
       setBusyAction(null);
+    }
+  };
+
+  // references: helpers
+  const onPickLocalFiles = (files: FileList | null) => {
+    if (!files) return;
+    const arr = Array.from(files);
+    setSelectedFiles((prev) => [...prev, ...arr]);
+  };
+
+  const removeSelectedFile = (idx: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const uploadToGoogleDrive = async (files: File[]): Promise<DriveFile[]> => {
+    // Kirim ke API route kamu (implement di /api/gdrive/upload)
+    const fd = new FormData();
+    files.forEach((f) => fd.append("files", f));
+    const res = await fetch("/api/gdrive/upload", {
+      method: "POST",
+      body: fd,
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`GDrive upload failed: ${txt}`);
+    }
+    const json = (await res.json()) as { files: DriveFile[] };
+    return json.files ?? [];
+  };
+
+  const submitReferencePost = async () => {
+    if (!composerText.trim() && selectedFiles.length === 0) {
+      alert("Tulis sesuatu atau pilih media dulu.");
+      return;
+    }
+    setIsPosting(true);
+    try {
+      // 1) upload media ke Google Drive (bila ada)
+      let driveFiles: DriveFile[] = [];
+      if (selectedFiles.length) {
+        driveFiles = await uploadToGoogleDrive(selectedFiles);
+      }
+
+      // 2) insert ke Supabase
+      const { data, error } = await supabase
+        .from("references_posts")
+        .insert({
+          project_id: params.id,
+          author_id: null, // isi user id kalau punya
+          content: composerText.trim() || null,
+          media: driveFiles,
+        })
+        .select("id,project_id,author_id,content,media,created_at")
+        .single<ReferencePost>();
+
+      if (error) throw error;
+
+      // 3) optimistic add + reset composer
+      setPosts((prev) => (prev ? [data, ...prev] : [data]));
+      setComposerText("");
+      setSelectedFiles([]);
+    } catch (e) {
+      console.error(e);
+      alert("Gagal membuat post referensi.");
+    } finally {
+      setIsPosting(false);
     }
   };
 
@@ -333,7 +446,6 @@ export default function ProjectDetailPage(): React.JSX.Element {
     cancelled: "Cancelled",
   };
 
-  // Group revisions per draft (newest first)
   return (
     <div className="p-6 space-y-6">
       {/* Breadcrumb */}
@@ -557,7 +669,6 @@ export default function ProjectDetailPage(): React.JSX.Element {
             )}
           </Card>
 
-          {/* (Opsional) Panel samping info / placeholder */}
           <Card title="Notes">
             <div className="text-sm text-gray-500">
               Simpan catatan review, checklist QC, atau link referensi terkait
@@ -568,13 +679,180 @@ export default function ProjectDetailPage(): React.JSX.Element {
       )}
 
       {activeTab === "references" && (
-        <Card title="Reference Files / Links / Notes">
-          <div className="text-sm text-gray-500">
-            Belum ada tabel khusus untuk references di schema kamu. Sementara,
-            upload bisa lewat “Drafts” atau simpan link di notes (akan kita
-            sambungkan ke DB nanti).
-          </div>
-        </Card>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Composer */}
+          <Card
+            title="Post an update"
+            right={
+              <span className="text-xs text-gray-500">
+                {isPosting ? "Posting…" : ""}
+              </span>
+            }
+          >
+            <div className="space-y-3">
+              <textarea
+                value={composerText}
+                onChange={(e) => setComposerText(e.target.value)}
+                placeholder="Tulis update…"
+                className="w-full resize-none rounded-md border border-gray-300 p-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                rows={3}
+              />
+              {/* pilih file lokal → API route akan upload ke Google Drive */}
+              <div className="flex items-center gap-2">
+                <label className="cursor-pointer rounded-md border px-3 py-2 text-xs hover:bg-gray-50">
+                  Choose Media
+                  <input
+                    type="file"
+                    accept="image/*,video/*,audio/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => onPickLocalFiles(e.target.files)}
+                  />
+                </label>
+
+                {selectedFiles.length > 0 && (
+                  <span className="text-xs text-gray-500">
+                    {selectedFiles.length} file selected
+                  </span>
+                )}
+              </div>
+
+              {/* preview kecil */}
+              {selectedFiles.length > 0 && (
+                <ul className="flex flex-wrap gap-2">
+                  {selectedFiles.map((f, i) => (
+                    <li
+                      key={`${f.name}-${i}`}
+                      className="group relative flex items-center gap-2 rounded-md border border-gray-200 px-2 py-1 text-xs"
+                    >
+                      <span className="max-w-[160px] truncate">{f.name}</span>
+                      <button
+                        onClick={() => removeSelectedFile(i)}
+                        className="opacity-60 hover:opacity-100"
+                        title="Hapus"
+                        type="button"
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="flex justify-end">
+                <button
+                  disabled={isPosting}
+                  onClick={submitReferencePost}
+                  className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
+                >
+                  Post
+                </button>
+              </div>
+            </div>
+          </Card>
+
+          {/* Feed */}
+          <Card title="References Feed" right={null}>
+            {posts === null ? (
+              <div className="text-sm text-gray-500">Loading…</div>
+            ) : posts.length === 0 ? (
+              <div className="text-sm text-gray-500">Belum ada post.</div>
+            ) : (
+              <ul className="space-y-4">
+                {posts.map((p) => (
+                  <li
+                    key={p.id}
+                    className="rounded-md border border-gray-200 p-3 text-sm"
+                  >
+                    <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
+                      <span>{p.author_id ?? "Anon"}</span>
+                      <span>
+                        {p.created_at
+                          ? new Date(p.created_at).toLocaleString("id-ID")
+                          : ""}
+                      </span>
+                    </div>
+                    {p.content && (
+                      <div className="mb-2 whitespace-pre-wrap text-gray-800">
+                        {p.content}
+                      </div>
+                    )}
+                    {p.media.length > 0 && (
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        {p.media.map((m, idx) => {
+                          const mime = m.mimeType ?? "";
+                          const isImg = mime.startsWith("image/");
+                          const isVideo = mime.startsWith("video/");
+                          const isAudio = mime.startsWith("audio/");
+                          return (
+                            <div
+                              key={`${m.id}-${idx}`}
+                              className="overflow-hidden rounded-md border border-gray-200"
+                            >
+                              {isImg ? (
+                                <a
+                                  href={m.webViewLink || m.webContentLink || "#"}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  {/* pakai thumbnail kalau ada */}
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={
+                                      m.thumbnailLink ||
+                                      m.webContentLink ||
+                                      "/placeholder.png"
+                                    }
+                                    alt={m.name}
+                                    className="h-36 w-full object-cover"
+                                  />
+                                </a>
+                              ) : isVideo ? (
+                                <a
+                                  className="block p-3 text-xs hover:bg-gray-50"
+                                  href={m.webViewLink || m.webContentLink || "#"}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  🎬 {m.name}
+                                </a>
+                              ) : isAudio ? (
+                                <a
+                                  className="block p-3 text-xs hover:bg-gray-50"
+                                  href={m.webViewLink || m.webContentLink || "#"}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  🎵 {m.name}
+                                </a>
+                              ) : (
+                                <a
+                                  className="block p-3 text-xs hover:bg-gray-50"
+                                  href={m.webViewLink || m.webContentLink || "#"}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  📄 {m.name}
+                                </a>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+
+          {/* Sisi kanan bisa dipakai filter/tagging jika perlu */}
+          <Card title="Filters (optional)">
+            <div className="text-sm text-gray-500">
+              Tambahkan filter by media type, author, dsb.
+            </div>
+          </Card>
+        </div>
       )}
 
       {activeTab === "discussion" && (

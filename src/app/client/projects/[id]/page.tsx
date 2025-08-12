@@ -91,7 +91,11 @@ export default function ProjectDetailPage(): React.JSX.Element {
   const [drafts, setDrafts] = useState<DraftRow[] | null>(null);      // background load
   const [revisions, setRevisions] = useState<RevisionRow[] | null>(null); // background load
   const [activeTab, setActiveTab] = useState<"drafts" | "references" | "discussion" | "history">("drafts");
-  const [busyAction, setBusyAction] = useState<string | null>(null);
+  const [busyAction, setBusyAction] = useState<{
+  draftId: string;
+  action: "approve" | "revision" | "publish";
+} | null>(null);
+
 
   // util: timeout keras supaya gak pernah stuck
   const raceWithTimeout = <T,>(promiseLike: PromiseLike<T>, ms = 8000): Promise<T> =>
@@ -105,7 +109,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
     let mounted = true;
     (async () => {
       try {
-        await ensureFreshSession();
+        // await ensureFreshSession();
         // Paksa refresh/validasi session agar query pertama tidak ngegantung
         await supabase.auth.getSession();
 
@@ -198,45 +202,84 @@ export default function ProjectDetailPage(): React.JSX.Element {
   }, [drafts, supabase]);
 
   // actions
-  const updateProjectStatus = async (status: ProjectSummary["status"]) => {
-    setBusyAction(status);
+    const updateProjectStatus = async (status: ProjectSummary["status"]): Promise<void> => {
     try {
       const { error } = await supabase
         .from("projects")
         .update({ status })
-        .eq("project_id", params.id) // kalau PK tabel projects adalah "id", ganti ke .eq("id", params.id)
+        .eq("project_id", params.id) // ganti ke .eq("id", params.id) kalau PK kamu "id"
         .select("status")
         .single();
       if (error) throw error;
+
       setProject((p) => (p ? { ...p, status } : p));
     } catch (e) {
       console.error(e);
       alert("Gagal memperbarui status.");
+    }
+  };
+
+  const approveDraft = async (draftId: string): Promise<void> => {
+    setBusyAction({ draftId, action: "approve" });
+    try {
+      // Contoh kalau mau tandai draftnya juga:
+      // await supabase.from("drafts").update({ status: "approved" }).eq("draft_id", draftId);
+
+      await updateProjectStatus("approved");
+    } catch (e) {
+      console.error(e);
+      alert("Gagal meng-approve draft.");
     } finally {
       setBusyAction(null);
     }
   };
 
-  const requestRevision = async () => {
+  const requestRevisionForDraft = async (draftId: string): Promise<void> => {
     const reason = window.prompt("Alasan/revisi yang diminta?");
     if (reason === null) return;
-    setBusyAction("revision");
+
+    setBusyAction({ draftId, action: "revision" });
     try {
-      const targetDraftId = drafts?.[0]?.draft_id;
-      if (!targetDraftId) {
-        alert("Belum ada draft untuk direvisi.");
-        setBusyAction(null);
-        return;
-      }
-      const { error: e1 } = await supabase.from("revisions").insert({ draft_id: targetDraftId, reason });
-      if (e1) throw e1;
+      const { error } = await supabase.from("revisions").insert({
+        draft_id: draftId,
+        reason,
+        // requested_by: isi kalau kamu punya user id
+      });
+      if (error) throw error;
+
       await updateProjectStatus("revision");
+
+      // Optimistic update riwayat revisi
+      setRevisions((prev) => [
+        ...(prev ?? []),
+        {
+          revision_id: crypto.randomUUID(),
+          draft_id: draftId,
+          requested_by: null,
+          reason,
+          created_at: new Date().toISOString(),
+        },
+      ]);
     } catch (e) {
       console.error(e);
       alert("Gagal membuat request revision.");
+    } finally {
       setBusyAction(null);
     }
   };
+
+  const markFinishedFromDraft = async (draftId: string): Promise<void> => {
+    setBusyAction({ draftId, action: "publish" });
+    try {
+      await updateProjectStatus("published");
+    } catch (e) {
+      console.error(e);
+      alert("Gagal menandai sebagai selesai.");
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
 
   if (loading) {
     // Loading HANYA sekali, cepat
@@ -362,11 +405,45 @@ export default function ProjectDetailPage(): React.JSX.Element {
                         {d.created_at ? new Date(d.created_at).toLocaleString("id-ID") : "-"}
                       </span>
                     </div>
+
                     <div className="mt-1 text-gray-600 break-all">{d.file_path}</div>
-                    <div className="mt-2 flex gap-2">
-                      <a href={d.file_path} target="_blank" rel="noreferrer" className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50">
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <a
+                        href={d.file_path}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
+                      >
                         Open
                       </a>
+
+                      <button
+                        disabled={!!busyAction && busyAction.draftId === d.draft_id}
+                        onClick={() => approveDraft(d.draft_id)}
+                        className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs text-white hover:bg-emerald-700 disabled:opacity-60"
+                        title="Approve draft ini"
+                      >
+                        {busyAction?.draftId === d.draft_id && busyAction.action === "approve" ? "Processing…" : "Approve Draft"}
+                      </button>
+
+                      <button
+                        disabled={!!busyAction && busyAction.draftId === d.draft_id}
+                        onClick={() => requestRevisionForDraft(d.draft_id)}
+                        className="rounded-md bg-amber-600 px-3 py-1.5 text-xs text-white hover:bg-amber-700 disabled:opacity-60"
+                        title="Minta revisi untuk draft ini"
+                      >
+                        {busyAction?.draftId === d.draft_id && busyAction.action === "revision" ? "Processing…" : "Request Revision"}
+                      </button>
+
+                      <button
+                        disabled={!!busyAction && busyAction.draftId === d.draft_id}
+                        onClick={() => markFinishedFromDraft(d.draft_id)}
+                        className="rounded-md bg-blue-600 px-3 py-1.5 text-xs text-white hover:bg-blue-700 disabled:opacity-60"
+                        title="Tandai selesai berdasarkan draft ini"
+                      >
+                        {busyAction?.draftId === d.draft_id && busyAction.action === "publish" ? "Processing…" : "Mark as Finished"}
+                      </button>
                     </div>
                   </li>
                 ))}
@@ -376,7 +453,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
             )}
           </Card>
 
-          <Card title="Actions" right={busyAction && <span className="text-xs text-gray-500">Processing…</span>}>
+          {/* <Card title="Actions" right={busyAction && <span className="text-xs text-gray-500">Processing…</span>}>
             <div className="flex flex-col gap-2">
               <button
                 disabled={!!busyAction}
@@ -400,7 +477,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
                 Mark as Finished
               </button>
             </div>
-          </Card>
+          </Card> */}
 
           <Card title="Status">
             <div className="text-sm">

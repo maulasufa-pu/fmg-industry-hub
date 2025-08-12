@@ -83,6 +83,9 @@ export async function withTimeout<T>(
   }
 }
 
-export function withSignal<Q>(qb: Q, signal: AbortSignal): Q {
-  return (qb as any)?.abortSignal?.(signal) ?? qb;
+export function withSignal<Q extends { abortSignal?: (signal: AbortSignal) => Q }>(
+  qb: Q,
+  signal: AbortSignal
+): Q {
+  return typeof qb.abortSignal === "function" ? qb.abortSignal(signal) : qb;
 }

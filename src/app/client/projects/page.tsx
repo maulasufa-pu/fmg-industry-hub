@@ -1,10 +1,12 @@
+// src/app/client/projects/page.tsx
 "use client";
+
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProjectTabsSection } from "./ProjectTabsSection";
 import { ProjectTableSection } from "./ProjectTableSection";
 import { ProjectPaginationSection } from "./ProjectPaginationSection";
-import { ensureFreshSession, withTimeout, withSignal, getSupabaseClient } from "@/lib/supabase/client";
+import { withSignal, getSupabaseClient } from "@/lib/supabase/client";
 import { useFocusRefetch } from "@/lib/supabase/useFocusRefetch";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
 
@@ -29,6 +31,7 @@ type ProjectRow = {
 };
 
 export default function PageContent(): React.JSX.Element {
+  // Boleh dipakai, tapi kita tidak pakai ensureFreshSession lagi (autoRefresh sudah ON)
   useFocusWarmAuth();
 
   const router = useRouter();
@@ -37,7 +40,8 @@ export default function PageContent(): React.JSX.Element {
 
   const validTabs: TabKey[] = ["All Project", "Active", "Finished", "Pending", "Requested"];
   const initialTabRaw = (params.get("tab") as TabKey) || "All Project";
-  const initialTabFromUrl: TabKey = validTabs.includes(initialTabRaw) ? initialTabRaw : "All Project";
+  const initialTabFromUrl: TabKey =
+    validTabs.includes(initialTabRaw) ? initialTabRaw : "All Project";
 
   // UI state
   const [activeTab, setActiveTab] = useState<TabKey>(initialTabFromUrl);
@@ -45,88 +49,108 @@ export default function PageContent(): React.JSX.Element {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  // Data state (HANYA DIISI SEKALI)
+  // Data state
   const [loading, setLoading] = useState(true);
   const [allRows, setAllRows] = useState<ProjectRow[]>([]);
 
-  const [rows, setRows] = useState<ProjectRow[]>([]);
-
+  // Satu-satunya controller untuk request yang sedang berjalan
   const inflightRef = useRef<AbortController | null>(null);
 
-  const abortCurrent = useCallback(() => {
+  const abortCurrent = useCallback((): void => {
     inflightRef.current?.abort("cancel-on-blur-or-new-request");
     inflightRef.current = null;
   }, []);
 
-  const reload = useCallback(async (status = activeTab) => {
-    // batalkan request lama
-    abortCurrent();
-    const ac = new AbortController();
-    inflightRef.current = ac;
-    try {
-      // query
-      let qb = supabase.from("project_summary")
-        .select("id,project_name,artist_name,genre,stage,status,latest_update,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name")
-        .order("latest_update", { ascending: false });
+  const reload = useCallback(
+    async (status: TabKey = activeTab): Promise<void> => {
+      abortCurrent();
+      const ac = new AbortController();
+      inflightRef.current = ac;
 
-      if (status !== "All Project") {
-        qb = qb.eq("status", status.toLowerCase());
-      }
+      try {
+        let qb = supabase
+          .from("project_summary")
+          .select(
+            "id,project_name,artist_name,genre,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name"
+          )
+          .order("latest_update", { ascending: false });
 
-      const { data, error } = await withSignal(qb, ac.signal);
-      if (error) throw error;
-      setRows(data ?? []);
-    } catch (e: any) {
-      if (e?.name !== "AbortError") {
-        console.error("reload failed:", e);
+        if (status !== "All Project") {
+          qb = qb.eq("status", status.toLowerCase());
+        }
+
+        const { data, error } = await withSignal(qb, ac.signal).returns<ProjectRow[]>();
+        if (error) throw error;
+        setAllRows(data ?? []);
+      } catch (err: unknown) {
+        // Hindari any: unknown + narrowing
+        const name = (err as { name?: string } | undefined)?.name;
+        if (name !== "AbortError") {
+          // eslint-disable-next-line no-console
+          console.error("reload failed:", err);
+        }
+      } finally {
+        if (inflightRef.current === ac) inflightRef.current = null;
       }
-    } finally {
-      if (inflightRef.current === ac) inflightRef.current = null;
-    }
-  }, [supabase, activeTab, abortCurrent]);
+    },
+    [supabase, activeTab, abortCurrent]
+  );
 
   // ---- LOAD SEKALI SAAT MOUNT ----
   useEffect(() => {
+    let mounted = true;
     const ac = new AbortController();
-    inflightRef.current = ac;
+
     (async () => {
+      setLoading(true);
       try {
-        let qb = supabase.from("project_summary")
-          .select("id,project_name,artist_name,genre,stage,status,latest_update,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name")
-          .order("latest_update", { ascending: false });
-        const { data, error } = await withSignal(qb, ac.signal);
-        if (error) throw error;
-        setRows(data ?? []);
-      } catch (e: any) {
-        if (e?.name !== "AbortError") console.error(e);
+        const { data, error } = await withSignal(
+          supabase
+            .from("project_summary")
+            .select(
+              "id,project_name,artist_name,genre,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name"
+            )
+            .order("id", { ascending: true }),
+          ac.signal
+        ).returns<ProjectRow[]>();
+
+        if (!mounted) return;
+
+        if (error) {
+          // eslint-disable-next-line no-console
+          console.error("LOAD error", error);
+          setAllRows([]);
+        } else {
+          setAllRows(data ?? []);
+        }
+      } catch (err: unknown) {
+        const name = (err as { name?: string } | undefined)?.name;
+        if (name !== "AbortError") {
+          // eslint-disable-next-line no-console
+          console.error("LOAD failed:", err);
+        }
       } finally {
-        if (inflightRef.current === ac) inflightRef.current = null;
+        if (mounted) setLoading(false);
       }
     })();
 
     return () => {
+      mounted = false;
       ac.abort("unmount");
-      if (inflightRef.current === ac) inflightRef.current = null;
     };
   }, [supabase]);
 
+  // ---- Refetch otomatis ketika balik fokus / tab visible ----
   useFocusRefetch(
-    () => reload(activeTab),
-    abortCurrent
+    () => reload(activeTab), // refetch
+    abortCurrent // kill inflight saat blur/hidden
   );
-
-  // Refetch saat ganti tab filter
-  useEffect(() => {
-    reload(activeTab);
-  }, [activeTab, reload]);
-
 
   // ---- Client-only filter (tab + search) ----
   const filteredRows = useMemo(() => {
     const q = search.trim().toLowerCase();
     let base = allRows;
 
-    // Tab filter
     switch (activeTab) {
       case "Active":
         base = base.filter((r) => r.is_active === true);
@@ -138,22 +162,15 @@ export default function PageContent(): React.JSX.Element {
         base = base.filter((r) => r.is_active === false && r.is_finished === false);
         break;
       case "Requested":
-        base = []; // belum ada definisi data "requested" di source
+        base = []; // belum ada definisi data "requested"
         break;
       default:
-        // "All Project" -> tidak difilter
         break;
     }
 
-    // Search filter (simple contains)
     if (q.length >= 2) {
       base = base.filter((r) => {
-        const hay =
-          (r.project_name ?? "") +
-          " " +
-          (r.artist_name ?? "") +
-          " " +
-          (r.genre ?? "");
+        const hay = `${r.project_name ?? ""} ${r.artist_name ?? ""} ${r.genre ?? ""}`;
         return hay.toLowerCase().includes(q);
       });
     }
@@ -161,7 +178,7 @@ export default function PageContent(): React.JSX.Element {
     return base;
   }, [allRows, activeTab, search]);
 
-  // ---- counts untuk tabs (hitung dari allRows sekali jalan) ----
+  // ---- counts untuk tabs (hitung dari allRows) ----
   const counts = useMemo((): Record<TabKey, number | null> => {
     const all = allRows.length;
     const act = allRows.filter((r) => r.is_active === true).length;
@@ -197,7 +214,6 @@ export default function PageContent(): React.JSX.Element {
   };
 
   const openProject = (id: string) => {
-    // langsung push; kalau balik ke /client/projects, boleh refresh lagi (load 1x lagi)
     router.push(`/client/projects/${id}?tab=${encodeURIComponent(activeTab)}`);
   };
 

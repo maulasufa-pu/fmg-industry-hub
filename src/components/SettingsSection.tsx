@@ -72,7 +72,7 @@ export const SettingsSection = () => {
       setLoading(true);
       setErr(null);
 
-      await ensureFreshSession();
+      // await ensureFreshSession();
       const { data: { user }, error: uErr } = await supabase.auth.getUser();
       if (aborted) return;
       if (uErr) { setErr(uErr.message); setLoading(false); return; }

@@ -50,12 +50,7 @@ export const LoginSection = () => {
     const redirectTo = `${window.location.origin}/auth/callback?flow=login`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { scopes: "https://www.googleapis.com/auth/drive.file",
-    // opsional, supaya Google kasih refresh token & munculin layar consent lagi:
-    queryParams: {
-      access_type: "offline",
-      prompt: "consent",
-    }, redirectTo },
+      options: { redirectTo },
     });
     if (error) setErr(error.message);
   };

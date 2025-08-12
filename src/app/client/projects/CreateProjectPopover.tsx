@@ -161,7 +161,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
   const handleSaveDraft = async () => {
     try {
       setSaving(true); setError(null);
-      await ensureFreshSession();
+      // await ensureFreshSession();
       const { data: auth } = await supabase.auth.getUser();
       const uid = auth.user?.id;
       if (!uid) throw new Error("Not authenticated");

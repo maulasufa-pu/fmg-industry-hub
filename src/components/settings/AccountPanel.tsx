@@ -21,7 +21,7 @@ export default function AccountPanel() {
 
   useEffect(() => {
     (async () => {
-      await ensureFreshSession();
+      // await ensureFreshSession();
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error) { setErr(error.message); return; }
 
@@ -62,7 +62,7 @@ export default function AccountPanel() {
 
     setSaving(true);
     try {
-      await ensureFreshSession();
+      // await ensureFreshSession();
       if (isEmailUser) {
         if (!currentPassword) {
           setErr("Current password is required.");

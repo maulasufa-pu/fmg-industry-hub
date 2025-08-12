@@ -23,7 +23,7 @@ export default function LogoutButton({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const supabase = getSupabaseClient(true);
+    const supabase = getSupabaseClient();
 
     // cek session awal
     supabase.auth.getSession().then(({ data: { session} }) => {
@@ -46,7 +46,7 @@ export default function LogoutButton({
   const onClick = async () => {
     setLoading(true);
     try {
-      const supabase = getSupabaseClient(true);
+      const supabase = getSupabaseClient();
 
       // 1) hapus session di client (localStorage)
       await supabase.auth.signOut();

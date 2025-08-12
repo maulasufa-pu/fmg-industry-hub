@@ -3,10 +3,11 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { ensureFreshSession } from "@/lib/supabase/safe";
 import { Google, Envelope } from "@/icons";
 
 export default function AccountPanel() {
-  const supabase = useMemo(() => getSupabaseClient(true), []);
+  const supabase = useMemo(() => getSupabaseClient(), []);
   const [email, setEmail] = useState("");
   const [isEmailUser, setIsEmailUser] = useState<boolean>(false);
   const [primaryProvider, setPrimaryProvider] = useState<string>("");
@@ -21,16 +22,27 @@ export default function AccountPanel() {
 
   useEffect(() => {
     (async () => {
+      await ensureFreshSession();
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error) { setErr(error.message); return; }
+
       const user = session?.user;
       setEmail(user?.email ?? "");
 
-      const identities = (user?.identities ?? []) as Array<{ provider?: string }>;
-      const hasEmailIdentity = identities.some(i => i.provider === "email");
-      const provider = (user?.app_metadata as any)?.provider as string | undefined;
+      type Identity = { provider?: string | null };
+      const identities = (user?.identities ?? []) as Identity[];
+      const hasEmailIdentity = identities.some((i) => i.provider === "email");
+
+      // Hindari any: ketatkan tipe app_metadata lalu cek jenisnya
+      type AppMeta = Record<string, unknown> & { provider?: string };
+      const appMeta: AppMeta = (user?.app_metadata ?? {}) as AppMeta;
+      const provider =
+        typeof appMeta.provider === "string" ? appMeta.provider : undefined;
+
       setIsEmailUser(hasEmailIdentity || provider === "email");
-      setPrimaryProvider(provider || (hasEmailIdentity ? "email" : (identities[0]?.provider ?? "unknown")));
+      setPrimaryProvider(
+        provider || (hasEmailIdentity ? "email" : (identities[0]?.provider ?? "unknown") || "unknown")
+      );
     })();
   }, [supabase]);
 
@@ -51,6 +63,7 @@ export default function AccountPanel() {
 
     setSaving(true);
     try {
+      await ensureFreshSession();
       if (isEmailUser) {
         if (!currentPassword) {
           setErr("Current password is required.");
@@ -80,8 +93,8 @@ export default function AccountPanel() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNew("");
-    } catch (e: any) {
-      setErr(e?.message ?? "Failed to update password.");
+    } catch (e: unknown) { // ⬅️ was: any
+      setErr(e instanceof Error ? e.message : "Failed to update password.");
     } finally {
       setSaving(false);
     }
@@ -90,11 +103,9 @@ export default function AccountPanel() {
   const ProviderBadge = () => (
     <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-coolgray-10 text-coolgray-90">
       {primaryProvider === "google" ? (
-        // Google "G" mini SVG
-          <Google className="" />
+        <Google />
       ) : (
-        // Email icon mini
-        <Envelope className=""/>
+        <Envelope />
       )}
       <span className="text-sm">
         {primaryProvider === "google" ? "Registered with Google Account" : "Registered with Email & Password"}
@@ -137,7 +148,7 @@ export default function AccountPanel() {
               <input
                 type="password"
                 value={currentPassword}
-                onChange={(e)=>setCurrentPassword(e.target.value)}
+                onChange={(e) => setCurrentPassword(e.target.value)}
                 className="flex-1 font-body-m text-coolgray-60 bg-transparent"
                 placeholder="••••••••"
                 disabled={saving}
@@ -156,7 +167,7 @@ export default function AccountPanel() {
             <input
               type="password"
               value={newPassword}
-              onChange={(e)=>setNewPassword(e.target.value)}
+              onChange={(e) => setNewPassword(e.target.value)}
               className="flex-1 font-body-m text-coolgray-60 bg-transparent"
               placeholder="At least 8 characters"
               disabled={saving}
@@ -174,7 +185,7 @@ export default function AccountPanel() {
             <input
               type="password"
               value={confirmNew}
-              onChange={(e)=>setConfirmNew(e.target.value)}
+              onChange={(e) => setConfirmNew(e.target.value)}
               className="flex-1 font-body-m text-coolgray-60 bg-transparent"
               placeholder="Repeat new password"
               disabled={saving}

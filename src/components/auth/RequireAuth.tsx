@@ -4,13 +4,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { ensureFreshSession } from "@/lib/supabase/safe";
 
 type Props = { children: React.ReactNode };
 
 export default function RequireAuth({ children }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const supabase = useMemo(() => getSupabaseClient(true), []);
+  const supabase = useMemo(() => getSupabaseClient(), []);
   const [status, setStatus] = useState<"checking" | "authed" | "guest">("checking");
 
   useEffect(() => {
@@ -18,6 +19,7 @@ export default function RequireAuth({ children }: Props) {
 
     const check = async () => {
       // cek session awal
+      await ensureFreshSession();
       const { data: { session } } = await supabase.auth.getSession();
       if (!mounted) return;
 

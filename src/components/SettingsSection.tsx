@@ -8,6 +8,7 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 import AccountPanel from "@/components/settings/AccountPanel";
 import BillingPanel from "@/components/settings/BillingPanel";
 import SubscriptionsPanel from "@/components/settings/SubscriptionsPanel";
+import { ensureFreshSession } from "@/lib/supabase/safe";
 
 type FormData = {
   firstName: string;
@@ -25,7 +26,7 @@ const MIN_H = 400;
 const USE_PUBLIC_BUCKET = true;
 
 export const SettingsSection = () => {
-  const supabase = useMemo(() => getSupabaseClient(true), []);
+  const supabase = useMemo(() => getSupabaseClient(), []);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeMenuItem, setActiveMenuItem] = useState("Edit Profile");
@@ -72,6 +73,7 @@ export const SettingsSection = () => {
       setLoading(true);
       setErr(null);
 
+      await ensureFreshSession();
       const { data: { user }, error: uErr } = await supabase.auth.getUser();
       if (aborted) return;
       if (uErr) { setErr(uErr.message); setLoading(false); return; }
@@ -134,8 +136,8 @@ export const SettingsSection = () => {
   const onPickFile = () => fileInputRef.current?.click();
 
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    if (!file) return;
+  const file = e.target.files?.[0] || null;
+  if (!file) return;
 
     setErr(null);
     // 1) Validasi ukuran
@@ -170,23 +172,19 @@ export const SettingsSection = () => {
       if (uErr) throw uErr;
       if (!user) throw new Error("Not authenticated.");
 
-      // ekstensi
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
       const path = `${user.id}/${Date.now()}.${ext}`;
 
-      // upload
       const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, file, {
         cacheControl: "3600",
         upsert: false,
       });
       if (upErr) throw upErr;
 
-      // kalau punya file lama → bisa dihapus (opsional)
       if (avatarPath && avatarPath !== path) {
         await supabase.storage.from(BUCKET).remove([avatarPath]).catch(() => {});
       }
 
-      // simpan path ke profile
       const { error: dbErr } = await supabase
         .from("profiles")
         .update({ avatar_path: path })
@@ -196,13 +194,14 @@ export const SettingsSection = () => {
       setAvatarPath(path);
       await refreshAvatarUrl(path);
       setShowSuccessMessage(true);
-    } catch (e: any) {
-      setErr(e?.message ?? "Upload failed.");
+    } catch (e: unknown) {                    // ⬅️ was: any
+      setErr(e instanceof Error ? e.message : "Upload failed.");
     } finally {
       setUploading(false);
       e.target.value = "";
     }
   };
+
 
   // Remove
   const onRemoveAvatar = async () => {
@@ -225,12 +224,13 @@ export const SettingsSection = () => {
       setAvatarPath(null);
       setAvatarUrl(null);
       setShowSuccessMessage(true);
-    } catch (e: any) {
-      setErr(e?.message ?? "Failed to remove photo.");
+    } catch (e: unknown) {                    // ⬅️ was: any
+      setErr(e instanceof Error ? e.message : "Failed to remove photo.");
     } finally {
       setUploading(false);
     }
   };
+
 
   const handleCloseSuccess = () => setShowSuccessMessage(false);
 

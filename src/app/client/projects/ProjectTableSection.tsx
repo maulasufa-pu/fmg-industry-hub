@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { ArrowDown } from "@/icons";
 import { ChevronDown } from "@/icons";
 import { User } from "@/icons";
-import { useRouter } from "next/navigation";
 
 type Activity = { id: string; time: string; actor: string; action: string; tag?: string };
 
@@ -42,9 +41,9 @@ type Props = {
 
 export const ProjectTableSection = ({
   rows,
-  emptyText = "No projects found.", onOpenProject
+  emptyText = "No projects found.",
+  onOpenProject,
 }: Props): React.JSX.Element => {
-  const router = useRouter();
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -53,7 +52,11 @@ export const ProjectTableSection = ({
   // ---------- selection ----------
   const handleRowSelection = (id: string) => {
     const next = new Set(selectedRows);
-    next.has(id) ? next.delete(id) : next.add(id);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
     setSelectedRows(next);
     setSelectAll(next.size === rows.length && rows.length > 0);
   };
@@ -67,7 +70,11 @@ export const ProjectTableSection = ({
   // ---------- expand ----------
   const toggleRowExpand = (id: string) => {
     const next = new Set(expandedRows);
-    next.has(id) ? next.delete(id) : next.add(id);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
     setExpandedRows(next);
   };
 
@@ -126,6 +133,10 @@ export const ProjectTableSection = ({
             <tr
               className="group hover:bg-gray-50 cursor-pointer"
               onClick={() => toggleRowExpand(project.id)}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                onOpenProject?.(project.id);
+              }}
               aria-expanded={expandedRows.has(project.id)}
             >
               <td className="p-3 text-center border-b border-gray-200">

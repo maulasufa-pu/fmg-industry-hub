@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import LogoutButton from "@/components/auth/LogoutButton";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { ensureFreshSession } from "@/lib/supabase/safe";
 
 type ProfileLite = {
   fullName: string;
@@ -18,10 +19,11 @@ export default function UserMenu() {
   const popRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const supabase = getSupabaseClient(true);
+    const supabase = getSupabaseClient();
     let unsub: (() => void) | undefined;
 
     const boot = async () => {
+      await ensureFreshSession();
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
       if (!user) {

@@ -1,20 +1,22 @@
+// src/app/auth/signout/route.ts
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export async function POST() {
-  const cookieStore = await cookies(); // ✅ versi lama butuh await
-  let response = NextResponse.json({ ok: true });
+  // ✅ di setup kamu: cookies() async
+  const cookieStore = await cookies();
+  const res = NextResponse.json({ ok: true });
 
   const supabase = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       getAll: () => cookieStore.getAll(),
       setAll: (cookiesToSet) => {
         cookiesToSet.forEach(({ name, value, options }) => {
-          response.cookies.set({ name, value, ...options });
+          res.cookies.set(name, value, options as CookieOptions | undefined);
         });
       },
     },
@@ -22,14 +24,10 @@ export async function POST() {
 
   await supabase.auth.signOut();
 
-  ["sb-access-token", "sb-refresh-token"].forEach((name) => {
-    response.cookies.set({
-      name,
-      value: "",
-      path: "/",
-      maxAge: 0,
-    });
-  });
+  // bersihkan token supabase
+  for (const name of ["sb-access-token", "sb-refresh-token"]) {
+    res.cookies.set(name, "", { path: "/", maxAge: 0 });
+  }
 
-  return response;
+  return res;
 }

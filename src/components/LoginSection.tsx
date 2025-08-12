@@ -26,17 +26,17 @@ export const LoginSection = () => {
     setErr(null);
     setLoading(true);
     try {
-      const supabase = getSupabaseClient(!!rememberMe);
+      const supabase = getSupabaseClient();
 
-      // kalau masih ada sesi lama, bersihkan dulu
       const { data: { session } } = await supabase.auth.getSession();
       if (session) await supabase.auth.signOut();
 
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
+
       router.push(redirectedFrom);
-    } catch (e: any) {
-      setErr(e?.message ?? "Login failed");
+    } catch (e: unknown) {                  // ⬅️ was: any
+      setErr(e instanceof Error ? e.message : "Login failed");
     } finally {
       setLoading(false);
     }
@@ -46,7 +46,7 @@ export const LoginSection = () => {
     provider: "google"
   ) => {
     setErr(null);
-    const supabase = getSupabaseClient(true); // OAuth sebaiknya persist
+    const supabase = getSupabaseClient(); // OAuth sebaiknya persist
     const redirectTo = `${window.location.origin}/auth/callback?flow=login`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider,

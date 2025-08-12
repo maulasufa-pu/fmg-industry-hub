@@ -15,7 +15,10 @@ export function getSupabaseClient(): SupabaseClient {
         autoRefreshToken: true,
         detectSessionInUrl: true,
       },
-      global: { fetch: (i: any, init?: any) => fetch(i, { ...init, cache: "no-store" }) },
+      global: {
+        fetch: (input: RequestInfo | URL, init?: RequestInit) =>
+          fetch(input, { ...init, cache: "no-store" }),
+      },
     }
   );
 

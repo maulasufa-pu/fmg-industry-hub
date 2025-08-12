@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Apple, Google, Twitter } from "@/icons";
+import { Google } from "@/icons";
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
@@ -27,7 +27,7 @@ export function SignUpSection() {
     if (!agree) return setErr("Please accept terms & conditions.");
     setLoading(true);
     try {
-      const supabase = getSupabaseClient(true);
+      const supabase = getSupabaseClient();
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -45,8 +45,9 @@ export function SignUpSection() {
         // auto login -> langsung ke dashboard
         router.push("/client/dashboard");
       }
-    } catch (e: any) {
-      setErr(e?.message ?? "Sign up failed");
+      
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Sign up failed");
     } finally {
       setLoading(false);
     }
@@ -54,7 +55,7 @@ export function SignUpSection() {
 
   const handleOAuth = async (provider: "google") => {
     setErr(null); setMsg(null);
-    const supabase = getSupabaseClient(true);
+    const supabase = getSupabaseClient();
     await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: `${window.location.origin}/auth/callback?flow=signup` },

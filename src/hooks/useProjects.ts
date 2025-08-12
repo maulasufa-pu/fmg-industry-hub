@@ -1,6 +1,6 @@
-// hooks/useProjects.ts (contoh hook kecil)
+// src/hooks/useProjects.ts
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
 type ProjectRow = {
   project_id: string;
@@ -27,32 +27,43 @@ export function useProjects(params: {
   pageSize?: number;
 }) {
   const { q, tab, page, pageSize = 10 } = params;
+
   const [data, setData] = useState<ProjectRow[]>([]);
   const [count, setCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const supabase = getSupabaseClient();
+    const ac = new AbortController();
+    const { signal } = ac;
+
     let cancelled = false;
+
     (async () => {
       setLoading(true);
       setError(null);
 
-      // Base query
+      // base query + count
       let query = supabase
         .from("project_summary")
-        .select("*", { count: "exact" })
-        .order("latest_update", { ascending: false });
+        .select(
+          "project_id,project_name,artist_name,genre,stage,status,progress_percent,budget_amount,budget_currency,is_active,is_finished,latest_update,engineer_name,anr_name,assigned_pic",
+          { count: "exact" }
+        )
+        .order("latest_update", { ascending: false })
+        .abortSignal(signal);
 
-      // Search (OR di 3 kolom)
-      if (q?.trim()) {
-        const term = `%${q.trim()}%`;
+      // search
+      const term = q.trim();
+      if (term) {
+        const like = `%${term}%`;
         query = query.or(
-          `project_name.ilike.${term},artist_name.ilike.${term},genre.ilike.${term}`
+          `project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`
         );
       }
 
-      // Tab filter
+      // tab filter
       switch (tab) {
         case "Active":
           query = query.eq("is_active", true);
@@ -64,29 +75,46 @@ export function useProjects(params: {
           query = query.eq("status", "pending");
           break;
         case "Requested":
-          // contoh: belum ada draft sama sekali
-          // cara simpel: join di server (view/func), tapi di client kita workaround:
-          // kalau kamu punya view `requested_projects`, panggil itu saja.
-          // sementara, skip filter ini atau buat view khusus di DB.
+          // belum ada definisi jelas → biarkan tanpa filter tambahan
+          break;
+        case "All":
+        default:
           break;
       }
 
-      // Pagination
+      // pagination
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
       query = query.range(from, to);
 
-      const { data, error, count } = await query;
-      if (cancelled) return;
-      if (error) setError(error);
-      else {
-        setData(data ?? []);
-        setCount(count ?? 0);
+      try {
+        const { data: rows, error: qErr, count: total } = await query.returns<ProjectRow[]>();
+        if (cancelled) return;
+        if (qErr) {
+          setError(qErr.message ?? "Failed to load projects");
+          setData([]);
+          setCount(0);
+        } else {
+          setData(rows ?? []);
+          setCount(total ?? 0);
+        }
+      } catch (e: unknown) {
+        if (cancelled) return;
+        if ((e as DOMException)?.name === "AbortError") {
+          // dibatalkan saat unmount/refresh effect — abaikan
+        } else {
+          setError(e instanceof Error ? e.message : "Failed to load projects");
+          setData([]);
+          setCount(0);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setLoading(false);
     })();
+
     return () => {
       cancelled = true;
+      ac.abort();
     };
   }, [q, tab, page, pageSize]);
 

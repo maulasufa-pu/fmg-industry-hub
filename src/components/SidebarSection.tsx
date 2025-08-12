@@ -7,6 +7,7 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 import { User, Tags, Plane, Search, Pictures, Home, Folder, Cog, Bell, ChevronDown } from "@/icons";
 import rectangle14Stroke from "../icons/rectangle-14-stroke.svg";
 import { usePathname, useRouter } from "next/navigation";
+import { ensureFreshSession } from "@/lib/supabase/safe";
 
 type ProfileLite = {
   fullName: string;
@@ -52,6 +53,7 @@ export const SidebarSection = () => {
     let mounted = true;
 
     const boot = async () => {
+      await ensureFreshSession();
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
 

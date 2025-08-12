@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { ensureFreshSession } from "@/lib/supabase/safe";
 import { Close } from "@/icons";
 
 /** ---------- CONFIG: Genre ---------- */
@@ -96,7 +97,7 @@ type Props = {
 };
 
 export default function CreateProjectPopover({ open, onClose, onSaved }: Props) {
-  const supabase = useMemo(() => getSupabaseClient(true), []);
+  const supabase = useMemo(() => getSupabaseClient(), []);
   // step
   const [step, setStep] = useState<1 | 2>(1);
   const [saving, setSaving] = useState(false);
@@ -161,6 +162,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
   const handleSaveDraft = async () => {
     try {
       setSaving(true); setError(null);
+      await ensureFreshSession();
       const { data: auth } = await supabase.auth.getUser();
       const uid = auth.user?.id;
       if (!uid) throw new Error("Not authenticated");
@@ -208,8 +210,8 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
 
       onSaved?.();
       onClose();
-    } catch (e: any) {
-      setError(e.message ?? "Failed to save draft");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to save draft");
     } finally {
       setSaving(false);
     }

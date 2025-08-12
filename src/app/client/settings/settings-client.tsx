@@ -2,6 +2,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { ensureFreshSession } from "@/lib/supabase/safe";
 
 type FormData = {
   firstName: string;
@@ -12,7 +13,7 @@ type FormData = {
 };
 
 export default function SettingsClient({ initialData }: { initialData: FormData }) {
-  const supabase = useMemo(() => getSupabaseClient(true), []);
+  const supabase = useMemo(() => getSupabaseClient(), []);
   const [formData, setFormData] = useState<FormData>(initialData);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -20,6 +21,7 @@ export default function SettingsClient({ initialData }: { initialData: FormData 
 
   const handleSave = async () => {
     setSaving(true); setErr(null); setShowSuccessMessage(false);
+    await ensureFreshSession();
     const { data: { user }, error: uErr } = await supabase.auth.getUser();
     if (uErr) { setErr(uErr.message); setSaving(false); return; }
     if (!user) { setErr("Session not found."); setSaving(false); return; }

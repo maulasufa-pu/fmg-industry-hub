@@ -7,7 +7,7 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 export default function RedirectIfAuthenticated() {
   const router = useRouter();
   useEffect(() => {
-    const supabase = getSupabaseClient(true);
+    const supabase = getSupabaseClient();
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) router.replace("/client/dashboard");
     });

@@ -12,19 +12,24 @@ export default function BillingPanel() {
   const [err, setErr] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
 
-  const onSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true); setErr(null); setOk(false);
-    try {
-      // TODO: integrate gateway (Stripe/etc) or store billing profile
-      await new Promise(r => setTimeout(r, 600));
-      setOk(true);
-    } catch (e: any) {
-      setErr(e?.message ?? "Failed");
-    } finally {
-      setSaving(false);
-    }
-  };
+  const onSave = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setSaving(true);
+  setErr(null);
+  setOk(false);
+
+  try {
+    // TODO: integrate gateway (Stripe/etc) or store billing profile
+    await new Promise((r) => setTimeout(r, 600));
+    setOk(true);
+  } catch (e: unknown) { // ⬅️ was: any
+    const msg = e instanceof Error ? e.message : "Failed";
+    setErr(msg);
+  } finally {
+    setSaving(false);
+  }
+};
+
 
   return (
     <div className="flex flex-col w-[700px] items-start gap-4">

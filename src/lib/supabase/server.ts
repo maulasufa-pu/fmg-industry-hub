@@ -17,7 +17,10 @@ export function getSupabaseServerClient(): SupabaseClient {
       autoRefreshToken: false, // tidak perlu auto refresh di server
       detectSessionInUrl: false,
     },
-    global: { fetch: (i: any, init?: any) => fetch(i, { ...init, cache: "no-store" }) },
+    global: {
+      fetch: (input: RequestInfo | URL, init?: RequestInit) =>
+        fetch(input, { ...init, cache: "no-store" }),
+    },
   });
 
   return _serverClient;

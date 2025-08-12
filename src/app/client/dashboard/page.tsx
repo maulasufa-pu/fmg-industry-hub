@@ -1,8 +1,13 @@
-export default function DashboardPage() {
+import { Suspense } from "react";
+import DashboardClient from "./DashboardClient"; // bikin komponen client terpisah
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export default function Page() {
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
-      <p>Ringkasan proyek aktif, status pembayaran terakhir, notifikasi penting.</p>
-    </div>
+    <Suspense fallback={<div className="p-6 text-gray-500">Loading…</div>}>
+      <DashboardClient />
+    </Suspense>
   );
 }

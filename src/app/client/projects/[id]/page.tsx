@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -129,16 +129,21 @@ export default function ProjectDetailPage(): React.JSX.Element {
   const [isSending, setIsSending] = useState(false);
 
   // Meeting state
+  // --- NEW: toggle untuk form meeting & guard realtime ---
+  const [showMeetingForm, setShowMeetingForm] = useState(false);
+  const realtimeBoundRef = useRef(false);
+
+  // Meeting state
   const [meetings, setMeetings] = useState<MeetingRow[] | null>(null);
-    const [meetingForm, setMeetingForm] = useState({
+  const [meetingForm, setMeetingForm] = useState({
     title: "",
     date: "",
     time: "",
     durationMin: 60,
-    link: "",
     notes: "",
-    provider: "zoom" as "zoom" | "google", // default zoom biar gampang
+    provider: "google" as "zoom" | "google", // bebas, default google
   });
+
 
   const [isCreatingMeeting, setIsCreatingMeeting] = useState(false);
 
@@ -341,57 +346,62 @@ export default function ProjectDetailPage(): React.JSX.Element {
   }, [drafts, supabase]);
 
   useEffect(() => {
-  // jangan jalan sebelum ada project id
     if (!project) return;
+    if (realtimeBoundRef.current) return; // hindari double binding (StrictMode dev)
+    realtimeBoundRef.current = true;
 
     const channel = supabase.channel(`realtime:project:${project.id}`);
 
-    // messages
+    const pushUniqueMsg = (row: DiscussionMessage) => {
+      setMessages(prev => {
+        const list = prev ?? [];
+        if (list.some(x => x.id === row.id)) return list; // dedup
+        return [row, ...list];
+      });
+    };
+    const pushUniqueMeeting = (row: MeetingRow) => {
+      setMeetings(prev => {
+        const list = prev ?? [];
+        if (list.some(x => x.id === row.id)) return list; // dedup
+        return [row, ...list];
+      });
+    };
+
     channel.on(
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'discussion_messages', filter: `project_id=eq.${project.id}` },
-      (payload) => {
-        const row = payload.new as DiscussionMessage;
-        setMessages((prev) => prev ? [row, ...prev] : [row]);
-      }
+      (payload) => pushUniqueMsg(payload.new as DiscussionMessage)
     );
 
-    // meetings
     channel.on(
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'meetings', filter: `project_id=eq.${project.id}` },
-      (payload) => {
-        const row = payload.new as MeetingRow;
-        setMeetings((prev) => prev ? [row, ...prev] : [row]);
-      }
+      (payload) => pushUniqueMeeting(payload.new as MeetingRow)
     );
 
-    channel.subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        // ok
-      }
-    });
+    channel.subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+      realtimeBoundRef.current = false;
+    };
   }, [project, supabase]);
+
 
   const sendMessage = async (): Promise<void> => {
     const text = chatInput.trim();
     if (!text) return;
     setIsSending(true);
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("discussion_messages")
         .insert({
           project_id: params.id,
           content: text,
-        })
-        .select("id,project_id,author_id,content,created_at")
-        .single<DiscussionMessage>();
-
+        });
       if (error) throw error;
-      // Optimistic optional; realtime juga akan masuk.
-      setMessages((prev) => prev ? [data, ...prev] : [data]);
+
+      // HAPUS optimistic add — realtime akan memasukkan 1x saja
       setChatInput("");
     } catch (e) {
       console.error(e);
@@ -402,54 +412,51 @@ export default function ProjectDetailPage(): React.JSX.Element {
   };
 
   const createMeeting = async (): Promise<void> => {
-    const { title, date, time, durationMin, link, notes, provider } = meetingForm;
+    const { title, date, time, durationMin, notes, provider } = meetingForm;
     if (!title.trim() || !date || !time) { alert("Isi Title, Date, dan Time."); return; }
 
-    const startLocal = new Date(`${meetingForm.date}T${meetingForm.time}:00`); // ini local browser
+    const startLocal = new Date(`${date}T${time}:00`);
     if (Number.isNaN(startLocal.getTime())) { alert("Tanggal/Jam tidak valid."); return; }
 
     setIsCreatingMeeting(true);
     try {
-      // 1) Minta URL meeting ke server
+      // 1) Minta URL meeting ke server (tetap, tapi link tidak diisi manual)
       const res = await fetch(`/api/meetings/${provider}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: title.trim(),
-          startAt: startLocal.toISOString(), // kirim UTC ISO
+          startAt: startLocal.toISOString(),
           durationMin: Number(durationMin) || 60,
-          // timezone: "Asia/Jakarta",
         }),
       });
       if (!res.ok) throw new Error(await res.text());
-      const { joinUrl } = await res.json(); // string
+      const { joinUrl } = await res.json();
 
       // 2) Simpan ke Supabase
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("meetings")
         .insert({
           project_id: params.id,
           title: title.trim(),
           start_at: startLocal.toISOString(),
           duration_min: Number(durationMin) || 60,
-          link: joinUrl,
+          link: joinUrl ?? null,
           notes: notes.trim() || null,
-        })
-        .select("id,project_id,title,start_at,duration_min,link,notes,created_by,created_at")
-        .single<MeetingRow>();
+        });
 
       if (error) throw error;
-      setMeetings((prev) => prev ? [data, ...prev] : [data]);
 
+      // JANGAN optimistic push — biarkan realtime INSERT menambah 1x
       setMeetingForm({
         title: "",
         date: "",
         time: "",
         durationMin: 60,
-        link: "",
         notes: "",
-        provider, // keep same selection
+        provider,
       });
+      setShowMeetingForm(false);
     } catch (e) {
       console.error(e);
       alert("Gagal membuat meeting otomatis: " + (e as Error).message);
@@ -457,6 +464,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
       setIsCreatingMeeting(false);
     }
   };
+
 
   // actions drafts → auto status
   const updateProjectStatus = async (
@@ -1088,71 +1096,78 @@ export default function ProjectDetailPage(): React.JSX.Element {
 
           {/* Meeting (1 kolom) */}
           <Card title="Meetings">
-            {/* Create */}
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  value={meetingForm.title}
-                  onChange={(e) => setMeetingForm((p) => ({ ...p, title: e.target.value }))}
-                  placeholder="Title"
-                  className="col-span-2 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-                />
-                <input
-                  type="date"
-                  value={meetingForm.date}
-                  onChange={(e) => setMeetingForm((p) => ({ ...p, date: e.target.value }))}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-                />
-                <input
-                  type="time"
-                  value={meetingForm.time}
-                  onChange={(e) => setMeetingForm((p) => ({ ...p, time: e.target.value }))}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-                />
-                <input
-                  type="number"
-                  min={15}
-                  step={15}
-                  value={meetingForm.durationMin}
-                  onChange={(e) => setMeetingForm((p) => ({ ...p, durationMin: Number(e.target.value) }))}
-                  placeholder="Duration (min)"
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-                />
-                <input
-                  value={meetingForm.link}
-                  onChange={(e) => setMeetingForm((p) => ({ ...p, link: e.target.value }))}
-                  placeholder="Meeting link (optional)"
-                  className="col-span-2 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-                />
-                <textarea
-                  value={meetingForm.notes}
-                  onChange={(e) => setMeetingForm((p) => ({ ...p, notes: e.target.value }))}
-                  placeholder="Notes (optional)"
-                  rows={2}
-                  className="col-span-2 w-full resize-none rounded-md border border-gray-300 p-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-                />
-                <select
-                  value={meetingForm.provider}
-                  onChange={(e) => setMeetingForm((p) => ({ ...p, provider: e.target.value as "zoom" | "google" }))}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-                >
-                  <option value="zoom">Zoom</option>
-                  <option value="google">Google Meet</option>
-                </select>
-              </div>
-              <div className="flex justify-end">
-                <button
-                  onClick={createMeeting}
-                  disabled={isCreatingMeeting || !meetingForm.title.trim() || !meetingForm.date || !meetingForm.time}
-                  className="rounded-md bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-700 disabled:opacity-60"
-                >
-                  {isCreatingMeeting ? "Creating…" : "Create Meeting"}
-                </button>
-              </div>
+            {/* Actions */}
+            <div className="mb-3 flex items-center justify-between">
+              <button
+                onClick={() => setShowMeetingForm(s => !s)}
+                className="rounded-md border px-3 py-1.5 text-xs hover:bg-gray-50"
+              >
+                {showMeetingForm ? "Close" : "New Meeting"}
+              </button>
             </div>
 
+            {/* Form (toggle) */}
+            {showMeetingForm && (
+              <div className="mb-4 space-y-3 rounded-md border border-gray-200 p-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    value={meetingForm.title}
+                    onChange={(e) => setMeetingForm((p) => ({ ...p, title: e.target.value }))}
+                    placeholder="Title"
+                    className="col-span-2 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                  <input
+                    type="date"
+                    value={meetingForm.date}
+                    onChange={(e) => setMeetingForm((p) => ({ ...p, date: e.target.value }))}
+                    className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                  <input
+                    type="time"
+                    value={meetingForm.time}
+                    onChange={(e) => setMeetingForm((p) => ({ ...p, time: e.target.value }))}
+                    className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                  <input
+                    type="number"
+                    min={15}
+                    step={15}
+                    value={meetingForm.durationMin}
+                    onChange={(e) => setMeetingForm((p) => ({ ...p, durationMin: Number(e.target.value) }))}
+                    placeholder="Duration (min)"
+                    className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                  {/* LINK DIHAPUS */}
+                  <textarea
+                    value={meetingForm.notes}
+                    onChange={(e) => setMeetingForm((p) => ({ ...p, notes: e.target.value }))}
+                    placeholder="Notes (optional)"
+                    rows={2}
+                    className="col-span-2 w-full resize-none rounded-md border border-gray-300 p-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                  <select
+                    value={meetingForm.provider}
+                    onChange={(e) => setMeetingForm((p) => ({ ...p, provider: e.target.value as "zoom" | "google" }))}
+                    className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                  >
+                    <option value="google">Google Meet</option>
+                    <option value="zoom">Zoom</option>
+                  </select>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={createMeeting}
+                    disabled={isCreatingMeeting || !meetingForm.title.trim() || !meetingForm.date || !meetingForm.time}
+                    className="rounded-md bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-700 disabled:opacity-60"
+                  >
+                    {isCreatingMeeting ? "Creating…" : "Create Meeting"}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* List */}
-            <div className="mt-4">
+            <div>
               <div className="mb-2 text-xs font-medium text-gray-700">Upcoming & Past</div>
               {meetings === null ? (
                 <div className="text-sm text-gray-500">Loading…</div>
@@ -1174,10 +1189,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
                         {m.notes && <div className="mt-1 text-gray-700">{m.notes}</div>}
                         <div className="mt-2">
                           {m.link ? (
-                            <a
-                              className="inline-flex items-center rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
-                              href={m.link} target="_blank" rel="noreferrer"
-                            >
+                            <a className="inline-flex items-center rounded-md border px-2 py-1 text-xs hover:bg-gray-50" href={m.link} target="_blank" rel="noreferrer">
                               Join
                             </a>
                           ) : (

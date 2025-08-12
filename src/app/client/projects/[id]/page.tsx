@@ -179,6 +179,20 @@ export default function ProjectDetailPage(): React.JSX.Element {
     };
   }, [params.id, router, supabase]);
 
+  const revByDraft = useMemo(() => {
+    const m = new Map<string, RevisionRow[]>();
+    (revisions ?? []).forEach((r) => {
+      const arr = m.get(r.draft_id) ?? [];
+      arr.push(r);
+      m.set(r.draft_id, arr);
+    });
+    for (const [k, arr] of m.entries()) {
+      arr.sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
+      m.set(k, arr);
+    }
+    return m;
+  }, [revisions]);
+
   // Setelah drafts ada, baru fetch revisions sekali
   useEffect(() => {
     if (drafts === null) return;
@@ -320,20 +334,6 @@ export default function ProjectDetailPage(): React.JSX.Element {
   };
 
   // Group revisions per draft (newest first)
-  const revByDraft = useMemo(() => {
-    const m = new Map<string, RevisionRow[]>();
-    (revisions ?? []).forEach((r) => {
-      const arr = m.get(r.draft_id) ?? [];
-      arr.push(r);
-      m.set(r.draft_id, arr);
-    });
-    for (const [k, arr] of m.entries()) {
-      arr.sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
-      m.set(k, arr);
-    }
-    return m;
-  }, [revisions]);
-
   return (
     <div className="p-6 space-y-6">
       {/* Breadcrumb */}

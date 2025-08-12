@@ -405,7 +405,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
     const { title, date, time, durationMin, link, notes, provider } = meetingForm;
     if (!title.trim() || !date || !time) { alert("Isi Title, Date, dan Time."); return; }
 
-    const startLocal = new Date(`${date}T${time}:00`);
+    const startLocal = new Date(`${meetingForm.date}T${meetingForm.time}:00`); // ini local browser
     if (Number.isNaN(startLocal.getTime())) { alert("Tanggal/Jam tidak valid."); return; }
 
     setIsCreatingMeeting(true);
@@ -418,6 +418,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
           title: title.trim(),
           startAt: startLocal.toISOString(), // kirim UTC ISO
           durationMin: Number(durationMin) || 60,
+          // timezone: "Asia/Jakarta",
         }),
       });
       if (!res.ok) throw new Error(await res.text());

@@ -68,92 +68,71 @@ export default function PageContent(): React.JSX.Element {
     Pending: null,
     Requested: 0,
   });
-  const [loading, setLoading] = useState(false);
+
+  // Spinner hanya untuk initial load
+  const [loadingInitial, setLoadingInitial] = useState(true);
 
   // Abort
   const abortRef = useRef<AbortController | null>(null);
 
   const fetchCounts = useCallback(
-  async (q: string, signal: AbortSignal) => {
-    type CountResp = { count: number | null; error: unknown };
+    async (q: string, signal: AbortSignal) => {
+      type CountResp = { count: number | null; error: unknown };
 
-    const like = q ? `%${q}%` : null;
+      const like = q ? `%${q}%` : null;
 
-    // ALL
-    let allQ = supabase
-      .from("project_summary")
-      .select("id", { count: "exact", head: true });
-    if (like) {
-      allQ = allQ.or(
-        `project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`
-      );
-    }
-    const allRes = await withSignal(allQ, signal).returns<CountResp>();
+      // ALL
+      let allQ = supabase.from("project_summary").select("id", { count: "exact", head: true });
+      if (like) allQ = allQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+      const allRes = await withSignal(allQ, signal).returns<CountResp>();
 
-    // ACTIVE
-    let actQ = supabase
-      .from("project_summary")
-      .select("id", { count: "exact", head: true })
-      .eq("is_active", true);
-    if (like) {
-      actQ = actQ.or(
-        `project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`
-      );
-    }
-    const actRes = await withSignal(actQ, signal).returns<CountResp>();
+      // ACTIVE
+      let actQ = supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("is_active", true);
+      if (like) actQ = actQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+      const actRes = await withSignal(actQ, signal).returns<CountResp>();
 
-    // FINISHED
-    let finQ = supabase
-      .from("project_summary")
-      .select("id", { count: "exact", head: true })
-      .eq("is_finished", true);
-    if (like) {
-      finQ = finQ.or(
-        `project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`
-      );
-    }
-    const finRes = await withSignal(finQ, signal).returns<CountResp>();
+      // FINISHED
+      let finQ = supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("is_finished", true);
+      if (like) finQ = finQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+      const finRes = await withSignal(finQ, signal).returns<CountResp>();
 
-    // PENDING
-    let penQ = supabase
-      .from("project_summary")
-      .select("id", { count: "exact", head: true })
-      .eq("is_active", false)
-      .eq("is_finished", false);
-    if (like) {
-      penQ = penQ.or(
-        `project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`
-      );
-    }
-    const penRes = await withSignal(penQ, signal).returns<CountResp>();
+      // PENDING
+      let penQ = supabase
+        .from("project_summary")
+        .select("id", { count: "exact", head: true })
+        .eq("is_active", false)
+        .eq("is_finished", false);
+      if (like) penQ = penQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+      const penRes = await withSignal(penQ, signal).returns<CountResp>();
 
-    if (allRes.error) throw allRes.error;
-    if (actRes.error) throw actRes.error;
-    if (finRes.error) throw finRes.error;
-    if (penRes.error) throw penRes.error;
+      if (allRes.error) throw allRes.error;
+      if (actRes.error) throw actRes.error;
+      if (finRes.error) throw finRes.error;
+      if (penRes.error) throw penRes.error;
 
-    return {
-      "All Project": allRes.count ?? 0,
-      Active: actRes.count ?? 0,
-      Finished: finRes.count ?? 0,
-      Pending: penRes.count ?? 0,
-      Requested: 0,
-    } as Record<TabKey, number>;
-  },
-  [supabase]
-);
+      return {
+        "All Project": allRes.count ?? 0,
+        Active: actRes.count ?? 0,
+        Finished: finRes.count ?? 0,
+        Pending: penRes.count ?? 0,
+        Requested: 0,
+      } as Record<TabKey, number>;
+    },
+    [supabase]
+  );
+
+  // isInitial = true → hanya initial load yang tunjukkan spinner
   const fetchPage = useCallback(
-    async (tab: TabKey, q: string, pageIdx: number) => {
+    async (tab: TabKey, q: string, pageIdx: number, isInitial = false) => {
       abortRef.current?.abort();
       const ac = new AbortController();
       abortRef.current = ac;
 
-      setLoading(true);
+      if (isInitial) setLoadingInitial(true);
       try {
         const from = (pageIdx - 1) * pageSize;
         const to = from + pageSize - 1;
 
-        // MULAI dari .select(...), lalu baru .eq/.or → barulah TypeScript tahu ini FilterBuilder
         let qBuilder = supabase
           .from("project_summary")
           .select(QUERY_COLS, { count: "exact", head: false });
@@ -171,7 +150,6 @@ export default function PageContent(): React.JSX.Element {
 
         qBuilder = qBuilder.order("latest_update", { ascending: false }).range(from, to);
 
-        // Tipenya: { data, count, error } — data = ProjectRow[]
         const { data, count, error } = await withSignal(qBuilder, ac.signal).returns<ProjectRow[]>();
         if (error) throw error;
 
@@ -184,7 +162,7 @@ export default function PageContent(): React.JSX.Element {
         if ((e as { name?: string }).name !== "AbortError") console.error(e);
       } finally {
         if (abortRef.current === ac) abortRef.current = null;
-        setLoading(false);
+        if (isInitial) setLoadingInitial(false);
       }
     },
     [fetchCounts, supabase]
@@ -193,13 +171,13 @@ export default function PageContent(): React.JSX.Element {
   // initial
   useEffect(() => {
     setPage(1);
-    fetchPage(initialTabFromUrl, "", 1);
+    fetchPage(initialTabFromUrl, "", 1, true); // <- spinner hanya di sini
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // re-fetch
+  // re-fetch tanpa spinner pada tab/search/page change
   useEffect(() => {
-    fetchPage(activeTab, debouncedSearch, page);
+    fetchPage(activeTab, debouncedSearch, page, false); // <- no spinner
   }, [activeTab, debouncedSearch, page, fetchPage]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -233,7 +211,7 @@ export default function PageContent(): React.JSX.Element {
         onCreateClick={() => setOpenCreate(true)}
       />
 
-      {loading ? (
+      {loadingInitial ? (
         <div className="w-full rounded-lg border border-gray-200 bg-white p-10 text-center text-gray-500 shadow">
           Loading projects…
         </div>
@@ -272,7 +250,7 @@ export default function PageContent(): React.JSX.Element {
           <CreateProjectPopover
             open={openCreate}
             onClose={() => setOpenCreate(false)}
-            onSaved={() => fetchPage(activeTab, debouncedSearch, pageSafe)}
+            onSaved={() => fetchPage(activeTab, debouncedSearch, pageSafe /* no spinner */)}
           />
         </>
       )}

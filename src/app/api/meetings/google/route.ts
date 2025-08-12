@@ -1,20 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
-import { google } from "googleapis";
+import { google, calendar_v3 } from "googleapis";
 
 const GOOGLE_OAUTH_CLIENT_ID = process.env.GOOGLE_OAUTH_CLIENT_ID!;
 const GOOGLE_OAUTH_CLIENT_SECRET = process.env.GOOGLE_OAUTH_CLIENT_SECRET!;
 const GOOGLE_OAUTH_REFRESH_TOKEN = process.env.GOOGLE_OAUTH_REFRESH_TOKEN!;
-// kalender target (email pemilik refresh token, atau calendarId lain yg user itu punya akses)
 const GOOGLE_CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || "primary";
 
 export async function POST(req: NextRequest) {
+  // Guard env
+  if (!GOOGLE_OAUTH_CLIENT_ID || !GOOGLE_OAUTH_CLIENT_SECRET || !GOOGLE_OAUTH_REFRESH_TOKEN) {
+    return NextResponse.json(
+      { error: "Missing Google env. Check GOOGLE_OAUTH_CLIENT_ID/SECRET/REFRESH_TOKEN" },
+      { status: 500 }
+    );
+  }
+
   try {
-    const { title, startAt, durationMin } = await req.json() as {
-      title: string; startAt: string; durationMin: number;
+    const { title, startAt, durationMin } = (await req.json()) as {
+      title: string;
+      startAt: string;   // UTC ISO dari client
+      durationMin: number;
     };
+
     if (!title || !startAt || !durationMin) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
+
+    const start = new Date(startAt);
+    if (isNaN(start.getTime())) {
+      return NextResponse.json({ error: "Invalid startAt" }, { status: 400 });
+    }
+    const end = new Date(start.getTime() + Number(durationMin) * 60_000);
 
     // OAuth client
     const oAuth2 = new google.auth.OAuth2(
@@ -25,17 +41,14 @@ export async function POST(req: NextRequest) {
 
     const calendar = google.calendar({ version: "v3", auth: oAuth2 });
 
-    const start = new Date(startAt);
-    const end = new Date(start.getTime() + durationMin * 60_000);
-
-    // Penting: conferenceDataVersion=1
+    // Penting: conferenceDataVersion=1 agar Meet link dibuat
     const res = await calendar.events.insert({
       calendarId: GOOGLE_CALENDAR_ID,
       conferenceDataVersion: 1,
       requestBody: {
         summary: title,
-        start: { dateTime: start.toISOString() },
-        end: { dateTime: end.toISOString() },
+        start: { dateTime: start.toISOString(), timeZone: "Asia/Jakarta" },
+        end:   { dateTime: end.toISOString(),   timeZone: "Asia/Jakarta" },
         conferenceData: {
           createRequest: {
             requestId: `meet-${start.getTime()}-${Math.random().toString(36).slice(2)}`,
@@ -46,14 +59,22 @@ export async function POST(req: NextRequest) {
     });
 
     const event = res.data;
-    // `hangoutLink` biasanya ada di event; fallback cek entries
-    const joinUrl =
-      event.hangoutLink ||
-      event.conferenceData?.entryPoints?.find((e: any) => e.entryPointType === "video")?.uri;
 
-    if (!joinUrl) throw new Error("Failed to get Meet link from Google Calendar response.");
+    // Ketik entryPoints dengan tipe resmi dari googleapis
+    const videoEP = event.conferenceData?.entryPoints?.find(
+      (ep): ep is calendar_v3.Schema$EntryPoint => ep?.entryPointType === "video"
+    );
+
+    const joinUrl = event.hangoutLink || videoEP?.uri;
+
+    if (!joinUrl) {
+      return NextResponse.json({ error: "Failed to get Meet link from Google Calendar response." }, { status: 500 });
+    }
+
     return NextResponse.json({ joinUrl });
-  } catch (e: any) {
-    return NextResponse.json({ error: String(e.message || e) }, { status: 500 });
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : typeof err === "string" ? err : JSON.stringify(err);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

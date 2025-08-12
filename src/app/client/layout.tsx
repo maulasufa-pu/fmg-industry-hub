@@ -1,20 +1,15 @@
 // src/app/client/layout.tsx
 "use client";
+
+// export const dynamic = "force-dynamic";
+// export const revalidate = 0;
+
 import "@/app/globals.css";
 import RequireAuth from "@/components/auth/RequireAuth";
 import { SidebarSection } from "@/components/SidebarSection";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
-import { getSupabaseClient } from "@/lib/client";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
-  document.addEventListener('visibilitychange', () => {
-  console.log('Visibility changed to:', document.visibilityState);
-  if (document.visibilityState === 'visible') {
-    getSupabaseClient().auth.getSession().then(({ data }) => {
-      console.log('Current session after focus:', data.session);
-    });
-  }
-});
   useFocusWarmAuth();
     return (
     <RequireAuth>

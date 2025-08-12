@@ -32,7 +32,6 @@ export default function CallbackClient() {
         }
 
         const { data: { session } } = await supabase.auth.getSession();
-        const googleAccessToken = (session as any)?.provider_token; 
 
         // Ambil user
         const { data: { user } } = await supabase.auth.getUser();

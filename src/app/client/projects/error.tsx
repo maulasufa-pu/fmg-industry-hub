@@ -1,4 +1,5 @@
 "use client";
+
 export default function Error({ error }: { error: Error & { digest?: string } }) {
   console.error("[/client/projects] error:", error);
   return (

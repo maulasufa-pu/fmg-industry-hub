@@ -7,11 +7,8 @@ import { ProjectTabsSection } from "./ProjectTabsSection";
 import { ProjectTableSection } from "./ProjectTableSection";
 import { ProjectPaginationSection } from "./ProjectPaginationSection";
 import { withSignal, getSupabaseClient } from "@/lib/supabase/client";
-import { useFocusRefetch } from "@/lib/supabase/useFocusRefetch";
+// Hapus useFocusRefetch: kita pakai versi debounce focus di bawah
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
-
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 type TabKey = "All Project" | "Active" | "Finished" | "Pending" | "Requested";
 
@@ -34,7 +31,7 @@ type ProjectRow = {
 };
 
 export default function PageContent(): React.JSX.Element {
-  // Boleh dipakai, tapi kita tidak pakai ensureFreshSession lagi (autoRefresh sudah ON)
+  // Auto refresh token & warm auth
   useFocusWarmAuth();
 
   const router = useRouter();
@@ -43,8 +40,7 @@ export default function PageContent(): React.JSX.Element {
 
   const validTabs: TabKey[] = ["All Project", "Active", "Finished", "Pending", "Requested"];
   const initialTabRaw = (params.get("tab") as TabKey) || "All Project";
-  const initialTabFromUrl: TabKey =
-    validTabs.includes(initialTabRaw) ? initialTabRaw : "All Project";
+  const initialTabFromUrl: TabKey = validTabs.includes(initialTabRaw) ? initialTabRaw : "All Project";
 
   // UI state
   const [activeTab, setActiveTab] = useState<TabKey>(initialTabFromUrl);
@@ -56,21 +52,58 @@ export default function PageContent(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
   const [allRows, setAllRows] = useState<ProjectRow[]>([]);
 
-  // Satu-satunya controller untuk request yang sedang berjalan
-  const inflightRef = useRef<AbortController | null>(null);
+  // ====== Anti-race & abort management ======
+  const inflightRef = useRef<AbortController | null>(null); // request aktif
+  const reqIdRef = useRef(0); // ID unik agar hanya request terakhir yang boleh set state
 
-  const abortCurrent = useCallback((): void => {
+  // Abort helper (dipakai saat blur)
+  const abortCurrent = useCallback(() => {
     inflightRef.current?.abort("cancel-on-blur-or-new-request");
     inflightRef.current = null;
   }, []);
 
-  const reload = useCallback(
-    async (status: TabKey = activeTab): Promise<void> => {
-      abortCurrent();
+  // Timeout keras biar gak pernah gantung
+  const withTimeout = <T,>(p: Promise<T>, ms = 10000) =>
+    Promise.race<T>([
+      p,
+      new Promise<T>((_, rej) => setTimeout(() => rej(new Error("timeout")), ms)),
+    ]);
+
+  // Satu pintu untuk semua query
+  const runQuery = useCallback(
+    async (build: (signal: AbortSignal) => Promise<ProjectRow[]>) => {
+      const myId = ++reqIdRef.current;
       const ac = new AbortController();
+
+      // Abort request lama & set baru
+      inflightRef.current?.abort("superseded");
       inflightRef.current = ac;
 
+      setLoading(true);
       try {
+        // (opsional) warm session dulu tiap siklus untuk menghindari delay token
+        await withTimeout(supabase.auth.getSession(), 5000).catch(() => {});
+
+        const rows = await withTimeout(build(ac.signal), 10000);
+        if (reqIdRef.current !== myId) return; // hasil basi → abaikan
+        setAllRows(rows ?? []);
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any 
+      catch (e: any) {
+        if (reqIdRef.current !== myId) return; // error basi → abaikan
+        if (e?.name !== "AbortError") console.error("fetch error:", e);
+      } finally {
+        if (reqIdRef.current === myId) setLoading(false);
+        if (inflightRef.current === ac) inflightRef.current = null;
+      }
+    },
+    [supabase]
+  );
+
+  // Reload data (dipakai tab/search/pagination/focus)
+  const reload = useCallback(
+    (status: TabKey = activeTab): Promise<void> => {
+      return runQuery(async (signal) => {
         let qb = supabase
           .from("project_summary")
           .select(
@@ -82,74 +115,53 @@ export default function PageContent(): React.JSX.Element {
           qb = qb.eq("status", status.toLowerCase());
         }
 
-        const { data, error } = await withSignal(qb, ac.signal).returns<ProjectRow[]>();
+        const { data, error } = await withSignal(qb, signal).returns<ProjectRow[]>();
         if (error) throw error;
-        setAllRows(data ?? []);
-      } catch (err: unknown) {
-        // Hindari any: unknown + narrowing
-        const name = (err as { name?: string } | undefined)?.name;
-        if (name !== "AbortError") {
-          // eslint-disable-next-line no-console
-          console.error("reload failed:", err);
-        }
-      } finally {
-        if (inflightRef.current === ac) inflightRef.current = null;
-      }
+        return data ?? [];
+      });
     },
-    [supabase, activeTab, abortCurrent]
+    [runQuery, supabase, activeTab]
   );
 
-  // ---- LOAD SEKALI SAAT MOUNT ----
+  // Load awal
   useEffect(() => {
-    let mounted = true;
-    const ac = new AbortController();
+    runQuery(async (signal) => {
+      const { data, error } = await withSignal(
+        supabase
+          .from("project_summary")
+          .select(
+            "id,project_name,artist_name,genre,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name"
+          )
+          .order("id", { ascending: true }),
+        signal
+      ).returns<ProjectRow[]>();
+      if (error) throw error;
+      return data ?? [];
+    });
+  }, [runQuery, supabase]);
 
-    (async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await withSignal(
-          supabase
-            .from("project_summary")
-            .select(
-              "id,project_name,artist_name,genre,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name"
-            )
-            .order("id", { ascending: true }),
-          ac.signal
-        ).returns<ProjectRow[]>();
-
-        if (!mounted) return;
-
-        if (error) {
-          // eslint-disable-next-line no-console
-          console.error("LOAD error", error);
-          setAllRows([]);
-        } else {
-          setAllRows(data ?? []);
-        }
-      } catch (err: unknown) {
-        const name = (err as { name?: string } | undefined)?.name;
-        if (name !== "AbortError") {
-          // eslint-disable-next-line no-console
-          console.error("LOAD failed:", err);
-        }
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-      ac.abort("unmount");
+  // Refetch saat kembali fokus (debounce agar tidak nabrak aksi user)
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any 
+    let t: any;
+    const onFocus = () => {
+      clearTimeout(t);
+      t = setTimeout(() => reload(activeTab), 200);
     };
-  }, [supabase]);
+    const onBlur = () => {
+      // hanya abort request otomatis
+      abortCurrent();
+    };
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("blur", onBlur);
+    };
+  }, [reload, activeTab, abortCurrent]);
 
-  // ---- Refetch otomatis ketika balik fokus / tab visible ----
-  useFocusRefetch(
-    () => reload(activeTab), // refetch
-    abortCurrent // kill inflight saat blur/hidden
-  );
-
-  // ---- Client-only filter (tab + search) ----
+  // ====== Client-only filter (tab + search) ======
   const filteredRows = useMemo(() => {
     const q = search.trim().toLowerCase();
     let base = allRows;
@@ -181,7 +193,7 @@ export default function PageContent(): React.JSX.Element {
     return base;
   }, [allRows, activeTab, search]);
 
-  // ---- counts untuk tabs (hitung dari allRows) ----
+  // counts untuk tabs (hitung dari allRows)
   const counts = useMemo((): Record<TabKey, number | null> => {
     const all = allRows.length;
     const act = allRows.filter((r) => r.is_active === true).length;
@@ -196,7 +208,7 @@ export default function PageContent(): React.JSX.Element {
     };
   }, [allRows]);
 
-  // ---- pagination (client-side) ----
+  // pagination (client-side)
   const total = filteredRows.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const pageSafe = Math.min(Math.max(1, page), totalPages);
@@ -205,7 +217,7 @@ export default function PageContent(): React.JSX.Element {
     return filteredRows.slice(from, from + pageSize);
   }, [filteredRows, pageSafe, pageSize]);
 
-  // ---- helpers ----
+  // helpers
   const setActiveTabAndUrl = (tab: TabKey) => {
     setPage(1);
     setActiveTab(tab);
@@ -220,7 +232,7 @@ export default function PageContent(): React.JSX.Element {
     router.push(`/client/projects/${id}?tab=${encodeURIComponent(activeTab)}`);
   };
 
-  // ---- render ----
+  // render
   return (
     <div className="flex flex-col gap-6 p-6">
       <ProjectTabsSection
@@ -229,17 +241,20 @@ export default function PageContent(): React.JSX.Element {
         onTabChange={(t) => {
           setPage(1);
           setActiveTabAndUrl(t);
+          // Optional: muat ulang data saat user ganti tab
+          reload(t);
         }}
         onSearchChange={(q) => {
           setPage(1);
           setSearch(q);
+          // Search tetap client-side; kalau mau server-filter, panggil reload() di sini
         }}
         externalCounts={counts}
         onCreateClick={() => {}}
       />
 
       {loading && (
-        <div className="w-full bg-white rounded-lg border border-gray-200 shadow p-10 text-center text-gray-500">
+        <div className="w-full rounded-lg border border-gray-200 bg-white p-10 text-center text-gray-500 shadow">
           Loading projects…
         </div>
       )}
@@ -274,7 +289,10 @@ export default function PageContent(): React.JSX.Element {
         <ProjectPaginationSection
           currentPage={pageSafe}
           totalPages={totalPages}
-          onPageChange={setPage}
+          onPageChange={(p) => {
+            setPage(p);
+            // pagination tetap client-side; kalau mau server-side pagination, panggil reload() dengan range
+          }}
         />
       )}
     </div>

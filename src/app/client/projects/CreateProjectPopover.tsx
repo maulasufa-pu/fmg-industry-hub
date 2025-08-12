@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import { getSupabaseClient } from "@/lib/supabase/client";
-import { ensureFreshSession } from "@/lib/supabase/safe";
+import { ensureFreshSession, withTimeout, withSignal, getSupabaseClient } from "@/lib/supabase/client";
 import { Close } from "@/icons";
 
 /** ---------- CONFIG: Genre ---------- */

@@ -3,12 +3,11 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { User, Check, Close } from "@/icons";
-import { getSupabaseClient } from "@/lib/supabase/client";
+import { ensureFreshSession, withTimeout, withSignal, getSupabaseClient } from "@/lib/supabase/client";
 
 import AccountPanel from "@/components/settings/AccountPanel";
 import BillingPanel from "@/components/settings/BillingPanel";
 import SubscriptionsPanel from "@/components/settings/SubscriptionsPanel";
-import { ensureFreshSession } from "@/lib/supabase/safe";
 
 type FormData = {
   firstName: string;

@@ -1,8 +1,7 @@
 // src/app/client/settings/settings-client.tsx  (CLIENT COMPONENT)
 "use client";
 import { useMemo, useState } from "react";
-import { getSupabaseClient } from "@/lib/supabase/client";
-import { ensureFreshSession } from "@/lib/supabase/safe";
+import { ensureFreshSession, withTimeout, withSignal, getSupabaseClient } from "@/lib/supabase/client";
 
 type FormData = {
   firstName: string;

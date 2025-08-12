@@ -1,7 +1,8 @@
-//E:\FMGIH\fmg-industry-hub\src\lib\supabase\client.ts
+// src/lib/supabase/client.ts
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 let _client: SupabaseClient | null = null;
+let _refreshLock: Promise<void> | null = null;
 
 export function getSupabaseClient(): SupabaseClient {
   if (_client) return _client;
@@ -11,14 +12,24 @@ export function getSupabaseClient(): SupabaseClient {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       auth: {
-        persistSession: false,
-        autoRefreshToken: true,
+        persistSession: false,   // tidak simpan di storage browser
+        autoRefreshToken: false, // refresh manual (kita yang kontrol)
         detectSessionInUrl: true,
       },
       global: {
         fetch: (input: RequestInfo | URL, init?: RequestInit) =>
-          fetch(input, { ...init, cache: "no-store" }),
+          fetch(input, {
+            ...init,
+            cache: "no-store",
+            headers: {
+              ...(init?.headers || {}),
+              "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+              Pragma: "no-cache",
+              Expires: "0",
+            },
+          }),
       },
+      realtime: { params: { eventsPerSecond: 5 } },
     }
   );
 
@@ -30,4 +41,49 @@ export function getSupabaseClient(): SupabaseClient {
   });
 
   return _client;
+}
+
+/** Aman dipanggil di client sebelum fetch penting. */
+export async function ensureFreshSession() {
+  const sb = getSupabaseClient();
+  const { data } = await sb.auth.getSession();
+  const sess = data.session;
+  const now = Math.floor(Date.now() / 1000);
+  const exp = sess?.expires_at ?? 0;
+
+  if (!sess) return; // anon ok (tergantung RLS)
+  if (!sess.refresh_token) return; // tidak bisa refresh → biarkan
+
+  if (exp - now > 60) return; // masih aman
+
+  if (!_refreshLock) {
+    _refreshLock = (async () => {
+      const { error, data: refreshed } = await sb.auth.refreshSession();
+      if (error) {
+        await sb.auth.signOut();
+      } else if (refreshed?.session?.access_token) {
+        try { sb.realtime.setAuth(refreshed.session.access_token); } catch {}
+      }
+    })().finally(() => { _refreshLock = null; });
+  }
+  await _refreshLock;
+}
+
+/** Timeout helper */
+export async function withTimeout<T>(
+  runner: (opts: { signal: AbortSignal }) => Promise<T>,
+  ms = 8000
+): Promise<T> {
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort("timeout"), ms);
+  try {
+    return await runner({ signal: ac.signal });
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+/** Pasang AbortSignal ke Postgrest builder (kalau tersedia) */
+export function withSignal<T>(qb: any, signal: AbortSignal) {
+  return typeof qb.abortSignal === "function" ? qb.abortSignal(signal) : qb;
 }

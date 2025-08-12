@@ -1,12 +1,11 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getSupabaseClient } from "@/lib/supabase/client";
 import { ProjectTabsSection } from "./ProjectTabsSection";
 import { ProjectTableSection } from "./ProjectTableSection";
 import { ProjectPaginationSection } from "./ProjectPaginationSection";
-import { useFocusWarmAuth, ensureFreshSession } from "@/lib/supabase/safe";
-
+import { ensureFreshSession, withTimeout, withSignal, getSupabaseClient } from "@/lib/supabase/client";
+import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
 
 type TabKey = "All Project" | "Active" | "Finished" | "Pending" | "Requested";
 

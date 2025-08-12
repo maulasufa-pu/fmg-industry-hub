@@ -1,3 +1,4 @@
+// src/lib/supabase/server.ts
 import "server-only";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
@@ -7,14 +8,13 @@ let _serverClient: SupabaseClient | null = null;
 export function getSupabaseServerClient(): SupabaseClient {
   if (_serverClient) return _serverClient;
 
-  // Pakai service role kalau ada (JANGAN pernah diekspos ke client / NEXT_PUBLIC).
   const key =
     process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
   _serverClient = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, {
     auth: {
-      persistSession: false,   // server tidak menyimpan sesi
-      autoRefreshToken: false, // tidak perlu auto refresh di server
+      persistSession: false,
+      autoRefreshToken: false,
       detectSessionInUrl: false,
     },
     global: {

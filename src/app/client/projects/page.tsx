@@ -1,10 +1,11 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProjectTabsSection } from "./ProjectTabsSection";
 import { ProjectTableSection } from "./ProjectTableSection";
 import { ProjectPaginationSection } from "./ProjectPaginationSection";
 import { ensureFreshSession, withTimeout, withSignal, getSupabaseClient } from "@/lib/supabase/client";
+import { useFocusRefetch } from "@/lib/supabase/useFocusRefetch";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
 
 type TabKey = "All Project" | "Active" | "Finished" | "Pending" | "Requested";
@@ -48,41 +49,77 @@ export default function PageContent(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
   const [allRows, setAllRows] = useState<ProjectRow[]>([]);
 
-  // ---- LOAD SEKALI SAAT MOUNT ----
-  useEffect(() => {
-    let mounted = true;
-    const ac = new AbortController(); // <-- tambah
-    (async () => {
-      setLoading(true);
-      await ensureFreshSession();
+  const [rows, setRows] = useState<ProjectRow[]>([]);
 
-      const { data, error } = await withSignal(
-        supabase
-          .from("project_summary")
-          .select(
-            "id,project_name,artist_name,genre,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name"
-          )
-          .order("id", { ascending: true }),
-        ac.signal // <-- pasang signal
-      ).returns<ProjectRow[]>();
+  const inflightRef = useRef<AbortController | null>(null);
 
-      if (!mounted) return;
+  const abortCurrent = useCallback(() => {
+    inflightRef.current?.abort("cancel-on-blur-or-new-request");
+    inflightRef.current = null;
+  }, []);
 
-      if (error) {
-        console.error("LOAD error", error);
-        setAllRows([]);
-      } else {
-        setAllRows(data ?? []);
+  const reload = useCallback(async (status = activeTab) => {
+    // batalkan request lama
+    abortCurrent();
+    const ac = new AbortController();
+    inflightRef.current = ac;
+    try {
+      // query
+      let qb = supabase.from("project_summary")
+        .select("id,project_name,artist_name,genre,stage,status,latest_update,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name")
+        .order("latest_update", { ascending: false });
+
+      if (status !== "All Project") {
+        qb = qb.eq("status", status.toLowerCase());
       }
 
-      setLoading(false);
+      const { data, error } = await withSignal(qb, ac.signal);
+      if (error) throw error;
+      setRows(data ?? []);
+    } catch (e: any) {
+      if (e?.name !== "AbortError") {
+        console.error("reload failed:", e);
+      }
+    } finally {
+      if (inflightRef.current === ac) inflightRef.current = null;
+    }
+  }, [supabase, activeTab, abortCurrent]);
+
+  // ---- LOAD SEKALI SAAT MOUNT ----
+  useEffect(() => {
+    const ac = new AbortController();
+    inflightRef.current = ac;
+    (async () => {
+      try {
+        let qb = supabase.from("project_summary")
+          .select("id,project_name,artist_name,genre,stage,status,latest_update,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name")
+          .order("latest_update", { ascending: false });
+        const { data, error } = await withSignal(qb, ac.signal);
+        if (error) throw error;
+        setRows(data ?? []);
+      } catch (e: any) {
+        if (e?.name !== "AbortError") console.error(e);
+      } finally {
+        if (inflightRef.current === ac) inflightRef.current = null;
+      }
     })();
 
     return () => {
-      mounted = false;
-      ac.abort("unmount"); // <-- abort request saat unmount / navigasi
+      ac.abort("unmount");
+      if (inflightRef.current === ac) inflightRef.current = null;
     };
   }, [supabase]);
+
+  useFocusRefetch(
+    () => reload(activeTab),
+    abortCurrent
+  );
+
+  // Refetch saat ganti tab filter
+  useEffect(() => {
+    reload(activeTab);
+  }, [activeTab, reload]);
+
 
   // ---- Client-only filter (tab + search) ----
   const filteredRows = useMemo(() => {

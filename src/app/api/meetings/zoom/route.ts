@@ -4,6 +4,12 @@ const ZOOM_ACCOUNT_ID = process.env.ZOOM_ACCOUNT_ID!;
 const ZOOM_CLIENT_ID = process.env.ZOOM_CLIENT_ID!;
 const ZOOM_CLIENT_SECRET = process.env.ZOOM_CLIENT_SECRET!;
 
+console.log("ZOOM env present:", {
+  ACCOUNT: Boolean(process.env.ZOOM_ACCOUNT_ID),
+  CLIENT: Boolean(process.env.ZOOM_CLIENT_ID),
+  SECRET: Boolean(process.env.ZOOM_CLIENT_SECRET),
+});
+
 async function getZoomAccessToken(): Promise<string> {
   const creds = Buffer.from(`${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}`).toString("base64");
   const res = await fetch(`https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${encodeURIComponent(ZOOM_ACCOUNT_ID)}`, {

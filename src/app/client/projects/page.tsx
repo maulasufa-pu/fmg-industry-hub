@@ -252,7 +252,7 @@ export default function PageContent(): React.JSX.Element {
           // Search tetap client-side; kalau mau server-filter, panggil reload() di sini
         }}
         externalCounts={counts}
-        onCreateClick={() => {}}
+        onCreateClick={() => router.push("/client/projects/CreateProjectPopover")}
       />
 
       {loadingInitial ? (

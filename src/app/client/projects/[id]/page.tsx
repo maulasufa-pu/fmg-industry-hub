@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
-import { useFocusWarmAuth, ensureFreshSession, withTimeout } from "@/lib/supabase/safe";
+import { useFocusWarmAuth, ensureFreshSession } from "@/lib/supabase/safe";
 
 
 type ProjectSummary = {

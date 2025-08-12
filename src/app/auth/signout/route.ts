@@ -1,33 +1,33 @@
-// src/app/auth/signout/route.ts
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+
+export const runtime = "nodejs";         // ⬅️ penting
+export const dynamic = "force-dynamic";  // (opsional) hindari cache
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export async function POST() {
-  // ✅ di setup kamu: cookies() async
-  const cookieStore = await cookies();
+  const cookieStore = await cookies(); // di Next 15 ini synchronous
   const res = NextResponse.json({ ok: true });
 
   const supabase = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       getAll: () => cookieStore.getAll(),
-      setAll: (cookiesToSet) => {
-        cookiesToSet.forEach(({ name, value, options }) => {
-          res.cookies.set(name, value, options as CookieOptions | undefined);
-        });
+      setAll: (all) => {
+        all.forEach(({ name, value, options }) =>
+          res.cookies.set(name, value, options as CookieOptions | undefined)
+        );
       },
     },
   });
 
   await supabase.auth.signOut();
 
-  // bersihkan token supabase
-  for (const name of ["sb-access-token", "sb-refresh-token"]) {
-    res.cookies.set(name, "", { path: "/", maxAge: 0 });
-  }
+  // bersihkan token
+  res.cookies.set("sb-access-token", "", { path: "/", maxAge: 0 });
+  res.cookies.set("sb-refresh-token", "", { path: "/", maxAge: 0 });
 
   return res;
 }

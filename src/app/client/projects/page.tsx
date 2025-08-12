@@ -5,7 +5,7 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 import { ProjectTabsSection } from "./ProjectTabsSection";
 import { ProjectTableSection } from "./ProjectTableSection";
 import { ProjectPaginationSection } from "./ProjectPaginationSection";
-import { useFocusWarmAuth, ensureFreshSession, withTimeout } from "@/lib/supabase/safe";
+import { useFocusWarmAuth, ensureFreshSession } from "@/lib/supabase/safe";
 
 
 type TabKey = "All Project" | "Active" | "Finished" | "Pending" | "Requested";

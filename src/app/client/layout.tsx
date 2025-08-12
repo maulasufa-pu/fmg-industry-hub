@@ -5,6 +5,7 @@
 // export const revalidate = 0;
 
 import "@/app/globals.css";
+import ClientWakeRefetch from "@/components/ClientWakeRefetch";
 import RequireAuth from "@/components/auth/RequireAuth";
 import { SidebarSection } from "@/components/SidebarSection";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
@@ -13,6 +14,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   useFocusWarmAuth();
     return (
     <RequireAuth>
+      <ClientWakeRefetch />
       <div className="flex items-start relative bg-coolgray-10 w-full min-h-screen">
         <SidebarSection />
         <main className="flex-1 min-w-0">{children}</main>

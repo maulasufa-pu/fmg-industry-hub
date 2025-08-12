@@ -9,7 +9,7 @@ import { ProjectPaginationSection } from "./ProjectPaginationSection";
 import { withSignal, getSupabaseClient } from "@/lib/supabase/client";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
 import CreateProjectPopover from "./CreateProjectPopover";
-
+import { useWakeRefetch } from "@/hooks/useWakeRefetch";
 
 type TabKey = "All Project" | "Active" | "Finished" | "Pending" | "Requested";
 
@@ -51,7 +51,7 @@ export default function PageContent(): React.JSX.Element {
 
   // Data state
   const [allRows, setAllRows] = useState<ProjectRow[]>([]);
-  const [loadingInitial, setLoadingInitial] = useState(true);
+  const [loadingInitial, setLoadingInitial] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const lastFetchRef = useRef(0);
 
@@ -64,6 +64,13 @@ export default function PageContent(): React.JSX.Element {
     inflightRef.current?.abort("cancel-on-blur-or-new-request");
     inflightRef.current = null;
   }, []);
+
+  const refetch = useCallback(async () => {
+    setLoadingInitial(true);
+    const { data } = await supabase.from("project_summary").select("*");
+    setAllRows(data ?? []);
+    setLoadingInitial(false);
+  }, [supabase]);
 
   // Timeout keras biar gak pernah gantung
   const withTimeout = <T,>(p: Promise<T>, ms = 10000) =>
@@ -133,40 +140,22 @@ export default function PageContent(): React.JSX.Element {
 
   // Load awal
   useEffect(() => {
-    runQuery(async (signal) => {
-      const { data, error } = await withSignal(
-        supabase
-          .from("project_summary")
-          .select(
-            "id,project_name,artist_name,genre,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name"
-          )
-          .order("id", { ascending: true }),
-        signal
-      ).returns<ProjectRow[]>();
-      if (error) throw error;
-      return data ?? [];
-    });
-  }, [runQuery, supabase]);
+     runQuery(async (signal) => {
+       const { data, error } = await withSignal(
+         supabase
+           .from("project_summary")
+           .select(
+             "id,project_name,artist_name,genre,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name"
+           )
+           .order("id", { ascending: true }),
+         signal
+       ).returns<ProjectRow[]>();
+       if (error) throw error;
+       return data ?? [];
+     });
+   }, [runQuery, supabase]);
 
-  // Refetch saat kembali fokus (debounce + stale check 60s)
-  useEffect(() => {
-    let t: ReturnType<typeof setTimeout> | undefined;
-    const onFocus = () => {
-      const staleFor = Date.now() - lastFetchRef.current;
-      if (staleFor < 60_000) return; // skip jika belum stale
-      if (t) clearTimeout(t);
-      t = setTimeout(() => reload(activeTab), 200);
-    };
-    const onBlur = () => abortCurrent();
-    window.addEventListener("focus", onFocus);
-    window.addEventListener("blur", onBlur);
-    return () => {
-      if (t) clearTimeout(t);
-      window.removeEventListener("focus", onFocus);
-      window.removeEventListener("blur", onBlur);
-    };
-  }, [reload, activeTab, abortCurrent]);
-
+  
   // ====== Client-only filter (tab + search) ======
   const filteredRows = useMemo(() => {
     const q = search.trim().toLowerCase();

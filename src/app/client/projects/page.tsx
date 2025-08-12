@@ -8,6 +8,8 @@ import { ProjectTableSection } from "./ProjectTableSection";
 import { ProjectPaginationSection } from "./ProjectPaginationSection";
 import { withSignal, getSupabaseClient } from "@/lib/supabase/client";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
+import CreateProjectPopover from "./CreateProjectPopover";
+
 
 type TabKey = "All Project" | "Active" | "Finished" | "Pending" | "Requested";
 
@@ -41,6 +43,7 @@ export default function PageContent(): React.JSX.Element {
   const initialTabFromUrl: TabKey = validTabs.includes(initialTabRaw) ? initialTabRaw : "All Project";
 
   // UI state
+  const [openCreate, setOpenCreate] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>(initialTabFromUrl);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -252,7 +255,7 @@ export default function PageContent(): React.JSX.Element {
           // Search tetap client-side; kalau mau server-filter, panggil reload() di sini
         }}
         externalCounts={counts}
-        onCreateClick={() => router.push("/client/projects/CreateProjectPopover")}
+        onCreateClick={() => setOpenCreate(true)}
       />
 
       {loadingInitial ? (
@@ -296,6 +299,11 @@ export default function PageContent(): React.JSX.Element {
               setPage(p);
               // pagination tetap client-side; untuk server-side pagination, panggil reload() dengan range
             }}
+          />
+          <CreateProjectPopover
+            open={openCreate}
+            onClose={() => setOpenCreate(false)}
+            onSaved={() => reload(activeTab)}
           />
         </>
       )}

@@ -92,37 +92,38 @@ export default function ClientDashboard(): React.JSX.Element {
       // ===== Counts (head:true) =====
       type CountResp = { count: number | null; error?: unknown };
 
-      // projects: all
-      const allQ = supabase.from("project_summary").select("id", { count: "exact", head: true });
-      const allP = withSignal(allQ, ac.signal) as unknown as Promise<CountResp>;
+      const allP = withSignal(
+        supabase.from("project_summary").select("id", { count: "exact", head: true }),
+        ac.signal
+      ) as unknown as Promise<CountResp>;
 
-      // projects: active (is_active = true) — sesuaikan kalau status berbeda
-      const actQ = supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("is_active", true);
-      const actP = withSignal(actQ, ac.signal) as unknown as Promise<CountResp>;
+      const actP = withSignal(
+        supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("is_active", true),
+        ac.signal
+      ) as unknown as Promise<CountResp>;
 
-      // projects: finished (is_finished = true)
-      const finQ = supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("is_finished", true);
-      const finP = withSignal(finQ, ac.signal) as unknown as Promise<CountResp>;
+      const finP = withSignal(
+        supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("is_finished", true),
+        ac.signal
+      ) as unknown as Promise<CountResp>;
 
-      // projects: pending (is_active=false & is_finished=false)
-      const penQ = supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("is_active", false).eq("is_finished", false);
-      const penP = withSignal(penQ, ac.signal) as unknown as Promise<CountResp>;
+      const penP = withSignal(
+        supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("is_active", false).eq("is_finished", false),
+        ac.signal
+      ) as unknown as Promise<CountResp>;
 
-      // invoices: unpaid
-      const invQ = supabase.from("invoices").select("id", { count: "exact", head: true }).eq("status", "unpaid");
-      const invP = withSignal(invQ, ac.signal) as unknown as Promise<CountResp>;
+      const invP = withSignal(
+        supabase.from("invoices").select("id", { count: "exact", head: true }).eq("status", "unpaid"),
+        ac.signal
+      ) as unknown as Promise<CountResp>;
 
-      // meetings: upcoming (start_at >= now)
       const nowIso = new Date().toISOString();
-      const meetQ = supabase.from("meetings").select("id", { count: "exact", head: true }).gte("start_at", nowIso);
-      const meetP = withSignal(meetQ, ac.signal) as unknown as Promise<CountResp>;
+      const meetP = withSignal(
+        supabase.from("meetings").select("id", { count: "exact", head: true }).gte("start_at", nowIso),
+        ac.signal
+      ) as unknown as Promise<CountResp>;
 
-      // ===== Lists =====
-      const projListQ = supabase
-        .from("project_summary")
-        .select(QUERY_PROJECTS)
-        .order("latest_update", { ascending: false })
-        .limit(8);
+      // ===== Lists (normalize ke array sebelum di-set) =====
       const projListP = withSignal(
         supabase
           .from("project_summary")
@@ -137,12 +138,6 @@ export default function ClientDashboard(): React.JSX.Element {
           return data ?? [];
         });
 
-      const meetingsQ = supabase
-        .from("meetings")
-        .select(QUERY_MEETINGS)
-        .gte("start_at", nowIso)
-        .order("start_at", { ascending: true })
-        .limit(6);
       const meetingsP = withSignal(
         supabase
           .from("meetings")
@@ -158,12 +153,6 @@ export default function ClientDashboard(): React.JSX.Element {
           return data ?? [];
         });
 
-
-      const invoicesQ = supabase
-        .from("invoices")
-        .select(QUERY_INVOICES)
-        .order("created_at", { ascending: false })
-        .limit(6);
       const invoicesP = withSignal(
         supabase
           .from("invoices")
@@ -178,19 +167,18 @@ export default function ClientDashboard(): React.JSX.Element {
           return data ?? [];
         });
 
-
       const [
-      allR, actR, finR, penR, invR, meetR,
-      projListArr, meetingsArr, invoicesArr
-    ] = await Promise.all([
-      allP, actP, finP, penP, invP, meetP,
-      projListP, meetingsP, invoicesP
-    ]);
+        allR, actR, finR, penR, invR, meetR,
+        projListArr, meetingsArr, invoicesArr
+      ] = await Promise.all([
+        allP, actP, finP, penP, invP, meetP,
+        projListP, meetingsP, invoicesP
+      ]);
 
-
-      // errors count?
-      for (const r of [allR, actR, finR, penR, invR, meetR]) {
-        if ((r as any)?.error) throw (r as any).error;
+      // Cek error tanpa any / tanpa PostgrestSingleResponse
+      const results: CountResp[] = [allR, actR, finR, penR, invR, meetR];
+      for (const r of results) {
+        if (r.error) throw r.error;
       }
 
       setStatProjectsAll(allR.count ?? 0);
@@ -203,7 +191,6 @@ export default function ClientDashboard(): React.JSX.Element {
       setRecentProjects(projListArr);
       setUpcomingMeetings(meetingsArr);
       setRecentInvoices(invoicesArr);
-
     } catch (e) {
       console.error(e);
       // fallback aman

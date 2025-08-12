@@ -3,8 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import LogoutButton from "@/components/auth/LogoutButton";
-import { getSupabaseClient } from "@/lib/supabase/client";
-import { ensureFreshSession } from "@/lib/supabase/safe";
+import { getSupabaseClient, ensureFreshSession } from "@/lib/supabase/client";
 
 type ProfileLite = {
   fullName: string;

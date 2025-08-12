@@ -3,7 +3,7 @@
 import "@/app/globals.css";
 import RequireAuth from "@/components/auth/RequireAuth";
 import { SidebarSection } from "@/components/SidebarSection";
-import { useFocusWarmAuth } from "@/lib/supabase/safe";
+import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   useFocusWarmAuth();

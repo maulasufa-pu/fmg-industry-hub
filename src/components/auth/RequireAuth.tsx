@@ -3,8 +3,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { getSupabaseClient } from "@/lib/supabase/client";
-import { ensureFreshSession } from "@/lib/supabase/safe";
+import { getSupabaseClient, ensureFreshSession } from "@/lib/supabase/client";
 
 type Props = { children: React.ReactNode };
 

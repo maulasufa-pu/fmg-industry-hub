@@ -3,11 +3,10 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import LogoutButton from "@/components/auth/LogoutButton";
-import { getSupabaseClient } from "@/lib/supabase/client";
+import { getSupabaseClient, ensureFreshSession } from "@/lib/supabase/client";
 import { User, Tags, Plane, Search, Pictures, Home, Folder, Cog, Bell, ChevronDown } from "@/icons";
 import rectangle14Stroke from "../icons/rectangle-14-stroke.svg";
 import { usePathname, useRouter } from "next/navigation";
-import { ensureFreshSession } from "@/lib/supabase/safe";
 
 type ProfileLite = {
   fullName: string;

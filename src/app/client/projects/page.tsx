@@ -10,6 +10,9 @@ import { withSignal, getSupabaseClient } from "@/lib/supabase/client";
 import { useFocusRefetch } from "@/lib/supabase/useFocusRefetch";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type TabKey = "All Project" | "Active" | "Finished" | "Pending" | "Requested";
 
 type ProjectRow = {

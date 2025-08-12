@@ -71,6 +71,7 @@ export default function PageContent(): React.JSX.Element {
 
   // Spinner hanya untuk initial load
   const [loadingInitial, setLoadingInitial] = useState(true);
+  const [didInit, setDidInit] = useState(false); // <- NEW
 
   // Abort
   const abortRef = useRef<AbortController | null>(null);
@@ -170,15 +171,22 @@ export default function PageContent(): React.JSX.Element {
 
   // initial
   useEffect(() => {
+  (async () => {
     setPage(1);
-    fetchPage(initialTabFromUrl, "", 1, true); // <- spinner hanya di sini
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // warm session supaya RLS nggak balikin 0 duluan
+    await supabase.auth.getSession().catch(() => {});
+    await fetchPage(initialTabFromUrl, "", 1, true); // spinner hanya di sini
+    setDidInit(true); // <- NEW
+  })();
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
 
   // re-fetch tanpa spinner pada tab/search/page change
   useEffect(() => {
-    fetchPage(activeTab, debouncedSearch, page, false); // <- no spinner
-  }, [activeTab, debouncedSearch, page, fetchPage]);
+  if (!didInit) return; // <- NEW: jangan nembak request kedua saat mount
+  fetchPage(activeTab, debouncedSearch, page, false);
+}, [didInit, activeTab, debouncedSearch, page, fetchPage]);
+
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const pageSafe = Math.min(Math.max(1, page), totalPages);

@@ -7,10 +7,10 @@ import { ensureFreshSession, getSupabaseClient } from "./client";
 export function useFocusWarmAuth() {
   useEffect(() => {
     const warm = () =>
-      ensureFreshSession().catch(async () => {
+      async () => {
         const sb = getSupabaseClient();
         await sb.auth.signOut();
-      });
+      };
 
     const onFocus = () => warm();
     const onVisible = () => { if (document.visibilityState === "visible") warm(); };

@@ -9,11 +9,14 @@ export function useFocusWarmAuth() {
         const { data } = await sb.auth.getSession();
         const exp = data.session?.expires_at ?? 0;
         const now = Math.floor(Date.now() / 1000);
-        // hanya refresh kalau benar-benar mau habis (<= 60s)
-        if (data.session && exp && exp - now <= 60) {
-          await sb.auth.refreshSession();
+        // refresh jika session tidak ada, sudah lewat, atau akan habis (<= 60s)
+        if (!data.session || exp <= now || exp - now <= 60) {
+          const { error } = await sb.auth.refreshSession();
+          if (error) await sb.auth.signOut();
         }
-      } catch {}
+      } catch {
+        await sb.auth.signOut();
+      }
     };
     const onFocus = () => warm();
     const onVisible = () => { if (document.visibilityState === "visible") warm(); };
@@ -35,10 +38,17 @@ export async function ensureFreshSession() {
     const { data } = await sb.auth.getSession();
     const exp = data.session?.expires_at ?? 0;
     const now = Math.floor(Date.now() / 1000);
-    if (data.session && exp && exp - now <= 60) {
-      await sb.auth.refreshSession();
+    if (!data.session || exp <= now || exp - now <= 60) {
+      const { error } = await sb.auth.refreshSession();
+      if (error) {
+        await sb.auth.signOut();
+        throw error;
+      }
     }
-  } catch {}
+  } catch (e) {
+    await sb.auth.signOut();
+    throw e;
+  }
 }
 
 export async function withTimeout<T>(

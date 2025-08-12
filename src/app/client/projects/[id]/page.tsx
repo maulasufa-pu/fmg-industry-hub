@@ -130,14 +130,16 @@ export default function ProjectDetailPage(): React.JSX.Element {
 
   // Meeting state
   const [meetings, setMeetings] = useState<MeetingRow[] | null>(null);
-  const [meetingForm, setMeetingForm] = useState({
+    const [meetingForm, setMeetingForm] = useState({
     title: "",
-    date: "",     // "2025-08-12"
-    time: "",     // "14:00"
+    date: "",
+    time: "",
     durationMin: 60,
     link: "",
     notes: "",
+    provider: "zoom" as "zoom" | "google", // default zoom biar gampang
   });
+
   const [isCreatingMeeting, setIsCreatingMeeting] = useState(false);
 
   const validTabs: TabKey[] = [
@@ -400,35 +402,42 @@ export default function ProjectDetailPage(): React.JSX.Element {
   };
 
   const createMeeting = async (): Promise<void> => {
-    const { title, date, time, durationMin, link, notes } = meetingForm;
-    if (!title.trim() || !date || !time) {
-      alert("Isi Title, Date, dan Time.");
-      return;
-    }
-    // gabung date + time ke ISO (anggap local tz)
-    const start = new Date(`${date}T${time}:00`);
-    if (Number.isNaN(start.getTime())) {
-      alert("Tanggal/Jam tidak valid.");
-      return;
-    }
+    const { title, date, time, durationMin, link, notes, provider } = meetingForm;
+    if (!title.trim() || !date || !time) { alert("Isi Title, Date, dan Time."); return; }
+
+    const startLocal = new Date(`${date}T${time}:00`);
+    if (Number.isNaN(startLocal.getTime())) { alert("Tanggal/Jam tidak valid."); return; }
 
     setIsCreatingMeeting(true);
     try {
+      // 1) Minta URL meeting ke server
+      const res = await fetch(`/api/meetings/${provider}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          startAt: startLocal.toISOString(), // kirim UTC ISO
+          durationMin: Number(durationMin) || 60,
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const { joinUrl } = await res.json(); // string
+
+      // 2) Simpan ke Supabase
       const { data, error } = await supabase
         .from("meetings")
         .insert({
           project_id: params.id,
           title: title.trim(),
-          start_at: start.toISOString(),
+          start_at: startLocal.toISOString(),
           duration_min: Number(durationMin) || 60,
-          link: link.trim() || null,
+          link: joinUrl,
           notes: notes.trim() || null,
         })
         .select("id,project_id,title,start_at,duration_min,link,notes,created_by,created_at")
         .single<MeetingRow>();
 
       if (error) throw error;
-      // Optimistic; realtime juga akan masuk
       setMeetings((prev) => prev ? [data, ...prev] : [data]);
 
       setMeetingForm({
@@ -438,10 +447,11 @@ export default function ProjectDetailPage(): React.JSX.Element {
         durationMin: 60,
         link: "",
         notes: "",
+        provider, // keep same selection
       });
     } catch (e) {
       console.error(e);
-      alert("Gagal membuat meeting.");
+      alert("Gagal membuat meeting otomatis: " + (e as Error).message);
     } finally {
       setIsCreatingMeeting(false);
     }
@@ -1120,6 +1130,14 @@ export default function ProjectDetailPage(): React.JSX.Element {
                   rows={2}
                   className="col-span-2 w-full resize-none rounded-md border border-gray-300 p-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
                 />
+                <select
+                  value={meetingForm.provider}
+                  onChange={(e) => setMeetingForm((p) => ({ ...p, provider: e.target.value as "zoom" | "google" }))}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                >
+                  <option value="zoom">Zoom</option>
+                  <option value="google">Google Meet</option>
+                </select>
               </div>
               <div className="flex justify-end">
                 <button

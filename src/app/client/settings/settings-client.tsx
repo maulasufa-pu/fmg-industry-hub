@@ -20,7 +20,7 @@ export default function SettingsClient({ initialData }: { initialData: FormData 
 
   const handleSave = async () => {
     setSaving(true); setErr(null); setShowSuccessMessage(false);
-    await ensureFreshSession();
+    // await ensureFreshSession();
     const { data: { user }, error: uErr } = await supabase.auth.getUser();
     if (uErr) { setErr(uErr.message); setSaving(false); return; }
     if (!user) { setErr("Session not found."); setSaving(false); return; }

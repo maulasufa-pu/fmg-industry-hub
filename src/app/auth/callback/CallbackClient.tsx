@@ -3,6 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import type { Session } from "@supabase/supabase-js";
+
+function getGoogleAccessToken(session: Session | null): string | null {
+  // Supabase belum expose type property ini, tapi ada di runtime
+  const s = session as unknown as { provider_token?: string } | null;
+  return s?.provider_token ?? null;
+}
 
 export default function CallbackClient() {
   const router = useRouter();
@@ -14,22 +21,22 @@ export default function CallbackClient() {
     (async () => {
       try {
         const supabase = getSupabaseClient();
-
         const href = window.location.href;
         const url = new URL(href);
 
-        // Pastikan ada code dari OAuth
         if (!url.searchParams.get("code")) {
           router.replace("/login");
           return;
         }
 
-        // Tukar code -> session
         const { error: exErr } = await supabase.auth.exchangeCodeForSession(href);
         if (exErr) {
           if (!cancelled) setError(exErr.message);
           return;
         }
+
+        const { data: { session } } = await supabase.auth.getSession();
+        const googleAccessToken = getGoogleAccessToken(session);
 
         // Ambil user
         const { data: { user } } = await supabase.auth.getUser();
@@ -75,6 +82,12 @@ export default function CallbackClient() {
           }
         }
 
+        // Jika token Google tidak ada (user belum kasih scope), minta login ulang
+        if (!googleAccessToken) {
+          router.replace("/login?reauth=drive");
+          return;
+        }
+
         const redirectedFrom = url.searchParams.get("redirectedFrom") || "/client/dashboard";
         router.replace(redirectedFrom);
       } catch (e: unknown) {
@@ -89,7 +102,7 @@ export default function CallbackClient() {
 
   return (
     <div className="min-h-[50vh] flex items-center justify-center">
-      <p className="text-sm text-coolgray-90">
+      <p className="text-sm text-gray-600">
         {error ? `Auth error: ${error}` : "Finishing sign-in..."}
       </p>
     </div>

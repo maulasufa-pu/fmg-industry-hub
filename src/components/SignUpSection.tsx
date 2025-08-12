@@ -19,8 +19,6 @@ export function SignUpSection() {
 
   const social = [
     { name: "Google", icon: Google, provider: "google" as const },
-    { name: "Apple",  icon: Apple,  provider: "apple"  as const },
-    { name: "Twitter",icon: Twitter,provider: "twitter"as const },
   ];
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -54,12 +52,12 @@ export function SignUpSection() {
     }
   };
 
-  const handleOAuth = async (provider: "google" | "apple" | "twitter") => {
+  const handleOAuth = async (provider: "google") => {
     setErr(null); setMsg(null);
     const supabase = getSupabaseClient(true);
     await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?flow=signup` },
     });
   };
 
@@ -155,7 +153,6 @@ export function SignUpSection() {
         <div className="flex gap-2 w-full">
           {social.map((s) => {
             const Icon = s.icon;
-            const isTwitter = s.provider === "twitter";
             return (
               <button
                 key={s.provider}
@@ -163,7 +160,7 @@ export function SignUpSection() {
                 onClick={() => handleOAuth(s.provider)}
                 className="flex h-12 items-center justify-center px-3 py-4 flex-1 border-2 border-primary-60 hover:bg-primary-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-60 focus-visible:ring-offset-2 transition-colors"
               >
-                <Icon className={`!w-6 !h-6 ${isTwitter ? "text-primary-60 [&_*]:fill-current [&_*]:stroke-current" : ""}`} />
+                <Icon className={`!w-6 !h-6}`} />
                 <span className="font-button-m text-primary-60 px-3">{s.name}</span>
               </button>
             );

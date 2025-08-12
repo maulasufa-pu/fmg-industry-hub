@@ -1,19 +1,22 @@
+/* ===================== Imports ===================== */
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* ===================== Tailwind Directives ===================== */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Custom variant untuk dark mode */
+/* ===================== Variants ===================== */
 @custom-variant dark (&:is(.dark *));
 
-/* Variabel dan tema */
+/* ===================== Design Tokens via @theme ===================== */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -22,11 +25,13 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -43,19 +48,22 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-html {
-  scroll-behavior: smooth;
-}
+/* ===================== Global HTML ===================== */
+html { scroll-behavior: smooth; }
+html, body { overflow-x: clip; }
 
-/* Variabel root utama */
+/* ===================== Root Tokens ===================== */
 :root {
   --radius: 0.625rem;
+
+  /* Light theme surface/tokens (OKLCH) */
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -74,11 +82,15 @@ html {
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
+
+  /* Charts */
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
+
+  /* Sidebar */
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -88,34 +100,49 @@ html {
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  /* Font vars */
+  /* Project brand tokens */
+  --coolgray-10: rgba(242, 244, 248, 1);
+  --coolgray-20: rgba(221, 225, 230, 1);
+  --coolgray-30: rgba(193, 199, 205, 1);
+  --coolgray-60: rgba(105, 112, 119, 1);
+  --coolgray-90: rgba(33, 39, 42, 1);
+
+  --default-success: rgba(37, 162, 73, 1);
+  --defaultalert: rgba(218, 30, 40, 1);
+  --defaultwhite: rgba(255, 255, 255, 1);
+
+  --primary-60: rgba(15, 98, 254, 1);
+  --primary-90: rgba(0, 29, 108, 1);
+  --primary-10: rgba(237, 245, 255, 1); /* for hover:bg-primary-10 */
+
+  /* Typography tokens */
   --body-l-font-family: "Roboto", Helvetica;
   --body-l-font-size: 18px;
   --body-l-font-style: normal;
   --body-l-font-weight: 400;
   --body-l-letter-spacing: 0px;
-  --body-l-line-height: 139.9999976158142%;
+  --body-l-line-height: 140%;
 
   --body-m-font-family: "Roboto", Helvetica;
   --body-m-font-size: 16px;
   --body-m-font-style: normal;
   --body-m-font-weight: 400;
   --body-m-letter-spacing: 0px;
-  --body-m-line-height: 139.9999976158142%;
+  --body-m-line-height: 140%;
 
   --body-s-font-family: "Roboto", Helvetica;
   --body-s-font-size: 14px;
   --body-s-font-style: normal;
   --body-s-font-weight: 400;
   --body-s-letter-spacing: 0px;
-  --body-s-line-height: 139.9999976158142%;
+  --body-s-line-height: 140%;
 
   --body-XS-font-family: "Roboto", Helvetica;
   --body-XS-font-size: 12px;
   --body-XS-font-style: normal;
   --body-XS-font-weight: 400;
   --body-XS-letter-spacing: 0px;
-  --body-XS-line-height: 139.9999976158142%;
+  --body-XS-line-height: 140%;
 
   --button-m-font-family: "Roboto", Helvetica;
   --button-m-font-size: 16px;
@@ -129,21 +156,21 @@ html {
   --heading-2-font-style: normal;
   --heading-2-font-weight: 700;
   --heading-2-letter-spacing: 0px;
-  --heading-2-line-height: 110.00000238418579%;
+  --heading-2-line-height: 110%;
 
   --heading-4-font-family: "Roboto", Helvetica;
   --heading-4-font-size: 24px;
   --heading-4-font-style: normal;
   --heading-4-font-weight: 700;
   --heading-4-letter-spacing: 0px;
-  --heading-4-line-height: 110.00000238418579%;
+  --heading-4-line-height: 110%;
 
   --heading-6-font-family: "Roboto", Helvetica;
   --heading-6-font-size: 18px;
   --heading-6-font-style: normal;
   --heading-6-font-weight: 700;
   --heading-6-letter-spacing: 0px;
-  --heading-6-line-height: 110.00000238418579%;
+  --heading-6-line-height: 110%;
 
   --other-menu-m-font-family: "Roboto", Helvetica;
   --other-menu-m-font-size: 16px;
@@ -152,19 +179,15 @@ html {
   --other-menu-m-letter-spacing: 0px;
   --other-menu-m-line-height: 100%;
 
-  /* Additional colors */
-  --coolgray-10: rgba(242, 244, 248, 1);
-  --coolgray-20: rgba(221, 225, 230, 1);
-  --coolgray-30: rgba(193, 199, 205, 1);
-  --coolgray-60: rgba(105, 112, 119, 1);
-  --coolgray-90: rgba(33, 39, 42, 1);
-  --defaultalert: rgba(218, 30, 40, 1);
-  --defaultwhite: rgba(255, 255, 255, 1);
-  --primary-60: rgba(15, 98, 254, 1);
-  --primary-90: rgba(0, 29, 108, 1);
+  --subtitle-s-font-family: "Roboto", Helvetica;
+  --subtitle-s-font-size: 14px;
+  --subtitle-s-font-style: normal;
+  --subtitle-s-font-weight: 500;
+  --subtitle-s-letter-spacing: 0px;
+  --subtitle-s-line-height: 110%;
 }
 
-/* Tema dark */
+/* ===================== Dark Theme Overrides ===================== */
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -172,6 +195,7 @@ html {
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
+
   --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
   --secondary: oklch(0.269 0 0);
@@ -184,11 +208,13 @@ html {
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
+
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
+
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -199,41 +225,32 @@ html {
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-/* Base layer styles */
+/* ===================== Base Layer ===================== */
 @layer base {
-  /* Reset appearance for form elements */
+  /* Form reset (gabungan keduanya) */
   button,
   input,
   select,
   textarea {
-    @apply appearance-none;
+    @apply appearance-none bg-transparent border-0 outline-none;
   }
 
-  /* Headings font-weight */
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-weight: 700;
-  }
-}
-/* === FMG: Additions for MainContentSection.tsx ========================= */
-
-/* Tambah token yang belum ada */
-:root {
-  /* dipakai oleh hover:bg-primary-10 */
-  --primary-10: rgba(237, 245, 255, 1);
+  /* Heading weight */
+  h1,h2,h3,h4,h5,h6 { font-weight: 700; }
 }
 
-/* Utilitas custom pakai Tailwind layer supaya prioritasnya pas */
+/* ===================== Components Layer ===================== */
+@layer components {
+  .all-\[unset\] { all: unset; }
+}
+
+/* ===================== Utilities Layer ===================== */
 @layer utilities {
-  /* Colors used as utility classes */
+  /* Color utilities mapped ke CSS vars */
   .bg-defaultwhite { background-color: var(--defaultwhite); }
-  .bg-coolgray-10 { background-color: var(--coolgray-10); }
-  .text-coolgray-60 { color: var(--coolgray-60); }
-  .text-coolgray-90 { color: var(--coolgray-90); }
+  .bg-coolgray-10  { background-color: var(--coolgray-10); }
+  .text-coolgray-60{ color: var(--coolgray-60); }
+  .text-coolgray-90{ color: var(--coolgray-90); }
   .border-coolgray-20 { border-color: var(--coolgray-20); }
   .border-coolgray-30 { border-color: var(--coolgray-30); }
 
@@ -242,15 +259,14 @@ html {
   .text-primary-90 { color: var(--primary-90); }
   .border-primary-60 { border-color: var(--primary-60); }
 
-  /* Hover helper sesuai class di komponen */
   .hover\:bg-primary-10:hover { background-color: var(--primary-10); }
   .hover\:underline:hover { text-decoration: underline; }
 
-  /* Ring shim agar focus:ring-primary-60 bekerja */
+  /* Ring helper agar focus:ring-primary-60 jalan */
   .ring-primary-60 { --tw-ring-color: var(--primary-60); }
   .focus\:ring-primary-60:focus { --tw-ring-color: var(--primary-60); }
 
-  /* Typography utilities mapping ke CSS variables yang sudah kamu punya */
+  /* Typography utilities */
   .font-body-XS {
     font-family: var(--body-XS-font-family);
     font-size: var(--body-XS-font-size);
@@ -259,7 +275,6 @@ html {
     letter-spacing: var(--body-XS-letter-spacing);
     font-style: var(--body-XS-font-style);
   }
-
   .font-body-s {
     font-family: var(--body-s-font-family);
     font-size: var(--body-s-font-size);
@@ -268,7 +283,6 @@ html {
     letter-spacing: var(--body-s-letter-spacing);
     font-style: var(--body-s-font-style);
   }
-
   .font-body-m {
     font-family: var(--body-m-font-family);
     font-size: var(--body-m-font-size);
@@ -277,16 +291,12 @@ html {
     letter-spacing: var(--body-m-letter-spacing);
     font-style: var(--body-m-font-style);
   }
-
   .font-body-l {
     font-family: var(--body-l-font-family);
     font-size: var(--body-l-font-size);
     line-height: var(--body-l-line-height);
     font-weight: var(--body-l-font-weight);
-    letter-spacing: var(--body-l-letter-spacing);
-    font-style: var(--body-l-font-style);
   }
-
   .font-button-m {
     font-family: var(--button-m-font-family);
     font-size: var(--button-m-font-size);
@@ -294,31 +304,40 @@ html {
     font-weight: var(--button-m-font-weight);
     letter-spacing: var(--button-m-letter-spacing);
   }
-
   .font-heading-2 {
     font-family: var(--heading-2-font-family);
     font-size: var(--heading-2-font-size);
     line-height: var(--heading-2-line-height);
     font-weight: var(--heading-2-font-weight);
-    letter-spacing: var(--heading-2-letter-spacing);
-    font-style: var(--heading-2-font-style);
     text-wrap: balance;
   }
 
-  /* Small utils yang dipakai di komponen */
-  .all-\[unset\] { all: unset; }
   .box-border { box-sizing: border-box; }
 
-  /* Pastikan tombol tetap kelihatan saat keyboard focus */
-  button.cursor-pointer:focus-visible,
-  a.cursor-pointer:focus-visible {
-    outline: 2px solid var(--primary-60);
-    outline-offset: 2px;
-  }
+  /* Pastikan semua button biru otomatis teks putih */
+  button.bg-primary-60 { @apply text-white; }
+  .bg-primary-60:where(button, a, .btn) { color: #fff; }
 }
-html, body { overflow-x: clip; }
 @layer utilities {
-  button.bg-primary-60 {
-    @apply text-white;
-  }
+  .bg-hover { background-color: var(--primary-10); }
+  .border-divider { border-color: color-mix(in oklab, var(--border) 60%, transparent); }
 }
+
+@layer utilities {
+  .bg-primary-30 { background-color: var(--primary); }
+  .text-primary-60 { color: var(--primary-60); }
+  .text-primary-90 { color: var(--primary-90); }
+  
+  /* Ring utilities */
+  .focus:ring-primary-30 { --tw-ring-color: var(--primary); }
+  .focus:ring-offset-2 { --tw-ring-offset-width: 2px; }
+  
+  /* Typography utilities */
+  .font-medium { font-weight: 500; }
+
+  /* Transition utility for smooth hover effects */
+  .transition { transition: all 0.3s ease; }
+}
+
+html { scroll-behavior: smooth; }
+html, body { overflow-x: clip; }

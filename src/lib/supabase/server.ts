@@ -1,32 +1,24 @@
-// src/lib/supabase/server.ts
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import "server-only";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-/**
- * Supabase server client untuk Server Components & Route Handlers.
- * Kompatibel dengan @supabase/ssr yang meminta cookies.getAll/setAll.
- */
-export async function createServerSupabase() {
-  const cookieStore = await cookies(); // pada Next versi kamu: Promise
+let _serverClient: SupabaseClient | null = null;
 
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
-            });
-          } catch {
-            // Di beberapa konteks RSC, set bisa diabaikan—aman untuk read-only use.
-          }
-        },
-      },
-    }
-  );
+/** HANYA dipakai di server (RSC, API routes, server actions). */
+export function getSupabaseServerClient(): SupabaseClient {
+  if (_serverClient) return _serverClient;
+
+  // Pakai service role kalau ada (JANGAN pernah diekspos ke client / NEXT_PUBLIC).
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+  _serverClient = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, {
+    auth: {
+      persistSession: false,   // server tidak menyimpan sesi
+      autoRefreshToken: false, // tidak perlu auto refresh di server
+      detectSessionInUrl: false,
+    },
+    global: { fetch: (i: any, init?: any) => fetch(i, { ...init, cache: "no-store" }) },
+  });
+
+  return _serverClient;
 }

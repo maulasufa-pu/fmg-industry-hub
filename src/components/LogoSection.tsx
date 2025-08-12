@@ -9,7 +9,6 @@ import React, { useState } from "react";
 // import { Youtube } from "./Youtube";
 
 import { Envelope, Facebook, Instagram, Linkedin, Twitter, Youtube } from "@/icons";
-import image from "../icons/rectangle-14-stroke.svg";
 // import vector3 from "./vector-3.svg";
 // import vector4 from "./vector-4.svg";
 // import vector5 from "./vector-5.svg";
@@ -60,11 +59,11 @@ const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         <div className="inline-flex flex-col items-start gap-2.5 relative flex-[0_0_auto]">
           <div className="inline-flex items-start gap-1 relative flex-[0_0_auto]">
             <div className="inline-flex items-center justify-center relative flex-[0_0_auto]">
-              <img
+              {/* <img
                 className="relative w-6 h-6"
                 alt="WebbyFrames logo"
-                src={image}
-              />
+                src="/icons/rectangle-14-stroke.svg"
+              /> */}
             </div>
 
             <div className="inline-flex flex-col items-end justify-center relative flex-[0_0_auto]">

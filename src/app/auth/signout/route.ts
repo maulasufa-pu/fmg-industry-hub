@@ -1,30 +1,35 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// Support POST (utama) dan GET (kalau kamu mau pakai link)
-export async function POST(request: NextRequest) {
-  const response = NextResponse.redirect(new URL("/login", request.url));
+export async function POST() {
+  const cookieStore = await cookies(); // ✅ versi lama butuh await
+  let response = NextResponse.json({ ok: true });
 
   const supabase = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
-      // gunakan getAll/setAll agar kompatibel dengan @supabase/ssr
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) =>
-          response.cookies.set({ name, value, ...options })
-        );
+      getAll: () => cookieStore.getAll(),
+      setAll: (cookiesToSet) => {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set({ name, value, ...options });
+        });
       },
     },
   });
 
-  await supabase.auth.signOut(); // revoke token + bersihkan storage sisi server
+  await supabase.auth.signOut();
+
+  ["sb-access-token", "sb-refresh-token"].forEach((name) => {
+    response.cookies.set({
+      name,
+      value: "",
+      path: "/",
+      maxAge: 0,
+    });
+  });
 
   return response;
 }
-
-export const GET = POST;

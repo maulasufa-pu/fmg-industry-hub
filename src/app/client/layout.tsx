@@ -1,19 +1,16 @@
-import LogoSection from "@/components/LogoSection";
-import HeaderSection from "@/components/HeaderSection";
+// src/app/client/layout.tsx
+"use client";
+import "@/app/globals.css";
+import RequireAuth from "@/components/auth/RequireAuth";
+import { SidebarSection } from "@/components/SidebarSection";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <LogoSection />
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        <HeaderSection />
-        <main className="p-6 flex-1 overflow-auto">
-          {children}
-        </main>
+    <RequireAuth>
+      <div className="flex items-start relative bg-coolgray-10 w-full min-h-screen">
+        <SidebarSection />
+        <main className="flex-1 min-w-0">{children}</main>
       </div>
-    </div>
+    </RequireAuth>
   );
 }

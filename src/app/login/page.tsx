@@ -1,6 +1,5 @@
 import React from "react";
 import { LoginSection } from "@/components/LoginSection";
-
 import RedirectIfAuthenticated from "@/app/auth/RedirectIfAuthenticated";
 
 export default function Login(): React.JSX.Element {

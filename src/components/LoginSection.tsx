@@ -47,13 +47,19 @@ export const LoginSection = () => {
   ) => {
     setErr(null);
     const supabase = getSupabaseClient(true); // OAuth sebaiknya persist
-    const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`;
+    const redirectTo = `${window.location.origin}/auth/callback?flow=login`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo },
     });
     if (error) setErr(error.message);
   };
+
+  const msg = qp.get("m");
+  {msg === "please_signup_with_google_first" && (
+    <p className="text-xs text-red-600 text-center">Please sign up with Google first.</p>
+  )}
+
 
   return (
     <div className="flex flex-col w-full max-w-md sm:max-w-lg lg:max-w-xl items-center gap-5 px-6 sm:px-7 md:px-8 py-6 sm:py-8 bg-defaultwhite border border-coolgray-20 rounded-xl">

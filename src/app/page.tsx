@@ -82,7 +82,7 @@ export default function HomePage() {
                 className="rounded-xl overflow-hidden shadow-lg hover:scale-105 transition transform"
               >
                 <Image
-                  src={`https://source.unsplash.com/random/400x300?music,studio&sig=${item}`}
+                  src={``}
                   alt={`Portofolio proyek musik nomor ${item}`}
                   width={400}
                   height={300}

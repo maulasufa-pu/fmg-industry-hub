@@ -12,8 +12,8 @@ export function getSupabaseClient(): SupabaseClient {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       auth: {
-        persistSession: false,   // tidak simpan di storage browser
-        autoRefreshToken: false, // refresh manual (kita yang kontrol)
+        persistSession: true,   // tidak simpan di storage browser
+        autoRefreshToken: true, // refresh manual (kita yang kontrol)
         detectSessionInUrl: true,
       },
       global: {

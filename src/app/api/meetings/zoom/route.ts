@@ -19,6 +19,12 @@ async function getZoomAccessToken(): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
+  if (!ZOOM_ACCOUNT_ID || !ZOOM_CLIENT_ID || !ZOOM_CLIENT_SECRET) {
+    return NextResponse.json(
+      { error: "Missing Zoom env. Check ZOOM_ACCOUNT_ID / ZOOM_CLIENT_ID / ZOOM_CLIENT_SECRET" },
+      { status: 500 }
+    );
+  }
   try {
     const { title, startAt, durationMin } = await req.json() as {
       title: string; startAt: string; durationMin: number;

@@ -1,7 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import { supabase } from '../lib/supabaseClient';
-
 
 export const metadata = {
   title: "FMG Industry Hub - Home",

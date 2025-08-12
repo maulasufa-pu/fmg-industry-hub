@@ -18,7 +18,7 @@ export default function RequireAuth({ children }: Props) {
 
     const check = async () => {
       // cek session awal
-      await ensureFreshSession();
+      // await ensureFreshSession();
       const { data: { session } } = await supabase.auth.getSession();
       if (!mounted) return;
 

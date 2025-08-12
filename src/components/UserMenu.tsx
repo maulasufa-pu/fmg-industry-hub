@@ -22,7 +22,7 @@ export default function UserMenu() {
     let unsub: (() => void) | undefined;
 
     const boot = async () => {
-      await ensureFreshSession();
+      // await ensureFreshSession();
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
       if (!user) {

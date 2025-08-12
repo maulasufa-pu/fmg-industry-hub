@@ -52,7 +52,7 @@ export const SidebarSection = () => {
     let mounted = true;
 
     const boot = async () => {
-      await ensureFreshSession();
+      // await ensureFreshSession();
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
 

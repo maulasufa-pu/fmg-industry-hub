@@ -259,18 +259,6 @@ export default function InvoicesPage(): React.JSX.Element {
     <div className="p-6 space-y-6">
       {/* Header / Breadcrumb */}
       <div className="flex items-center justify-between">
-        <nav className="text-sm text-gray-500">
-          <ol className="flex items-center gap-2">
-            <li>
-              <Link href="/client/projects" className="hover:underline">
-                Projects
-              </Link>
-            </li>
-            <li>›</li>
-            <li className="text-gray-800">Invoices</li>
-          </ol>
-        </nav>
-
         <div className="flex items-center gap-2">
           <input
             value={search}

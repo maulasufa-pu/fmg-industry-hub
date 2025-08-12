@@ -83,7 +83,6 @@ export async function withTimeout<T>(
   }
 }
 
-/** Pasang AbortSignal ke Postgrest builder (kalau tersedia) */
-export function withSignal<T>(qb: any, signal: AbortSignal) {
-  return typeof qb.abortSignal === "function" ? qb.abortSignal(signal) : qb;
+export function withSignal<Q>(qb: Q, signal: AbortSignal): Q {
+  return (qb as any)?.abortSignal?.(signal) ?? qb;
 }

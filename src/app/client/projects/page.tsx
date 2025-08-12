@@ -7,7 +7,6 @@ import { ProjectTabsSection } from "./ProjectTabsSection";
 import { ProjectTableSection } from "./ProjectTableSection";
 import { ProjectPaginationSection } from "./ProjectPaginationSection";
 import { withSignal, getSupabaseClient } from "@/lib/supabase/client";
-// Hapus useFocusRefetch: kita pakai versi debounce focus di bawah
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
 
 type TabKey = "All Project" | "Active" | "Finished" | "Pending" | "Requested";
@@ -31,7 +30,6 @@ type ProjectRow = {
 };
 
 export default function PageContent(): React.JSX.Element {
-  // Auto refresh token & warm auth
   useFocusWarmAuth();
 
   const router = useRouter();
@@ -49,8 +47,10 @@ export default function PageContent(): React.JSX.Element {
   const pageSize = 10;
 
   // Data state
-  const [loading, setLoading] = useState(true);
   const [allRows, setAllRows] = useState<ProjectRow[]>([]);
+  const [loadingInitial, setLoadingInitial] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const lastFetchRef = useRef(0);
 
   // ====== Anti-race & abort management ======
   const inflightRef = useRef<AbortController | null>(null); // request aktif
@@ -79,21 +79,26 @@ export default function PageContent(): React.JSX.Element {
       inflightRef.current?.abort("superseded");
       inflightRef.current = ac;
 
-      setLoading(true);
+      const isInitial = lastFetchRef.current === 0;
+      if (isInitial) setLoadingInitial(true);
+      else setRefreshing(true);
+
       try {
-        // (opsional) warm session dulu tiap siklus untuk menghindari delay token
-        await withTimeout(supabase.auth.getSession(), 5000).catch(() => {});
+        // warm session (mengurangi delay token di request pertama)
+        await supabase.auth.getSession().catch(() => {});
 
         const rows = await withTimeout(build(ac.signal), 10000);
         if (reqIdRef.current !== myId) return; // hasil basi → abaikan
         setAllRows(rows ?? []);
-      }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any 
-      catch (e: any) {
+        lastFetchRef.current = Date.now();
+      } catch (e: unknown) {
         if (reqIdRef.current !== myId) return; // error basi → abaikan
-        if (e?.name !== "AbortError") console.error("fetch error:", e);
+        if ((e as { name?: string })?.name !== "AbortError") console.error("fetch error:", e);
       } finally {
-        if (reqIdRef.current === myId) setLoading(false);
+        if (reqIdRef.current === myId) {
+          setLoadingInitial(false);
+          setRefreshing(false);
+        }
         if (inflightRef.current === ac) inflightRef.current = null;
       }
     },
@@ -140,22 +145,20 @@ export default function PageContent(): React.JSX.Element {
     });
   }, [runQuery, supabase]);
 
-  // Refetch saat kembali fokus (debounce agar tidak nabrak aksi user)
+  // Refetch saat kembali fokus (debounce + stale check 60s)
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any 
-    let t: any;
+    let t: ReturnType<typeof setTimeout> | undefined;
     const onFocus = () => {
-      clearTimeout(t);
+      const staleFor = Date.now() - lastFetchRef.current;
+      if (staleFor < 60_000) return; // skip jika belum stale
+      if (t) clearTimeout(t);
       t = setTimeout(() => reload(activeTab), 200);
     };
-    const onBlur = () => {
-      // hanya abort request otomatis
-      abortCurrent();
-    };
+    const onBlur = () => abortCurrent();
     window.addEventListener("focus", onFocus);
     window.addEventListener("blur", onBlur);
     return () => {
-      clearTimeout(t);
+      if (t) clearTimeout(t);
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("blur", onBlur);
     };
@@ -241,8 +244,7 @@ export default function PageContent(): React.JSX.Element {
         onTabChange={(t) => {
           setPage(1);
           setActiveTabAndUrl(t);
-          // Optional: muat ulang data saat user ganti tab
-          reload(t);
+          reload(t); // muat ulang data saat user ganti tab
         }}
         onSearchChange={(q) => {
           setPage(1);
@@ -253,47 +255,49 @@ export default function PageContent(): React.JSX.Element {
         onCreateClick={() => {}}
       />
 
-      {loading && (
+      {loadingInitial ? (
         <div className="w-full rounded-lg border border-gray-200 bg-white p-10 text-center text-gray-500 shadow">
           Loading projects…
         </div>
-      )}
+      ) : (
+        <>
+          {refreshing && (
+            <div className="text-xs text-gray-500">Refreshing…</div>
+          )}
 
-      {!loading && (
-        <ProjectTableSection
-          rows={pagedRows.map((r) => ({
-            id: r.id,
-            projectName: r.project_name,
-            artistName: r.artist_name,
-            genre: r.genre,
-            stage: r.stage,
-            progressStatus: r.status,
-            latestUpdate: r.latest_update,
-            assignedPIC: r.assigned_pic ?? "-",
-            budget:
-              r.budget_amount != null
-                ? `${(r.budget_currency ?? "IDR").toUpperCase()} ${Number(r.budget_amount).toLocaleString("id-ID")}`
-                : undefined,
-            assignedEngineer: r.engineer_name ?? "-",
-            assignedANR: r.anr_name ?? "-",
-            coverUrl: undefined,
-            description: undefined,
-            progress: r.progress_percent != null ? Number(r.progress_percent) : null,
-            activities: [],
-          }))}
-          onOpenProject={openProject}
-        />
-      )}
+          <ProjectTableSection
+            rows={pagedRows.map((r) => ({
+              id: r.id,
+              projectName: r.project_name,
+              artistName: r.artist_name,
+              genre: r.genre,
+              stage: r.stage,
+              progressStatus: r.status,
+              latestUpdate: r.latest_update,
+              assignedPIC: r.assigned_pic ?? "-",
+              budget:
+                r.budget_amount != null
+                  ? `${(r.budget_currency ?? "IDR").toUpperCase()} ${Number(r.budget_amount).toLocaleString("id-ID")}`
+                  : undefined,
+              assignedEngineer: r.engineer_name ?? "-",
+              assignedANR: r.anr_name ?? "-",
+              coverUrl: undefined,
+              description: undefined,
+              progress: r.progress_percent != null ? Number(r.progress_percent) : null,
+              activities: [],
+            }))}
+            onOpenProject={openProject}
+          />
 
-      {!loading && (
-        <ProjectPaginationSection
-          currentPage={pageSafe}
-          totalPages={totalPages}
-          onPageChange={(p) => {
-            setPage(p);
-            // pagination tetap client-side; kalau mau server-side pagination, panggil reload() dengan range
-          }}
-        />
+          <ProjectPaginationSection
+            currentPage={pageSafe}
+            totalPages={totalPages}
+            onPageChange={(p) => {
+              setPage(p);
+              // pagination tetap client-side; untuk server-side pagination, panggil reload() dengan range
+            }}
+          />
+        </>
       )}
     </div>
   );

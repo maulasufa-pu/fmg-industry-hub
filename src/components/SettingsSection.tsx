@@ -48,10 +48,18 @@ export const SettingsSection = () => {
     if (!path) { setAvatarUrl(null); return; }
     if (USE_PUBLIC_BUCKET) {
       const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-      setAvatarUrl(data.publicUrl);
+      if (data && data.publicUrl) {
+        setAvatarUrl(data.publicUrl);
+      } else {
+        setAvatarUrl(null);
+      }
     } else {
       const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 10);
-      if (!error) setAvatarUrl(data.signedUrl);
+      if (!error && data && data.signedUrl) {
+        setAvatarUrl(data.signedUrl);
+      } else {
+        setAvatarUrl(null);
+      }
     }
   }, [supabase]);
 
@@ -296,10 +304,11 @@ export const SettingsSection = () => {
                       {avatarUrl ? (
                         <Image
                           src={avatarUrl}
-                          alt="Profile avatar"
+                          alt={avatarUrl ? "Profile avatar" : "No avatar"}
                           className="w-full h-full object-cover"
                           width={96}
                           height={96}
+                          onError={() => setAvatarUrl(null)}
                         />
                       ) : (
                         <User />

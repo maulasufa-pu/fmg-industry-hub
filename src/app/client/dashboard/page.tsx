@@ -431,6 +431,17 @@ export default function ClientDashboard(): React.JSX.Element {
           )}
         </Card>
       </div>
+
+      {/* Refresh Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={fetchAll}
+          disabled={loadingInitial}
+          className="mb-4 rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+        >
+          {loadingInitial ? "Refreshing..." : "Refresh Data"}
+        </button>
+      </div>
     </div>
   );
 }

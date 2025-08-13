@@ -86,9 +86,9 @@ export default function InvoicesPage(): React.JSX.Element {
   // === Fetch helpers ===
   const fetchPage = useCallback(
     async (isInitial = false) => {
-      abortRef.current?.abort();
-      const ac = new AbortController();
-      abortRef.current = ac;
+      // Selalu buat AbortController baru
+      abortRef.current = new AbortController();
+      const ac = abortRef.current;
 
       if (isInitial) setLoadingInitial(true);
       try {
@@ -192,6 +192,16 @@ export default function InvoicesPage(): React.JSX.Element {
   const openInvoice = (id: string) => {
     router.push(`/client/invoices/${id}`);
   };
+
+  useEffect(() => {
+    const onClientRefresh = () => {
+      fetchPage(true);
+    };
+    window.addEventListener('client-refresh', onClientRefresh);
+    return () => {
+      window.removeEventListener('client-refresh', onClientRefresh);
+    };
+  }, [fetchPage]);
 
   return (
     <div className="p-6 space-y-6">

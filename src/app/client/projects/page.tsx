@@ -125,9 +125,9 @@ export default function PageContent(): React.JSX.Element {
   // isInitial = true → hanya initial load yang tunjukkan spinner
   const fetchPage = useCallback(
     async (tab: TabKey, q: string, pageIdx: number, isInitial = false) => {
-      abortRef.current?.abort();
-      const ac = new AbortController();
-      abortRef.current = ac;
+      // Selalu buat AbortController baru
+      abortRef.current = new AbortController();
+      const ac = abortRef.current;
 
       if (isInitial) setLoadingInitial(true);
       try {
@@ -187,6 +187,15 @@ export default function PageContent(): React.JSX.Element {
   fetchPage(activeTab, debouncedSearch, page, false);
 }, [didInit, activeTab, debouncedSearch, page, fetchPage]);
 
+  useEffect(() => {
+    const onClientRefresh = () => {
+      fetchPage(activeTab, debouncedSearch, page, true);
+    };
+    window.addEventListener('client-refresh', onClientRefresh);
+    return () => {
+      window.removeEventListener('client-refresh', onClientRefresh);
+    };
+  }, [fetchPage, activeTab, debouncedSearch, page]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const pageSafe = Math.min(Math.max(1, page), totalPages);

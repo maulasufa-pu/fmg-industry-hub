@@ -83,9 +83,9 @@ export default function ClientDashboard(): React.JSX.Element {
 
   // Fetch helpers
   const fetchAll = async () => {
-    abortRef.current?.abort();
-    const ac = new AbortController();
-    abortRef.current = ac;
+    // Selalu buat AbortController baru
+    abortRef.current = new AbortController();
+    const ac = abortRef.current;
     setLoadingInitial(true);
 
     try {
@@ -192,11 +192,8 @@ export default function ClientDashboard(): React.JSX.Element {
       setUpcomingMeetings(meetingsArr);
       setRecentInvoices(invoicesArr);
     } catch (e) {
-      console.error(e);
-      // fallback aman
-      setRecentProjects((p) => p ?? []);
-      setUpcomingMeetings((p) => p ?? []);
-      setRecentInvoices((p) => p ?? []);
+      // handle error
+      console.error("fetchAll error:", e);
     } finally {
       if (abortRef.current === ac) abortRef.current = null;
       setLoadingInitial(false);
@@ -267,6 +264,17 @@ export default function ClientDashboard(): React.JSX.Element {
       }
     };
   }, [supabase]);
+
+  // Refresh data on custom event
+  useEffect(() => {
+    const onClientRefresh = () => {
+      fetchAll();
+    };
+    window.addEventListener('client-refresh', onClientRefresh);
+    return () => {
+      window.removeEventListener('client-refresh', onClientRefresh);
+    };
+  }, [fetchAll]);
 
   if (loadingInitial) {
     return (

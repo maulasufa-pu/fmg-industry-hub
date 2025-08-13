@@ -53,7 +53,6 @@ export default function InvoicesPage(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
   const [search, setSearch] = useState(initialQ);
   const [page, setPage] = useState(Math.max(1, initialPage));
-  const [showForm, setShowForm] = useState(false);
 
   // Debounce search
   const [q, setQ] = useState(initialQ.trim());
@@ -112,12 +111,11 @@ export default function InvoicesPage(): React.JSX.Element {
         qb = qb.order("created_at", { ascending: false }).range(from, to);
 
         const { data, count, error } =
-        await withSignal(qb, ac.signal).returns<InvoiceRow[]>();
+          await withSignal(qb, ac.signal).returns<InvoiceRow[]>();
         if (error) throw error;
 
         setRows(data ?? []);
         setTotalCount(count ?? 0);
-
       } finally {
         if (abortRef.current === ac) abortRef.current = null;
         if (isInitial) setLoadingInitial(false);
@@ -167,7 +165,6 @@ export default function InvoicesPage(): React.JSX.Element {
           setRows((prev) => {
             const list = prev ?? [];
             if (list.some((x) => x.id === row.id)) return list;
-            // keep pagination head fresh; if full page, drop last
             const next = [row, ...list];
             return next.slice(0, pageSize);
           });
@@ -182,65 +179,6 @@ export default function InvoicesPage(): React.JSX.Element {
       realtimeBoundRef.current = false;
     };
   }, [activeTab, pageSize, q, supabase]);
-
-  // === Create invoice form state ===
-  const [isCreating, setIsCreating] = useState(false);
-  const [form, setForm] = useState({
-    invoice_no: "",
-    client_name: "",
-    project_id: "",
-    issue_date: "",
-    due_date: "",
-    currency: "IDR",
-    amount_total: "" as number | string,
-    status: "unpaid" as InvoiceRow["status"],
-    notes: "",
-  });
-
-  const resetForm = () =>
-    setForm({
-      invoice_no: "",
-      client_name: "",
-      project_id: "",
-      issue_date: "",
-      due_date: "",
-      currency: "IDR",
-      amount_total: "",
-      status: "unpaid",
-      notes: "",
-    });
-
-  const createInvoice = async () => {
-    const amt = Number(form.amount_total);
-    if (!form.invoice_no.trim() || !form.client_name.trim() || !amt) {
-      alert("Invoice No, Client, dan Amount wajib diisi.");
-      return;
-    }
-    setIsCreating(true);
-    try {
-      const { error } = await supabase.from("invoices").insert({
-        invoice_no: form.invoice_no.trim(),
-        client_name: form.client_name.trim(),
-        project_id: form.project_id || null,
-        issue_date: form.issue_date || null,
-        due_date: form.due_date || null,
-        currency: (form.currency || "IDR").toUpperCase(),
-        amount_total: amt,
-        status: form.status,
-        notes: form.notes.trim() || null,
-      });
-      if (error) throw error;
-
-      // no optimistic push → realtime INSERT akan menambah 1x (dedup)
-      resetForm();
-      setShowForm(false);
-    } catch (e) {
-      console.error(e);
-      alert("Gagal membuat invoice.");
-    } finally {
-      setIsCreating(false);
-    }
-  };
 
   // === Derived ===
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -257,7 +195,7 @@ export default function InvoicesPage(): React.JSX.Element {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header / Breadcrumb */}
+      {/* Header / Search only (no create) */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <input
@@ -266,12 +204,6 @@ export default function InvoicesPage(): React.JSX.Element {
             placeholder="Search invoice no / client…"
             className="h-9 rounded-md border border-gray-300 px-3 text-sm outline-none focus:ring-2 focus:ring-blue-600"
           />
-          <button
-            onClick={() => setShowForm((s) => !s)}
-            className="h-9 rounded-md border px-3 text-sm hover:bg-gray-50"
-          >
-            {showForm ? "Close" : "New Invoice"}
-          </button>
         </div>
       </div>
 
@@ -294,95 +226,6 @@ export default function InvoicesPage(): React.JSX.Element {
           );
         })}
       </div>
-
-      {/* Form (toggle) */}
-      {showForm && (
-        <Card title="Create Invoice">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <input
-              value={form.invoice_no}
-              onChange={(e) => setForm((p) => ({ ...p, invoice_no: e.target.value }))}
-              placeholder="Invoice No *"
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-            />
-            <input
-              value={form.client_name}
-              onChange={(e) => setForm((p) => ({ ...p, client_name: e.target.value }))}
-              placeholder="Client *"
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-            />
-            <input
-              value={form.project_id}
-              onChange={(e) => setForm((p) => ({ ...p, project_id: e.target.value }))}
-              placeholder="Project ID (optional)"
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-            />
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="date"
-                value={form.issue_date}
-                onChange={(e) => setForm((p) => ({ ...p, issue_date: e.target.value }))}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-              />
-              <input
-                type="date"
-                value={form.due_date}
-                onChange={(e) => setForm((p) => ({ ...p, due_date: e.target.value }))}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                value={form.currency}
-                onChange={(e) => setForm((p) => ({ ...p, currency: e.target.value.toUpperCase() }))}
-                placeholder="Currency"
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-              />
-              <input
-                type="number"
-                min={0}
-                value={form.amount_total}
-                onChange={(e) => setForm((p) => ({ ...p, amount_total: e.target.value }))}
-                placeholder="Amount *"
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-              />
-            </div>
-            <select
-              value={form.status}
-              onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as InvoiceRow["status"] }))}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-            >
-              <option value="unpaid">Unpaid</option>
-              <option value="draft">Draft</option>
-              <option value="paid">Paid</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-            <textarea
-              value={form.notes}
-              onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-              placeholder="Notes"
-              rows={2}
-              className="col-span-1 md:col-span-2 w-full resize-none rounded-md border border-gray-300 p-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-            />
-          </div>
-          <div className="mt-3 flex justify-end gap-2">
-            <button
-              onClick={resetForm}
-              className="rounded-md border px-4 py-2 text-sm hover:bg-gray-50"
-              type="button"
-            >
-              Reset
-            </button>
-            <button
-              onClick={createInvoice}
-              disabled={isCreating}
-              className="rounded-md bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-700 disabled:opacity-60"
-            >
-              {isCreating ? "Creating…" : "Create"}
-            </button>
-          </div>
-        </Card>
-      )}
 
       {/* List */}
       {loadingInitial ? (

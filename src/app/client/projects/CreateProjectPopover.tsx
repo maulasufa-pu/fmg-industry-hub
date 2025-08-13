@@ -1,43 +1,29 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import { ensureFreshSession, withTimeout, withSignal, getSupabaseClient } from "@/lib/supabase/client";
+import { getSupabaseClient } from "@/lib/supabase/client";
 import { Close } from "@/icons";
 
-/** ---------- CONFIG: Genre ---------- */
+/** ---------- CONFIG ---------- */
 const GENRES = [
   "Pop","R&B","Hip-Hop","Jazz","Rock","Indie","Electronic","EDM","House","Techno",
   "Folk","Country","Gospel","Classical","Lo-fi","Ambient","Reggae","Latin","K-Pop","J-Pop",
 ];
-
 const SUBGENRES = [
   "Synth-pop","Bedroom Pop","Neo-Soul","Trap","Boom Bap","Bebop","Fusion","Alt-Rock","Shoegaze",
   "Indie Folk","Orchestral","Chillhop","Drum & Bass","Future Bass","Deep House","Afrobeats","City Pop","Bossa Nova",
 ];
 
-/** ---------- CATALOG ---------- */
-// Semua harga contoh (IDR). Silakan ganti sesuai rate kamu.
 type ServiceKey =
-  | "songwriting"
-  | "composition"
-  | "arrangement"
-  | "digital_production"
-  | "sound_design"
-  | "editing"
-  | "mixing"
-  | "mastering"
-  | "publishing_admin"
-  | "recording_studio"
-  | "vocal_directing"
-  | "mv_directing"
-  | "social_media_mgmt"
-  | "artist_management"
-  | "music_marketing";
+  | "songwriting" | "composition" | "arrangement" | "digital_production" | "sound_design"
+  | "editing" | "mixing" | "mastering" | "publishing_admin"
+  | "recording_studio" | "vocal_directing"
+  | "mv_directing" | "social_media_mgmt" | "artist_management" | "music_marketing";
 
 type ServiceItem = {
   key: ServiceKey;
   label: string;
-  price: number;          // IDR (flat)
-  isSubscription?: boolean; // per month
+  price: number;
+  isSubscription?: boolean;
   group: "core" | "additional" | "business";
 };
 
@@ -66,7 +52,7 @@ type Bundle = {
   key: BundleKey;
   label: string;
   includes: ServiceKey[];
-  bundlePrice: number; // total khusus bundle (lebih murah dari sum harga)
+  bundlePrice: number;
   note?: string;
 };
 const BUNDLES: Bundle[] = [
@@ -86,23 +72,38 @@ const BUNDLES: Bundle[] = [
   },
 ];
 
-/** ---------- UTILS ---------- */
 const idr = (n: number) => `IDR ${n.toLocaleString("id-ID")}`;
 
-type Props = {
-  open: boolean;
-  onClose: () => void;
-  onSaved?: () => void;
+type Props = { open: boolean; onClose: () => void; onSaved?: () => void; };
+
+// di atas: boleh tambahkan tipe ringan (opsional)
+type SubmitPayload = {
+  songTitle: string;
+  artistName: string;
+  genre?: string;
+  subGenre?: string;
+  description?: string;
+  selectedServices: { key: string; price: number; label: string; isSubscription?: boolean }[];
+  bundle?: { label: string; bundlePrice: number; includes: string[] } | null;
+  startDate?: string | null;
+  deadline?: string | null;
+  deliveryFormat?: string[];
+  referenceLinks?: string; // newline separated
+  paymentPlan: "upfront" | "half" | "milestone";
+  ndaRequired?: boolean;
+  preferredEngineerId?: string | null;
+  total: number;
 };
+
 
 export default function CreateProjectPopover({ open, onClose, onSaved }: Props) {
   const supabase = useMemo(() => getSupabaseClient(), []);
-  // step
-  const [step, setStep] = useState<1 | 2>(1);
+
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // form 1
+  // Step 1
   const [songTitle, setSongTitle] = useState("");
   const [albumTitle, setAlbumTitle] = useState("");
   const [artistName, setArtistName] = useState("");
@@ -110,10 +111,76 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
   const [subGenre, setSubGenre] = useState<string>("");
   const [description, setDescription] = useState("");
 
-  // form 2: services
+  // Step 2
   const [selectedServices, setSelectedServices] = useState<Set<ServiceKey>>(new Set());
   const [selectedBundle, setSelectedBundle] = useState<BundleKey | null>(null);
 
+  // Step 3
+  const [startDate, setStartDate] = useState("");
+  const [deadline, setDeadline] = useState("");
+  const [deliveryFormat, setDeliveryFormat] = useState<string[]>([]);
+  const [referenceLinks, setReferenceLinks] = useState<string>("");
+  const [paymentPlan, setPaymentPlan] = useState<"upfront" | "half" | "milestone">("half");
+  const [agree, setAgree] = useState(false);
+  const [ndaRequired, setNdaRequired] = useState(false);
+  const [preferredEngineerId, setPreferredEngineerId] = useState<string>("");
+
+  // helper kecil untuk merangkai payload sesuai route.ts server
+  const buildPayload = (): SubmitPayload => {
+    const chosen = Array.from(selectedServices);
+    const selectedServicesForApi = chosen.map((k) => {
+      const s = SERVICES.find((x) => x.key === k)!;
+      return { key: s.key, price: s.price, label: s.label, isSubscription: s.isSubscription };
+    });
+
+    const bundleObj = selectedBundle
+      ? (() => {
+          const b = BUNDLES.find((x) => x.key === selectedBundle)!;
+          return { label: b.label, bundlePrice: b.bundlePrice, includes: b.includes };
+        })()
+      : null;
+
+    return {
+      songTitle,
+      artistName,
+      genre,
+      subGenre,
+      description,
+      selectedServices: selectedServicesForApi,
+      bundle: bundleObj,
+      startDate: startDate || null,
+      deadline: deadline || null,
+      deliveryFormat,
+      referenceLinks,
+      paymentPlan,
+      ndaRequired,
+      preferredEngineerId: preferredEngineerId || null,
+      total, // sudah kamu hitung di client
+    };
+  };
+
+
+  // engineers dropdown
+  const [engineers, setEngineers] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, name")
+        .eq("role", "engineer")
+        .order("name", { ascending: true });
+
+      if (!error) {
+        setEngineers((data ?? []).map((r) => ({
+          id: r.id as string,
+          name: (r as any).name as string,
+        })));
+      }
+    })();
+  }, [open, supabase]);
+
+  // lifecycle
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -123,31 +190,32 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
 
   useEffect(() => {
     if (!open) return;
-    // reset when open
+    // reset all when opened
     setStep(1); setSaving(false); setError(null);
-    setSongTitle(""); setAlbumTitle(""); setArtistName(""); setGenre(""); setSubGenre(""); setDescription("");
+    setSongTitle(""); setAlbumTitle(""); setArtistName("");
+    setGenre(""); setSubGenre(""); setDescription("");
     setSelectedServices(new Set()); setSelectedBundle(null);
+    setStartDate(""); setDeadline(""); setDeliveryFormat([]);
+    setReferenceLinks(""); setPaymentPlan("half"); setAgree(false);
+    setNdaRequired(false); setPreferredEngineerId("");
   }, [open]);
 
   if (!open) return null;
 
-  // calc total
+  // calculate total
   const bundle = selectedBundle ? BUNDLES.find(b => b.key === selectedBundle) : null;
   const sumSelected = Array.from(selectedServices).reduce((acc, key) => {
     const s = SERVICES.find(x => x.key === key);
     return acc + (s ? s.price : 0);
   }, 0);
-
   const bundleValue = bundle
     ? (() => {
-        // pastikan semua layanan bundle masuk hitungan bundle price, dan layanan lain di luar bundle ditambah normal
         const bundleSet = new Set(bundle.includes);
         const outside = Array.from(selectedServices).filter(k => !bundleSet.has(k));
         const outsideSum = outside.reduce((acc, k) => acc + (SERVICES.find(s => s.key === k)?.price || 0), 0);
         return bundle.bundlePrice + outsideSum;
       })()
     : sumSelected;
-
   const total = bundleValue;
 
   const toggleService = (key: ServiceKey) => {
@@ -157,60 +225,46 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
       return n;
     });
   };
+  const toggleFormat = (fmt: string) => {
+    setDeliveryFormat(prev => prev.includes(fmt) ? prev.filter(f => f !== fmt) : [...prev, fmt]);
+  };
 
-  const handleSaveDraft = async () => {
+  // B) Helper kecil buat tanggal & persen
+  const toDateStr = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
+  const pct = (n: number) => Math.max(0, Math.round(n)); // jaga-jaga pembulatan
+
+  // C) SUBMIT
+  // GANTI seluruh handleSubmit lama dengan ini
+  const handleSubmit = async () => {
     try {
-      setSaving(true); setError(null);
-      // await ensureFreshSession();
-      const { data: auth } = await supabase.auth.getUser();
-      const uid = auth.user?.id;
-      if (!uid) throw new Error("Not authenticated");
+      setSaving(true);
+      setError(null);
 
-      // Ringkasan layanan (tanpa ubah SQL): simpan ke description + budget_amount
-      const chosenServices = Array.from(selectedServices);
-      const serviceLines = chosenServices.map(k => {
-        const s = SERVICES.find(x => x.key === k)!;
-        return `- ${s.label}${s.isSubscription ? " (subscription)" : ""} — ${idr(s.price)}`;
+      // pastikan user login (opsional: hanya untuk UX; auth asli ditangani di server route)
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user?.id) throw new Error("Not authenticated");
+
+      const res = await fetch("/api/projects/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // penting: biar cookies Supabase (sb-*) ikut ke server route
+        body: JSON.stringify(buildPayload()),
       });
 
-      const bundleLine = bundle ? `Bundle: ${bundle.label} — ${idr(bundle.bundlePrice)}` : null;
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json?.error || "Failed to submit project");
+      }
 
-      const fullDescription =
-        [
-          description?.trim(),
-          "",
-          "— Requested Services —",
-          ...(bundleLine ? [bundleLine] : []),
-          ...serviceLines,
-          "",
-          `Total Estimate: ${idr(total)}`,
-          "",
-          `Song Title: ${songTitle || "-"}`,
-          `Album Title: ${albumTitle || "-"}`,
-          `Genre: ${genre || "-"} / ${subGenre || "-"}`,
-        ].filter(Boolean).join("\n");
-
-      const { error: insertErr } = await supabase
-        .from("projects")
-        .insert({
-          client_id: uid,
-          title: songTitle || "(Untitled)",
-          artist_name: artistName || null,
-          genre: genre || null,
-          stage: "drafting",     // enum project_stage
-          status: "pending",     // enum project_status
-          description: fullDescription,
-          budget_amount: total || null,
-          budget_currency: "IDR",
-          // progress_percent biarkan default
-        });
-
-      if (insertErr) throw insertErr;
-
+      // sukses → json = { project_id }
       onSaved?.();
       onClose();
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to save draft");
+
+      // (opsional) arahkan ke halaman project
+      // router.push(`/client/projects/${json.project_id}`);
+
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to submit project");
     } finally {
       setSaving(false);
     }
@@ -231,19 +285,12 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
         onClick={() => toggleService(s.key)}
         className={[
           "group relative flex items-start gap-3 rounded-xl border px-3 py-3 text-left transition",
-          active
-            ? "border-primary-60 bg-primary-50/10"
-            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50",
+          active ? "border-primary-60 bg-primary-50/10" : "border-gray-200 hover:border-gray-300 hover:bg-gray-50",
         ].join(" ")}
       >
-        <div className={[
-          "mt-0.5 h-4 w-4 rounded border",
-          active ? "bg-primary-60 border-primary-60" : "bg-white border-gray-300",
-        ].join(" ")} />
+        <div className={["mt-0.5 h-4 w-4 rounded border", active ? "bg-primary-60 border-primary-60" : "bg-white border-gray-300"].join(" ")} />
         <div className="min-w-0">
-          <div className="text-sm font-medium text-gray-900">
-            {s.label}{s.isSubscription ? " • /mo" : ""}
-          </div>
+          <div className="text-sm font-medium text-gray-900">{s.label}{s.isSubscription ? " • /mo" : ""}</div>
           <div className="text-xs text-gray-500">{idr(s.price)}</div>
         </div>
       </button>
@@ -252,14 +299,13 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
 
   return (
     <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm flex items-start justify-center overflow-y-auto" onClick={(e)=>{ if(e.target===e.currentTarget) onClose(); }}>
-      {/* margin biar background nampak di pinggir */}
       <div className="mx-4 my-6 w-full max-w-6xl">
         <div className="rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 overflow-hidden">
           {/* header */}
           <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-white/90 backdrop-blur px-5 py-3">
             <div className="flex items-center gap-3">
               <h2 className="text-base font-semibold text-gray-900">Create Project</h2>
-              <div className="text-xs text-gray-500">Step {step} of 2</div>
+              <div className="text-xs text-gray-500">Step {step} of 3</div>
             </div>
             <button
               onClick={onClose}
@@ -366,6 +412,114 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
                 </Section>
               </div>
             )}
+
+            {step === 3 && (
+              <div className="space-y-6">
+                {/* Review */}
+                <Section title="Review">
+                  <div className="rounded-xl border p-3 text-sm">
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div><span className="text-gray-500">Song</span><div className="font-medium">{songTitle || "-"}</div></div>
+                      <div><span className="text-gray-500">Artist</span><div className="font-medium">{artistName || "-"}</div></div>
+                      <div><span className="text-gray-500">Album</span><div className="font-medium">{albumTitle || "-"}</div></div>
+                      <div><span className="text-gray-500">Genre</span><div className="font-medium">{genre || "-"}{subGenre ? ` / ${subGenre}` : ""}</div></div>
+                    </div>
+                    <div className="mt-3">
+                      <div className="text-gray-500">Services</div>
+                      <ul className="list-disc pl-5">
+                        {Array.from(selectedServices).map(k => {
+                          const s = SERVICES.find(x => x.key === k)!;
+                          return <li key={k}>{s.label}{s.isSubscription ? " (subscription)" : ""} — {idr(s.price)}</li>;
+                        })}
+                        {bundle && <li><strong>Bundle:</strong> {bundle.label} — {idr(bundle.bundlePrice)}</li>}
+                      </ul>
+                    </div>
+                    {description?.trim() && (
+                      <div className="mt-3">
+                        <div className="text-gray-500">Brief</div>
+                        <div className="whitespace-pre-wrap">{description}</div>
+                      </div>
+                    )}
+                  </div>
+                </Section>
+
+                {/* Preferences */}
+                <Section title="Preferences">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-sm text-gray-700">Target Start</label>
+                      <input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)}
+                        className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-primary-60 outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-700">Deadline</label>
+                      <input type="date" value={deadline} onChange={e=>setDeadline(e.target.value)}
+                        className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-primary-60 outline-none" />
+                    </div>
+                  </div>
+
+                  <div className="mt-3">
+                    <div className="text-sm text-gray-700 mb-1">Delivery Format</div>
+                    <div className="flex flex-wrap gap-2">
+                      {["WAV 24-bit","MP3","STEMS","Project File"].map(fmt => {
+                        const active = deliveryFormat.includes(fmt);
+                        return (
+                          <button key={fmt} type="button" onClick={()=>toggleFormat(fmt)}
+                            className={`rounded-full border px-3 py-1 text-xs ${active ? "border-primary-60 bg-primary-50/10" : "border-gray-300 hover:bg-gray-50"}`}>
+                            {fmt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="mt-3">
+                    <label className="block text-sm text-gray-700">Reference links (YouTube/Spotify/Drive)</label>
+                    <textarea rows={2} value={referenceLinks} onChange={e=>setReferenceLinks(e.target.value)}
+                      placeholder="Pisahkan dengan baris baru"
+                      className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-primary-60 outline-none" />
+                  </div>
+
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-sm text-gray-700">Preferred Engineer</label>
+                      <select
+                        value={preferredEngineerId}
+                        onChange={(e)=>setPreferredEngineerId(e.target.value)}
+                        className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-primary-60 outline-none"
+                      >
+                        <option value="">No preference</option>
+                        {engineers.map((e)=>(
+                          <option key={e.id} value={e.id}>{e.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-2 mt-6">
+                      <input id="nda" type="checkbox" checked={ndaRequired} onChange={e=>setNdaRequired(e.target.checked)} />
+                      <label htmlFor="nda" className="text-sm text-gray-700">NDA required</label>
+                    </div>
+                  </div>
+                </Section>
+
+                {/* Payment */}
+                <Section title="Payment Plan">
+                  <select value={paymentPlan} onChange={e=>setPaymentPlan(e.target.value as typeof paymentPlan)}
+                    className="rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-primary-60 outline-none">
+                    <option value="upfront">100% Up-front</option>
+                    <option value="half">50% DP / 50% Delivery</option>
+                    <option value="milestone">Milestone (25/50/25)</option>
+                  </select>
+                </Section>
+
+                {/* Agreement */}
+                <div className="flex items-start gap-2">
+                  <input id="agree" type="checkbox" checked={agree} onChange={e=>setAgree(e.target.checked)} className="mt-1"/>
+                  <label htmlFor="agree" className="text-sm text-gray-700">
+                    I agree with the deliverables & payment plan above.
+                  </label>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* footer */}
@@ -374,45 +528,37 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
               <div className="text-sm text-gray-700">
                 <span className="font-medium">Total Estimate:</span>{" "}
                 <span className="font-semibold text-gray-900">{idr(total)}</span>
-                {selectedBundle && <span className="ml-2 text-xs text-primary-60">(Bundle applied)</span>}
+                {bundle && <span className="ml-2 text-xs text-primary-60">(Bundle applied)</span>}
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={onClose}
-                  className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
-                >
-                  Close
-                </button>
+                <button onClick={onClose} className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">Close</button>
 
                 {step > 1 && (
-                  <button
-                    onClick={()=>setStep(1)}
-                    className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
-                  >
+                  <button onClick={()=>setStep((s)=> (s === 3 ? 2 : 1))} className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
                     Back
                   </button>
                 )}
 
-                {step < 2 ? (
+                {step < 3 ? (
                   <button
-                    onClick={()=>setStep(2)}
-                    disabled={!songTitle.trim()}
+                    onClick={() => setStep((s) => (s === 1 ? 2 : 3))}
+                    disabled={step === 1 ? !songTitle.trim() : (selectedServices.size === 0 && !selectedBundle)}
                     className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-110 disabled:opacity-50"
                   >
                     Next
                   </button>
                 ) : (
                   <button
-                    onClick={handleSaveDraft}
-                    disabled={saving || !songTitle.trim()}
+                    onClick={handleSubmit}
+                    disabled={saving || !agree || !songTitle.trim()}
                     className="inline-flex items-center rounded-lg bg-primary-60 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-95 disabled:opacity-60"
                   >
-                    {saving ? "Saving…" : "Save as draft"}
+                    {saving ? "Submitting…" : "Submit Request"}
                   </button>
                 )}
               </div>
             </div>
-            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+            {error && <p className="mt-2 text-sm text-red-600">{String(error)}</p>}
           </div>
         </div>
       </div>

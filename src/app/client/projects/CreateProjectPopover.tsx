@@ -242,9 +242,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
     setDeliveryFormat(prev => prev.includes(fmt) ? prev.filter(f => f !== fmt) : [...prev, fmt]);
   };
 
-  // B) Helper kecil buat tanggal & persen
-  const toDateStr = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
-  const pct = (n: number) => Math.max(0, Math.round(n)); // jaga-jaga pembulatan
+
 
   // C) SUBMIT
   // GANTI seluruh handleSubmit lama dengan ini

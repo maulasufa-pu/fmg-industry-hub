@@ -31,7 +31,7 @@ export default function CallbackClient() {
           return;
         }
 
-        const { data: { session } } = await supabase.auth.getSession();
+        await supabase.auth.getSession();
 
         // Ambil user
         const { data: { user } } = await supabase.auth.getUser();

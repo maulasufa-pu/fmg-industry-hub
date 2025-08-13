@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
 import LogoutButton from "@/components/auth/LogoutButton";
-import { getSupabaseClient, ensureFreshSession } from "@/lib/supabase/client";
+import { getSupabaseClient } from "@/lib/supabase/client";
 import { User, Tags, Plane, Search, Pictures, Home, Folder, Cog, Bell, ChevronDown } from "@/icons";
-import rectangle14Stroke from "../icons/rectangle-14-stroke.svg";
 import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
 
 type ProfileLite = {
   fullName: string;
@@ -18,7 +18,7 @@ type ProfileLite = {
 const BUCKET = "avatars";
 const USE_PUBLIC_BUCKET = true;
 
-export const SidebarSection = () => {
+export function SidebarSection() {
   const supabase = useMemo(() => getSupabaseClient(), []);
   const router = useRouter();
   const pathname = usePathname() || "";
@@ -28,14 +28,13 @@ export const SidebarSection = () => {
   const [open, setOpen] = useState(false);
   const [profile, setProfile] = useState<ProfileLite | null>(null);
 
-  const [avatarPath, setAvatarPath] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const btnRef = useRef<HTMLButtonElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
 
   // helper: buat URL dari path storage
-  const refreshAvatarUrl = async (path: string | null) => {
+  const refreshAvatarUrl = useCallback(async (path: string | null) => {
     if (!path) { setAvatarUrl(null); return; }
     if (USE_PUBLIC_BUCKET) {
       const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
@@ -44,7 +43,7 @@ export const SidebarSection = () => {
       const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 10);
       setAvatarUrl(error ? null : data.signedUrl);
     }
-  };
+  }, [supabase, setAvatarUrl]);
 
   // Ambil profile Supabase + avatar path
   useEffect(() => {
@@ -60,7 +59,6 @@ export const SidebarSection = () => {
 
       if (!user) {
         setProfile(null);
-        setAvatarPath(null);
         setAvatarUrl(null);
       } else {
         const md = user.user_metadata || {};
@@ -89,17 +87,15 @@ export const SidebarSection = () => {
           role: md.role || "Client",
           avatar_path: p,
         });
-        setAvatarPath(p);
         await refreshAvatarUrl(p);
       }
 
       // subscribe perubahan auth
-      const { data: sub } = supabase.auth.onAuthStateChange(async (_e, s) => {
+      const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
         if (!mounted) return;
-        const u = s?.user;
+        const u = session?.user;
         if (!u) {
           setProfile(null);
-          setAvatarPath(null);
           setAvatarUrl(null);
         } else {
           const m = u.user_metadata || {};
@@ -125,7 +121,6 @@ export const SidebarSection = () => {
             role: m.role || "Client",
             avatar_path: p2,
           });
-          setAvatarPath(p2);
           await refreshAvatarUrl(p2);
         }
       });
@@ -135,7 +130,7 @@ export const SidebarSection = () => {
 
     boot();
     return () => { mounted = false; unsub?.(); };
-  }, [supabase]);
+  }, [supabase, refreshAvatarUrl]);
 
   // Tutup popover kalau klik di luar / ESC
   useEffect(() => {
@@ -171,8 +166,7 @@ export const SidebarSection = () => {
     if (match) setActiveMenuItem(match.id);
   }, [pathname, menuItems]);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setSearchValue(e.target.value);
+
 
   const itemBase =
     "group relative flex items-center gap-3 w-full px-3 py-3 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coolgray-30";
@@ -214,7 +208,7 @@ export const SidebarSection = () => {
             aria-label="User profile"
             aria-haspopup="menu"
             aria-expanded={open}
-            onClick={() => setOpen(v => !v)}
+            onClick={() => setOpen((v: boolean) => !v)}
             className={`${qaBtnBase} rounded-full`}
           >
             <span className="pointer-events-none absolute inset-0 rounded-full bg-black/5 opacity-0 group-active:opacity-100 transition-opacity duration-150" />
@@ -231,10 +225,13 @@ export const SidebarSection = () => {
               <div className="flex items-start gap-3 p-2">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-coolgray-10 text-coolgray-90 overflow-hidden">
                   {avatarUrl ? (
-                    <img
+                    <Image
                       src={avatarUrl}
                       alt={profile?.fullName || "User avatar"}
                       className="h-full w-full object-cover"
+                      width={40}
+                      height={40}
+                      unoptimized
                     />
                   ) : (
                     (profile?.fullName?.charAt(0) || "U").toUpperCase()
@@ -385,4 +382,4 @@ export const SidebarSection = () => {
       </nav>
     </aside>
   );
-};
+}

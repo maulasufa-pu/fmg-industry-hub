@@ -2,15 +2,17 @@
 "use client";
 
 import { useEffect } from "react";
-import { ensureFreshSession, getSupabaseClient } from "./client";
+import { ensureFreshSession } from "./client";
 
 export function useFocusWarmAuth() {
   useEffect(() => {
-    const warm = () =>
-      async () => {
-        const sb = getSupabaseClient();
-        await sb.auth.signOut();
-      };
+    const warm = async () => {
+      try {
+        await ensureFreshSession();
+      } catch (error) {
+        console.error('Session refresh failed:', error);
+      }
+    };
 
     const onFocus = () => warm();
     const onVisible = () => { if (document.visibilityState === "visible") warm(); };

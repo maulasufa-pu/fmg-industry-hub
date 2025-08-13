@@ -216,11 +216,12 @@ export default function ClientDashboard(): React.JSX.Element {
   useEffect(() => {
     if (rtBoundRef.current) return;
     rtBoundRef.current = true;
-
-    const ch = supabase.channel("realtime:dashboard");
-
-    ch.on(
-      "postgres_changes",
+    
+    const channelName = "realtime:dashboard:" + Math.random().toString(36).slice(2);
+    const ch = supabase.channel(channelName);
+    
+    // Setup channel handlers
+    ch.on("postgres_changes", 
       { event: "INSERT", schema: "public", table: "meetings" },
       (payload) => {
         const row = payload.new as MeetingRow;
@@ -236,8 +237,7 @@ export default function ClientDashboard(): React.JSX.Element {
       }
     );
 
-    ch.on(
-      "postgres_changes",
+    ch.on("postgres_changes",
       { event: "INSERT", schema: "public", table: "invoices" },
       (payload) => {
         const row = payload.new as InvoiceRow;
@@ -253,10 +253,18 @@ export default function ClientDashboard(): React.JSX.Element {
       }
     );
 
-    ch.subscribe();
+    // Subscribe channel
+    void ch.subscribe();
+
+    // Cleanup function
     return () => {
-      supabase.removeChannel(ch);
-      rtBoundRef.current = false;
+      try {
+        void supabase.removeChannel(ch);
+      } catch (error) {
+        console.error("Failed to remove channel:", error);
+      } finally {
+        rtBoundRef.current = false;
+      }
     };
   }, [supabase]);
 

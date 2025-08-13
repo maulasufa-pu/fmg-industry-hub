@@ -7,7 +7,7 @@
 import "@/app/globals.css";
 import RequireAuth from "@/components/auth/RequireAuth";
 import { SidebarSection } from "@/components/SidebarSection";
-import ClientAutoF5 from "@/components/ClientWakeReloader";
+
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
     return (

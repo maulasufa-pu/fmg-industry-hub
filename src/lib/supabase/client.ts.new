@@ -5,7 +5,7 @@ let _client: SupabaseClient | null = null;
 let _refreshLock: Promise<void> | null = null;
 
 /** Helper untuk menjalankan operasi dengan timeout */
-export async function withTimeout<T>(operation: Promise<T>, ms: number, errorMessage: string): Promise<T> {
+async function withTimeout<T>(operation: Promise<T>, ms: number, errorMessage: string): Promise<T> {
   return Promise.race([
     operation,
     new Promise<never>((_, reject) => 
@@ -56,12 +56,9 @@ export async function ensureFreshSession(): Promise<void> {
   let lockResolver: (() => void) | undefined;
 
   try {
-    // Tunggu lock dengan timeout dan retry limit
+    // Tunggu lock dengan timeout
     const start = Date.now();
-    let retryCount = 0;
-    const MAX_RETRIES = 5;
-    
-    while (_refreshLock && retryCount < MAX_RETRIES) {
+    while (_refreshLock) {
       if (Date.now() - start > LOCK_TIMEOUT) {
         throw new Error('Timeout waiting for refresh lock');
       }
@@ -72,14 +69,8 @@ export async function ensureFreshSession(): Promise<void> {
           1000,
           'Lock wait timeout'
         );
-        break; // Berhasil mendapatkan lock
       } catch {
-        retryCount++;
-        if (retryCount === MAX_RETRIES) {
-          throw new Error('Max retry attempts exceeded waiting for lock');
-        }
-        // Tunggu sebentar sebelum retry
-        await new Promise(resolve => setTimeout(resolve, 200));
+        continue; // Ignore timeout dan coba lagi
       }
     }
 

@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useLayoutEffect, useState, useCallback } from "react";
 import { Search } from "@/icons";
 
 // Types
@@ -58,7 +58,7 @@ export const ProjectTabsSection = ({
   const listRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLSpanElement>(null);
 
-  const updateIndicator = () => {
+  const updateIndicator = useCallback(() => {
     const container = listRef.current;
     const indicator = indicatorRef.current;
     if (!container || !indicator) return;
@@ -75,7 +75,7 @@ export const ProjectTabsSection = ({
 
     indicator.style.width = `${aRect.width}px`;
     indicator.style.transform = `translateX(${x}px)`;
-  };
+  }, [activeTab]);
 
   useLayoutEffect(() => {
     updateIndicator();
@@ -86,7 +86,7 @@ export const ProjectTabsSection = ({
       ro.disconnect();
       window.removeEventListener("resize", updateIndicator);
     };
-  }, [activeTab, tabs.length]);
+  }, [activeTab, tabs.length, updateIndicator]);
 
   const handleTabClick = (tab: Tab) => {
     if (tab.isDisabled) return;

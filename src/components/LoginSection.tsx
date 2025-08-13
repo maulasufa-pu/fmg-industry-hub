@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { Apple, Controls, Google, Twitter } from "@/icons";
+import { Google } from "@/icons";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getSupabaseClient } from "@/lib/supabase/client"; // pastikan file ini ada seperti instruksi sebelumnya
-import sep from "../icons/Sep.svg";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
 export const LoginSection = () => {
   const [email, setEmail] = useState("");
@@ -56,13 +55,15 @@ export const LoginSection = () => {
   };
 
   const msg = qp.get("m");
-  {msg === "please_signup_with_google_first" && (
-    <p className="text-xs text-red-600 text-center">Please sign up with Google first.</p>
-  )}
-
+  
 
   return (
     <div className="flex flex-col w-full max-w-md sm:max-w-lg lg:max-w-xl items-center gap-5 px-6 sm:px-7 md:px-8 py-6 sm:py-8 bg-defaultwhite border border-coolgray-20 rounded-xl">
+      {msg && (
+        <p className="text-[13px] text-primary-60 self-stretch text-center">
+          {msg}
+        </p>
+      )}
       <header className="flex flex-col items-center gap-2 relative self-stretch w-full flex-[0_0_auto]">
         <div className="flex flex-col items-center gap-2 relative self-stretch w-full flex-[0_0_auto]">
           <h1 className="relative self-stretch mt-[-1.00px] font-heading-2 font-[number:var(--heading-2-font-weight)] text-coolgray-90 text-[length:var(--heading-2-font-size)] text-center tracking-[var(--heading-2-letter-spacing)] leading-[var(--heading-2-line-height)] [font-style:var(--heading-2-font-style)]">
@@ -74,6 +75,12 @@ export const LoginSection = () => {
           Please log in to continue
         </p>
       </header>
+
+      {msg && (
+        <p className="text-[13px] text-primary-90 self-stretch text-center">
+          {msg}
+        </p>
+      )}
 
       <form
         onSubmit={handleSubmit}

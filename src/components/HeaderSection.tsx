@@ -2,9 +2,8 @@
 
 import React, { useState } from "react";
 
-import { Bell, ChevronDown, Cog, User } from "@/icons";
+import { Bell, ChevronDown, Cog } from "@/icons";
 import type { JSX } from "react";
-import LogoutButton from "@/components/auth/LogoutButton";
 import UserMenu from "@/components/UserMenu";
 
 

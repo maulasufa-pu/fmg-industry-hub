@@ -1,9 +1,10 @@
 // src/components/SettingsSection.tsx
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { User, Check, Close } from "@/icons";
-import { ensureFreshSession, withTimeout, withSignal, getSupabaseClient } from "@/lib/supabase/client";
+import Image from "next/image";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
 import AccountPanel from "@/components/settings/AccountPanel";
 import BillingPanel from "@/components/settings/BillingPanel";
@@ -43,7 +44,7 @@ export const SettingsSection = () => {
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   // helper: buat URL dari path
-  const refreshAvatarUrl = async (path: string | null) => {
+  const refreshAvatarUrl = useCallback(async (path: string | null) => {
     if (!path) { setAvatarUrl(null); return; }
     if (USE_PUBLIC_BUCKET) {
       const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
@@ -52,16 +53,19 @@ export const SettingsSection = () => {
       const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 10);
       if (!error) setAvatarUrl(data.signedUrl);
     }
-  };
+  }, [supabase]);
 
   // ambil dimensi image
   const getImageSize = (file: File): Promise<{w:number;h:number}> => {
     return new Promise((resolve, reject) => {
       const url = URL.createObjectURL(file);
-      const img = new Image();
-      img.onload = () => { resolve({ w: img.naturalWidth, h: img.naturalHeight }); URL.revokeObjectURL(url); };
-      img.onerror = reject;
-      img.src = url;
+      const imgElement = document.createElement('img');
+      imgElement.onload = () => { 
+        resolve({ w: imgElement.naturalWidth, h: imgElement.naturalHeight }); 
+        URL.revokeObjectURL(url); 
+      };
+      imgElement.onerror = reject;
+      imgElement.src = url;
     });
   };
 
@@ -101,7 +105,7 @@ export const SettingsSection = () => {
     })();
 
     return () => { aborted = true; };
-  }, [supabase]);
+  }, [supabase, refreshAvatarUrl]);
 
   const handleInputChange = (field: keyof FormData, value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -290,10 +294,12 @@ export const SettingsSection = () => {
                       aria-label="Profile photo"
                     >
                       {avatarUrl ? (
-                        <img
+                        <Image
                           src={avatarUrl}
                           alt="Profile avatar"
                           className="w-full h-full object-cover"
+                          width={96}
+                          height={96}
                         />
                       ) : (
                         <User />

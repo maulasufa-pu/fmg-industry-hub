@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     }
 
     // validate body
-    const json = await req.json();
+    const json = (await req.json()) as unknown;
     const body = PayloadSchema.parse(json);
 
     // sanitize dates
@@ -148,14 +148,18 @@ export async function POST(req: Request) {
       { title: "Mastering",         due_date: toDateStr(end),   order_no: 4 },
     ].map((m) => ({ ...m, project_id: projectId, status: "pending" as const }));
 
+    type MilestoneRow = { id: string; title: string; order_no: number };
+
     const { data: msData, error: msErr } = await srv
-      .from("project_milestones")
-      .insert(msRows)
-      .select("id,title,order_no");
+    .from("project_milestones")
+    .insert(msRows)
+    .select("id,title,order_no")
+    .returns<MilestoneRow[]>();
     if (msErr) throw msErr;
 
+    // tanpa any:
     const msByTitle = new Map<string, string>(
-      (msData ?? []).map((m: any) => [m.title as string, m.id as string])
+        (msData ?? []).map((m) => [m.title, m.id])
     );
 
     /** 3) reference links */
@@ -212,17 +216,19 @@ export async function POST(req: Request) {
       ];
     }
 
-    let createdSchedules: { id: string; label: string }[] = [];
+    type PaymentScheduleRow = { id: string; label: string };
+
+    let createdSchedules: PaymentScheduleRow[] = [];
     if (schedules.length) {
-      const { data: schData, error: schErr } = await srv
+    const { data: schData, error: schErr } = await srv
         .from("payment_schedules")
         .insert(schedules)
-        .select("id,label");
-      if (schErr) throw schErr;
-      createdSchedules = (schData ?? []).map((r: any) => ({
-        id: r.id as string,
-        label: r.label as string,
-      }));
+        .select("id,label")
+        .returns<PaymentScheduleRow[]>();
+    if (schErr) throw schErr;
+
+    // tanpa any:
+    createdSchedules = schData ?? [];
     }
 
     return NextResponse.json({
@@ -230,9 +236,12 @@ export async function POST(req: Request) {
       milestones: msData,
       payment_schedules: createdSchedules,
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("[/api/projects/submit] error:", e);
-    const msg = typeof e?.message === "string" ? e.message : String(e);
+    const msg =
+        typeof e === "object" && e !== null && "message" in e && typeof (e as { message?: unknown }).message === "string"
+        ? (e as { message: string }).message
+        : String(e);
     return NextResponse.json({ error: msg }, { status: 500 });
-  }
+    }
 }

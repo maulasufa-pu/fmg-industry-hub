@@ -161,24 +161,37 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
 
 
   // engineers dropdown
+  type EngineerRow = {
+    id: string;
+    name: string | null; // kolom kamu boleh null
+  };
+
   const [engineers, setEngineers] = useState<{ id: string; name: string }[]>([]);
+
   useEffect(() => {
     if (!open) return;
     (async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, name")
+        .select("id,name")
         .eq("role", "engineer")
-        .order("name", { ascending: true });
+        .order("name", { ascending: true })
+        .returns<EngineerRow[]>();
 
-      if (!error) {
-        setEngineers((data ?? []).map((r) => ({
-          id: r.id as string,
-          name: (r as any).name as string,
-        })));
+      if (error) {
+        console.error(error);
+        return;
       }
+
+      setEngineers(
+        (data ?? []).map((r) => ({
+          id: r.id,
+          name: r.name ?? "Unnamed",
+        }))
+      );
     })();
   }, [open, supabase]);
+
 
   // lifecycle
   useEffect(() => {

@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useEffect, useMemo, useRef, useState, startTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -20,32 +19,39 @@ export default function RequireAuth({ children }: Props) {
   const supabase = useMemo(() => getSupabaseClient(), []);
 
   const [status, setStatus] = useState<"checking" | "authed" | "guest">("checking");
+  const statusRef = useRef<typeof status>("checking");
+  useEffect(() => { statusRef.current = status; }, [status]);
+
   const redirectingRef = useRef(false);
-  const mountedRef = useRef(true);
+  const mountedRef = useRef(false);
   const lastKickRef = useRef(0);
 
+  const isLoginPage = pathname?.startsWith("/login") ?? false;
+
   // Satu-satunya tempat redirect
-  const goLoginOnce = (reason: string) => {
-    if (redirectingRef.current) return;
+  const goLoginOnce = async (reason: string) => {
+    if (redirectingRef.current || isLoginPage) return;
+
+    // Double-check masih guest sebelum redirect
+    try {
+      const { data: { session } } = await withTimeout(supabase.auth.getSession(), 400, "pre-redirect-getSession");
+      if (session || statusRef.current === "authed") return;
+    } catch {/* abaikan */}
+
     redirectingRef.current = true;
     const to = `/login?redirectedFrom=${encodeURIComponent(pathname || "/client")}`;
-    // Hindari throwing sinkron ke render pipeline
     startTransition(() => router.replace(to));
   };
 
   const checkSession = async () => {
     try {
-      // 1) getSession cepat; kalau nge-timeout → refreshSession sekali
       const getFast = async () => {
         try {
           return await withTimeout(supabase.auth.getSession(), 800, "getSession");
         } catch {
-          // refresh sekali
           try {
             await withTimeout(supabase.auth.refreshSession(), 900, "refreshSession");
-          } catch {
-            // biarkan lanjut ke getSession biasa; kalau gagal, dianggap tidak login
-          }
+          } catch {/* biarkan lanjut */}
           return await withTimeout(supabase.auth.getSession(), 800, "getSession-2");
         }
       };
@@ -53,33 +59,24 @@ export default function RequireAuth({ children }: Props) {
       const { data: { session } } = await getFast();
       if (!mountedRef.current) return;
 
-      if (session) {
-        setStatus("authed");
-      } else {
-        setStatus("guest");
-        goLoginOnce("no-session");
-      }
-    } catch {
+      if (session) setStatus("authed");
+      else { setStatus("guest"); void goLoginOnce("no-session"); }
+    } catch { 
       if (!mountedRef.current) return;
       setStatus("guest");
-      goLoginOnce("error");
+      void goLoginOnce("error");
     }
   };
 
   useEffect(() => {
     mountedRef.current = true;
-    // Cek segera saat mount
     void checkSession();
 
-    // Reaksi realtime saat token berubah
-    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+    // ✅ onAuthStateChange: destructuring & cleanup yang benar
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_evt, session) => {
       if (!mountedRef.current) return;
-      if (session) {
-        setStatus("authed");
-      } else {
-        setStatus("guest");
-        goLoginOnce("state-change");
-      }
+      if (session) setStatus("authed");
+      else { setStatus("guest"); void goLoginOnce("state-change"); }
     });
 
     // Re-validate saat balik fokus / BFCache
@@ -87,7 +84,7 @@ export default function RequireAuth({ children }: Props) {
       const now = Date.now();
       if (now - lastKickRef.current < 500) return; // debounce
       lastKickRef.current = now;
-      if (status === "checking") return; // sudah jalan
+      if (statusRef.current === "checking") return; // sudah jalan
       setStatus("checking");
       void checkSession();
     };
@@ -102,10 +99,10 @@ export default function RequireAuth({ children }: Props) {
       mountedRef.current = false;
       window.removeEventListener("pageshow", onShow);
       document.removeEventListener("visibilitychange", onVis);
-      sub?.subscription?.unsubscribe?.();
+      subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supabase]); // router/pathname tidak perlu di deps untuk mencegah re-init
+  }, [supabase, isLoginPage]);
 
   if (status !== "authed") {
     return (

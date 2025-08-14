@@ -162,7 +162,7 @@ export default function PageContent(): React.JSX.Element {
 
         if (tab === "Active") qBuilder = qBuilder.eq("is_active", true);
         else if (tab === "Finished") qBuilder = qBuilder.eq("is_finished", true);
-        else if (tab === "Pending") qBuilder = qBuilder.eq("is_active", false).eq("is_finished", false);
+        else if (tab === "Pending") qBuilder = qBuilder.eq("status", "pending");
         else if (tab === "Requested") qBuilder = qBuilder.eq("status", "requested");
 
         if (q) {

@@ -14,7 +14,7 @@ const SUBGENRES = [
   "Indie Folk","Orchestral","Chillhop","Drum & Bass","Future Bass","Deep House","Afrobeats","City Pop","Bossa Nova",
 ];
 
-const MIN_DESC = 150; // <<— deskripsi minimal
+const MIN_DESC = 150;
 
 type ServiceKey =
   | "songwriting" | "composition" | "arrangement" | "digital_production" | "sound_design"
@@ -29,7 +29,7 @@ type ProjectStatus =
 type ServiceItem = {
   key: ServiceKey;
   label: string;
-  price: number; // default price
+  price: number;
   isSubscription?: boolean;
   group: "core" | "additional" | "business";
 };
@@ -99,7 +99,7 @@ type SubmitPayload = {
   startDate?: string | null;
   deadline?: string | null;
   deliveryFormat?: string[];
-  referenceLinks?: string; // newline separated
+  referenceLinks?: string;
   paymentPlan: "upfront" | "half" | "milestone";
   ndaRequired?: boolean;
   preferredEngineerId?: string | null;
@@ -107,7 +107,7 @@ type SubmitPayload = {
   status?: ProjectStatus;
 };
 
-export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitted }: Props): React.JSX.Element | null {
+export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitted }: Props): React.JSX.Element {
   const supabase = useMemo(() => getSupabaseClient(), []);
   const router = useRouter();
   const mountedRef = useRef<boolean>(true);
@@ -116,10 +116,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // After-submit dialog
-  // const [showSubmitted, setShowSubmitted] = useState(false);
-  // const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
-  
   // Step 1
   const [songTitle, setSongTitle] = useState("");
   const [albumTitle, setAlbumTitle] = useState("");
@@ -131,7 +127,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   // Step 2
   const [selectedServices, setSelectedServices] = useState<Set<ServiceKey>>(new Set());
   const [selectedBundle, setSelectedBundle] = useState<BundleKey | null>(null);
-  // custom price per service (optional)
   const [customPrices, setCustomPrices] = useState<Partial<Record<ServiceKey, number>>>({});
 
   // Step 3
@@ -144,17 +139,15 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   const [ndaRequired, setNdaRequired] = useState(false);
   const [preferredEngineerId, setPreferredEngineerId] = useState<string>("");
 
-  // derived
   const bundle = selectedBundle ? BUNDLES.find(b => b.key === selectedBundle) ?? null : null;
 
-  // helpers
   const defaultPriceOf = (key: ServiceKey): number => SERVICES.find(s => s.key === key)?.price ?? 0;
 
   const resolvedPriceOf = (key: ServiceKey): number => {
     const def = defaultPriceOf(key);
     const cus = customPrices[key];
     if (cus == null || Number.isNaN(cus)) return def;
-    return Math.max(def, Math.round(cus)); // clamp min default + bulatkan
+    return Math.max(def, Math.round(cus));
   };
 
   const total = useMemo(() => {
@@ -172,7 +165,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     const inside = new Set<ServiceKey>(bundle?.includes ?? []);
     const selectedServicesForApi = chosen.map((k) => {
       const s = SERVICES.find((x) => x.key === k)!;
-      const price = inside.has(k) ? 0 : resolvedPriceOf(k); // item dalam bundle dibayar via bundle
+      const price = inside.has(k) ? 0 : resolvedPriceOf(k);
       return { key: s.key, price, label: s.label, isSubscription: s.isSubscription };
     });
     const bundleObj = bundle
@@ -198,7 +191,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     };
   };
 
-  // engineers dropdown
   type EngineerRow = { id: string; name: string | null };
   const [engineers, setEngineers] = useState<Array<{ id: string; name: string }>>([]);
 
@@ -238,7 +230,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     return () => ac.abort();
   }, [open, supabase]);
 
-  // lifecycle: esc to close
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -247,36 +238,29 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   }, [open, onClose]);
 
   const firstOpenRef = useRef(false);
-
-  // reset form setiap dibuka
   useEffect(() => {
     if (open && !firstOpenRef.current) {
       firstOpenRef.current = true;
-      // reset form sekali saat pertama kali dibuka
       setStep(1); setSaving(false); setError(null);
       setSongTitle(""); setAlbumTitle(""); setArtistName("");
       setGenre(""); setSubGenre(""); setDescription("");
       setSelectedServices(new Set()); setSelectedBundle(null);
       setCustomPrices({});
       setStartDate(""); setDeadline(""); setDeliveryFormat([]);
-      setReferenceLinks(""); // ← aman, hanya saat pertama buka
+      setReferenceLinks("");
       setPaymentPlan("half"); setAgree(false);
       setNdaRequired(false); setPreferredEngineerId("");
     }
     if (!open) {
-      firstOpenRef.current = false; // reset flag saat ditutup
+      firstOpenRef.current = false;
     }
   }, [open]);
-
-
-  if (!open) return null;
 
   const toggleService = (key: ServiceKey) => {
     setSelectedServices(prev => {
       const n = new Set(prev);
       if (n.has(key)) {
         n.delete(key);
-        // bersihkan custom price saat di-unselect
         setCustomPrices(p => {
           const { [key]: _omit, ...rest } = p;
           return rest;
@@ -296,7 +280,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     const def = defaultPriceOf(key);
     const n = Number(raw);
     if (!Number.isFinite(n)) {
-      // hapus custom, kembali ke default
       setCustomPrices(p => {
         const { [key]: _omit, ...rest } = p;
         return rest;
@@ -313,7 +296,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     milestone: "Milestone (25% – 50% – 25%)",
   };
 
-  // SUBMIT
   const handleSubmit = async () => {
     try {
       setSaving(true);
@@ -333,7 +315,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-      
+
       const payload: SubmitPayload = { ...buildPayload(), status: "requested" };
 
       const res = await fetch("/api/projects/submit", {
@@ -343,7 +325,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
         body: JSON.stringify(payload),
       });
 
-      // SELALU coba baca sebagai text dulu → parse JSON kalau ada body
       const text = await res.text();
       const json = text ? JSON.parse(text) as { project_id?: string; error?: string } : {};
 
@@ -351,12 +332,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
         throw new Error(json?.error || `Request failed (${res.status})`);
       }
 
-      // Berhasil
-      // setCreatedProjectId(json.project_id ?? null);
-      // setShowSubmitted(true); // tampilkan popover sukses (jangan langsung onClose)
       const newProjectId = json.project_id ?? null;
-
-      if (!res.ok) throw new Error(json?.error || "Failed to submit project");
 
       if (json.project_id) {
         await supabase
@@ -405,7 +381,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     );
   };
 
-  // Komponen kecil untuk checkbox kustom
+  /** Komponen kecil untuk checkbox kustom — SUDAH diperbaiki: sekarang return JSX */
   function FancyCheckbox({
     id,
     checked,
@@ -424,7 +400,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     };
     return (
       <>
-        {/* input hidden agar tetap bisa di-submit di form kalau perlu */}
         <input id={id} type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="sr-only" />
         <div
           role="checkbox"
@@ -447,20 +422,24 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
       </>
     );
   }
-  // END Komponen kecil untuk checkbox kustom
-    
+
+  // NOTE: komponen selalu mounted; visibilitas pakai class
   return (
     <div
-      className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/40 backdrop-blur-sm"
+      className={[
+        "fixed inset-0 z-40 flex items-start justify-center bg-black/40 backdrop-blur-sm transition",
+        open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+      ].join(" ")}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      aria-hidden={!open}
     >
       <div className="mx-4 my-6 w-full max-w-6xl">
         <div
-            className="overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
-            onPointerDown={(e) => e.stopPropagation()} // cegah event awal (sebelum focus)
-            onMouseDown={(e) => e.stopPropagation()}   // backup utk browser lama
-            onClick={(e) => e.stopPropagation()}       // opsional: ekstra aman
-          >
+          className="overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
+          onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* header */}
           <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-white/90 px-5 py-3 backdrop-blur">
             <div className="flex items-center gap-3">
@@ -476,8 +455,8 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
             </button>
           </div>
 
-          {/* content */}
-          <div className="px-5 py-4">
+          {/* content scrollable */}
+          <div className="px-5 py-4 overflow-y-auto max-h-[75vh]">
             {step === 1 && (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
@@ -631,7 +610,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                           const inBundle = !!bundle && bundle.includes.includes(key);
                           const custom = customPrices[key];
                           const resolved = inBundle ? 0 : resolvedPriceOf(key);
-                          const isCustom = !inBundle && custom != null; // penanda custom price
+                          const isCustom = !inBundle && custom != null;
                           return (
                             <div key={key} className="grid grid-cols-12 items-center border-t px-3 py-2 text-sm">
                               <div className="col-span-6">
@@ -773,6 +752,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                       className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
                     />
                   </div>
+
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <div>
                       <label className="block text-sm text-gray-700">Preferred Engineer</label>
@@ -787,15 +767,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                         ))}
                       </select>
                     </div>
-                    {/* <div className="mt-6 flex items-center gap-2">
-                      <input
-                        id="nda"
-                        type="checkbox"
-                        checked={ndaRequired}
-                        onChange={(e) => setNdaRequired(e.target.checked)}
-                      />
-                      <label htmlFor="nda" className="text-sm text-gray-700">NDA required</label>
-                    </div> */}
                   </div>
                 </Section>
 
@@ -824,6 +795,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                     })}
                   </div>
                 </Section>
+
                 {/* Agreement */}
                 <div className="flex items-start gap-2">
                   <FancyCheckbox id="agree" checked={agree} onChange={setAgree} />
@@ -836,7 +808,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
           </div>
 
           {/* footer */}
-          <div className="sticky bottom-0 z-10 border-t bg-white/90 px-5 py-3 backdrop-blur">
+          <div className="border-t bg-white/90 px-5 py-3 backdrop-blur">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-gray-700">
                 <span className="font-medium">Total:</span>{" "}

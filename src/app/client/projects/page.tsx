@@ -9,6 +9,7 @@ import { ProjectPaginationSection } from "./ProjectPaginationSection";
 import { withSignal, getSupabaseClient } from "@/lib/supabase/client";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
 import CreateProjectPopover from "./CreateProjectPopover";
+import SubmitSuccessForm from "@/components/SubmitSuccessForm"; // <-- tambahkan ini
 
 type TabKey = "All Project" | "Active" | "Finished" | "Pending" | "Requested";
 
@@ -46,6 +47,9 @@ export default function PageContent(): React.JSX.Element {
 
   // UI
   const [openCreate, setOpenCreate] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [submitInfo, setSubmitInfo] = useState<{ projectId: string | null; paymentPlan: "upfront" | "half" | "milestone" } | null>(null);
+
   const [activeTab, setActiveTab] = useState<TabKey>(initialTabFromUrl);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -71,7 +75,7 @@ export default function PageContent(): React.JSX.Element {
 
   // Spinner hanya untuk initial load
   const [loadingInitial, setLoadingInitial] = useState(true);
-  const [didInit, setDidInit] = useState(false); // <- NEW
+  const [didInit, setDidInit] = useState(false);
 
   // Abort
   const abortRef = useRef<AbortController | null>(null);
@@ -122,10 +126,8 @@ export default function PageContent(): React.JSX.Element {
     [supabase]
   );
 
-  // isInitial = true → hanya initial load yang tunjukkan spinner
   const fetchPage = useCallback(
     async (tab: TabKey, q: string, pageIdx: number, isInitial = false) => {
-      // Selalu buat AbortController baru
       abortRef.current = new AbortController();
       const ac = abortRef.current;
 
@@ -171,21 +173,20 @@ export default function PageContent(): React.JSX.Element {
 
   // initial
   useEffect(() => {
-  (async () => {
-    setPage(1);
-    // warm session supaya RLS nggak balikin 0 duluan
-    await supabase.auth.getSession().catch(() => {});
-    await fetchPage(initialTabFromUrl, "", 1, true); // spinner hanya di sini
-    setDidInit(true); // <- NEW
-  })();
-// eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
+    (async () => {
+      setPage(1);
+      await supabase.auth.getSession().catch(() => {});
+      await fetchPage(initialTabFromUrl, "", 1, true);
+      setDidInit(true);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // re-fetch tanpa spinner pada tab/search/page change
   useEffect(() => {
-  if (!didInit) return; // <- NEW: jangan nembak request kedua saat mount
-  fetchPage(activeTab, debouncedSearch, page, false);
-}, [didInit, activeTab, debouncedSearch, page, fetchPage]);
+    if (!didInit) return;
+    fetchPage(activeTab, debouncedSearch, page, false);
+  }, [didInit, activeTab, debouncedSearch, page, fetchPage]);
 
   useEffect(() => {
     const onClientRefresh = () => {
@@ -268,6 +269,21 @@ export default function PageContent(): React.JSX.Element {
             open={openCreate}
             onClose={() => setOpenCreate(false)}
             onSaved={() => fetchPage(activeTab, debouncedSearch, pageSafe /* no spinner */)}
+            onSubmitted={(info) => {
+              setOpenCreate(false);
+              setSubmitInfo(info);        // { projectId, paymentPlan }
+              setShowSuccess(true);       // buka modal sukses
+              fetchPage(activeTab, debouncedSearch, pageSafe);  // refresh list/counter
+              // optional kalau kamu masih pakai listener 'client-refresh'
+              // window.dispatchEvent(new Event("client-refresh"));
+            }}
+          />
+
+          <SubmitSuccessForm
+            open={showSuccess}
+            onClose={() => setShowSuccess(false)}
+            projectId={submitInfo?.projectId ?? null}
+            paymentPlan={submitInfo?.paymentPlan ?? "half"}
           />
         </>
       )}

@@ -607,6 +607,21 @@ export default function ProjectDetailPage(): React.JSX.Element {
     }
   };
 
+  useEffect(() => {
+    const onClientRefresh = () => {
+      // Trigger refetch utama (misal: project, drafts, revisions, posts, meetings)
+      setLoading(true);
+      // Anda bisa panggil semua fetch di sini sesuai kebutuhan
+      // Contoh: fetchProject(); fetchDrafts(); fetchRevisions(); fetchPosts(); fetchMeetings();
+      // Untuk demo, reload halaman saja:
+      window.location.reload();
+    };
+    window.addEventListener('client-refresh', onClientRefresh);
+    return () => {
+      window.removeEventListener('client-refresh', onClientRefresh);
+    };
+  }, []);
+
   if (loading) {
     return (
       <div className="p-6">

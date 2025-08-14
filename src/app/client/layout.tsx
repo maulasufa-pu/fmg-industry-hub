@@ -3,6 +3,7 @@
 
 // export const dynamic = "force-dynamic";
 // export const revalidate = 0;
+import { useReInitOnFocus } from "@/hooks/useReInitOnFocus";
 
 import "@/app/globals.css";
 import RequireAuth from "@/components/auth/RequireAuth";
@@ -12,6 +13,7 @@ import React from "react";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   // State dan handler refresh
+  useReInitOnFocus();
   const [loading, setLoading] = React.useState(false);
   const handleRefresh = async () => {
     setLoading(true);

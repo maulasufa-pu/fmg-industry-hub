@@ -310,15 +310,19 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
       if (selectedServices.size === 0 && !selectedBundle) {
         throw new Error("Pick at least one service or a bundle");
       }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("Not authenticated");
+      }
 
-      const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user?.id) throw new Error("Not authenticated");
-
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+      
       const payload: SubmitPayload = { ...buildPayload(), status: "requested" };
 
       const res = await fetch("/api/projects/submit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
         credentials: "include",
         body: JSON.stringify(payload),
       });

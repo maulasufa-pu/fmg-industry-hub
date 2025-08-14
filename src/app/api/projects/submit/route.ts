@@ -43,6 +43,11 @@ const PayloadSchema = z.object({
 });
 
 /** ---------- handler ---------- */
+export async function GET(req: Request) {
+  const h = req.headers.get("Authorization");
+  return NextResponse.json({ hasAuth: !!h, authPrefix: h?.slice(0, 10) ?? null });
+}
+
 export async function POST(req: Request) {
   try {
     // env guard
@@ -59,6 +64,7 @@ export async function POST(req: Request) {
     const cookieStore = cookies();
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
     const { data: auth } = await supabase.auth.getUser();
+
     const authHeader = req.headers.get("Authorization");
     const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
@@ -74,8 +80,7 @@ export async function POST(req: Request) {
       uid = u.user?.id ?? null;
     } else {
       // fallback ke cookies (kalau ada)
-      const cookieStore = cookies();
-      const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+      const supabase = createRouteHandlerClient({ cookies });
       const { data: u } = await supabase.auth.getUser();
       uid = u.user?.id ?? null;
     }

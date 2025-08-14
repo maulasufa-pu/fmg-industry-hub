@@ -1,66 +1,68 @@
 "use client";
 
-import React, { useEffect, useRef, startTransition } from "react";
+import React, { useEffect, useRef } from "react";
 import RequireAuth from "@/components/auth/RequireAuth";
 import { SidebarSection } from "@/components/SidebarSection";
-import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
-function withTimeout<T>(p: Promise<T>, ms: number, tag = "op"): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const t = window.setTimeout(
-      () => reject(new Error(`[timeout] ${tag} > ${ms}ms`)),
-      ms
-    );
-    p.then((v) => {
-      clearTimeout(t);
-      resolve(v);
-    }).catch((e) => {
-      clearTimeout(t);
-      reject(e);
-    });
-  });
-}
+const SOFT_REFRESH_COOLDOWN = 600;       // ms, debounce
+const HARD_REFRESH_AFTER = 10 * 60_000;  // ms, >10 menit idle → segarkan RSC sekali
 
-export default function ClientShell({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function ClientShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const supabase = getSupabaseClient();
+
   const busyRef = useRef(false);
   const lastRunRef = useRef(0);
+  const lastHardRef = useRef(0);
 
   useEffect(() => {
-    const recover = async () => {
+    const softRefresh = () => {
+      // biar komponen client (dashboard/projects/invoices/etc.) refetch tanpa remount
+      window.dispatchEvent(new Event("client-refresh"));
+    };
+
+    const maybeRecover = async (reason: "focus" | "visible" | "pageshow" | "pageshow-bfcache") => {
       const now = Date.now();
-      if (busyRef.current || now - lastRunRef.current < 600) return; // debounce
+      if (busyRef.current || now - lastRunRef.current < SOFT_REFRESH_COOLDOWN) return;
       busyRef.current = true;
 
       try {
-        const supabase = getSupabaseClient();
-        try {
-          await withTimeout(supabase.auth.getSession(), 700, "getSession");
-        } catch {
-          try {
-            await withTimeout(supabase.auth.refreshSession(), 800, "refreshSession");
-          } catch {
-            // ignore
+        // Pastikan session OK (ini tidak meremount UI)
+        await supabase.auth.getSession().catch(() => { /* ignore */ });
+
+        if (reason === "pageshow") {
+          // Restore normal: cukup soft refresh
+          softRefresh();
+        } else if (reason === "pageshow-bfcache") {
+          // BFCache restore: lakukan hard refresh sekali (jarang terjadi)
+          if (now - lastHardRef.current > 30_000) {
+            lastHardRef.current = now;
+            router.refresh(); // hanya di BFCache
+          }
+        } else {
+          // focus/visible:
+          // Kalau idle > HARD_REFRESH_AFTER, segarkan RSC sekali; selain itu soft saja
+          if (now - lastHardRef.current > HARD_REFRESH_AFTER) {
+            lastHardRef.current = now;
+            router.refresh(); // sesekali agar data server side ikut fresh
+          } else {
+            softRefresh();
           }
         }
-        startTransition(() => router.refresh());
       } finally {
         lastRunRef.current = Date.now();
         busyRef.current = false;
       }
     };
 
-    const onFocus = () => void recover();
+    const onFocus = () => { void maybeRecover("focus"); };
     const onVisibility = () => {
-      if (document.visibilityState === "visible") void recover();
+      if (document.visibilityState === "visible") void maybeRecover("visible");
     };
     const onPageShow = (e: PageTransitionEvent) => {
-      void recover();
+      void maybeRecover(e.persisted ? "pageshow-bfcache" : "pageshow");
     };
 
     window.addEventListener("focus", onFocus);
@@ -72,7 +74,7 @@ export default function ClientShell({
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pageshow", onPageShow);
     };
-  }, [router]);
+  }, [router, supabase]);
 
   return (
     <RequireAuth>

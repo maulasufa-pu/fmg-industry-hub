@@ -40,6 +40,7 @@ const PayloadSchema = z.object({
   ndaRequired: z.boolean().optional(),
   preferredEngineerId: z.string().uuid().nullable().optional(),
   total: z.number().finite().nonnegative(),
+  status: z.enum(["requested", "pending", "in_progress", "revision", "approved", "published", "archived", "cancelled"]).optional(),
 });
 
 /** ---------- handler ---------- */
@@ -146,7 +147,7 @@ export async function POST(req: Request) {
         artist_name: body.artistName || null,
         genre: body.genre || null,
         stage: "drafting",
-        status: status,
+        status: body.status ?? "requested",
         description: desc,
         budget_amount: clampInt(body.total) || null,
         budget_currency: "IDR",

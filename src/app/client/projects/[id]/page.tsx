@@ -193,6 +193,34 @@ export default function ProjectDetailPage(): React.JSX.Element {
       new Promise<T>((_, rej) => setTimeout(() => rej(new Error("timeout")), ms)),
     ]);
 
+    // === PRICING START: types ===
+    type CatalogItem = {
+      id: string;
+      name: string;
+      unit: string | null;
+      default_price: number; // numeric → number di client
+      is_active?: boolean;
+    };
+
+    type ProjectPricingItem = {
+      id: string;
+      project_id: string;         // sesuai schema: projects.project_id
+      catalog_id: string;
+      qty: number;
+      custom_unit_price: number | null;
+      created_at?: string | null;
+      catalog?: CatalogItem;      // join alias
+    };
+    // === PRICING END: types ===
+  
+    // === PRICING START: state ===
+  const [pricingCatalog, setPricingCatalog] = useState<CatalogItem[] | null>(null);
+  const [pricingItems, setPricingItems] = useState<ProjectPricingItem[] | null>(null);
+  const [pricingBusyId, setPricingBusyId] = useState<string | null>(null);
+  const [addingCatalogId, setAddingCatalogId] = useState<string>("");
+  const [isSyncingBudget, setIsSyncingBudget] = useState(false);
+  // === PRICING END: state ===
+
   // 1) CEPAT: session → project
   useEffect(() => {
     let mounted = true;
@@ -285,13 +313,40 @@ export default function ProjectDetailPage(): React.JSX.Element {
           }));
           setPosts(safe);
         });
+
+        // === PRICING START: fetch catalog & items ===
+        supabase
+          .from("pricing_catalog")
+          .select("id,name,unit,default_price,is_active")
+          .eq("is_active", true)
+          .order("name", { ascending: true })
+          .returns<CatalogItem[]>()
+          .then(({ data, error }) => {
+            if (!mounted) return;
+            if (error) { console.error(error); setPricingCatalog([]); return; }
+            setPricingCatalog(data ?? []);
+          });
+
+        supabase
+          .from("project_pricing_items")
+          .select("id,project_id,catalog_id,qty,custom_unit_price,created_at,catalog:pricing_catalog(id,name,unit,default_price)")
+          .eq("project_id", params.id)   // ← filter pakai project_id
+          .order("created_at", { ascending: false })
+          .returns<ProjectPricingItem[]>()
+          .then(({ data, error }) => {
+            if (!mounted) return;
+            if (error) { console.error(error); setPricingItems([]); return; }
+            setPricingItems(data ?? []);
+          });
+        // === PRICING END: fetch catalog & items ===
+
     })();
 
     return () => {
       mounted = false;
     };
   }, [params.id, router, supabase]);
-
+  
   // Group revisions per draft
   const revByDraft = useMemo(() => {
     const m = new Map<string, RevisionRow[]>();
@@ -500,6 +555,138 @@ export default function ProjectDetailPage(): React.JSX.Element {
     }
   };
 
+  // === PRICING START: helpers & handlers ===
+  const fmtIDR = (n: number): string => `IDR ${Math.round(n).toLocaleString("id-ID")}`;
+
+  const resolvedUnit = (row: ProjectPricingItem): number => {
+    const def = Number(row.catalog?.default_price ?? 0);
+    const cus = row.custom_unit_price == null ? 0 : Number(row.custom_unit_price);
+    return Math.max(def, cus);
+  };
+
+  const lineTotal = (row: ProjectPricingItem): number =>
+    resolvedUnit(row) * Math.max(1, Number(row.qty || 1));
+
+  const grandTotal = useMemo(() => {
+    return (pricingItems ?? []).reduce((acc, r) => acc + lineTotal(r), 0);
+  }, [pricingItems]);
+
+  const addPricingItem = async (): Promise<void> => {
+    if (!addingCatalogId || !project) return;
+
+    // Jika item katalog sudah ada → tambah qty saja
+    const existing = (pricingItems ?? []).find((x) => x.catalog_id === addingCatalogId);
+    if (existing) {
+      await updateQty(existing.id, existing.qty + 1);
+      return;
+    }
+
+    setPricingBusyId("new");
+    try {
+      const { data, error } = await supabase
+        .from("project_pricing_items")
+        .insert({
+          project_id: params.id,            // ← pakai project_id
+          catalog_id: addingCatalogId,
+          qty: 1,
+          custom_unit_price: null,          // null = pakai default
+        })
+        .select("id,project_id,catalog_id,qty,custom_unit_price,created_at,catalog:pricing_catalog(id,name,unit,default_price)")
+        .single<ProjectPricingItem>();
+      if (error) throw error;
+      setPricingItems((prev) => prev ? [data, ...prev] : [data]);
+      setAddingCatalogId("");
+    } catch (e: unknown) {
+      console.error(e);
+      alert("Gagal menambah item.");
+    } finally {
+      setPricingBusyId(null);
+    }
+  };
+
+  const removePricingItem = async (id: string): Promise<void> => {
+    if (!confirm("Hapus item ini?")) return;
+    setPricingBusyId(id);
+    try {
+      const { error } = await supabase.from("project_pricing_items").delete().eq("id", id);
+      if (error) throw error;
+      setPricingItems((prev) => (prev ?? []).filter((x) => x.id !== id));
+    } catch (e: unknown) {
+      console.error(e);
+      alert("Gagal menghapus item.");
+    } finally {
+      setPricingBusyId(null);
+    }
+  };
+
+  const updateQty = async (id: string, nextQty: number): Promise<void> => {
+    const qty = Math.max(1, Math.round(Number(nextQty || 1)));
+    setPricingBusyId(id);
+    try {
+      const { data, error } = await supabase
+        .from("project_pricing_items")
+        .update({ qty })
+        .eq("id", id)
+        .select("id,project_id,catalog_id,qty,custom_unit_price,created_at,catalog:pricing_catalog(id,name,unit,default_price)")
+        .single<ProjectPricingItem>();
+      if (error) throw error;
+      setPricingItems((prev) => (prev ?? []).map((x) => (x.id === id ? data : x)));
+    } catch (e: unknown) {
+      console.error(e);
+      alert("Gagal mengubah qty.");
+    } finally {
+      setPricingBusyId(null);
+    }
+  };
+
+  const updateCustomPrice = async (id: string, raw: string, defaultPrice: number): Promise<void> => {
+    // custom bebas tapi minimal default → clamp ke default
+    const parsed = Number(raw);
+    const safe = Number.isFinite(parsed) ? Math.max(defaultPrice, Math.round(parsed)) : defaultPrice;
+
+    setPricingBusyId(id);
+    try {
+      const { data, error } = await supabase
+        .from("project_pricing_items")
+        .update({ custom_unit_price: safe })
+        .eq("id", id)
+        .select("id,project_id,catalog_id,qty,custom_unit_price,created_at,catalog:pricing_catalog(id,name,unit,default_price)")
+        .single<ProjectPricingItem>();
+      if (error) throw error;
+      setPricingItems((prev) => (prev ?? []).map((x) => (x.id === id ? data : x)));
+    } catch (e: unknown) {
+      console.error(e);
+      alert("Gagal menyimpan harga custom.");
+    } finally {
+      setPricingBusyId(null);
+    }
+  };
+
+  const syncBudgetToProject = async (): Promise<void> => {
+    if (!project) return;
+    if (!confirm(`Sync total ${fmtIDR(grandTotal)} ke Budget project?`)) return;
+
+    setIsSyncingBudget(true);
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .update({ budget_amount: grandTotal, budget_currency: project.budget_currency ?? "IDR" })
+        .eq("project_id", params.id)   // ← sesuai schema kamu
+        .select("project_id,budget_amount,budget_currency")
+        .single();
+      if (error) throw error;
+
+      setProject((p) => p ? { ...p, budget_amount: grandTotal, budget_currency: p.budget_currency ?? "IDR" } : p);
+    } catch (e: unknown) {
+      console.error(e);
+      alert("Gagal sync budget.");
+    } finally {
+      setIsSyncingBudget(false);
+    }
+  };
+  // === PRICING END: helpers & handlers ===
+
+
   // references
   const onPickLocalFiles = (files: FileList | null) => {
     if (!files) return;
@@ -666,6 +853,130 @@ export default function ProjectDetailPage(): React.JSX.Element {
           </div>
         </Card>
       </div>
+
+      {/* === PRICING START: UI Card === */}
+      <Card
+        title="Pricing Items"
+        right={
+          <div className="flex items-center gap-2">
+            <select
+              value={addingCatalogId}
+              onChange={(e) => setAddingCatalogId(e.target.value)}
+              className="rounded-md border border-gray-300 px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-blue-600"
+            >
+              <option value="">+ Add item from catalog…</option>
+              {(pricingCatalog ?? []).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} — {fmtIDR(Number(c.default_price))}{c.unit ? ` / ${c.unit}` : ""}
+                </option>
+              ))}
+            </select>
+            <button
+              disabled={!addingCatalogId || pricingBusyId === "new"}
+              onClick={addPricingItem}
+              className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50 disabled:opacity-60"
+            >
+              {pricingBusyId === "new" ? "Adding…" : "Add"}
+            </button>
+          </div>
+        }
+      >
+        {pricingItems === null ? (
+          <div className="text-sm text-gray-500">Loading pricing…</div>
+        ) : pricingItems.length === 0 ? (
+          <div className="text-sm text-gray-500">Belum ada item. Tambahkan dari katalog.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-500">
+                  <th className="px-2 py-2">Item</th>
+                  <th className="px-2 py-2">Default</th>
+                  <th className="px-2 py-2">Custom</th>
+                  <th className="px-2 py-2">Qty</th>
+                  <th className="px-2 py-2">Line Total</th>
+                  <th className="px-2 py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {pricingItems.map((row) => {
+                  const def = Number(row.catalog?.default_price ?? 0);
+                  const cus = row.custom_unit_price == null ? undefined : Number(row.custom_unit_price);
+                  const resolved = resolvedUnit(row);
+                  return (
+                    <tr key={row.id} className="border-t">
+                      <td className="px-2 py-2">
+                        <div className="font-medium text-gray-800">{row.catalog?.name ?? "Item"}</div>
+                        <div className="text-xs text-gray-500">{row.catalog?.unit ? `per ${row.catalog?.unit}` : ""}</div>
+                      </td>
+                      <td className="px-2 py-2">{fmtIDR(def)}</td>
+                      <td className="px-2 py-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min={def}
+                            step={1000}
+                            inputMode="numeric"
+                            defaultValue={cus ?? def}
+                            onBlur={(e) => {
+                              const v = e.currentTarget.value;
+                              void updateCustomPrice(row.id, v, def);
+                            }}
+                            className="w-36 rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                          />
+                          {resolved > def ? (
+                            <span className="text-[11px] text-emerald-600">custom &gt;= default ✓</span>
+                          ) : (
+                            <span className="text-[11px] text-gray-400">min {fmtIDR(def)}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-2 py-2">
+                        <input
+                          type="number"
+                          min={1}
+                          step={1}
+                          inputMode="numeric"
+                          value={row.qty}
+                          onChange={(e) => void updateQty(row.id, Number(e.target.value))}
+                          className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                        />
+                      </td>
+                      <td className="px-2 py-2 font-medium text-gray-800">{fmtIDR(lineTotal(row))}</td>
+                      <td className="px-2 py-2">
+                        <button
+                          disabled={pricingBusyId === row.id}
+                          onClick={() => void removePricingItem(row.id)}
+                          className="rounded-md border px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-60"
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                <tr className="border-t">
+                  <td colSpan={4} className="px-2 py-3 text-right text-sm font-semibold text-gray-700">
+                    Grand Total
+                  </td>
+                  <td className="px-2 py-3 text-sm font-semibold text-gray-900">{fmtIDR(grandTotal)}</td>
+                  <td className="px-2 py-3">
+                    <button
+                      disabled={isSyncingBudget}
+                      onClick={() => void syncBudgetToProject()}
+                      className="rounded-md bg-blue-600 px-3 py-1.5 text-xs text-white hover:bg-blue-700 disabled:opacity-60"
+                    >
+                      {isSyncingBudget ? "Syncing…" : "Sync to Project Budget"}
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+      {/* === PRICING END: UI Card === */}
+
 
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-gray-200">

@@ -45,10 +45,6 @@ const PayloadSchema = z.object({
 /** ---------- handler ---------- */
 export async function POST(req: Request) {
   try {
-    if (req.method !== "POST") {
-      return NextResponse.json({ error: "Method Not Allowed" }, { status: 405 });
-    }
-
     // env guard
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -59,7 +55,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // auth (session user)
+    // auth (session user via cookies)
     const cookieStore = cookies();
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
     const { data: auth } = await supabase.auth.getUser();
@@ -69,8 +65,9 @@ export async function POST(req: Request) {
     }
 
     // validate body
-    const json = (await req.json()) as unknown;
-    const body = PayloadSchema.parse(json);
+    const raw = await req.json().catch(() => null);
+    if (!raw) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    const body = PayloadSchema.parse(raw);
 
     // sanitize dates
     const startDate = isYmd(body.startDate ?? undefined) ? body.startDate : null;
@@ -109,10 +106,13 @@ export async function POST(req: Request) {
       .filter(Boolean)
       .join("\n");
 
-    // service-role client
-    const srv = createClient(url, serviceKey);
+    // service-role client (no session)
+    const srv = createClient(url, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
     /** 1) projects */
+    type ProjectInsertResult = { project_id: string };
     const { data: proj, error: projErr } = await srv
       .from("projects")
       .insert({
@@ -123,11 +123,11 @@ export async function POST(req: Request) {
         stage: "drafting",
         status: "pending",
         description: desc,
-        budget_amount: body.total || null,
+        budget_amount: clampInt(body.total) || null,
         budget_currency: "IDR",
       })
       .select("project_id")
-      .single<{ project_id: string }>();
+      .single<ProjectInsertResult>();
     if (projErr) throw projErr;
     const projectId = proj.project_id;
 
@@ -149,17 +149,15 @@ export async function POST(req: Request) {
     ].map((m) => ({ ...m, project_id: projectId, status: "pending" as const }));
 
     type MilestoneRow = { id: string; title: string; order_no: number };
-
     const { data: msData, error: msErr } = await srv
-    .from("project_milestones")
-    .insert(msRows)
-    .select("id,title,order_no")
-    .returns<MilestoneRow[]>();
+      .from("project_milestones")
+      .insert(msRows)
+      .select("id,title,order_no")
+      .returns<MilestoneRow[]>();
     if (msErr) throw msErr;
 
-    // tanpa any:
     const msByTitle = new Map<string, string>(
-        (msData ?? []).map((m) => [m.title, m.id])
+      (msData ?? []).map((m) => [m.title, m.id])
     );
 
     /** 3) reference links */
@@ -167,7 +165,6 @@ export async function POST(req: Request) {
       .split(/\r?\n/)
       .map((s: string) => s.trim())
       .filter(Boolean);
-
     if (lines.length) {
       const refRows = lines.map((u) => ({ project_id: projectId, url: u }));
       const { error: refErr } = await srv.from("project_reference_links").insert(refRows);
@@ -200,7 +197,7 @@ export async function POST(req: Request) {
       status: "unpaid" as const,
     });
 
-    let schedules: ReturnType<typeof addSched>[] = [];
+    let schedules: Array<ReturnType<typeof addSched>> = [];
     if (body.paymentPlan === "upfront") {
       schedules = [addSched("Full Payment", 100, "DP (Down Payment)", start)];
     } else if (body.paymentPlan === "half") {
@@ -217,31 +214,35 @@ export async function POST(req: Request) {
     }
 
     type PaymentScheduleRow = { id: string; label: string };
-
     let createdSchedules: PaymentScheduleRow[] = [];
     if (schedules.length) {
-    const { data: schData, error: schErr } = await srv
+      const { data: schData, error: schErr } = await srv
         .from("payment_schedules")
         .insert(schedules)
         .select("id,label")
         .returns<PaymentScheduleRow[]>();
-    if (schErr) throw schErr;
-
-    // tanpa any:
-    createdSchedules = schData ?? [];
+      if (schErr) throw schErr;
+      createdSchedules = schData ?? [];
     }
 
-    return NextResponse.json({
-      project_id: projectId,
-      milestones: msData,
-      payment_schedules: createdSchedules,
-    });
+    return NextResponse.json(
+      {
+        project_id: projectId,
+        milestones: msData,
+        payment_schedules: createdSchedules,
+      },
+      { status: 201 }
+    );
   } catch (e: unknown) {
+    // eslint-disable-next-line no-console
     console.error("[/api/projects/submit] error:", e);
     const msg =
-        typeof e === "object" && e !== null && "message" in e && typeof (e as { message?: unknown }).message === "string"
+      typeof e === "object" &&
+      e !== null &&
+      "message" in e &&
+      typeof (e as { message?: unknown }).message === "string"
         ? (e as { message: string }).message
         : String(e);
     return NextResponse.json({ error: msg }, { status: 500 });
-    }
+  }
 }

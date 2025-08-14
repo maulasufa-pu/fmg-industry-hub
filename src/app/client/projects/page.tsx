@@ -30,6 +30,8 @@ type ProjectRow = {
   is_finished?: boolean | null;
 };
 
+type CountResp = { count: number | null; error?: unknown };
+
 const QUERY_COLS =
   "id,project_name,artist_name,genre,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name";
 
@@ -51,11 +53,11 @@ export default function PageContent(): React.JSX.Element {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  // Debounce
+  // Debounce search
   const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300);
-    return () => clearTimeout(t);
+    const t = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => window.clearTimeout(t);
   }, [search]);
 
   // Data
@@ -71,33 +73,28 @@ export default function PageContent(): React.JSX.Element {
 
   // Spinner hanya untuk initial load
   const [loadingInitial, setLoadingInitial] = useState(true);
-  const [didInit, setDidInit] = useState(false); // <- NEW
+  const [didInit, setDidInit] = useState(false);
 
-  // Abort
+  // Abort & mount guard
   const abortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef<boolean>(true);
 
   const fetchCounts = useCallback(
-    async (q: string, signal: AbortSignal) => {
-      type CountResp = { count: number | null; error: unknown };
-
+    async (q: string, signal: AbortSignal): Promise<Record<TabKey, number>> => {
       const like = q ? `%${q}%` : null;
 
-      // ALL
       let allQ = supabase.from("project_summary").select("id", { count: "exact", head: true });
       if (like) allQ = allQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
       const allRes = await withSignal(allQ, signal).returns<CountResp>();
 
-      // ACTIVE
       let actQ = supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("is_active", true);
       if (like) actQ = actQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
       const actRes = await withSignal(actQ, signal).returns<CountResp>();
 
-      // FINISHED
       let finQ = supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("is_finished", true);
       if (like) finQ = finQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
       const finRes = await withSignal(finQ, signal).returns<CountResp>();
 
-      // PENDING
       let penQ = supabase
         .from("project_summary")
         .select("id", { count: "exact", head: true })
@@ -117,15 +114,15 @@ export default function PageContent(): React.JSX.Element {
         Finished: finRes.count ?? 0,
         Pending: penRes.count ?? 0,
         Requested: 0,
-      } as Record<TabKey, number>;
+      };
     },
     [supabase]
   );
 
-  // isInitial = true → hanya initial load yang tunjukkan spinner
   const fetchPage = useCallback(
     async (tab: TabKey, q: string, pageIdx: number, isInitial = false) => {
-      // Selalu buat AbortController baru
+      // Batalkan request lama
+      abortRef.current?.abort();
       abortRef.current = new AbortController();
       const ac = abortRef.current;
 
@@ -134,9 +131,7 @@ export default function PageContent(): React.JSX.Element {
         const from = (pageIdx - 1) * pageSize;
         const to = from + pageSize - 1;
 
-        let qBuilder = supabase
-          .from("project_summary")
-          .select(QUERY_COLS, { count: "exact", head: false });
+        let qBuilder = supabase.from("project_summary").select(QUERY_COLS, { count: "exact", head: false });
 
         if (tab === "Active") qBuilder = qBuilder.eq("is_active", true);
         else if (tab === "Finished") qBuilder = qBuilder.eq("is_finished", true);
@@ -144,9 +139,7 @@ export default function PageContent(): React.JSX.Element {
         else if (tab === "Requested") qBuilder = qBuilder.eq("status", "requested");
 
         if (q) {
-          qBuilder = qBuilder.or(
-            `project_name.ilike.%${q}%,artist_name.ilike.%${q}%,genre.ilike.%${q}%`
-          );
+          qBuilder = qBuilder.or(`project_name.ilike.%${q}%,artist_name.ilike.%${q}%,genre.ilike.%${q}%`);
         }
 
         qBuilder = qBuilder.order("latest_update", { ascending: false }).range(from, to);
@@ -156,14 +149,19 @@ export default function PageContent(): React.JSX.Element {
 
         const counts = await fetchCounts(q, ac.signal);
 
+        if (!mountedRef.current) return;
         setRows(data ?? []);
         setTotalCount(count ?? 0);
         setTabCounts(counts);
-      } catch (e) {
-        if ((e as { name?: string }).name !== "AbortError") console.error(e);
+      } catch (err: unknown) {
+        // Abaikan abort; log error lain
+        const isAbort =
+          (err instanceof DOMException && err.name === "AbortError") ||
+          (typeof err === "object" && err !== null && "name" in err && (err as { name?: string }).name === "AbortError");
+        if (!isAbort) console.error("fetchPage error:", err);
       } finally {
         if (abortRef.current === ac) abortRef.current = null;
-        if (isInitial) setLoadingInitial(false);
+        if (isInitial && mountedRef.current) setLoadingInitial(false);
       }
     },
     [fetchCounts, supabase]
@@ -171,29 +169,38 @@ export default function PageContent(): React.JSX.Element {
 
   // initial
   useEffect(() => {
-  (async () => {
-    setPage(1);
-    // warm session supaya RLS nggak balikin 0 duluan
-    await supabase.auth.getSession().catch(() => {});
-    await fetchPage(initialTabFromUrl, "", 1, true); // spinner hanya di sini
-    setDidInit(true); // <- NEW
-  })();
-// eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
+    mountedRef.current = true;
+    (async () => {
+      setPage(1);
+      try {
+        await supabase.auth.getSession();
+      } catch {
+        // ignore
+      }
+      await fetchPage(initialTabFromUrl, "", 1, true); // spinner hanya di sini
+      if (mountedRef.current) setDidInit(true);
+    })();
+    return () => {
+      mountedRef.current = false;
+      abortRef.current?.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // re-fetch tanpa spinner pada tab/search/page change
   useEffect(() => {
-  if (!didInit) return; // <- NEW: jangan nembak request kedua saat mount
-  fetchPage(activeTab, debouncedSearch, page, false);
-}, [didInit, activeTab, debouncedSearch, page, fetchPage]);
+    if (!didInit) return;
+    void fetchPage(activeTab, debouncedSearch, page, false);
+  }, [didInit, activeTab, debouncedSearch, page, fetchPage]);
 
+  // client-refresh (mis. dipanggil dari layout recovery)
   useEffect(() => {
-    const onClientRefresh = () => {
-      fetchPage(activeTab, debouncedSearch, page, true);
+    const onClientRefresh = (_e: Event) => {
+      void fetchPage(activeTab, debouncedSearch, page, true);
     };
-    window.addEventListener('client-refresh', onClientRefresh);
+    window.addEventListener("client-refresh", onClientRefresh as EventListener);
     return () => {
-      window.removeEventListener('client-refresh', onClientRefresh);
+      window.removeEventListener("client-refresh", onClientRefresh as EventListener);
     };
   }, [fetchPage, activeTab, debouncedSearch, page]);
 
@@ -229,7 +236,10 @@ export default function PageContent(): React.JSX.Element {
       />
 
       {loadingInitial ? (
-        <div className="w-full rounded-lg border border-gray-200 bg-white p-10 text-center text-gray-500 shadow">
+        <div
+          className="w-full rounded-lg border border-gray-200 bg-white p-10 text-center text-gray-500 shadow"
+          data-global-loader="true"
+        >
           Loading projects…
         </div>
       ) : (
@@ -267,7 +277,7 @@ export default function PageContent(): React.JSX.Element {
           <CreateProjectPopover
             open={openCreate}
             onClose={() => setOpenCreate(false)}
-            onSaved={() => fetchPage(activeTab, debouncedSearch, pageSafe /* no spinner */)}
+            onSaved={() => void fetchPage(activeTab, debouncedSearch, pageSafe /* no spinner */)}
           />
         </>
       )}

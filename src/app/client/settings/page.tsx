@@ -2,5 +2,5 @@
 import { SettingsSection } from "@/components/SettingsSection";
 
 export default function SettingsPage() {
-  return <SettingsSection />; // Sidebar sudah dari client/layout.tsx
+  return <SettingsSection />; // Sidebar/guard dari client/layout.tsx
 }

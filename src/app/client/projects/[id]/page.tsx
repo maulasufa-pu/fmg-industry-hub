@@ -1,5 +1,9 @@
+// src/app/client/projects/[id]/page.tsx
 "use client";
-import React, { useEffect, useMemo, useState, useRef } from "react";
+
+export const dynamic = "force-dynamic"; // ekstra aman: cegah prerender/ISR di segment ini
+
+import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -129,11 +133,8 @@ export default function ProjectDetailPage(): React.JSX.Element {
   const [isSending, setIsSending] = useState(false);
 
   // Meeting state
-  // --- NEW: toggle untuk form meeting & guard realtime ---
   const [showMeetingForm, setShowMeetingForm] = useState(false);
   const realtimeBoundRef = useRef(false);
-
-  // Meeting state
   const [meetings, setMeetings] = useState<MeetingRow[] | null>(null);
   const [meetingForm, setMeetingForm] = useState({
     title: "",
@@ -141,10 +142,8 @@ export default function ProjectDetailPage(): React.JSX.Element {
     time: "",
     durationMin: 60,
     notes: "",
-    provider: "google" as "zoom" | "google", // bebas, default google
+    provider: "google" as "zoom" | "google",
   });
-
-
   const [isCreatingMeeting, setIsCreatingMeeting] = useState(false);
 
   const validTabs: TabKey[] = [
@@ -227,7 +226,10 @@ export default function ProjectDetailPage(): React.JSX.Element {
       } finally {
         if (mounted) setLoading(false);
       }
-      // Discussion messages background
+
+      if (!mounted) return;
+
+      // Discussion messages (background)
       supabase
         .from("discussion_messages")
         .select("id,project_id,author_id,content,created_at")
@@ -241,7 +243,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
           setMessages(data ?? []);
         });
 
-      // Meetings background
+      // Meetings (background)
       supabase
         .from("meetings")
         .select("id,project_id,title,start_at,duration_min,link,notes,created_by,created_at")
@@ -254,7 +256,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
           setMeetings(data ?? []);
         });
 
-      // Drafts background
+      // Drafts (background)
       supabase
         .from("drafts")
         .select("draft_id,project_id,file_path,uploaded_by,version,created_at")
@@ -263,15 +265,11 @@ export default function ProjectDetailPage(): React.JSX.Element {
         .returns<DraftRow[]>()
         .then(({ data, error }) => {
           if (!mounted) return;
-          if (error) {
-            console.error(error);
-            setDrafts([]);
-            return;
-          }
+          if (error) { console.error(error); setDrafts([]); return; }
           setDrafts(data ?? []);
         });
 
-      // References posts background
+      // References posts (background)
       supabase
         .from("references_posts")
         .select("id,project_id,author_id,content,media,created_at")
@@ -280,12 +278,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
         .returns<ReferencePost[]>()
         .then(({ data, error }) => {
           if (!mounted) return;
-          if (error) {
-            console.error(error);
-            setPosts([]);
-            return;
-          }
-          // Pastikan media selalu array
+          if (error) { console.error(error); setPosts([]); return; }
           const safe = (data ?? []).map((p) => ({
             ...p,
             media: Array.isArray(p.media) ? (p.media as DriveFile[]) : [],
@@ -299,7 +292,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
     };
   }, [params.id, router, supabase]);
 
-  // Group revisions per draft (keep hooks before early returns)
+  // Group revisions per draft
   const revByDraft = useMemo(() => {
     const m = new Map<string, RevisionRow[]>();
     (revisions ?? []).forEach((r) => {
@@ -333,21 +326,16 @@ export default function ProjectDetailPage(): React.JSX.Element {
         8000
       );
       if (!mounted) return;
-      if (error) {
-        console.error(error);
-        setRevisions([]);
-        return;
-      }
+      if (error) { console.error(error); setRevisions([]); return; }
       setRevisions(data ?? []);
     })();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [drafts, supabase]);
 
+  // realtime
   useEffect(() => {
     if (!project) return;
-    if (realtimeBoundRef.current) return; // hindari double binding (StrictMode dev)
+    if (realtimeBoundRef.current) return;
     realtimeBoundRef.current = true;
 
     const channel = supabase.channel(`realtime:project:${project.id}`);
@@ -355,15 +343,16 @@ export default function ProjectDetailPage(): React.JSX.Element {
     const pushUniqueMsg = (row: DiscussionMessage) => {
       setMessages(prev => {
         const list = prev ?? [];
-        if (list.some(x => x.id === row.id)) return list; // dedup
+        if (list.some(x => x.id === row.id)) return list;
         return [row, ...list];
       });
     };
     const pushUniqueMeeting = (row: MeetingRow) => {
       setMeetings(prev => {
         const list = prev ?? [];
-        if (list.some(x => x.id === row.id)) return list; // dedup
-        return [row, ...list];
+        if (list.some(x => x.id === row.id)) return list;
+        const next = [row, ...list].sort((a,b) => b.start_at.localeCompare(a.start_at));
+        return next;
       });
     };
 
@@ -379,30 +368,24 @@ export default function ProjectDetailPage(): React.JSX.Element {
       (payload) => pushUniqueMeeting(payload.new as MeetingRow)
     );
 
-    channel.subscribe();
+    void channel.subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
-      realtimeBoundRef.current = false;
+      try { void supabase.removeChannel(channel); } finally { realtimeBoundRef.current = false; }
     };
   }, [project, supabase]);
-
 
   const sendMessage = async (): Promise<void> => {
     const text = chatInput.trim();
     if (!text) return;
     setIsSending(true);
     try {
-      const { error } = await supabase
-        .from("discussion_messages")
-        .insert({
-          project_id: params.id,
-          content: text,
-        });
+      const { error } = await supabase.from("discussion_messages").insert({
+        project_id: params.id,
+        content: text,
+      });
       if (error) throw error;
-
-      // HAPUS optimistic add — realtime akan memasukkan 1x saja
-      setChatInput("");
+      setChatInput(""); // realtime akan masukin pesan
     } catch (e) {
       console.error(e);
       alert("Gagal mengirim pesan.");
@@ -414,13 +397,11 @@ export default function ProjectDetailPage(): React.JSX.Element {
   const createMeeting = async (): Promise<void> => {
     const { title, date, time, durationMin, notes, provider } = meetingForm;
     if (!title.trim() || !date || !time) { alert("Isi Title, Date, dan Time."); return; }
-
     const startLocal = new Date(`${date}T${time}:00`);
     if (Number.isNaN(startLocal.getTime())) { alert("Tanggal/Jam tidak valid."); return; }
 
     setIsCreatingMeeting(true);
     try {
-      // 1) Minta URL meeting ke server (tetap, tapi link tidak diisi manual)
       const res = await fetch(`/api/meetings/${provider}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -433,29 +414,17 @@ export default function ProjectDetailPage(): React.JSX.Element {
       if (!res.ok) throw new Error(await res.text());
       const { joinUrl } = await res.json();
 
-      // 2) Simpan ke Supabase
-      const { error } = await supabase
-        .from("meetings")
-        .insert({
-          project_id: params.id,
-          title: title.trim(),
-          start_at: startLocal.toISOString(),
-          duration_min: Number(durationMin) || 60,
-          link: joinUrl ?? null,
-          notes: notes.trim() || null,
-        });
-
+      const { error } = await supabase.from("meetings").insert({
+        project_id: params.id,
+        title: title.trim(),
+        start_at: startLocal.toISOString(),
+        duration_min: Number(durationMin) || 60,
+        link: joinUrl ?? null,
+        notes: notes.trim() || null,
+      });
       if (error) throw error;
 
-      // JANGAN optimistic push — biarkan realtime INSERT menambah 1x
-      setMeetingForm({
-        title: "",
-        date: "",
-        time: "",
-        durationMin: 60,
-        notes: "",
-        provider,
-      });
+      setMeetingForm((p) => ({ ...p, title: "", date: "", time: "", durationMin: 60, notes: "" }));
       setShowMeetingForm(false);
     } catch (e) {
       console.error(e);
@@ -464,7 +433,6 @@ export default function ProjectDetailPage(): React.JSX.Element {
       setIsCreatingMeeting(false);
     }
   };
-
 
   // actions drafts → auto status
   const updateProjectStatus = async (
@@ -489,9 +457,6 @@ export default function ProjectDetailPage(): React.JSX.Element {
     setBusyAction({ draftId, action: "approve" });
     try {
       await updateProjectStatus("approved");
-    } catch (e) {
-      console.error(e);
-      alert("Gagal meng-approve draft.");
     } finally {
       setBusyAction(null);
     }
@@ -500,7 +465,6 @@ export default function ProjectDetailPage(): React.JSX.Element {
   const requestRevisionForDraft = async (draftId: string): Promise<void> => {
     const reason = window.prompt("Alasan/revisi yang diminta?");
     if (reason === null) return;
-
     setBusyAction({ draftId, action: "revision" });
     try {
       const { error } = await supabase.from("revisions").insert({
@@ -508,9 +472,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
         reason,
       });
       if (error) throw error;
-
       await updateProjectStatus("revision");
-
       setRevisions((prev) => [
         ...(prev ?? []),
         {
@@ -533,37 +495,26 @@ export default function ProjectDetailPage(): React.JSX.Element {
     setBusyAction({ draftId, action: "publish" });
     try {
       await updateProjectStatus("published");
-    } catch (e) {
-      console.error(e);
-      alert("Gagal menandai sebagai selesai.");
     } finally {
       setBusyAction(null);
     }
   };
 
-  // references: helpers
+  // references
   const onPickLocalFiles = (files: FileList | null) => {
     if (!files) return;
     const arr = Array.from(files);
     setSelectedFiles((prev) => [...prev, ...arr]);
   };
-
   const removeSelectedFile = (idx: number) => {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const uploadToGoogleDrive = async (files: File[]): Promise<DriveFile[]> => {
-    // Kirim ke API route kamu (implement di /api/gdrive/upload)
     const fd = new FormData();
     files.forEach((f) => fd.append("files", f));
-    const res = await fetch("/api/gdrive/upload", {
-      method: "POST",
-      body: fd,
-    });
-    if (!res.ok) {
-      const txt = await res.text();
-      throw new Error(`GDrive upload failed: ${txt}`);
-    }
+    const res = await fetch("/api/gdrive/upload", { method: "POST", body: fd });
+    if (!res.ok) throw new Error(`GDrive upload failed: ${await res.text()}`);
     const json = (await res.json()) as { files: DriveFile[] };
     return json.files ?? [];
   };
@@ -575,27 +526,22 @@ export default function ProjectDetailPage(): React.JSX.Element {
     }
     setIsPosting(true);
     try {
-      // 1) upload media ke Google Drive (bila ada)
       let driveFiles: DriveFile[] = [];
       if (selectedFiles.length) {
         driveFiles = await uploadToGoogleDrive(selectedFiles);
       }
-
-      // 2) insert ke Supabase
       const { data, error } = await supabase
         .from("references_posts")
         .insert({
           project_id: params.id,
-          author_id: null, // isi user id kalau punya
+          author_id: null,
           content: composerText.trim() || null,
           media: driveFiles,
         })
         .select("id,project_id,author_id,content,media,created_at")
         .single<ReferencePost>();
-
       if (error) throw error;
 
-      // 3) optimistic add + reset composer
       setPosts((prev) => (prev ? [data, ...prev] : [data]));
       setComposerText("");
       setSelectedFiles([]);
@@ -607,19 +553,13 @@ export default function ProjectDetailPage(): React.JSX.Element {
     }
   };
 
+  // support tombol Try again di error boundary (client-refresh)
   useEffect(() => {
     const onClientRefresh = () => {
-      // Trigger refetch utama (misal: project, drafts, revisions, posts, meetings)
-      setLoading(true);
-      // Anda bisa panggil semua fetch di sini sesuai kebutuhan
-      // Contoh: fetchProject(); fetchDrafts(); fetchRevisions(); fetchPosts(); fetchMeetings();
-      // Untuk demo, reload halaman saja:
       window.location.reload();
     };
-    window.addEventListener('client-refresh', onClientRefresh);
-    return () => {
-      window.removeEventListener('client-refresh', onClientRefresh);
-    };
+    window.addEventListener("client-refresh", onClientRefresh);
+    return () => window.removeEventListener("client-refresh", onClientRefresh);
   }, []);
 
   if (loading) {
@@ -664,7 +604,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
           </li>
           <li>›</li>
           <li>
-            <Link href={backUrl} className="hover:underline">
+            <Link href={`/client/projects?tab=${encodeURIComponent(currentTab)}`} className="hover:underline">
               {tabLabel}
             </Link>
           </li>
@@ -903,7 +843,6 @@ export default function ProjectDetailPage(): React.JSX.Element {
                 className="w-full resize-none rounded-md border border-gray-300 p-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
                 rows={3}
               />
-              {/* pilih file lokal → API route akan upload ke Google Drive */}
               <div className="flex items-center gap-2">
                 <label className="cursor-pointer rounded-md border px-3 py-2 text-xs hover:bg-gray-50">
                   Choose Media
@@ -923,7 +862,6 @@ export default function ProjectDetailPage(): React.JSX.Element {
                 )}
               </div>
 
-              {/* preview kecil */}
               {selectedFiles.length > 0 && (
                 <ul className="flex flex-wrap gap-2">
                   {selectedFiles.map((f, i) => (
@@ -1001,7 +939,6 @@ export default function ProjectDetailPage(): React.JSX.Element {
                                   target="_blank"
                                   rel="noreferrer"
                                 >
-                                  {/* pakai thumbnail kalau ada */}
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img
                                     src={
@@ -1052,7 +989,6 @@ export default function ProjectDetailPage(): React.JSX.Element {
             )}
           </Card>
 
-          {/* Sisi kanan bisa dipakai filter/tagging jika perlu */}
           <Card title="Filters (optional)">
             <div className="text-sm text-gray-500">
               Tambahkan filter by media type, author, dsb.
@@ -1069,7 +1005,6 @@ export default function ProjectDetailPage(): React.JSX.Element {
             right={<span className="text-xs text-gray-500">{isSending ? "Sending…" : ""}</span>}
           >
             <div className="flex h-[420px] flex-col">
-              {/* Messages */}
               <div className="flex-1 overflow-y-auto rounded-md border border-gray-200 p-3">
                 {messages === null ? (
                   <div className="text-sm text-gray-500">Loading…</div>
@@ -1090,7 +1025,6 @@ export default function ProjectDetailPage(): React.JSX.Element {
                 )}
               </div>
 
-              {/* Composer */}
               <div className="mt-3 flex gap-2">
                 <input
                   value={chatInput}
@@ -1111,7 +1045,6 @@ export default function ProjectDetailPage(): React.JSX.Element {
 
           {/* Meeting (1 kolom) */}
           <Card title="Meetings">
-            {/* Actions */}
             <div className="mb-3 flex items-center justify-between">
               <button
                 onClick={() => setShowMeetingForm(s => !s)}
@@ -1121,7 +1054,6 @@ export default function ProjectDetailPage(): React.JSX.Element {
               </button>
             </div>
 
-            {/* Form (toggle) */}
             {showMeetingForm && (
               <div className="mb-4 space-y-3 rounded-md border border-gray-200 p-3">
                 <div className="grid grid-cols-2 gap-2">
@@ -1152,7 +1084,6 @@ export default function ProjectDetailPage(): React.JSX.Element {
                     placeholder="Duration (min)"
                     className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
                   />
-                  {/* LINK DIHAPUS */}
                   <textarea
                     value={meetingForm.notes}
                     onChange={(e) => setMeetingForm((p) => ({ ...p, notes: e.target.value }))}
@@ -1181,7 +1112,6 @@ export default function ProjectDetailPage(): React.JSX.Element {
               </div>
             )}
 
-            {/* List */}
             <div>
               <div className="mb-2 text-xs font-medium text-gray-700">Upcoming & Past</div>
               {meetings === null ? (

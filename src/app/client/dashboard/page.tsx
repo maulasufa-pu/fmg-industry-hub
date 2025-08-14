@@ -1,6 +1,7 @@
+// E:\FMGIH\fmg-industry-hub\src\app\client\dashboard\page.tsx
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { getSupabaseClient, withSignal } from "@/lib/supabase/client";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
@@ -17,7 +18,7 @@ type MeetingRow = {
   id: string;
   project_id: string | null;
   title: string;
-  start_at: string;     // ISO
+  start_at: string; // ISO
   duration_min: number;
   link: string | null;
   notes: string | null;
@@ -34,11 +35,17 @@ type InvoiceRow = {
   created_at: string | null;
 };
 
+type CountResp = { count: number | null; error: unknown };
+
 const QUERY_PROJECTS = "id,project_name,artist_name,status,latest_update";
 const QUERY_MEETINGS = "id,project_id,title,start_at,duration_min,link,notes,created_at";
 const QUERY_INVOICES = "id,invoice_no,client_name,amount_total,currency,status,created_at";
 
-const Card: React.FC<React.PropsWithChildren<{ title: string; right?: React.ReactNode }>> = ({ title, right, children }) => (
+const Card: React.FC<React.PropsWithChildren<{ title: string; right?: React.ReactNode }>> = ({
+  title,
+  right,
+  children,
+}) => (
   <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
     <div className="mb-3 flex items-center justify-between">
       <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
@@ -50,7 +57,7 @@ const Card: React.FC<React.PropsWithChildren<{ title: string; right?: React.Reac
 
 const Stat: React.FC<{ label: string; value: React.ReactNode; to?: string }> = ({ label, value, to }) => {
   const content = (
-    <div className="rounded-lg border border-gray-200 p-4 hover:bg-gray-50 transition">
+    <div className="rounded-lg border border-gray-200 p-4 transition hover:bg-gray-50">
       <div className="text-xs text-gray-500">{label}</div>
       <div className="mt-1 text-2xl font-semibold text-gray-900">{value}</div>
     </div>
@@ -67,6 +74,7 @@ export default function ClientDashboard(): React.JSX.Element {
   // Abort + realtime guard
   const abortRef = useRef<AbortController | null>(null);
   const rtBoundRef = useRef(false);
+  const mountedRef = useRef(true);
 
   // Stats
   const [statProjectsAll, setStatProjectsAll] = useState<number | null>(null);
@@ -81,17 +89,17 @@ export default function ClientDashboard(): React.JSX.Element {
   const [upcomingMeetings, setUpcomingMeetings] = useState<MeetingRow[]>([]);
   const [recentInvoices, setRecentInvoices] = useState<InvoiceRow[]>([]);
 
-  // Fetch helpers
-  const fetchAll = async () => {
-    // Selalu buat AbortController baru
+  const fetchAll = useCallback(async () => {
+    // Batalkan request lama sebelum mulai yang baru
+    abortRef.current?.abort();
     abortRef.current = new AbortController();
     const ac = abortRef.current;
+
     setLoadingInitial(true);
-
     try {
-      // ===== Counts (head:true) =====
-      type CountResp = { count: number | null; error?: unknown };
+      const nowIso = new Date().toISOString();
 
+      // ===== Counts (head:true) =====
       const allP = withSignal(
         supabase.from("project_summary").select("id", { count: "exact", head: true }),
         ac.signal
@@ -108,7 +116,11 @@ export default function ClientDashboard(): React.JSX.Element {
       ) as unknown as Promise<CountResp>;
 
       const penP = withSignal(
-        supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("is_active", false).eq("is_finished", false),
+        supabase
+          .from("project_summary")
+          .select("id", { count: "exact", head: true })
+          .eq("is_active", false)
+          .eq("is_finished", false),
         ac.signal
       ) as unknown as Promise<CountResp>;
 
@@ -117,19 +129,14 @@ export default function ClientDashboard(): React.JSX.Element {
         ac.signal
       ) as unknown as Promise<CountResp>;
 
-      const nowIso = new Date().toISOString();
       const meetP = withSignal(
         supabase.from("meetings").select("id", { count: "exact", head: true }).gte("start_at", nowIso),
         ac.signal
       ) as unknown as Promise<CountResp>;
 
-      // ===== Lists (normalize ke array sebelum di-set) =====
+      // ===== Lists =====
       const projListP = withSignal(
-        supabase
-          .from("project_summary")
-          .select(QUERY_PROJECTS)
-          .order("latest_update", { ascending: false })
-          .limit(8),
+        supabase.from("project_summary").select(QUERY_PROJECTS).order("latest_update", { ascending: false }).limit(8),
         ac.signal
       )
         .returns<ProjectRow[]>()
@@ -154,11 +161,7 @@ export default function ClientDashboard(): React.JSX.Element {
         });
 
       const invoicesP = withSignal(
-        supabase
-          .from("invoices")
-          .select(QUERY_INVOICES)
-          .order("created_at", { ascending: false })
-          .limit(6),
+        supabase.from("invoices").select(QUERY_INVOICES).order("created_at", { ascending: false }).limit(6),
         ac.signal
       )
         .returns<InvoiceRow[]>()
@@ -167,19 +170,25 @@ export default function ClientDashboard(): React.JSX.Element {
           return data ?? [];
         });
 
-      const [
-        allR, actR, finR, penR, invR, meetR,
-        projListArr, meetingsArr, invoicesArr
-      ] = await Promise.all([
-        allP, actP, finP, penP, invP, meetP,
-        projListP, meetingsP, invoicesP
+      const [allR, actR, finR, penR, invR, meetR, projListArr, meetingsArr, invoicesArr] = await Promise.all([
+        allP,
+        actP,
+        finP,
+        penP,
+        invP,
+        meetP,
+        projListP,
+        meetingsP,
+        invoicesP,
       ]);
 
-      // Cek error tanpa any / tanpa PostgrestSingleResponse
-      const results: CountResp[] = [allR, actR, finR, penR, invR, meetR];
-      for (const r of results) {
-        if (r.error) throw r.error;
+      // Cek error dari count responses
+      const countResults: CountResp[] = [allR, actR, finR, penR, invR, meetR];
+      for (const r of countResults) {
+        if ((r as CountResp).error) throw (r as CountResp).error;
       }
+
+      if (!mountedRef.current) return;
 
       setStatProjectsAll(allR.count ?? 0);
       setStatProjectsActive(actR.count ?? 0);
@@ -192,38 +201,45 @@ export default function ClientDashboard(): React.JSX.Element {
       setUpcomingMeetings(meetingsArr);
       setRecentInvoices(invoicesArr);
     } catch (e) {
-      // handle error
       console.error("fetchAll error:", e);
     } finally {
       if (abortRef.current === ac) abortRef.current = null;
-      setLoadingInitial(false);
+      if (mountedRef.current) setLoadingInitial(false);
     }
-  };
+  }, [supabase]);
 
   // Initial load
   useEffect(() => {
+    mountedRef.current = true;
     (async () => {
-      await supabase.auth.getSession().catch(() => {});
-      await fetchAll();
+      try {
+        await supabase.auth.getSession();
+      } catch {
+        // ignore
+      } finally {
+        await fetchAll();
+      }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => {
+      mountedRef.current = false;
+      abortRef.current?.abort();
+    };
+  }, [fetchAll, supabase.auth]);
 
   // Realtime INSERT minimal (meetings + invoices) — dedup + strictmode guard
   useEffect(() => {
     if (rtBoundRef.current) return;
     rtBoundRef.current = true;
-    
+
     const channelName = "realtime:dashboard:" + Math.random().toString(36).slice(2);
     const ch = supabase.channel(channelName);
-    
-    // Setup channel handlers
-    ch.on("postgres_changes", 
+
+    ch.on(
+      "postgres_changes",
       { event: "INSERT", schema: "public", table: "meetings" },
       (payload) => {
         const row = payload.new as MeetingRow;
-        // upcoming only
-        if (new Date(row.start_at).getTime() < Date.now()) return;
+        if (new Date(row.start_at).getTime() < Date.now()) return; // only upcoming
         setUpcomingMeetings((prev) => {
           const list = prev ?? [];
           if (list.some((x) => x.id === row.id)) return list;
@@ -234,7 +250,8 @@ export default function ClientDashboard(): React.JSX.Element {
       }
     );
 
-    ch.on("postgres_changes",
+    ch.on(
+      "postgres_changes",
       { event: "INSERT", schema: "public", table: "invoices" },
       (payload) => {
         const row = payload.new as InvoiceRow;
@@ -250,10 +267,8 @@ export default function ClientDashboard(): React.JSX.Element {
       }
     );
 
-    // Subscribe channel
     void ch.subscribe();
 
-    // Cleanup function
     return () => {
       try {
         void supabase.removeChannel(ch);
@@ -268,18 +283,18 @@ export default function ClientDashboard(): React.JSX.Element {
   // Refresh data on custom event
   useEffect(() => {
     const onClientRefresh = () => {
-      fetchAll();
+      void fetchAll();
     };
-    window.addEventListener('client-refresh', onClientRefresh);
+    window.addEventListener("client-refresh", onClientRefresh);
     return () => {
-      window.removeEventListener('client-refresh', onClientRefresh);
+      window.removeEventListener("client-refresh", onClientRefresh);
     };
   }, [fetchAll]);
 
   if (loadingInitial) {
     return (
       <div className="p-6">
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-gray-500 shadow">
+        <div className="rounded-xl border border-gray-200 bg-white p-8 text-gray-500 shadow" data-global-loader="true">
           Loading dashboard…
         </div>
       </div>
@@ -287,7 +302,7 @@ export default function ClientDashboard(): React.JSX.Element {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-gray-900">Dashboard</h1>
@@ -369,7 +384,7 @@ export default function ClientDashboard(): React.JSX.Element {
                 return (
                   <li key={m.id} className="rounded-md border border-gray-200 p-3 text-sm">
                     <div className="flex items-center justify-between">
-                      <div className="font-medium text-gray-800 truncate">{m.title}</div>
+                      <div className="truncate font-medium text-gray-800">{m.title}</div>
                       <div className="text-xs text-gray-500">
                         {start.toLocaleString("id-ID")} –{" "}
                         {end.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
@@ -443,7 +458,7 @@ export default function ClientDashboard(): React.JSX.Element {
       {/* Refresh Button */}
       <div className="flex justify-end">
         <button
-          onClick={fetchAll}
+          onClick={() => void fetchAll()}
           disabled={loadingInitial}
           className="mb-4 rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
         >

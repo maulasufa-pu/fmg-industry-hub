@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { Close } from "@/icons";
 
@@ -76,7 +76,6 @@ const idr = (n: number) => `IDR ${n.toLocaleString("id-ID")}`;
 
 type Props = { open: boolean; onClose: () => void; onSaved?: () => void; };
 
-// di atas: boleh tambahkan tipe ringan (opsional)
 type SubmitPayload = {
   songTitle: string;
   artistName: string;
@@ -95,9 +94,9 @@ type SubmitPayload = {
   total: number;
 };
 
-
-export default function CreateProjectPopover({ open, onClose, onSaved }: Props) {
+export default function CreateProjectPopover({ open, onClose, onSaved }: Props): React.JSX.Element | null {
   const supabase = useMemo(() => getSupabaseClient(), []);
+  const mountedRef = useRef<boolean>(true);
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [saving, setSaving] = useState(false);
@@ -124,6 +123,22 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
   const [agree, setAgree] = useState(false);
   const [ndaRequired, setNdaRequired] = useState(false);
   const [preferredEngineerId, setPreferredEngineerId] = useState<string>("");
+
+  // calculate total
+  const bundle = selectedBundle ? BUNDLES.find(b => b.key === selectedBundle) ?? null : null;
+  const sumSelected = Array.from(selectedServices).reduce((acc, key) => {
+    const s = SERVICES.find(x => x.key === key);
+    return acc + (s ? s.price : 0);
+  }, 0);
+  const bundleValue = bundle
+    ? (() => {
+        const bundleSet = new Set(bundle.includes);
+        const outside = Array.from(selectedServices).filter(k => !bundleSet.has(k));
+        const outsideSum = outside.reduce((acc, k) => acc + (SERVICES.find(s => s.key === k)?.price || 0), 0);
+        return bundle.bundlePrice + outsideSum;
+      })()
+    : sumSelected;
+  const total = bundleValue;
 
   // helper kecil untuk merangkai payload sesuai route.ts server
   const buildPayload = (): SubmitPayload => {
@@ -155,21 +170,24 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
       paymentPlan,
       ndaRequired,
       preferredEngineerId: preferredEngineerId || null,
-      total, // sudah kamu hitung di client
+      total, // dihitung di client
     };
   };
 
-
   // engineers dropdown
-  type EngineerRow = {
-    id: string;
-    name: string | null; // kolom kamu boleh null
-  };
+  type EngineerRow = { id: string; name: string | null };
 
-  const [engineers, setEngineers] = useState<{ id: string; name: string }[]>([]);
+  const [engineers, setEngineers] = useState<Array<{ id: string; name: string }>>([]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
+    const ac = new AbortController();
+
     (async () => {
       const { data, error } = await supabase
         .from("profiles")
@@ -178,22 +196,26 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
         .order("name", { ascending: true })
         .returns<EngineerRow[]>();
 
+      if (ac.signal.aborted) return;
       if (error) {
         console.error(error);
         return;
       }
 
-      setEngineers(
-        (data ?? []).map((r) => ({
-          id: r.id,
-          name: r.name ?? "Unnamed",
-        }))
-      );
+      if (mountedRef.current) {
+        setEngineers(
+          (data ?? []).map((r) => ({
+            id: r.id,
+            name: r.name ?? "Unnamed",
+          }))
+        );
+      }
     })();
+
+    return () => ac.abort();
   }, [open, supabase]);
 
-
-  // lifecycle
+  // lifecycle: esc to close
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -201,9 +223,9 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  // reset form setiap dibuka
   useEffect(() => {
     if (!open) return;
-    // reset all when opened
     setStep(1); setSaving(false); setError(null);
     setSongTitle(""); setAlbumTitle(""); setArtistName("");
     setGenre(""); setSubGenre(""); setDescription("");
@@ -214,22 +236,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
   }, [open]);
 
   if (!open) return null;
-
-  // calculate total
-  const bundle = selectedBundle ? BUNDLES.find(b => b.key === selectedBundle) : null;
-  const sumSelected = Array.from(selectedServices).reduce((acc, key) => {
-    const s = SERVICES.find(x => x.key === key);
-    return acc + (s ? s.price : 0);
-  }, 0);
-  const bundleValue = bundle
-    ? (() => {
-        const bundleSet = new Set(bundle.includes);
-        const outside = Array.from(selectedServices).filter(k => !bundleSet.has(k));
-        const outsideSum = outside.reduce((acc, k) => acc + (SERVICES.find(s => s.key === k)?.price || 0), 0);
-        return bundle.bundlePrice + outsideSum;
-      })()
-    : sumSelected;
-  const total = bundleValue;
 
   const toggleService = (key: ServiceKey) => {
     setSelectedServices(prev => {
@@ -242,42 +248,40 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
     setDeliveryFormat(prev => prev.includes(fmt) ? prev.filter(f => f !== fmt) : [...prev, fmt]);
   };
 
-
-
-  // C) SUBMIT
-  // GANTI seluruh handleSubmit lama dengan ini
+  // SUBMIT
   const handleSubmit = async () => {
     try {
       setSaving(true);
       setError(null);
 
-      // pastikan user login (opsional: hanya untuk UX; auth asli ditangani di server route)
+      if (!songTitle.trim()) throw new Error("Song title is required");
+      if (selectedServices.size === 0 && !selectedBundle) {
+        throw new Error("Pick at least one service or a bundle");
+      }
+
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user?.id) throw new Error("Not authenticated");
 
       const res = await fetch("/api/projects/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // penting: biar cookies Supabase (sb-*) ikut ke server route
+        credentials: "include",
         body: JSON.stringify(buildPayload()),
       });
 
-      const json = await res.json();
+      const json: unknown = await res.json();
       if (!res.ok) {
-        throw new Error(json?.error || "Failed to submit project");
+        const msg = (json as { error?: string })?.error || "Failed to submit project";
+        throw new Error(msg);
       }
 
-      // sukses → json = { project_id }
       onSaved?.();
       onClose();
-
-      // (opsional) arahkan ke halaman project
-      // router.push(`/client/projects/${json.project_id}`);
-
-    } catch (e) {
+      // optionally: router.push(`/client/projects/${(json as { project_id?: string }).project_id}`);
+    } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to submit project");
     } finally {
-      setSaving(false);
+      if (mountedRef.current) setSaving(false);
     }
   };
 
@@ -309,11 +313,14 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
   };
 
   return (
-    <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm flex items-start justify-center overflow-y-auto" onClick={(e)=>{ if(e.target===e.currentTarget) onClose(); }}>
+    <div
+      className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/40 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
       <div className="mx-4 my-6 w-full max-w-6xl">
-        <div className="rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 overflow-hidden">
+        <div className="overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
           {/* header */}
-          <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-white/90 backdrop-blur px-5 py-3">
+          <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-white/90 px-5 py-3 backdrop-blur">
             <div className="flex items-center gap-3">
               <h2 className="text-base font-semibold text-gray-900">Create Project</h2>
               <div className="text-xs text-gray-500">Step {step} of 3</div>
@@ -323,48 +330,77 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
               className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-60"
               aria-label="Close"
             >
-              <Close className="w-5 h-5 text-gray-600" />
+              <Close className="h-5 w-5 text-gray-600" />
             </button>
           </div>
 
           {/* content */}
           <div className="px-5 py-4">
             {step === 1 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700">Song Title</label>
-                  <input value={songTitle} onChange={(e)=>setSongTitle(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-60 outline-none" placeholder="e.g., 'Aurora'"/>
+                  <input
+                    value={songTitle}
+                    onChange={(e) => setSongTitle(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
+                    placeholder="e.g., 'Aurora'"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Album Title</label>
-                  <input value={albumTitle} onChange={(e)=>setAlbumTitle(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-60 outline-none" placeholder="Optional"/>
+                  <input
+                    value={albumTitle}
+                    onChange={(e) => setAlbumTitle(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
+                    placeholder="Optional"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Artist Name</label>
-                  <input value={artistName} onChange={(e)=>setArtistName(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-60 outline-none" placeholder="Artist"/>
+                  <input
+                    value={artistName}
+                    onChange={(e) => setArtistName(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
+                    placeholder="Artist"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Genre</label>
-                  <select value={genre} onChange={(e)=>setGenre(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-60 outline-none">
+                  <select
+                    value={genre}
+                    onChange={(e) => setGenre(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
+                  >
                     <option value="" disabled>Choose genre</option>
-                    {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+                    {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Sub-genre</label>
-                  <select value={subGenre} onChange={(e)=>setSubGenre(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-60 outline-none">
+                  <select
+                    value={subGenre}
+                    onChange={(e) => setSubGenre(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
+                  >
                     <option value="" disabled>Choose sub-genre</option>
-                    {SUBGENRES.map(sg => <option key={sg} value={sg}>{sg}</option>)}
+                    {SUBGENRES.map((sg) => <option key={sg} value={sg}>{sg}</option>)}
                   </select>
                 </div>
 
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700">Description</label>
-                  <textarea value={description} onChange={(e)=>setDescription(e.target.value)} rows={4} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-60 outline-none" placeholder="Short brief about the project..." />
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={4}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
+                    placeholder="Short brief about the project..."
+                  />
                 </div>
               </div>
             )}
@@ -372,36 +408,36 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
             {step === 2 && (
               <div className="space-y-6">
                 <Section title="Type of Service">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {SERVICES.filter(s => s.group === "core").map(s => <ServiceCard key={s.key} s={s} />)}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {SERVICES.filter((s) => s.group === "core").map((s) => <ServiceCard key={s.key} s={s} />)}
                   </div>
                 </Section>
 
                 <Section title="Additional Service">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {SERVICES.filter(s => s.group === "additional").map(s => <ServiceCard key={s.key} s={s} />)}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {SERVICES.filter((s) => s.group === "additional").map((s) => <ServiceCard key={s.key} s={s} />)}
                   </div>
                 </Section>
 
                 <Section title="Business Management / Development / Others">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {SERVICES.filter(s => s.group === "business").map(s => <ServiceCard key={s.key} s={s} />)}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {SERVICES.filter((s) => s.group === "business").map((s) => <ServiceCard key={s.key} s={s} />)}
                   </div>
                 </Section>
 
                 <Section title="Bundles (Hemat)">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {BUNDLES.map(b => {
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {BUNDLES.map((b) => {
                       const active = selectedBundle === b.key;
-                      const sumNormal = b.includes.reduce((acc,k)=>acc+(SERVICES.find(s=>s.key===k)?.price||0),0);
-                      const saved = sumNormal - b.bundlePrice;
+                      const sumNormal = b.includes.reduce((acc, k) => acc + (SERVICES.find((s) => s.key === k)?.price || 0), 0);
+                      const saved = Math.max(sumNormal - b.bundlePrice, 0);
                       return (
                         <button
                           type="button"
                           key={b.key}
-                          onClick={()=> setSelectedBundle(active ? null : b.key)}
+                          onClick={() => setSelectedBundle(active ? null : b.key)}
                           className={[
-                            "text-left rounded-xl border px-4 py-3 transition",
+                            "rounded-xl border px-4 py-3 text-left transition",
                             active ? "border-primary-60 bg-primary-50/10" : "border-gray-200 hover:border-gray-300 hover:bg-gray-50",
                           ].join(" ")}
                         >
@@ -409,11 +445,13 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
                             <div>
                               <div className="text-sm font-semibold text-gray-900">{b.label}</div>
                               <div className="mt-0.5 text-xs text-gray-600">{b.note}</div>
-                              <div className="mt-1 text-xs text-gray-500">Includes: {b.includes.map(k => SERVICES.find(s=>s.key===k)?.label).join(", ")}</div>
+                              <div className="mt-1 text-xs text-gray-500">
+                                Includes: {b.includes.map((k) => SERVICES.find((s) => s.key === k)?.label).join(", ")}
+                              </div>
                             </div>
                             <div className="text-right">
                               <div className="text-sm font-semibold text-gray-900">{idr(b.bundlePrice)}</div>
-                              <div className="text-xs text-green-600">Save {idr(Math.max(saved,0))}</div>
+                              <div className="text-xs text-green-600">Save {idr(saved)}</div>
                             </div>
                           </div>
                         </button>
@@ -438,8 +476,8 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
                     <div className="mt-3">
                       <div className="text-gray-500">Services</div>
                       <ul className="list-disc pl-5">
-                        {Array.from(selectedServices).map(k => {
-                          const s = SERVICES.find(x => x.key === k)!;
+                        {Array.from(selectedServices).map((k) => {
+                          const s = SERVICES.find((x) => x.key === k)!;
                           return <li key={k}>{s.label}{s.isSubscription ? " (subscription)" : ""} — {idr(s.price)}</li>;
                         })}
                         {bundle && <li><strong>Bundle:</strong> {bundle.label} — {idr(bundle.bundlePrice)}</li>}
@@ -459,24 +497,36 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
                       <label className="block text-sm text-gray-700">Target Start</label>
-                      <input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)}
-                        className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-primary-60 outline-none" />
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
+                      />
                     </div>
                     <div>
                       <label className="block text-sm text-gray-700">Deadline</label>
-                      <input type="date" value={deadline} onChange={e=>setDeadline(e.target.value)}
-                        className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-primary-60 outline-none" />
+                      <input
+                        type="date"
+                        value={deadline}
+                        onChange={(e) => setDeadline(e.target.value)}
+                        className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
+                      />
                     </div>
                   </div>
 
                   <div className="mt-3">
-                    <div className="text-sm text-gray-700 mb-1">Delivery Format</div>
+                    <div className="mb-1 text-sm text-gray-700">Delivery Format</div>
                     <div className="flex flex-wrap gap-2">
-                      {["WAV 24-bit","MP3","STEMS","Project File"].map(fmt => {
+                      {["WAV 24-bit","MP3","STEMS","Project File"].map((fmt) => {
                         const active = deliveryFormat.includes(fmt);
                         return (
-                          <button key={fmt} type="button" onClick={()=>toggleFormat(fmt)}
-                            className={`rounded-full border px-3 py-1 text-xs ${active ? "border-primary-60 bg-primary-50/10" : "border-gray-300 hover:bg-gray-50"}`}>
+                          <button
+                            key={fmt}
+                            type="button"
+                            onClick={() => toggleFormat(fmt)}
+                            className={`rounded-full border px-3 py-1 text-xs ${active ? "border-primary-60 bg-primary-50/10" : "border-gray-300 hover:bg-gray-50"}`}
+                          >
                             {fmt}
                           </button>
                         );
@@ -486,9 +536,13 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
 
                   <div className="mt-3">
                     <label className="block text-sm text-gray-700">Reference links (YouTube/Spotify/Drive)</label>
-                    <textarea rows={2} value={referenceLinks} onChange={e=>setReferenceLinks(e.target.value)}
+                    <textarea
+                      rows={2}
+                      value={referenceLinks}
+                      onChange={(e) => setReferenceLinks(e.target.value)}
                       placeholder="Pisahkan dengan baris baru"
-                      className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-primary-60 outline-none" />
+                      className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
+                    />
                   </div>
 
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -496,17 +550,22 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
                       <label className="block text-sm text-gray-700">Preferred Engineer</label>
                       <select
                         value={preferredEngineerId}
-                        onChange={(e)=>setPreferredEngineerId(e.target.value)}
-                        className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-primary-60 outline-none"
+                        onChange={(e) => setPreferredEngineerId(e.target.value)}
+                        className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
                       >
                         <option value="">No preference</option>
-                        {engineers.map((e)=>(
+                        {engineers.map((e) => (
                           <option key={e.id} value={e.id}>{e.name}</option>
                         ))}
                       </select>
                     </div>
-                    <div className="flex items-center gap-2 mt-6">
-                      <input id="nda" type="checkbox" checked={ndaRequired} onChange={e=>setNdaRequired(e.target.checked)} />
+                    <div className="mt-6 flex items-center gap-2">
+                      <input
+                        id="nda"
+                        type="checkbox"
+                        checked={ndaRequired}
+                        onChange={(e) => setNdaRequired(e.target.checked)}
+                      />
                       <label htmlFor="nda" className="text-sm text-gray-700">NDA required</label>
                     </div>
                   </div>
@@ -514,8 +573,11 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
 
                 {/* Payment */}
                 <Section title="Payment Plan">
-                  <select value={paymentPlan} onChange={e=>setPaymentPlan(e.target.value as typeof paymentPlan)}
-                    className="rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-primary-60 outline-none">
+                  <select
+                    value={paymentPlan}
+                    onChange={(e) => setPaymentPlan(e.target.value as typeof paymentPlan)}
+                    className="rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
+                  >
                     <option value="upfront">100% Up-front</option>
                     <option value="half">50% DP / 50% Delivery</option>
                     <option value="milestone">Milestone (25/50/25)</option>
@@ -524,7 +586,13 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
 
                 {/* Agreement */}
                 <div className="flex items-start gap-2">
-                  <input id="agree" type="checkbox" checked={agree} onChange={e=>setAgree(e.target.checked)} className="mt-1"/>
+                  <input
+                    id="agree"
+                    type="checkbox"
+                    checked={agree}
+                    onChange={(e) => setAgree(e.target.checked)}
+                    className="mt-1"
+                  />
                   <label htmlFor="agree" className="text-sm text-gray-700">
                     I agree with the deliverables & payment plan above.
                   </label>
@@ -534,18 +602,26 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
           </div>
 
           {/* footer */}
-          <div className="sticky bottom-0 z-10 border-t bg-white/90 backdrop-blur px-5 py-3">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="sticky bottom-0 z-10 border-t bg-white/90 px-5 py-3 backdrop-blur">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-gray-700">
                 <span className="font-medium">Total Estimate:</span>{" "}
                 <span className="font-semibold text-gray-900">{idr(total)}</span>
                 {bundle && <span className="ml-2 text-xs text-primary-60">(Bundle applied)</span>}
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={onClose} className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">Close</button>
+                <button
+                  onClick={onClose}
+                  className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                >
+                  Close
+                </button>
 
                 {step > 1 && (
-                  <button onClick={()=>setStep((s)=> (s === 3 ? 2 : 1))} className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                  <button
+                    onClick={() => setStep((s) => (s === 3 ? 2 : 1))}
+                    className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                  >
                     Back
                   </button>
                 )}
@@ -569,7 +645,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props) 
                 )}
               </div>
             </div>
-            {error && <p className="mt-2 text-sm text-red-600">{String(error)}</p>}
+            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
           </div>
         </div>
       </div>

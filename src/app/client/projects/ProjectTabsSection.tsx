@@ -22,7 +22,7 @@ type Props = {
 
 export const ProjectTabsSection = ({
   activeTab: activeTabProp,
-  initialTab = "Active",
+  initialTab = "All Project",
   onTabChange,
   onSearchChange,
   onCreateClick,
@@ -47,11 +47,11 @@ export const ProjectTabsSection = ({
   }, [initialTab, activeTabProp]);
   const activeTab = activeTabProp ?? activeTabInner;
 
-  // 🔧 FIX: search state is local here and reported up via onSearchChange (debounced)
+  // Search (debounced)
   const [searchValue, setSearchValue] = useState("");
   useEffect(() => {
-    const id = setTimeout(() => onSearchChange?.(searchValue), 300);
-    return () => clearTimeout(id);
+    const id: number = window.setTimeout(() => onSearchChange?.(searchValue), 300);
+    return () => window.clearTimeout(id);
   }, [searchValue, onSearchChange]);
 
   // Underline indicator
@@ -73,18 +73,28 @@ export const ProjectTabsSection = ({
     const aRect = activeBtn.getBoundingClientRect();
     const x = aRect.left - cRect.left;
 
-    indicator.style.width = `${aRect.width}px`;
-    indicator.style.transform = `translateX(${x}px)`;
+    // smooth + layout-safe
+    window.requestAnimationFrame(() => {
+      indicator.style.width = `${aRect.width}px`;
+      indicator.style.transform = `translateX(${x}px)`;
+    });
   }, [activeTab]);
 
   useLayoutEffect(() => {
     updateIndicator();
-    const ro = new ResizeObserver(() => updateIndicator());
-    if (listRef.current) ro.observe(listRef.current);
-    window.addEventListener("resize", updateIndicator);
+
+    // Guard untuk environment yang belum support ResizeObserver
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => updateIndicator());
+      if (listRef.current) ro.observe(listRef.current);
+    }
+    const onResize = () => updateIndicator();
+    window.addEventListener("resize", onResize);
+
     return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", updateIndicator);
+      ro?.disconnect();
+      window.removeEventListener("resize", onResize);
     };
   }, [activeTab, tabs.length, updateIndicator]);
 
@@ -95,7 +105,7 @@ export const ProjectTabsSection = ({
   };
 
   // Keyboard navigation
-  const onKeyNav = (e: React.KeyboardEvent) => {
+  const onKeyNav = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
     e.preventDefault();
     const idx = tabs.findIndex((t) => t.name === activeTab);
@@ -110,9 +120,11 @@ export const ProjectTabsSection = ({
     onTabChange?.(tabs[next].name);
   };
 
+  const safeId = (name: string) => `panel-${name.replace(/\s+/g, "-").toLowerCase()}`;
+
   return (
     <nav
-      className="flex items-center justify-between w-full border-b border-gray-200"
+      className="flex w-full items-center justify-between border-b border-gray-200"
       role="navigation"
       aria-label="Project tabs"
     >
@@ -128,7 +140,7 @@ export const ProjectTabsSection = ({
           const isActive = tab.name === activeTab;
           const displayCount =
             externalCounts && typeof externalCounts[tab.name] === "number"
-              ? externalCounts[tab.name]!
+              ? (externalCounts[tab.name] as number)
               : null;
 
           return (
@@ -141,10 +153,10 @@ export const ProjectTabsSection = ({
               disabled={!!tab.isDisabled}
               role="tab"
               aria-selected={isActive}
-              aria-controls={`panel-${tab.name}`}
+              aria-controls={safeId(tab.name)}
               tabIndex={tab.isDisabled ? -1 : 0}
               className={[
-                "relative inline-flex items-center gap-2 px-4 py-2 h-12",
+                "relative inline-flex h-12 items-center gap-2 px-4 py-2",
                 "text-sm font-medium",
                 "transition-colors",
                 tab.isDisabled
@@ -156,7 +168,7 @@ export const ProjectTabsSection = ({
             >
               <span>{tab.name}</span>
               {typeof displayCount === "number" && (
-                <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs">
+                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
                   {displayCount}
                 </span>
               )}
@@ -182,7 +194,7 @@ export const ProjectTabsSection = ({
             placeholder="Search"
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
-            className="pl-10 pr-3 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-60"
+            className="rounded-lg border px-3 py-1.5 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-60"
           />
         </div>
 

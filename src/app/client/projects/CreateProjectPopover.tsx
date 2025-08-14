@@ -134,6 +134,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   const [deadline, setDeadline] = useState("");
   const [deliveryFormat, setDeliveryFormat] = useState<string[]>([]);
   const [referenceLinks, setReferenceLinks] = useState<string>("");
+  const [refLinksDraft, setRefLinksDraft] = useState<string>("");
   const [paymentPlan, setPaymentPlan] = useState<"upfront" | "half" | "milestone">("half");
   const [agree, setAgree] = useState(false);
   const [ndaRequired, setNdaRequired] = useState(false);
@@ -143,9 +144,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   const setStartWithPreserve = withPreservedScroll((v: string) => setStartDate(v));
   const setDeadlineWithPreserve = withPreservedScroll((v: string) => setDeadline(v));
   const setEngineerWithPreserve = withPreservedScroll((v: string) => setPreferredEngineerId(v));
-  const setRefsWithPreserve = withPreservedScroll((v: string) => setReferenceLinks(v));
   const setAgreeWithPreserve = withPreservedScroll((v: boolean) => setAgree(v));
-
 
   const bundle = selectedBundle ? BUNDLES.find(b => b.key === selectedBundle) ?? null : null;
 
@@ -283,6 +282,11 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     }
   }, []);
 
+  // Sinkronkan draft ref links saat masuk Step 3 / saat nilai global berubah
+  useEffect(() => {
+    if (step === 3) setRefLinksDraft(referenceLinks ?? "");
+  }, [step, referenceLinks]);
+
   // Helper pembungkus handler agar menyimpan scroll sebelum state berubah
   function withPreservedScroll<A extends unknown[]>(fn: (...args: A) => void) {
     return (...args: A) => {
@@ -342,6 +346,9 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
       return rest;
     });
   };
+
+  // commit reference links ke state global dengan preservasi scroll
+  const setRefsWithPreserve = withPreservedScroll((v: string) => setReferenceLinks(v));
 
   const planPretty: Record<"upfront" | "half" | "milestone", string> = {
     upfront: "100% Up-front (dibayar penuh di awal)",
@@ -422,7 +429,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
           "group relative flex items-start gap-3 rounded-xl border px-3 py-3 text-left transition",
           active ? "border-primary-60 bg-primary-50/10" : "border-gray-200 hover:border-gray-300 hover:bg-gray-50",
         ].join(" ")}
-        // cegah fokus yang kadang bikin lompat di beberapa browser
         onMouseDown={(e) => e.preventDefault()}
       >
         <div className={["mt-0.5 h-4 w-4 rounded border", active ? "bg-primary-60 border-primary-60" : "bg-white border-gray-300"].join(" ")} />
@@ -470,7 +476,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
       onKeyDown={(e) => {
         if (e.key === "Enter") {
           const target = e.target as HTMLElement;
-          // izinkan Enter di textarea
           if (target && target.tagName.toLowerCase() !== "textarea") {
             e.preventDefault();
           }
@@ -802,11 +807,17 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                       Reference links (YouTube/Spotify/Drive)
                     </label>
                     <textarea
-                      value={referenceLinks}
-                      onChange={(e) => setRefsWithPreserve(e.target.value)}
+                      value={refLinksDraft}
+                      onChange={(e) => setRefLinksDraft(e.target.value)}
+                      onBlur={() => setRefsWithPreserve(refLinksDraft)}
                       rows={2}
                       placeholder="Separate with new line"
                       className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
+                      onKeyDown={(e) => {
+                        if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                          (e.currentTarget as HTMLTextAreaElement).blur(); // commit cepat
+                        }
+                      }}
                     />
                   </div>
 

@@ -807,17 +807,11 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                       Reference links (YouTube/Spotify/Drive)
                     </label>
                     <textarea
-                      value={refLinksDraft}
-                      onChange={(e) => setRefLinksDraft(e.target.value)}
-                      // onBlur={() => setRefsWithPreserve(refLinksDraft)}
+                      value={referenceLinks}
+                      onChange={(e) => setReferenceLinks(e.target.value)}
                       rows={2}
-                      placeholder="Separate with new line"
+                      placeholder="Pisahkan dengan baris baru"
                       className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
-                      // onKeyDown={(e) => {
-                      //   if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-                      //     (e.currentTarget as HTMLTextAreaElement).blur(); // commit cepat
-                      //   }
-                      // }}
                     />
                   </div>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">

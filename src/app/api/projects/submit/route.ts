@@ -59,7 +59,27 @@ export async function POST(req: Request) {
     const cookieStore = cookies();
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
     const { data: auth } = await supabase.auth.getUser();
-    const uid = auth.user?.id;
+    const authHeader = req.headers.get("Authorization");
+    const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+
+    let uid: string | null = null;
+
+    if (bearer) {
+      // verifikasi token langsung (tanpa cookies)
+      const svc = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+        auth: { persistSession: false, autoRefreshToken: false },
+        global: { headers: { Authorization: `Bearer ${bearer}` } },
+      });
+      const { data: u } = await svc.auth.getUser();
+      uid = u.user?.id ?? null;
+    } else {
+      // fallback ke cookies (kalau ada)
+      const cookieStore = cookies();
+      const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+      const { data: u } = await supabase.auth.getUser();
+      uid = u.user?.id ?? null;
+    }
+
     if (!uid) {
       return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
     }

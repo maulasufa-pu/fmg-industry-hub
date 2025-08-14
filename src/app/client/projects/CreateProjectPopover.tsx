@@ -14,6 +14,8 @@ const SUBGENRES = [
   "Indie Folk","Orchestral","Chillhop","Drum & Bass","Future Bass","Deep House","Afrobeats","City Pop","Bossa Nova",
 ];
 
+const MIN_DESC = 150; // <<— deskripsi minimal
+
 type ServiceKey =
   | "songwriting" | "composition" | "arrangement" | "digital_production" | "sound_design"
   | "editing" | "mixing" | "mastering" | "publishing_admin"
@@ -130,7 +132,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
   const [startDate, setStartDate] = useState("");
   const [deadline, setDeadline] = useState("");
   const [deliveryFormat, setDeliveryFormat] = useState<string[]>([]);
-  const referenceLinksRef = useRef<HTMLTextAreaElement>(null);
+  const [referenceLinks, setReferenceLinks] = useState<string>("");
   const [paymentPlan, setPaymentPlan] = useState<"upfront" | "half" | "milestone">("half");
   const [agree, setAgree] = useState(false);
   const [ndaRequired, setNdaRequired] = useState(false);
@@ -182,7 +184,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
       startDate: startDate || null,
       deadline: deadline || null,
       deliveryFormat,
-      referenceLinks: (referenceLinksRef.current?.value ?? ""),
+      referenceLinks,
       paymentPlan,
       ndaRequired,
       preferredEngineerId: preferredEngineerId || null,
@@ -250,9 +252,12 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
     // setReferenceLinks("");  // HAPUS
     setPaymentPlan("half"); setAgree(false);
     setNdaRequired(false); setPreferredEngineerId("");
+    setDeliveryFormat([]);
 
     // kosongkan textarea via ref
-    if (referenceLinksRef.current) referenceLinksRef.current.value = "";
+    setReferenceLinks(""); // <- pakai ini
+    setPaymentPlan("half");
+
   }, [open]);
 
 
@@ -307,6 +312,9 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
       setError(null);
 
       if (!songTitle.trim()) throw new Error("Song title is required");
+      if (description.trim().length < MIN_DESC) {
+        throw new Error(`Description must be at least ${MIN_DESC} characters`);
+      }
       if (selectedServices.size === 0 && !selectedBundle) {
         throw new Error("Pick at least one service or a bundle");
       }
@@ -444,7 +452,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
           {/* header */}
           <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-white/90 px-5 py-3 backdrop-blur">
             <div className="flex items-center gap-3">
-              <h2 className="text-base font-semibold text-gray-900">Create Project</h2>
+              <h2 className="text-base font-semibold text-gray-900">Order Form</h2>
               <div className="text-xs text-gray-500">Step {step} of 3</div>
             </div>
             <button
@@ -515,39 +523,49 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">Description</label>
+                  <label className="block text-sm font-medium text-gray-700">Song Synopsis / Description</label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={4}
-                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
-                    placeholder="Short brief about the project..."
+                    className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 ${
+                      description.trim().length < MIN_DESC ? "border-red-300 focus:ring-red-400" : "border-gray-300 focus:ring-primary-60"
+                    }`}
+                    placeholder={`Write a synopsis / description about the project (min ${MIN_DESC} characters)`}
                   />
+                  <div className="mt-1 flex items-center justify-between text-xs">
+                    <span className={description.trim().length < MIN_DESC ? "text-red-600" : "text-gray-500"}>
+                      {description.trim().length}/{MIN_DESC} characters
+                    </span>
+                    {description.trim().length < MIN_DESC && (
+                      <span className="text-red-600">Please add more details to reach at least {MIN_DESC} characters.</span>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
 
             {step === 2 && (
               <div className="space-y-6">
-                <Section title="Type of Service">
+                <Section title="Music Services">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {SERVICES.filter((s) => s.group === "core").map((s) => <ServiceCard key={s.key} s={s} />)}
                   </div>
                 </Section>
 
-                <Section title="Additional Service">
+                <Section title="Add-on Services">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {SERVICES.filter((s) => s.group === "additional").map((s) => <ServiceCard key={s.key} s={s} />)}
                   </div>
                 </Section>
 
-                <Section title="Business Management / Development / Others">
+                <Section title="Artist Support Services">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {SERVICES.filter((s) => s.group === "business").map((s) => <ServiceCard key={s.key} s={s} />)}
                   </div>
                 </Section>
 
-                <Section title="Bundles (Hemat)">
+                <Section title="Bundles (More Cheap)">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {BUNDLES.map((b) => {
                       const active = selectedBundle === b.key;
@@ -583,13 +601,13 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
                 </Section>
 
                 {/* Custom Price Editor */}
-                <Section title="Custom Price (optional)">
+                <Section title="Service Details">
                   <div className="rounded-xl border border-gray-200">
                     <div className="grid grid-cols-12 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-500">
                       <div className="col-span-6">Service</div>
-                      <div className="col-span-2 text-right">Default</div>
-                      <div className="col-span-2 text-right">Custom (min default)</div>
-                      <div className="col-span-2 text-right">Resolved</div>
+                      <div className="col-span-2 text-right">Default Price</div>
+                      <div className="col-span-2 text-right">Premium Price</div>
+                      <div className="col-span-2 text-right">Amount</div>
                     </div>
                     <div>
                       {Array.from(selectedServices).length === 0 ? (
@@ -601,11 +619,12 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
                           const inBundle = !!bundle && bundle.includes.includes(key);
                           const custom = customPrices[key];
                           const resolved = inBundle ? 0 : resolvedPriceOf(key);
+                          const isCustom = !inBundle && custom != null; // penanda custom price
                           return (
                             <div key={key} className="grid grid-cols-12 items-center border-t px-3 py-2 text-sm">
                               <div className="col-span-6">
                                 <div className="font-medium text-gray-800">{s.label}{s.isSubscription ? " • /mo" : ""}</div>
-                                {inBundle && <div className="text-[11px] text-primary-60">Bundled — dibayar via bundle</div>}
+                                {inBundle && <div className="text-[11px] text-primary-60">Bundled — harga sudah termasuk di bundle</div>}
                               </div>
                               <div className="col-span-2 text-right text-gray-700">{idr(def)}</div>
                               <div className="col-span-2 text-right">
@@ -623,7 +642,15 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
                                   />
                                 )}
                               </div>
-                              <div className="col-span-2 text-right font-medium text-gray-900">{idr(resolved)}</div>
+                              <div className="col-span-2 text-right">
+                                {inBundle ? (
+                                  <span className="font-medium text-gray-900">{idr(resolved)}</span>
+                                ) : isCustom ? (
+                                  <span className="font-semibold text-gray-900"><span aria-hidden>★ </span>{idr(resolved)}</span>
+                                ) : (
+                                  <span className="font-medium text-gray-900">{idr(resolved)}</span>
+                                )}
+                              </div>
                             </div>
                           );
                         })
@@ -654,16 +681,16 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
                           const def = s.price;
                           const cus = customPrices[k];
                           const resolved = inBundle ? 0 : resolvedPriceOf(k);
+                          const isCustom = !inBundle && cus != null;
                           return (
                             <li key={k}>
                               {s.label}{s.isSubscription ? " (subscription)" : ""} —{" "}
                               {inBundle ? (
                                 <span className="text-primary-60">Bundled</span>
+                              ) : isCustom ? (
+                                <strong><span aria-hidden>★ </span>{idr(resolved)}</strong>
                               ) : (
-                                <>
-                                  {idr(resolved)}
-                                  {cus && cus > def ? <span className="text-xs text-gray-500"> (custom ≥ default)</span> : null}
-                                </>
+                                idr(resolved)
                               )}
                             </li>
                           );
@@ -684,7 +711,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
                 <Section title="Preferences">
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="block text-sm text-gray-700">Target Start</label>
+                      <label className="block text-sm text-gray-700">Project Start</label>
                       <input
                         type="date"
                         value={startDate}
@@ -693,7 +720,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
                       />
                     </div>
                     <div>
-                      <label className="block text-sm text-gray-700">Deadline</label>
+                      <label className="block text-sm text-gray-700">Project End</label>
                       <input
                         type="date"
                         value={deadline}
@@ -727,9 +754,10 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
                       Reference links (YouTube/Spotify/Drive)
                     </label>
                     <textarea
-                      ref={referenceLinksRef}
+                      value={referenceLinks}
+                      onChange={(e) => setReferenceLinks(e.target.value)}
                       rows={2}
-                      placeholder="Pisahkan dengan baris baru"
+                      placeholder="Separate with new line"
                       className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
                     />
                   </div>
@@ -741,7 +769,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
                         onChange={(e) => setPreferredEngineerId(e.target.value)}
                         className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
                       >
-                        <option value="">No preference</option>
+                        <option value="">Alfath Flemmo</option>
                         {engineers.map((e) => (
                           <option key={e.id} value={e.id}>{e.name}</option>
                         ))}
@@ -799,9 +827,9 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
           <div className="sticky bottom-0 z-10 border-t bg-white/90 px-5 py-3 backdrop-blur">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-gray-700">
-                <span className="font-medium">Total Estimate:</span>{" "}
+                <span className="font-medium">Total:</span>{" "}
                 <span className="font-semibold text-gray-900">{idr(total)}</span>
-                {bundle && <span className="ml-2 text-xs text-primary-60">(Bundle applied)</span>}
+                {bundle && <span className="ml-2 text-xs text-primary-60">(Bundle Applied)</span>}
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -823,7 +851,11 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
                 {step < 3 ? (
                   <button
                     onClick={() => setStep((s) => (s === 1 ? 2 : 3))}
-                    disabled={step === 1 ? !songTitle.trim() : (selectedServices.size === 0 && !selectedBundle)}
+                    disabled={
+                      step === 1
+                        ? !(songTitle.trim() && description.trim().length >= MIN_DESC)
+                        : (selectedServices.size === 0 && !selectedBundle)
+                    }
                     className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-110 disabled:opacity-50"
                   >
                     Next
@@ -834,7 +866,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
                     disabled={saving || !agree || !songTitle.trim()}
                     className="inline-flex items-center rounded-lg bg-primary-60 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-95 disabled:opacity-60"
                   >
-                    {saving ? "Submitting…" : "Submit Request"}
+                    {saving ? "Sending Request..." : "Send Request"}
                   </button>
                 )}
               </div>
@@ -848,7 +880,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" role="dialog" aria-modal="true">
           <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
             <div className="flex items-center justify-between border-b px-5 py-3">
-              <h3 className="text-base font-semibold text-gray-900">Request Terkirim ✨</h3>
+              <h3 className="text-base font-semibold text-gray-900">Request Sent! ✨</h3>
               <button
                 onClick={() => { setShowSubmitted(false); onClose(); }}
                 className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-60"
@@ -860,12 +892,12 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
 
             <div className="space-y-3 px-5 py-4 text-sm text-gray-700">
               <p>
-                Terima kasih! Project kamu telah kami terima dan saat ini berstatus{" "}
+                Thank you! We have received your project and it is currently in progress.{" "}
                 <span className="rounded bg-amber-50 px-1.5 py-0.5 font-medium text-amber-700 ring-1 ring-amber-200">Requested</span>.
               </p>
               <p>
-                Tim Admin akan melakukan verifikasi & approval. Begitu project <span className="font-medium">di-ACC</span>,
-                proses akan otomatis berlanjut ke tahap <span className="font-medium">pembayaran</span> sesuai plan yang kamu pilih:
+                The Admin Team will verify and approve the project. Once the project <span className="font-medium">is approved</span>,
+                the process will automatically proceed to the <span className="font-medium">payment stage</span> according to the plan you selected:
               </p>
               <div className="rounded-lg border bg-gray-50 px-3 py-2 text-gray-800">
                 <div className="text-sm">
@@ -873,11 +905,11 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
                   {planPretty[paymentPlan]}
                 </div>
                 <div className="mt-1 text-xs text-gray-500">
-                  Kamu akan menerima notifikasi/email ketika project sudah disetujui dan invoice siap dibayar.
+                  You will receive a notification/email when the project has been approved and the invoice is ready to be paid.
                 </div>
               </div>
               <p className="text-xs text-gray-500">
-                *Jika ada penyesuaian brief atau harga, Admin akan menghubungi kamu sebelum approval.
+                *If there are any adjustments to the brief or price, the Admin will contact you before approval.
               </p>
             </div>
 
@@ -896,7 +928,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
                 }}
                 className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:brightness-110"
               >
-                Lihat di Requested
+                Open in Project Requested
               </button>
               {createdProjectId && (
                 <button
@@ -907,7 +939,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
                   }}
                   className="rounded-lg bg-primary-60 px-4 py-2 text-sm font-semibold text-white hover:brightness-95"
                 >
-                  Buka Project
+                  Open Project
                 </button>
               )}
             </div>

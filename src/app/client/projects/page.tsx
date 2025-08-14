@@ -9,8 +9,6 @@ import { ProjectPaginationSection } from "./ProjectPaginationSection";
 import { withSignal, getSupabaseClient } from "@/lib/supabase/client";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
 import CreateProjectPopover from "./CreateProjectPopover";
-import SubmitSuccessModal from "@/components/SubmisSuccessForm";
-
 
 type TabKey = "All Project" | "Active" | "Finished" | "Pending" | "Requested";
 
@@ -32,13 +30,10 @@ type ProjectRow = {
   is_finished?: boolean | null;
 };
 
-type CountResp = { count: number | null; error?: unknown };
-
 const QUERY_COLS =
   "id,project_name,artist_name,genre,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name";
 
 export default function PageContent(): React.JSX.Element {
-
   useFocusWarmAuth();
 
   const router = useRouter();
@@ -51,20 +46,16 @@ export default function PageContent(): React.JSX.Element {
 
   // UI
   const [openCreate, setOpenCreate] = useState(false);
-  const [successOpen, setSuccessOpen] = useState(false);
-  const [successProjectId, setSuccessProjectId] = useState<string | null>(null);
-  const [successPlan, setSuccessPlan] = useState<"upfront" | "half" | "milestone">("half");
-
   const [activeTab, setActiveTab] = useState<TabKey>(initialTabFromUrl);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  // Debounce search
+  // Debounce
   const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
-    const t = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
-    return () => window.clearTimeout(t);
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(t);
   }, [search]);
 
   // Data
@@ -75,88 +66,66 @@ export default function PageContent(): React.JSX.Element {
     Active: null,
     Finished: null,
     Pending: null,
-    Requested: null,
+    Requested: 0,
   });
 
   // Spinner hanya untuk initial load
   const [loadingInitial, setLoadingInitial] = useState(true);
-  const [didInit, setDidInit] = useState(false);
+  const [didInit, setDidInit] = useState(false); // <- NEW
 
-  // Abort & mount guard
+  // Abort
   const abortRef = useRef<AbortController | null>(null);
-  const mountedRef = useRef<boolean>(true);
 
   const fetchCounts = useCallback(
-    async (q: string, signal: AbortSignal): Promise<Record<TabKey, number>> => {
+    async (q: string, signal: AbortSignal) => {
+      type CountResp = { count: number | null; error: unknown };
+
       const like = q ? `%${q}%` : null;
 
-      // Helper untuk apply OR search tanpa bikin TS ngambek
-      const applySearch = <T extends { or: (expr: string) => T }>(qb: T): T => {
-        return like
-          ? qb.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`)
-          : qb;
-      };
-      
-      // All
-      let allQ = supabase
-        .from("project_summary")
-        .select("id", { count: "exact", head: true });
-      allQ = applySearch(allQ);
-      const { count: allCount, error: allErr } = await allQ.abortSignal(signal);
+      // ALL
+      let allQ = supabase.from("project_summary").select("id", { count: "exact", head: true });
+      if (like) allQ = allQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+      const allRes = await withSignal(allQ, signal).returns<CountResp>();
 
-      // Active
-      let actQ = supabase
-        .from("project_summary")
-        .select("id", { count: "exact", head: true })
-        .eq("is_active", true);
-      actQ = applySearch(actQ);
-      const { count: actCount, error: actErr } = await actQ.abortSignal(signal);
+      // ACTIVE
+      let actQ = supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("is_active", true);
+      if (like) actQ = actQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+      const actRes = await withSignal(actQ, signal).returns<CountResp>();
 
-      // Finished
-      let finQ = supabase
-        .from("project_summary")
-        .select("id", { count: "exact", head: true })
-        .eq("is_finished", true);
-      finQ = applySearch(finQ);
-      const { count: finCount, error: finErr } = await finQ.abortSignal(signal);
+      // FINISHED
+      let finQ = supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("is_finished", true);
+      if (like) finQ = finQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+      const finRes = await withSignal(finQ, signal).returns<CountResp>();
 
-      // Pending (pakai status agar tidak tumpang tindih)
+      // PENDING
       let penQ = supabase
         .from("project_summary")
         .select("id", { count: "exact", head: true })
-        .eq("status", "pending");
-      penQ = applySearch(penQ);
-      const { count: penCount, error: penErr } = await penQ.abortSignal(signal);
+        .eq("is_active", false)
+        .eq("is_finished", false);
+      if (like) penQ = penQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+      const penRes = await withSignal(penQ, signal).returns<CountResp>();
 
-      // Requested
-      let reqQ = supabase
-        .from("project_summary")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "requested");
-      reqQ = applySearch(reqQ);
-      const { count: reqCount, error: reqErr } = await reqQ.abortSignal(signal);
-
-      if (allErr) throw allErr;
-      if (actErr) throw actErr;
-      if (finErr) throw finErr;
-      if (penErr) throw penErr;
-      if (reqErr) throw reqErr;
+      if (allRes.error) throw allRes.error;
+      if (actRes.error) throw actRes.error;
+      if (finRes.error) throw finRes.error;
+      if (penRes.error) throw penRes.error;
 
       return {
-        "All Project": allCount ?? 0,
-        Active: actCount ?? 0,
-        Finished: finCount ?? 0,
-        Pending: penCount ?? 0,
-        Requested: reqCount ?? 0,
-      };
+        "All Project": allRes.count ?? 0,
+        Active: actRes.count ?? 0,
+        Finished: finRes.count ?? 0,
+        Pending: penRes.count ?? 0,
+        Requested: 0,
+      } as Record<TabKey, number>;
     },
     [supabase]
   );
 
+  // isInitial = true → hanya initial load yang tunjukkan spinner
   const fetchPage = useCallback(
     async (tab: TabKey, q: string, pageIdx: number, isInitial = false) => {
-      // Batalkan request lama
-      abortRef.current?.abort();
+      // Selalu buat AbortController baru
       abortRef.current = new AbortController();
       const ac = abortRef.current;
 
@@ -165,42 +134,36 @@ export default function PageContent(): React.JSX.Element {
         const from = (pageIdx - 1) * pageSize;
         const to = from + pageSize - 1;
 
-        let qBuilder = supabase.from("project_summary").select(QUERY_COLS, { count: "exact", head: false });
+        let qBuilder = supabase
+          .from("project_summary")
+          .select(QUERY_COLS, { count: "exact", head: false });
 
         if (tab === "Active") qBuilder = qBuilder.eq("is_active", true);
         else if (tab === "Finished") qBuilder = qBuilder.eq("is_finished", true);
-        else if (tab === "Pending") qBuilder = qBuilder.eq("status", "pending");
+        else if (tab === "Pending") qBuilder = qBuilder.eq("is_active", false).eq("is_finished", false);
         else if (tab === "Requested") qBuilder = qBuilder.eq("status", "requested");
 
         if (q) {
-          qBuilder = qBuilder.or(`project_name.ilike.%${q}%,artist_name.ilike.%${q}%,genre.ilike.%${q}%`);
+          qBuilder = qBuilder.or(
+            `project_name.ilike.%${q}%,artist_name.ilike.%${q}%,genre.ilike.%${q}%`
+          );
         }
 
         qBuilder = qBuilder.order("latest_update", { ascending: false }).range(from, to);
 
-        const { data, count, error } = await qBuilder.abortSignal(ac.signal);
+        const { data, count, error } = await withSignal(qBuilder, ac.signal).returns<ProjectRow[]>();
         if (error) throw error;
 
         const counts = await fetchCounts(q, ac.signal);
 
-        if (!mountedRef.current) return;
         setRows(data ?? []);
         setTotalCount(count ?? 0);
         setTabCounts(counts);
-      } catch (err: unknown) {
-        const isAbortError = (e: unknown): boolean => {
-          if (e instanceof DOMException && e.name === "AbortError") return true;
-          const x = e as { code?: string; name?: string; message?: string } | null;
-          return !!(
-            x &&
-            (x.name === "AbortError" ||
-            x.code === "20" ||
-            /aborted|AbortError/i.test(x.message || ""))
-          );
-        };
+      } catch (e) {
+        if ((e as { name?: string }).name !== "AbortError") console.error(e);
       } finally {
         if (abortRef.current === ac) abortRef.current = null;
-        if (isInitial && mountedRef.current) setLoadingInitial(false);
+        if (isInitial) setLoadingInitial(false);
       }
     },
     [fetchCounts, supabase]
@@ -208,38 +171,29 @@ export default function PageContent(): React.JSX.Element {
 
   // initial
   useEffect(() => {
-    mountedRef.current = true;
-    (async () => {
-      setPage(1);
-      try {
-        await supabase.auth.getSession();
-      } catch {
-        // ignore
-      }
-      await fetchPage(initialTabFromUrl, "", 1, true); // spinner hanya di sini
-      if (mountedRef.current) setDidInit(true);
-    })();
-    return () => {
-      mountedRef.current = false;
-      abortRef.current?.abort();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  (async () => {
+    setPage(1);
+    // warm session supaya RLS nggak balikin 0 duluan
+    await supabase.auth.getSession().catch(() => {});
+    await fetchPage(initialTabFromUrl, "", 1, true); // spinner hanya di sini
+    setDidInit(true); // <- NEW
+  })();
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
 
   // re-fetch tanpa spinner pada tab/search/page change
   useEffect(() => {
-    if (!didInit) return;
-    void fetchPage(activeTab, debouncedSearch, page, false);
-  }, [didInit, activeTab, debouncedSearch, page, fetchPage]);
+  if (!didInit) return; // <- NEW: jangan nembak request kedua saat mount
+  fetchPage(activeTab, debouncedSearch, page, false);
+}, [didInit, activeTab, debouncedSearch, page, fetchPage]);
 
-  // client-wake (dipanggil dari ClientShell saat focus/visible/pageshow)
   useEffect(() => {
-    const onWake = () => {
-      void fetchPage(activeTab, debouncedSearch, page, false);
+    const onClientRefresh = () => {
+      fetchPage(activeTab, debouncedSearch, page, true);
     };
-    window.addEventListener("client-wake", onWake);
+    window.addEventListener('client-refresh', onClientRefresh);
     return () => {
-      window.removeEventListener("client-wake", onWake);
+      window.removeEventListener('client-refresh', onClientRefresh);
     };
   }, [fetchPage, activeTab, debouncedSearch, page]);
 
@@ -275,10 +229,7 @@ export default function PageContent(): React.JSX.Element {
       />
 
       {loadingInitial ? (
-        <div
-          className="w-full rounded-lg border border-gray-200 bg-white p-10 text-center text-gray-500 shadow"
-          data-global-loader="true"
-        >
+        <div className="w-full rounded-lg border border-gray-200 bg-white p-10 text-center text-gray-500 shadow">
           Loading projects…
         </div>
       ) : (
@@ -316,19 +267,7 @@ export default function PageContent(): React.JSX.Element {
           <CreateProjectPopover
             open={openCreate}
             onClose={() => setOpenCreate(false)}
-            onSaved={() => {/* refresh table/list kalau perlu */}}
-            onSubmitted={({ projectId, paymentPlan }) => {
-              setSuccessProjectId(projectId);
-              setSuccessPlan(paymentPlan);
-              setSuccessOpen(true); // tampilkan modal sukses DI LUAR form
-            }}
-          />
-
-          <SubmitSuccessModal
-            open={successOpen}
-            onClose={() => setSuccessOpen(false)}
-            projectId={successProjectId}
-            paymentPlan={successPlan}
+            onSaved={() => fetchPage(activeTab, debouncedSearch, pageSafe /* no spinner */)}
           />
         </>
       )}

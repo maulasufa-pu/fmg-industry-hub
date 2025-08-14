@@ -1,31 +1,58 @@
 "use client";
-import { useEffect } from "react";
-import { WAKE_EVENT } from "@/lib/wakeRefetch"; // pastikan: export const WAKE_EVENT = 'client-refresh' as const;
+import { useEffect, useCallback, useRef } from "react";
+import { WAKE_EVENT } from "@/lib/wakeRefetch";
 
+/**
+ * Component untuk memicu re-fetch data ketika tab/window mendapat fokus,
+ * dengan debounce untuk mencegah reload berulang.
+ */
 export default function ClientWakeReloader() {
-  useEffect(() => {
-    const DEBOUNCE_MS = 2000;
-    let last = 0;
+  const lastReloadTime = useRef(0);
+  const DEBOUNCE_MS = 2000; // Minimal jarak antar reload
 
-    const fire = () => {
-      const now = Date.now();
-      if (now - last < DEBOUNCE_MS) return;
-      last = now;
-      window.dispatchEvent(new Event(WAKE_EVENT)); // 'client-refresh'
+  const handleWake = useCallback(() => {
+    const now = Date.now();
+    if (now - lastReloadTime.current < DEBOUNCE_MS) {
+      return; // Skip jika terlalu dekat dengan reload sebelumnya
+    }
+    
+    let retryCount = 0;
+    const MAX_RETRIES = 3;
+    
+    const dispatchWithRetry = () => {
+      try {
+        // Broadcast event untuk trigger refetch data
+        window.dispatchEvent(new Event(WAKE_EVENT));
+        lastReloadTime.current = now; // Update waktu hanya jika berhasil
+      } catch (error) {
+        console.error("Failed to dispatch wake event:", error);
+        if (retryCount < MAX_RETRIES) {
+          retryCount++;
+          // Exponential backoff untuk retry
+          setTimeout(dispatchWithRetry, Math.pow(2, retryCount) * 100);
+        }
+      }
     };
+    
+    dispatchWithRetry();
+  }, []);
 
-    const onFocus = () => fire();
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") fire();
+  useEffect(() => {
+    const onFocus = () => void handleWake();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void handleWake();
+      }
     };
 
     window.addEventListener("focus", onFocus, { passive: true });
-    document.addEventListener("visibilitychange", onVisibility, { passive: true });
+    document.addEventListener("visibilitychange", onVisibilityChange, { passive: true });
+
     return () => {
       window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onVisibility);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, []);
+  }, [handleWake]);
 
   return null;
 }

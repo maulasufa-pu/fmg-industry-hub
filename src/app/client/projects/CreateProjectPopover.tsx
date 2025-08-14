@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { Close } from "@/icons";
@@ -256,7 +256,26 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     }
   }, [open]);
 
-  const toggleService = (key: ServiceKey) => {
+  /** ---------- SCROLL LOCK HELPERS ---------- */
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const pendingScrollY = useRef<number | null>(null);
+
+  const preserveScroll =
+    <A extends unknown[]>(fn: (...args: A) => void) =>
+    (...args: A) => {
+      pendingScrollY.current = scrollRef.current?.scrollTop ?? 0;
+      fn(...args);
+      // restore on next paint after DOM updates
+      requestAnimationFrame(() => {
+        if (pendingScrollY.current != null && scrollRef.current) {
+          scrollRef.current.scrollTop = pendingScrollY.current;
+          pendingScrollY.current = null;
+        }
+      });
+    };
+
+  // --- handlers with preserved scroll ---
+  const toggleService = preserveScroll((key: ServiceKey) => {
     setSelectedServices(prev => {
       const n = new Set(prev);
       if (n.has(key)) {
@@ -270,16 +289,28 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
       }
       return n;
     });
-  };
+  });
 
-  const toggleFormat = (fmt: string) => {
+  const setBundleWithPreserve = preserveScroll((b: BundleKey | null) => {
+    setSelectedBundle(b);
+  });
+
+  const toggleFormat = preserveScroll((fmt: string) => {
     setDeliveryFormat(prev => prev.includes(fmt) ? prev.filter(f => f !== fmt) : [...prev, fmt]);
-  };
+  });
+
+  const setPlanWithPreserve = preserveScroll((val: "upfront" | "half" | "milestone") => {
+    setPaymentPlan(val);
+  });
+
+  const goStep = preserveScroll((next: 1 | 2 | 3) => setStep(next));
 
   // --- draft untuk harga custom (Step 2) ---
   const [priceDraft, setPriceDraft] = useState<Partial<Record<ServiceKey, string>>>({});
 
   const commitCustomPrice = (key: ServiceKey, raw: string) => {
+    // commit tidak perlu preserve (onBlur jarang memicu jump),
+    // tapi aman kalau mau pakai preserve juga:
     const def = defaultPriceOf(key);
     const n = Number(raw);
     if (!Number.isFinite(n)) {
@@ -376,6 +407,8 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
           "group relative flex items-start gap-3 rounded-xl border px-3 py-3 text-left transition",
           active ? "border-primary-60 bg-primary-50/10" : "border-gray-200 hover:border-gray-300 hover:bg-gray-50",
         ].join(" ")}
+        // cegah fokus yang kadang bikin lompat di beberapa browser
+        onMouseDown={(e) => e.preventDefault()}
       >
         <div className={["mt-0.5 h-4 w-4 rounded border", active ? "bg-primary-60 border-primary-60" : "bg-white border-gray-300"].join(" ")} />
         <div className="min-w-0">
@@ -418,6 +451,18 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
       ].join(" ")}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       aria-hidden={!open}
+      // tahan Enter agar tidak submit form induk jika ada
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          const target = e.target as HTMLElement;
+          // izinkan Enter di textarea
+          if (target && target.tagName.toLowerCase() !== "textarea") {
+            e.preventDefault();
+          }
+        }
+      }}
+      role="dialog"
+      aria-modal="true"
     >
       <div className="mx-4 my-6 w-full max-w-6xl">
         <div
@@ -443,7 +488,10 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
           </div>
 
           {/* content scrollable */}
-          <div className="px-5 py-4 overflow-y-auto max-h-[75vh]">
+          <div
+            ref={scrollRef}
+            className="px-5 py-4 overflow-y-auto max-h-[75vh]"
+          >
             {step === 1 && (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
@@ -553,11 +601,12 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                         <button
                           type="button"
                           key={b.key}
-                          onClick={() => setSelectedBundle(active ? null : b.key)}
+                          onClick={() => setBundleWithPreserve(active ? null : b.key)}
                           className={[
                             "rounded-xl border px-4 py-3 text-left transition",
                             active ? "border-primary-60 bg-primary-50/10" : "border-gray-200 hover:border-gray-300 hover:bg-gray-50",
                           ].join(" ")}
+                          onMouseDown={(e) => e.preventDefault()}
                         >
                           <div className="flex items-start justify-between">
                             <div>
@@ -724,6 +773,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                             type="button"
                             onClick={() => toggleFormat(fmt)}
                             className={`rounded-full border px-3 py-1 text-xs ${active ? "border-primary-60 bg-primary-50/10" : "border-gray-300 hover:bg-gray-50"}`}
+                            onMouseDown={(e) => e.preventDefault()}
                           >
                             {fmt}
                           </button>
@@ -775,11 +825,12 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                         <button
                           key={opt.value}
                           type="button"
-                          onClick={() => setPaymentPlan(opt.value as typeof paymentPlan)}
+                          onClick={() => setPlanWithPreserve(opt.value as typeof paymentPlan)}
                           className={`rounded-lg border px-3 py-2 text-sm transition-colors
                             ${active 
                               ? "border-primary-60 bg-primary-50 text-white" 
                               : "border-gray-300 hover:border-primary-60 hover:bg-primary-50/10"}`}
+                          onMouseDown={(e) => e.preventDefault()}
                         >
                           {opt.label}
                         </button>
@@ -819,7 +870,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                 {step > 1 && (
                   <button
                     type="button"
-                    onClick={() => setStep((s) => (s === 3 ? 2 : 1))}
+                    onClick={() => goStep(step === 3 ? 2 : 1)}
                     className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
                   >
                     Back
@@ -829,7 +880,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                 {step < 3 ? (
                   <button
                     type="button"
-                    onClick={() => setStep((s) => (s === 1 ? 2 : 3))}
+                    onClick={() => goStep(step === 1 ? 2 : 3)}
                     disabled={
                       step === 1
                         ? !(songTitle.trim() && description.trim().length >= MIN_DESC)

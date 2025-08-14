@@ -195,12 +195,12 @@ export default function PageContent(): React.JSX.Element {
 
   // client-refresh (mis. dipanggil dari layout recovery)
   useEffect(() => {
-    const onClientRefresh = (_e: Event) => {
-      void fetchPage(activeTab, debouncedSearch, page, true);
+    const onWake = () => {
+      void fetchPage(activeTab, debouncedSearch, page, false); 
     };
-    window.addEventListener("client-refresh", onClientRefresh as EventListener);
+    window.addEventListener("client-wake", onWake);
     return () => {
-      window.removeEventListener("client-refresh", onClientRefresh as EventListener);
+      window.removeEventListener("client-wake", onWake);
     };
   }, [fetchPage, activeTab, debouncedSearch, page]);
 

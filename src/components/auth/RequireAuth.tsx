@@ -8,8 +8,6 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 type Props = { children: React.ReactNode };
 type GuardStatus = "checking" | "authed" | "guest";
 
-const DEBUG = false;
-
 export default function RequireAuth({ children }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -21,96 +19,116 @@ export default function RequireAuth({ children }: Props) {
 
   const mountedRef = useRef(false);
   const redirectingRef = useRef(false);
+  const retryTimerRef = useRef<number | null>(null);
+  const lastKickRef = useRef(0);
+
   const isLoginPage = pathname?.startsWith("/login") ?? false;
 
-  const log = (...a: unknown[]) => { if (DEBUG) console.debug("[RequireAuth]", ...a); };
+  const clearRetry = () => {
+    if (retryTimerRef.current) {
+      window.clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+  };
 
-  // Aman: kembalikan session | null | undefined (undefined = error/transient)
+  // getSession aman: kembalikan
+  // - object  : ada session
+  // - null    : tegas tidak ada session
+  // - undefined: gagal cek (timeout/network), jangan langsung redirect
   const getSessionSafe = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       return session; // session | null
-    } catch (e) {
-      log("getSession error:", e);
+    } catch {
       return undefined;
     }
   };
 
-  // Redirect hanya jika benar2 guest; jangan ganggu UI kalau ragu
   const goLoginOnce = async (reason: string) => {
     if (redirectingRef.current || isLoginPage) return;
-    // double-check sebelum redirect (hindari race)
+    // double-check sebelum redirect
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        log("cancel redirect, session valid (reason:", reason, ")");
-        if (statusRef.current !== "authed") setStatus("authed");
-        return;
-      }
-    } catch {
-      // error transient → jangan paksa redirect
-      log("cancel redirect due to transient error (reason:", reason, ")");
-      return;
-    }
+      if (session || statusRef.current === "authed") return;
+    } catch { /* abaikan */ }
 
     redirectingRef.current = true;
     const to = `/login?redirectedFrom=${encodeURIComponent(pathname || "/client")}`;
-    log("redirect ->", to, "reason:", reason);
-    // pasang 'guest' HANYA saat memang redirect
-    setStatus("guest");
     startTransition(() => router.replace(to));
   };
 
-  const initialCheck = async () => {
-    const s = await getSessionSafe();
+  const checkSession = async (opts?: { retry?: boolean; attempt?: number }) => {
+    const attempt = opts?.attempt ?? 0;
+    const session = await getSessionSafe();
     if (!mountedRef.current) return;
 
-    if (s) {
-      log("initial: authed");
+    if (session) {
+      clearRetry();
       setStatus("authed");
       return;
     }
-    if (s === null) {
-      log("initial: no session -> login");
-      await goLoginOnce("initial-no-session");
+    if (session === null) {
+      clearRetry();
+      setStatus("guest");
+      void goLoginOnce("no-session");
       return;
     }
-    // s === undefined -> transient; jangan ganggu UI
-    log("initial: transient error -> assume authed for UX");
-    setStatus("authed");
+
+    // undefined = gagal cek (transient) -> retry ringan dengan backoff
+    if (opts?.retry !== false) {
+      const backoff = Math.min(300 + attempt * 300, 1500);
+      if (statusRef.current !== "checking") setStatus("checking");
+      clearRetry();
+      retryTimerRef.current = window.setTimeout(() => {
+        if (mountedRef.current) void checkSession({ retry: true, attempt: attempt + 1 });
+      }, backoff) as unknown as number;
+    }
   };
 
   useEffect(() => {
     mountedRef.current = true;
-    void initialCheck();
+    void checkSession({ retry: true });
 
-    // Realtime auth events: ini satu-satunya pemicu perubahan
+    // Dengarkan perubahan auth realtime
     const { data: { subscription } } = supabase.auth.onAuthStateChange((evt, session) => {
       if (!mountedRef.current) return;
-      log("auth event:", evt);
 
       if (evt === "SIGNED_IN" || evt === "TOKEN_REFRESHED") {
+        clearRetry();
         setStatus("authed");
         return;
       }
       if (evt === "SIGNED_OUT") {
-        // Jangan ubah UI ke 'guest' dulu; serahkan ke goLoginOnce agar bisa recovery kalau balapan
+        clearRetry();
+        setStatus("guest");
         void goLoginOnce("signed-out");
         return;
       }
 
-      // Event lain (USER_UPDATED, PASSWORD_RECOVERY, dsb): cek ringan tanpa ganggu UI
-      void (async () => {
-        const s = await getSessionSafe();
-        if (!mountedRef.current) return;
-        if (s) setStatus("authed");
-        else if (s === null) await goLoginOnce("event-no-session");
-        // undefined -> silent
-      })();
+      // USER_UPDATED, PASSWORD_RECOVERY, dsb → verifikasi ulang
+      setStatus("checking");
+      void checkSession({ retry: true });
     });
+
+    // Re-validate saat balik fokus / BFCache
+    const kick = () => {
+      const now = Date.now();
+      if (now - lastKickRef.current < 500) return; // debounce
+      lastKickRef.current = now;
+      if (statusRef.current !== "checking") setStatus("checking");
+      void checkSession({ retry: true, attempt: 0 });
+    };
+
+    const onVis = () => { if (document.visibilityState === "visible") kick(); };
+    const onShow = () => kick();
+    window.addEventListener("pageshow", onShow);
+    document.addEventListener("visibilitychange", onVis);
 
     return () => {
       mountedRef.current = false;
+      clearRetry();
+      window.removeEventListener("pageshow", onShow);
+      document.removeEventListener("visibilitychange", onVis);
       subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -123,6 +141,5 @@ export default function RequireAuth({ children }: Props) {
       </div>
     );
   }
-
   return <>{children}</>;
 }

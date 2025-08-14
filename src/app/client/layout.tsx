@@ -15,12 +15,12 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 
 // util: timeout guard untuk promise apa pun
 function withTimeout<T>(p: Promise<T>, ms: number, tag = "op"): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error(`[timeout] ${tag} > ${ms}ms`)), ms);
-    p.then(v => { clearTimeout(t); resolve(v); }).catch(e => { clearTimeout(t); reject(e); });
+  return new Promise<T>((resolve, reject) => {
+    const t = window.setTimeout(() => reject(new Error(`[timeout] ${tag} > ${ms}ms`)), ms);
+    p.then((v) => { clearTimeout(t); resolve(v); })
+     .catch((e) => { clearTimeout(t); reject(e); });
   });
 }
-
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   // State dan handler refresh
@@ -33,59 +33,64 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   // };
 
   const router = useRouter();
-  const busy = useRef(false);
-  const last = useRef(0);
+  const busyRef = useRef(false);
+  const lastRunRef = useRef(0);
 
   useEffect(() => {
     const recover = async (reason: string) => {
       const now = Date.now();
-      if (busy.current || now - last.current < 600) return; // debounce
-      busy.current = true;
+      if (busyRef.current || now - lastRunRef.current < 600) return; // debounce
+      busyRef.current = true;
 
       try {
-        // 1) Coba “pulihkan sistem” secara halus, batasi tiap step dengan timeout
         const supabase = getSupabaseClient();
 
-        // Pastikan session “terbaca”; kalau macet >700ms, anggap beku
+        // Pastikan session kebaca; jika macet, coba refresh cepat.
         try {
           await withTimeout(supabase.auth.getSession(), 700, "getSession");
         } catch {
-          // Coba refresh cepat; kalau macet, lanjut ke fallback refresh RSC
-          try { await withTimeout(supabase.auth.refreshSession(), 800, "refreshSession"); } catch {}
+          try {
+            await withTimeout(supabase.auth.refreshSession(), 800, "refreshSession");
+          } catch {
+            // diamkan: fallback berikutnya akan memulihkan UI
+          }
         }
 
-        // 2) Soft refresh RSC boundary (tanpa full reload)
-        //    startTransition supaya tidak block UI thread
+        // Soft refresh RSC boundary (tanpa full reload)
         startTransition(() => router.refresh());
-
       } finally {
-        last.current = Date.now();
-        busy.current = false;
+        lastRunRef.current = Date.now();
+        busyRef.current = false;
       }
     };
 
-    // Handler multi-skenario
-    const onFocus = () => recover("focus");
+    const onFocus = () => { void recover("focus"); };
+
     const onVisibility = () => {
-      if (document.visibilityState === "visible") recover("visibility");
+      if (document.visibilityState === "visible") {
+        void recover("visibility");
+      }
     };
+
     const onPageShow = (e: PageTransitionEvent) => {
-      // BFCache restore di mobile: e.persisted true → wajib refresh RSC
-      if ((e as any).persisted) recover("pageshow-bfcache");
-      else recover("pageshow");
+      // BFCache restore di mobile/Chromium
+      if (e.persisted) {
+        void recover("pageshow-bfcache");
+      } else {
+        void recover("pageshow");
+      }
     };
 
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("pageshow", onPageShow as any);
+    window.addEventListener("pageshow", onPageShow);
 
     return () => {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("pageshow", onPageShow as any);
+      window.removeEventListener("pageshow", onPageShow);
     };
   }, [router]);
-
 
   return (
     <RequireAuth>

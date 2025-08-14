@@ -258,24 +258,33 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
 
   /** ---------- SCROLL LOCK HELPERS ---------- */
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const pendingScrollY = useRef<number | null>(null);
+  const savedScrollTopRef = useRef<number | null>(null);
 
-  const preserveScroll =
-    <A extends unknown[]>(fn: (...args: A) => void) =>
-    (...args: A) => {
-      pendingScrollY.current = scrollRef.current?.scrollTop ?? 0;
+  // Pulihkan scroll tepat setelah commit DOM
+  useLayoutEffect(() => {
+    if (savedScrollTopRef.current != null && scrollRef.current) {
+      scrollRef.current.scrollTop = savedScrollTopRef.current;
+      savedScrollTopRef.current = null;
+    }
+  });
+
+  // Matikan scroll anchoring bawaan browser di kontainer
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.style.setProperty("overflow-anchor", "none");
+    }
+  }, []);
+
+  // Helper pembungkus handler agar menyimpan scroll sebelum state berubah
+  function withPreservedScroll<A extends unknown[]>(fn: (...args: A) => void) {
+    return (...args: A) => {
+      if (scrollRef.current) savedScrollTopRef.current = scrollRef.current.scrollTop;
       fn(...args);
-      // restore on next paint after DOM updates
-      requestAnimationFrame(() => {
-        if (pendingScrollY.current != null && scrollRef.current) {
-          scrollRef.current.scrollTop = pendingScrollY.current;
-          pendingScrollY.current = null;
-        }
-      });
     };
+  }
 
   // --- handlers with preserved scroll ---
-  const toggleService = preserveScroll((key: ServiceKey) => {
+  const toggleService = withPreservedScroll((key: ServiceKey) => {
     setSelectedServices(prev => {
       const n = new Set(prev);
       if (n.has(key)) {
@@ -291,26 +300,24 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     });
   });
 
-  const setBundleWithPreserve = preserveScroll((b: BundleKey | null) => {
+  const setBundleWithPreserve = withPreservedScroll((b: BundleKey | null) => {
     setSelectedBundle(b);
   });
 
-  const toggleFormat = preserveScroll((fmt: string) => {
+  const toggleFormat = withPreservedScroll((fmt: string) => {
     setDeliveryFormat(prev => prev.includes(fmt) ? prev.filter(f => f !== fmt) : [...prev, fmt]);
   });
 
-  const setPlanWithPreserve = preserveScroll((val: "upfront" | "half" | "milestone") => {
+  const setPlanWithPreserve = withPreservedScroll((val: "upfront" | "half" | "milestone") => {
     setPaymentPlan(val);
   });
 
-  const goStep = preserveScroll((next: 1 | 2 | 3) => setStep(next));
+  const goStep = withPreservedScroll((next: 1 | 2 | 3) => setStep(next));
 
   // --- draft untuk harga custom (Step 2) ---
   const [priceDraft, setPriceDraft] = useState<Partial<Record<ServiceKey, string>>>({});
 
   const commitCustomPrice = (key: ServiceKey, raw: string) => {
-    // commit tidak perlu preserve (onBlur jarang memicu jump),
-    // tapi aman kalau mau pakai preserve juga:
     const def = defaultPriceOf(key);
     const n = Number(raw);
     if (!Number.isFinite(n)) {
@@ -490,7 +497,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
           {/* content scrollable */}
           <div
             ref={scrollRef}
-            className="px-5 py-4 overflow-y-auto max-h-[75vh]"
+            className="px-5 py-4 overflow-y-auto max-h-[75vh] overscroll-contain"
           >
             {step === 1 && (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

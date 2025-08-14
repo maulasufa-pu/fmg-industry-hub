@@ -68,7 +68,7 @@ export default function PageContent(): React.JSX.Element {
     Active: null,
     Finished: null,
     Pending: null,
-    Requested: 0,
+    Requested: null,
   });
 
   // Spinner hanya untuk initial load
@@ -83,37 +83,72 @@ export default function PageContent(): React.JSX.Element {
     async (q: string, signal: AbortSignal): Promise<Record<TabKey, number>> => {
       const like = q ? `%${q}%` : null;
 
-      let allQ = supabase.from("project_summary").select("id", { count: "exact", head: true });
-      if (like) allQ = allQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
-      const allRes = await withSignal(allQ, signal).returns<CountResp>();
+      // Helper untuk apply OR search tanpa bikin TS ngambek
+      const applySearch = <T,>(
+        qb: ReturnType<typeof supabase.from> extends any
+          ? any // biarkan fleksibel: akan menjadi PostgrestFilterBuilder setelah .select
+          : never
+      ) => {
+        if (like) {
+          // .or() hanya tersedia pada FilterBuilder (setelah .select)
+          qb = qb.or(
+            `project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`
+          );
+        }
+        return qb;
+      };
 
-      let actQ = supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("is_active", true);
-      if (like) actQ = actQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
-      const actRes = await withSignal(actQ, signal).returns<CountResp>();
+      // All
+      let allQ = supabase
+        .from("project_summary")
+        .select("id", { count: "exact", head: true });
+      allQ = applySearch(allQ);
+      const { count: allCount, error: allErr } = await allQ.abortSignal(signal);
 
-      let finQ = supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("is_finished", true);
-      if (like) finQ = finQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
-      const finRes = await withSignal(finQ, signal).returns<CountResp>();
+      // Active
+      let actQ = supabase
+        .from("project_summary")
+        .select("id", { count: "exact", head: true })
+        .eq("is_active", true);
+      actQ = applySearch(actQ);
+      const { count: actCount, error: actErr } = await actQ.abortSignal(signal);
 
+      // Finished
+      let finQ = supabase
+        .from("project_summary")
+        .select("id", { count: "exact", head: true })
+        .eq("is_finished", true);
+      finQ = applySearch(finQ);
+      const { count: finCount, error: finErr } = await finQ.abortSignal(signal);
+
+      // Pending (pakai status agar tidak tumpang tindih)
       let penQ = supabase
         .from("project_summary")
         .select("id", { count: "exact", head: true })
-        .eq("is_active", false)
-        .eq("is_finished", false);
-      if (like) penQ = penQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
-      const penRes = await withSignal(penQ, signal).returns<CountResp>();
+        .eq("status", "pending");
+      penQ = applySearch(penQ);
+      const { count: penCount, error: penErr } = await penQ.abortSignal(signal);
 
-      if (allRes.error) throw allRes.error;
-      if (actRes.error) throw actRes.error;
-      if (finRes.error) throw finRes.error;
-      if (penRes.error) throw penRes.error;
+      // Requested
+      let reqQ = supabase
+        .from("project_summary")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "requested");
+      reqQ = applySearch(reqQ);
+      const { count: reqCount, error: reqErr } = await reqQ.abortSignal(signal);
+
+      if (allErr) throw allErr;
+      if (actErr) throw actErr;
+      if (finErr) throw finErr;
+      if (penErr) throw penErr;
+      if (reqErr) throw reqErr;
 
       return {
-        "All Project": allRes.count ?? 0,
-        Active: actRes.count ?? 0,
-        Finished: finRes.count ?? 0,
-        Pending: penRes.count ?? 0,
-        Requested: 0,
+        "All Project": allCount ?? 0,
+        Active: actCount ?? 0,
+        Finished: finCount ?? 0,
+        Pending: penCount ?? 0,
+        Requested: reqCount ?? 0,
       };
     },
     [supabase]
@@ -144,7 +179,7 @@ export default function PageContent(): React.JSX.Element {
 
         qBuilder = qBuilder.order("latest_update", { ascending: false }).range(from, to);
 
-        const { data, count, error } = await withSignal(qBuilder, ac.signal).returns<ProjectRow[]>();
+        const { data, count, error } = await qBuilder.abortSignal(ac.signal);
         if (error) throw error;
 
         const counts = await fetchCounts(q, ac.signal);

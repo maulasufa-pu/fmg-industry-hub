@@ -146,7 +146,7 @@ export async function POST(req: Request) {
         artist_name: body.artistName || null,
         genre: body.genre || null,
         stage: "drafting",
-        status: "pending",
+        status: status,
         description: desc,
         budget_amount: clampInt(body.total) || null,
         budget_currency: "IDR",

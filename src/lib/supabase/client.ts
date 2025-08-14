@@ -82,9 +82,13 @@ export async function ensureFreshSession(): Promise<void> {
             .catch(() => {});
         }
         return true;
-      } catch (e: any) {
-        // Deteksi error yang benar2 invalid (jangan signOut untuk timeout)
-        const msg = (e?.error_description || e?.message || "").toLowerCase();
+      } catch (e: unknown) {
+        // pastikan e adalah object dan punya message/error_description
+        let msg = "";
+        if (typeof e === "object" && e !== null) {
+          const errObj = e as { error_description?: string; message?: string };
+          msg = (errObj.error_description || errObj.message || "").toLowerCase();
+        }
         if (msg.includes("invalid_grant") || msg.includes("invalid refresh")) {
           // refresh token invalid → ini baru alasan kuat untuk sign out
           await sb.auth.signOut().catch(() => {});

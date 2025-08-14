@@ -1,7 +1,5 @@
-// src/components/auth/LogoutButton.tsx
 "use client";
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
@@ -21,22 +19,23 @@ export default function LogoutButton({
   const router = useRouter();
   const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
     const supabase = getSupabaseClient();
 
-    // cek session awal
-    supabase.auth.getSession().then(({ data: { session} }) => {
-      setIsAuthed(!!session);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (mountedRef.current) setIsAuthed(!!session);
     });
 
-    // subscribe perubahan auth
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthed(!!session);
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+      if (mountedRef.current) setIsAuthed(!!session);
     });
 
     return () => {
-      subscription.subscription.unsubscribe();
+      mountedRef.current = false;
+      sub.subscription.unsubscribe();
     };
   }, []);
 
@@ -44,21 +43,26 @@ export default function LogoutButton({
   if (!isAuthed) return <>{fallback}</>;
 
   const onClick = async () => {
+    if (loading) return;
     setLoading(true);
     try {
       const supabase = getSupabaseClient();
 
-      // 1) hapus session di client (localStorage)
+      // 1) drop session lokal (cepat)
       await supabase.auth.signOut();
-      setIsAuthed(false); // sembunyikan tombol segera
+      if (mountedRef.current) setIsAuthed(false);
 
-      // 2) bersihkan cookie server + redirect target
-      await fetch("/auth/signout", { method: "POST" });
+      // 2) refresh boundary supaya cache server-side tidak stale
+      startTransition(() => router.refresh());
 
-      // 3) pindah ke login
-      router.replace("/login");
+      // 3) fire-and-forget bersihkan cookie server (jangan ditunggu)
+      void fetch("/auth/signout", { method: "POST", cache: "no-store", credentials: "include" })
+        .catch(() => { /* abaikan error jaringan */ });
+
+      // 4) navigasi ke login
+      startTransition(() => router.replace("/login"));
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   };
 

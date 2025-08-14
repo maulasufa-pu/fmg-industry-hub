@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
-export const runtime = "nodejs";         // ⬅️ penting
-export const dynamic = "force-dynamic";  // (opsional) hindari cache
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export async function POST() {
-  const cookieStore = await cookies(); // di Next 15 ini synchronous
+  const cookieStore = await cookies(); // ← biarkan infer tipenya
   const res = NextResponse.json({ ok: true });
 
   const supabase = createServerClient(supabaseUrl, supabaseKey, {

@@ -1,99 +1,79 @@
 "use client";
-
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
 export default function CallbackClient() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
+  const sp = useSearchParams();
+  const ranRef = useRef(false);
 
   useEffect(() => {
-    let cancelled = false;
+    if (ranRef.current) return;
+    ranRef.current = true;
+
+    const supabase = getSupabaseClient();
 
     (async () => {
       try {
-        const supabase = getSupabaseClient();
-
-        const href = window.location.href;
-        const url = new URL(href);
-
-        // Pastikan ada code dari OAuth
-        if (!url.searchParams.get("code")) {
+        // Harus ada ?code= dari provider
+        const code = sp.get("code");
+        if (!code) {
           router.replace("/login");
           return;
         }
 
-        // Tukar code -> session
+        // Tukar code -> session (pakai URL penuh)
+        const href = window.location.href;
         const { error: exErr } = await supabase.auth.exchangeCodeForSession(href);
         if (exErr) {
-          if (!cancelled) setError(exErr.message);
+          console.error("[callback] exchange error:", exErr);
+          router.replace("/login?err=oauth");
           return;
         }
 
-        await supabase.auth.getSession();
+        // (Optional) ambil user dan buat profile kalau belum ada — tapi JANGAN blok navigasi
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: prof, error: selErr } = await supabase
+              .from("profiles")
+              .select("id")
+              .eq("id", user.id)
+              .maybeSingle();
+            if (!selErr && !prof) {
+              const md = (user.user_metadata ?? {}) as Record<string, unknown>;
+              const first = (md.given_name ?? md.first_name ?? "") as string;
+              const last  = (md.family_name ?? md.last_name ?? "") as string;
+              const full  =
+                (md.full_name as string) ||
+                [first, last].filter(Boolean).join(" ") ||
+                (user.email?.split("@")[0] ?? "User");
+              const role = typeof md.role === "string" ? md.role : "client";
+              const avatarUrl = (md.avatar_url as string) || null;
 
-        // Ambil user
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          if (!cancelled) setError("No user after OAuth callback.");
-          return;
-        }
-
-        // Pastikan ada profile
-        const { data: prof, error: selErr } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        if (selErr) {
-          if (!cancelled) setError(selErr.message);
-          return;
-        }
-
-        if (!prof) {
-          const md = (user.user_metadata ?? {}) as Record<string, unknown>;
-          const first = (md.given_name ?? md.first_name ?? "") as string;
-          const last  = (md.family_name ?? md.last_name ?? "") as string;
-          const full  =
-            (md.full_name as string) ||
-            [first, last].filter(Boolean).join(" ") ||
-            (user.email?.split("@")[0] ?? "User");
-
-          const role = typeof md.role === "string" ? md.role : "client";
-          const avatarUrl = (md.avatar_url as string) || null;
-
-          const { error: insErr } = await supabase.from("profiles").insert({
-            id: user.id,
-            name: full,
-            role,
-            avatar_url: avatarUrl,
-            created_at: new Date().toISOString(),
-          });
-          if (insErr) {
-            if (!cancelled) setError(insErr.message);
-            return;
+              await supabase.from("profiles").insert({
+                id: user.id, name: full, role, avatar_url: avatarUrl,
+                created_at: new Date().toISOString(),
+              }).throwOnError();
+            }
           }
+        } catch (e) {
+          // Soft-fail saja: jangan tahan redirect
+          console.warn("[callback] profile ensure soft-fail:", e);
         }
 
-        const redirectedFrom = url.searchParams.get("redirectedFrom") || "/client/dashboard";
+        // Redirect tujuan (default dashboard). Prefetch supaya halus.
+        const redirectedFrom = sp.get("redirectedFrom") || "/client/dashboard";
+        router.prefetch(redirectedFrom);
         router.replace(redirectedFrom);
-      } catch (e: unknown) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Unexpected error");
+      } catch (e) {
+        console.error("[callback] unexpected:", e);
+        router.replace("/login?err=unexpected");
       }
     })();
+  }, [router, sp]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [router]);
-
-  return (
-    <div className="min-h-[50vh] flex items-center justify-center">
-      <p className="text-sm text-coolgray-90">
-        {error ? `Auth error: ${error}` : "Finishing sign-in..."}
-      </p>
-    </div>
-  );
+  // Suspense fallback di parent sudah cukup; tak perlu render loading lagi di sini.
+  return null;
 }

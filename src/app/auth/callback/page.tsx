@@ -1,3 +1,4 @@
+//E:\FMGIH\fmg-industry-hub\src\app\auth\callback\page.tsx
 import { Suspense } from "react";
 import CallbackClient from "./CallbackClient";
 

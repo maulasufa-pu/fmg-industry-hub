@@ -1,14 +1,16 @@
-// src/components/settings/AccountPanel.tsx
 "use client";
-
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, startTransition } from "react";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 import { Google, Envelope } from "@/icons";
 
 export default function AccountPanel() {
   const supabase = useMemo(() => getSupabaseClient(), []);
+  const router = useRouter();
+  const mounted = useRef(true);
+
   const [email, setEmail] = useState("");
-  const [isEmailUser, setIsEmailUser] = useState<boolean>(false);
+  const [isEmailUser, setIsEmailUser] = useState(false);
   const [primaryProvider, setPrimaryProvider] = useState<string>("");
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -20,9 +22,10 @@ export default function AccountPanel() {
   const [ok, setOk] = useState<string | null>(null);
 
   useEffect(() => {
+    mounted.current = true;
     (async () => {
-      // await ensureFreshSession();
       const { data: { session }, error } = await supabase.auth.getSession();
+      if (!mounted.current) return;
       if (error) { setErr(error.message); return; }
 
       const user = session?.user;
@@ -32,17 +35,15 @@ export default function AccountPanel() {
       const identities = (user?.identities ?? []) as Identity[];
       const hasEmailIdentity = identities.some((i) => i.provider === "email");
 
-      // Hindari any: ketatkan tipe app_metadata lalu cek jenisnya
       type AppMeta = Record<string, unknown> & { provider?: string };
       const appMeta: AppMeta = (user?.app_metadata ?? {}) as AppMeta;
-      const provider =
-        typeof appMeta.provider === "string" ? appMeta.provider : undefined;
+      const provider = typeof appMeta.provider === "string" ? appMeta.provider : undefined;
 
       setIsEmailUser(hasEmailIdentity || provider === "email");
-      setPrimaryProvider(
-        provider || (hasEmailIdentity ? "email" : (identities[0]?.provider ?? "unknown") || "unknown")
-      );
+      setPrimaryProvider(provider || (hasEmailIdentity ? "email" : (identities[0]?.provider ?? "unknown")));
     })();
+
+    return () => { mounted.current = false; };
   }, [supabase]);
 
   const resetAlerts = () => { setErr(null); setOk(null); };
@@ -62,19 +63,14 @@ export default function AccountPanel() {
 
     setSaving(true);
     try {
-      // await ensureFreshSession();
       if (isEmailUser) {
         if (!currentPassword) {
           setErr("Current password is required.");
-          setSaving(false);
           return;
         }
         const reauth = await supabase.auth.signInWithPassword({ email, password: currentPassword });
-        if (reauth.error) {
-          setErr(reauth.error.message || "Current password is incorrect.");
-          setSaving(false);
-          return;
-        }
+        if (reauth.error) { setErr(reauth.error.message || "Current password is incorrect."); return; }
+
         const upd = await supabase.auth.updateUser({ password: newPassword });
         if (upd.error) throw upd.error;
         setOk("Password updated successfully.");
@@ -89,13 +85,17 @@ export default function AccountPanel() {
           setOk("Password set successfully.");
         }
       }
+
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNew("");
-    } catch (e: unknown) { // ⬅️ was: any
+
+      // Opsional: segarkan boundary agar data user konsisten
+      startTransition(() => router.refresh());
+    } catch (e) {
       setErr(e instanceof Error ? e.message : "Failed to update password.");
     } finally {
-      setSaving(false);
+      if (mounted.current) setSaving(false);
     }
   };
 

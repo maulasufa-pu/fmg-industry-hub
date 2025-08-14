@@ -1,55 +1,113 @@
-// src/components/auth/RequireAuth.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, startTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
 type Props = { children: React.ReactNode };
 
+function withTimeout<T>(p: Promise<T>, ms: number, tag = "op"): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(`[timeout] ${tag} > ${ms}ms`)), ms);
+    p.then(v => { clearTimeout(t); resolve(v); })
+     .catch(e => { clearTimeout(t); reject(e); });
+  });
+}
+
 export default function RequireAuth({ children }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const supabase = useMemo(() => getSupabaseClient(), []);
+
   const [status, setStatus] = useState<"checking" | "authed" | "guest">("checking");
+  const redirectingRef = useRef(false);
+  const mountedRef = useRef(true);
+  const lastKickRef = useRef(0);
 
-  useEffect(() => {
-    let mounted = true;
+  // Satu-satunya tempat redirect
+  const goLoginOnce = (reason: string) => {
+    if (redirectingRef.current) return;
+    redirectingRef.current = true;
+    const to = `/login?redirectedFrom=${encodeURIComponent(pathname || "/client")}`;
+    // Hindari throwing sinkron ke render pipeline
+    startTransition(() => router.replace(to));
+  };
 
-    const check = async () => {
-      // cek session awal
-      // await ensureFreshSession();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!mounted) return;
+  const checkSession = async () => {
+    try {
+      // 1) getSession cepat; kalau nge-timeout → refreshSession sekali
+      const getFast = async () => {
+        try {
+          return await withTimeout(supabase.auth.getSession(), 800, "getSession");
+        } catch {
+          // refresh sekali
+          try {
+            await withTimeout(supabase.auth.refreshSession(), 900, "refreshSession");
+          } catch {
+            // biarkan lanjut ke getSession biasa; kalau gagal, dianggap tidak login
+          }
+          return await withTimeout(supabase.auth.getSession(), 800, "getSession-2");
+        }
+      };
+
+      const { data: { session } } = await getFast();
+      if (!mountedRef.current) return;
 
       if (session) {
         setStatus("authed");
       } else {
         setStatus("guest");
-        router.replace(`/login?redirectedFrom=${encodeURIComponent(pathname || "/client")}`);
+        goLoginOnce("no-session");
       }
-    };
+    } catch {
+      if (!mountedRef.current) return;
+      setStatus("guest");
+      goLoginOnce("error");
+    }
+  };
 
-    check();
+  useEffect(() => {
+    mountedRef.current = true;
+    // Cek segera saat mount
+    void checkSession();
 
-    // update realtime kalau status auth berubah
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!mounted) return;
-      if (session) setStatus("authed");
-      else {
+    // Reaksi realtime saat token berubah
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+      if (!mountedRef.current) return;
+      if (session) {
+        setStatus("authed");
+      } else {
         setStatus("guest");
-        router.replace(`/login?redirectedFrom=${encodeURIComponent(pathname || "/client")}`);
+        goLoginOnce("state-change");
       }
     });
 
-    return () => {
-      mounted = false;
-      sub.subscription.unsubscribe();
+    // Re-validate saat balik fokus / BFCache
+    const kick = () => {
+      const now = Date.now();
+      if (now - lastKickRef.current < 500) return; // debounce
+      lastKickRef.current = now;
+      if (status === "checking") return; // sudah jalan
+      setStatus("checking");
+      void checkSession();
     };
-  }, [pathname, router, supabase]);
+
+    const onVis = () => { if (document.visibilityState === "visible") kick(); };
+    const onShow = () => kick();
+
+    window.addEventListener("pageshow", onShow);
+    document.addEventListener("visibilitychange", onVis);
+
+    return () => {
+      mountedRef.current = false;
+      window.removeEventListener("pageshow", onShow);
+      document.removeEventListener("visibilitychange", onVis);
+      sub?.subscription?.unsubscribe?.();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase]); // router/pathname tidak perlu di deps untuk mencegah re-init
 
   if (status !== "authed") {
-    // optionally: skeleton/spinner
     return (
       <div className="min-h-[40vh] grid place-items-center text-sm text-coolgray-60">
         Checking session…

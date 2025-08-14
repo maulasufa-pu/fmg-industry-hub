@@ -356,7 +356,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
           .eq("project_id", json.project_id);
       }
       onSaved?.();
-      onClose();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to submit project");
     } finally {

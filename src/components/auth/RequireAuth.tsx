@@ -25,46 +25,41 @@ export default function RequireAuth({ children }: Props) {
   const redirectingRef = useRef(false);
   const mountedRef = useRef(false);
   const lastKickRef = useRef(0);
-
   const isLoginPage = pathname?.startsWith("/login") ?? false;
 
-  // Satu-satunya tempat redirect
+  const getSessionSafe = async () => {
+    try {
+      const { data: { session } } =
+        await withTimeout(supabase.auth.getSession(), 1800, "getSession");
+      return session; // session | null
+    } catch {
+      return undefined; // unknown (timeout/error)
+    }
+  };
+
   const goLoginOnce = async (reason: string) => {
     if (redirectingRef.current || isLoginPage) return;
-
-    // Double-check masih guest sebelum redirect
     try {
-      const { data: { session } } = await withTimeout(supabase.auth.getSession(), 400, "pre-redirect-getSession");
+      const { data: { session } } =
+        await withTimeout(supabase.auth.getSession(), 900, "pre-redirect");
       if (session || statusRef.current === "authed") return;
-    } catch {/* abaikan */}
-
+    } catch {}
     redirectingRef.current = true;
-    const to = `/login?redirectedFrom=${encodeURIComponent(pathname || "/client")}`;
-    startTransition(() => router.replace(to));
+    startTransition(() =>
+      router.replace(`/login?redirectedFrom=${encodeURIComponent(pathname || "/client")}`)
+    );
   };
 
   const checkSession = async () => {
-    try {
-      const getFast = async () => {
-        try {
-          return await withTimeout(supabase.auth.getSession(), 800, "getSession");
-        } catch {
-          try {
-            await withTimeout(supabase.auth.refreshSession(), 900, "refreshSession");
-          } catch {/* biarkan lanjut */}
-          return await withTimeout(supabase.auth.getSession(), 800, "getSession-2");
-        }
-      };
+    const s = await getSessionSafe();
+    if (!mountedRef.current) return;
 
-      const { data: { session } } = await getFast();
-      if (!mountedRef.current) return;
-
-      if (session) setStatus("authed");
-      else { setStatus("guest"); void goLoginOnce("no-session"); }
-    } catch { 
-      if (!mountedRef.current) return;
-      setStatus("guest");
-      void goLoginOnce("error");
+    if (s) setStatus("authed");
+    else if (s === null) { setStatus("guest"); void goLoginOnce("no-session"); }
+    else {
+      // unknown → retry ringan
+      setStatus("checking");
+      setTimeout(() => { if (mountedRef.current && statusRef.current==="checking") void checkSession(); }, 700);
     }
   };
 
@@ -72,26 +67,25 @@ export default function RequireAuth({ children }: Props) {
     mountedRef.current = true;
     void checkSession();
 
-    // ✅ onAuthStateChange: destructuring & cleanup yang benar
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_evt, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((evt, session) => {
       if (!mountedRef.current) return;
-      if (session) setStatus("authed");
-      else { setStatus("guest"); void goLoginOnce("state-change"); }
+      if (evt === "SIGNED_IN" || evt === "TOKEN_REFreshed".toUpperCase()) setStatus("authed");
+      else if (evt === "SIGNED_OUT") { setStatus("guest"); void goLoginOnce("signed-out"); }
+      else { setStatus("checking"); void checkSession(); }
     });
 
-    // Re-validate saat balik fokus / BFCache
     const kick = () => {
       const now = Date.now();
-      if (now - lastKickRef.current < 500) return; // debounce
+      if (now - lastKickRef.current < 500) return;
       lastKickRef.current = now;
-      if (statusRef.current === "checking") return; // sudah jalan
-      setStatus("checking");
-      void checkSession();
+      if (statusRef.current !== "checking") {
+        setStatus("checking");
+        void checkSession();
+      }
     };
 
     const onVis = () => { if (document.visibilityState === "visible") kick(); };
     const onShow = () => kick();
-
     window.addEventListener("pageshow", onShow);
     document.addEventListener("visibilitychange", onVis);
 
@@ -101,7 +95,7 @@ export default function RequireAuth({ children }: Props) {
       document.removeEventListener("visibilitychange", onVis);
       subscription.unsubscribe();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+// eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, isLoginPage]);
 
   if (status !== "authed") {
@@ -111,6 +105,5 @@ export default function RequireAuth({ children }: Props) {
       </div>
     );
   }
-
   return <>{children}</>;
 }

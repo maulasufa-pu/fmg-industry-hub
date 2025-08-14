@@ -19,6 +19,10 @@ type ServiceKey =
   | "recording_studio" | "vocal_directing"
   | "mv_directing" | "social_media_mgmt" | "artist_management" | "music_marketing";
 
+type ProjectStatus =
+  | "requested" | "pending" | "in_progress" | "revision"
+  | "approved" | "published" | "archived" | "cancelled";
+
 type ServiceItem = {
   key: ServiceKey;
   label: string;
@@ -92,6 +96,7 @@ type SubmitPayload = {
   ndaRequired?: boolean;
   preferredEngineerId?: string | null;
   total: number;
+  status?: ProjectStatus;
 };
 
 export default function CreateProjectPopover({ open, onClose, onSaved }: Props): React.JSX.Element | null {
@@ -293,19 +298,25 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user?.id) throw new Error("Not authenticated");
 
+      const payload: SubmitPayload = { ...buildPayload(), status: "requested" };
+
       const res = await fetch("/api/projects/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(buildPayload()),
+        body: JSON.stringify(payload),
       });
 
-      const json: unknown = await res.json();
-      if (!res.ok) {
-        const msg = (json as { error?: string })?.error || "Failed to submit project";
-        throw new Error(msg);
-      }
+      const json = await res.json() as { project_id?: string; error?: string };
 
+      if (!res.ok) throw new Error(json?.error || "Failed to submit project");
+
+      if (json.project_id) {
+        await supabase
+          .from("projects")
+          .update({ status: "requested" })
+          .eq("project_id", json.project_id);
+      }
       onSaved?.();
       onClose();
     } catch (e: unknown) {

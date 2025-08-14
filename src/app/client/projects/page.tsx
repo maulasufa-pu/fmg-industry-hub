@@ -193,10 +193,10 @@ export default function PageContent(): React.JSX.Element {
     void fetchPage(activeTab, debouncedSearch, page, false);
   }, [didInit, activeTab, debouncedSearch, page, fetchPage]);
 
-  // client-refresh (mis. dipanggil dari layout recovery)
+  // client-wake (dipanggil dari ClientShell saat focus/visible/pageshow)
   useEffect(() => {
     const onWake = () => {
-      void fetchPage(activeTab, debouncedSearch, page, false); 
+      void fetchPage(activeTab, debouncedSearch, page, false);
     };
     window.addEventListener("client-wake", onWake);
     return () => {

@@ -1,3 +1,4 @@
+// src/components/auth/RequireAuth.tsx
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState, startTransition } from "react";
@@ -5,95 +6,118 @@ import { usePathname, useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
 type Props = { children: React.ReactNode };
-
-function withTimeout<T>(p: Promise<T>, ms: number, tag = "op"): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error(`[timeout] ${tag} > ${ms}ms`)), ms);
-    p.then(v => { clearTimeout(t); resolve(v); })
-     .catch(e => { clearTimeout(t); reject(e); });
-  });
-}
+type GuardStatus = "checking" | "authed" | "guest";
 
 export default function RequireAuth({ children }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const supabase = useMemo(() => getSupabaseClient(), []);
 
-  const [status, setStatus] = useState<"checking" | "authed" | "guest">("checking");
-  const redirectingRef = useRef(false);
-  const mountedRef = useRef(true);
-  const lastKickRef = useRef(0);
+  const [status, setStatus] = useState<GuardStatus>("checking");
+  const statusRef = useRef<GuardStatus>("checking");
+  useEffect(() => { statusRef.current = status; }, [status]);
 
-  // Satu-satunya tempat redirect
-  const goLoginOnce = (reason: string) => {
-    if (redirectingRef.current) return;
+  const mountedRef = useRef(false);
+  const redirectingRef = useRef(false);
+  const lastPassiveCheckRef = useRef(0);
+
+  const isLoginPage = pathname?.startsWith("/login") ?? false;
+
+  // --- getSession aman: kembalikan
+  // - object   : ada session
+  // - null     : tegas tidak ada session
+  // - undefined: gagal cek (timeout/network) → jangan ganggu UI
+  const getSessionSafe = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session; // session | null
+    } catch {
+      return undefined; // transient error
+    }
+  };
+
+  const goLoginOnce = async (reason: string) => {
+    if (redirectingRef.current || isLoginPage) return;
+    // double-check sebelum redirect (hindari balapan)
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session || statusRef.current === "authed") return;
+    } catch { /* abaikan */ }
+
     redirectingRef.current = true;
     const to = `/login?redirectedFrom=${encodeURIComponent(pathname || "/client")}`;
-    // Hindari throwing sinkron ke render pipeline
     startTransition(() => router.replace(to));
   };
 
   const checkSession = async () => {
-    try {
-      // 1) getSession cepat; kalau nge-timeout → refreshSession sekali
-      const getFast = async () => {
-        try {
-          return await withTimeout(supabase.auth.getSession(), 800, "getSession");
-        } catch {
-          // refresh sekali
-          try {
-            await withTimeout(supabase.auth.refreshSession(), 900, "refreshSession");
-          } catch {
-            // biarkan lanjut ke getSession biasa; kalau gagal, dianggap tidak login
-          }
-          return await withTimeout(supabase.auth.getSession(), 800, "getSession-2");
-        }
-      };
+    const session = await getSessionSafe();
+    if (!mountedRef.current) return;
+    if (session) setStatus("authed");
+    else if (session === null) { setStatus("guest"); void goLoginOnce("no-session"); }
+    else setStatus("authed"); // gagal cek (transient) → jangan ganggu UI
+  };
 
-      const { data: { session } } = await getFast();
+  // --- PASSIVE recheck saat balik fokus: tanpa ubah UI, tanpa flicker
+  const userBusy = () => {
+    const el = document.activeElement as HTMLElement | null;
+    return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+  };
+
+  const passiveRecheckOnFocus = async () => {
+    // throttle 10 detik
+    const now = Date.now();
+    if (now - lastPassiveCheckRef.current < 10_000) return;
+    lastPassiveCheckRef.current = now;
+
+    if (userBusy()) return; // jangan ganggu saat user mengetik / isi form
+
+    // cek diam-diam
+    let s = await getSessionSafe();
+    if (s === undefined) {
+      // transient → grace lalu cek lagi
+      await new Promise((r) => setTimeout(r, 1200));
+      s = await getSessionSafe();
+    }
+    if (!mountedRef.current) return;
+
+    if (s) return; // aman, tidak ubah apapun
+    if (s === null) {
+      // tegas tidak ada session → grace + double-check sebelum redirect
+      await new Promise((r) => setTimeout(r, 1000));
       if (!mountedRef.current) return;
-
-      if (session) {
-        setStatus("authed");
-      } else {
+      const s2 = await getSessionSafe();
+      if (s2 === null) {
         setStatus("guest");
-        goLoginOnce("no-session");
+        void goLoginOnce("focus-no-session");
       }
-    } catch {
-      if (!mountedRef.current) return;
-      setStatus("guest");
-      goLoginOnce("error");
     }
   };
 
   useEffect(() => {
     mountedRef.current = true;
-    // Cek segera saat mount
     void checkSession();
 
-    // Reaksi realtime saat token berubah
-    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+    // Dengarkan perubahan auth realtime (tanpa ganggu fokus)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((evt, session) => {
       if (!mountedRef.current) return;
-      if (session) {
+
+      if (evt === "SIGNED_IN" || evt === "TOKEN_REFRESHED") {
         setStatus("authed");
-      } else {
-        setStatus("guest");
-        goLoginOnce("state-change");
+        return;
       }
+      if (evt === "SIGNED_OUT") {
+        setStatus("guest");
+        void goLoginOnce("signed-out");
+        return;
+      }
+
+      // USER_UPDATED, PASSWORD_RECOVERY, dll → verifikasi diam-diam
+      void checkSession();
     });
 
-    // Re-validate saat balik fokus / BFCache
-    const kick = () => {
-      const now = Date.now();
-      if (now - lastKickRef.current < 500) return; // debounce
-      lastKickRef.current = now;
-      if (status === "checking") return; // sudah jalan
-      setStatus("checking");
-      void checkSession();
-    };
-
-    const onVis = () => { if (document.visibilityState === "visible") kick(); };
-    const onShow = () => kick();
+    // Recheck pasif saat balik fokus / BFCache (tanpa setStatus("checking"))
+    const onVis = () => { if (document.visibilityState === "visible") { void passiveRecheckOnFocus(); } };
+    const onShow = () => { void passiveRecheckOnFocus(); };
 
     window.addEventListener("pageshow", onShow);
     document.addEventListener("visibilitychange", onVis);
@@ -102,10 +126,10 @@ export default function RequireAuth({ children }: Props) {
       mountedRef.current = false;
       window.removeEventListener("pageshow", onShow);
       document.removeEventListener("visibilitychange", onVis);
-      sub?.subscription?.unsubscribe?.();
+      subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supabase]); // router/pathname tidak perlu di deps untuk mencegah re-init
+  }, [supabase, isLoginPage, pathname]);
 
   if (status !== "authed") {
     return (

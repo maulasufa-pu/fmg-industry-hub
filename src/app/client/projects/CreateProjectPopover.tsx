@@ -276,10 +276,9 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     setDeliveryFormat(prev => prev.includes(fmt) ? prev.filter(f => f !== fmt) : [...prev, fmt]);
   };
 
-  // --- tambahkan state draft untuk harga (di dekat state lain Step 2) ---
+  // --- draft untuk harga custom (Step 2) ---
   const [priceDraft, setPriceDraft] = useState<Partial<Record<ServiceKey, string>>>({});
 
-  // ...helper commitCustomPrice tetap bisa dipakai (tidak berubah)
   const commitCustomPrice = (key: ServiceKey, raw: string) => {
     const def = defaultPriceOf(key);
     const n = Number(raw);
@@ -292,13 +291,11 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
       const clamped = Math.max(def, Math.round(n));
       setCustomPrices(p => ({ ...p, [key]: clamped }));
     }
-    // bersihkan draft setelah commit
     setPriceDraft(p => {
       const { [key]: _omit, ...rest } = p;
       return rest;
     });
   };
-
 
   const planPretty: Record<"upfront" | "half" | "milestone", string> = {
     upfront: "100% Up-front (dibayar penuh di awal)",
@@ -391,7 +388,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     );
   };
 
-  /** Komponen kecil untuk checkbox kustom — SUDAH diperbaiki: sekarang return JSX */
+  /** Komponen kecil untuk checkbox kustom */
   function FancyCheckbox({
     id,
     checked,
@@ -411,6 +408,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
       />
     );
   }
+
   // NOTE: komponen selalu mounted; visibilitas pakai class
   return (
     <div
@@ -435,6 +433,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
               <div className="text-xs text-gray-500">Step {step} of 3</div>
             </div>
             <button
+              type="button"
               onClick={onClose}
               className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-60"
               aria-label="Close"
@@ -616,7 +615,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                                     min={def}
                                     step={1000}
                                     inputMode="numeric"
-                                    // JADIKAN CONTROLLED:
                                     value={priceDraft[key] ?? (custom != null ? String(custom) : String(def))}
                                     onChange={(e) => {
                                       const v = e.currentTarget.value;
@@ -811,6 +809,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
               </div>
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
                   onClick={onClose}
                   className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
                 >
@@ -819,6 +818,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
 
                 {step > 1 && (
                   <button
+                    type="button"
                     onClick={() => setStep((s) => (s === 3 ? 2 : 1))}
                     className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
                   >
@@ -828,6 +828,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
 
                 {step < 3 ? (
                   <button
+                    type="button"
                     onClick={() => setStep((s) => (s === 1 ? 2 : 3))}
                     disabled={
                       step === 1
@@ -840,6 +841,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                   </button>
                 ) : (
                   <button
+                    type="button"
                     onClick={handleSubmit}
                     disabled={saving || !agree || !songTitle.trim()}
                     className="inline-flex items-center rounded-lg bg-primary-60 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-95 disabled:opacity-60"

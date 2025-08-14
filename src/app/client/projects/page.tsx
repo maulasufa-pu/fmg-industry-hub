@@ -84,20 +84,12 @@ export default function PageContent(): React.JSX.Element {
       const like = q ? `%${q}%` : null;
 
       // Helper untuk apply OR search tanpa bikin TS ngambek
-      const applySearch = <T,>(
-        qb: ReturnType<typeof supabase.from> extends any
-          ? any // biarkan fleksibel: akan menjadi PostgrestFilterBuilder setelah .select
-          : never
-      ) => {
-        if (like) {
-          // .or() hanya tersedia pada FilterBuilder (setelah .select)
-          qb = qb.or(
-            `project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`
-          );
-        }
-        return qb;
+      const applySearch = <T extends { or: (expr: string) => T }>(qb: T): T => {
+        return like
+          ? qb.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`)
+          : qb;
       };
-
+      
       // All
       let allQ = supabase
         .from("project_summary")

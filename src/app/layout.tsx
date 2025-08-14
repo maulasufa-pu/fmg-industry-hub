@@ -1,9 +1,39 @@
 // src/app/layout.tsx
+
+"use client";
 import "./globals.css";
-import HeaderVisibility from "@/components/ui/HeaderVisibility"; // ini client, aman dipakai dari server layout
 import { HeaderSection } from "@/components/HeaderSection";
-import MainContainerClient from "@/components/shell/MainContainerClient";
-import FooterClient from "@/components/shell/FooterClient";
+import { LogoSection } from "@/components/LogoSection";
+import HeaderVisibility from "@/components/ui/HeaderVisibility";
+import { usePathname } from "next/navigation";
+
+function MainContainer({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isApp = pathname?.startsWith("/client"); // halaman sidebar
+
+  const wrapperCls = isApp
+    ? "w-full" 
+    : "mx-auto w-full max-w-screen-xl px-4 sm:px-6 lg:px-8";
+
+  return <main className={wrapperCls}>{children}</main>;
+}
+
+function Footer() {
+  const pathname = usePathname();
+  const isApp = pathname?.startsWith("/client");
+
+  if (isApp) return null; // sembunyiin footer di halaman app
+  return (
+    <section
+      aria-label="Trusted by"
+      className="border-b border-[var(--border)] bg-[var(--card)]"
+    >
+      <div className="mx-auto w-full max-w-screen-xl px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+        <LogoSection />
+      </div>
+    </section>
+  );
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -17,8 +47,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </header>
         </HeaderVisibility>
 
-        <MainContainerClient>{children}</MainContainerClient>
-        <FooterClient />
+        <MainContainer>{children}</MainContainer>
+        <Footer />
       </body>
     </html>
   );

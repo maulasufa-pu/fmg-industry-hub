@@ -28,7 +28,8 @@ export function getSupabaseClient(): SupabaseClient {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: true
+        detectSessionInUrl: true,
+        storageKey: "flemmo-auth",
       }
     }
   );
@@ -39,102 +40,66 @@ export function getSupabaseClient(): SupabaseClient {
 /** Aman dipanggil di client sebelum fetch penting. */
 export async function ensureFreshSession(): Promise<void> {
   const sb = getSupabaseClient();
-  const LOCK_TIMEOUT = 10000; // 10 detik max untuk acquire lock
-  
-  // Check session dulu tanpa lock
+
   const { data } = await sb.auth.getSession();
   const sess = data.session;
-  const now = Math.floor(Date.now() / 1000);
-  const exp = sess?.expires_at ?? 0;
+  if (!sess) return; // anon ok
+  // NOTE: refresh_token bisa saja tidak tampil; jangan jadikan syarat
+  const now1 = Math.floor(Date.now() / 1000);
+  const exp1 = sess.expires_at ?? 0;
+  if (exp1 - now1 > 60) return; // masih aman
 
-  // Early returns sebelum acquire lock
-  if (!sess) return; // anon ok (tergantung RLS)
-  if (!sess.refresh_token) return; // tidak bisa refresh → biarkan
-  if (exp - now > 60) return; // masih aman
-
-  // Lock mechanism dengan timeout
+  // Lock
   let lockResolver: (() => void) | undefined;
+  const waitForLock = async () => {
+    const start = Date.now();
+    while (_refreshLock) {
+      if (Date.now() - start > 10_000) throw new Error("Timeout waiting for refresh lock");
+      // tunggu lock existing selesai (tanpa meledak)
+      try { await withTimeout(_refreshLock, 1200, "Lock wait timeout"); }
+      catch { /* retry lagi */ }
+    }
+  };
 
   try {
-    // Tunggu lock dengan timeout dan retry limit
-    const start = Date.now();
-    let retryCount = 0;
-    const MAX_RETRIES = 5;
-    
-    while (_refreshLock && retryCount < MAX_RETRIES) {
-      if (Date.now() - start > LOCK_TIMEOUT) {
-        throw new Error('Timeout waiting for refresh lock');
-      }
+    await waitForLock();
+    _refreshLock = new Promise<void>(res => { lockResolver = res; });
 
-      try {
-        await withTimeout(
-          _refreshLock,
-          1000,
-          'Lock wait timeout'
-        );
-        break; // Berhasil mendapatkan lock
-      } catch {
-        retryCount++;
-        if (retryCount === MAX_RETRIES) {
-          throw new Error('Max retry attempts exceeded waiting for lock');
-        }
-        // Tunggu sebentar sebelum retry
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-    }
-
-    // Acquire lock
-    _refreshLock = new Promise(resolve => {
-      lockResolver = resolve;
-    });
-
-    // Double-check session setelah dapat lock
+    // Double-check (recompute now!)
     const { data: current } = await sb.auth.getSession();
-    const currentExp = current.session?.expires_at ?? 0;
-    if (currentExp - now > 60) {
-      return; // Session sudah di-refresh oleh proses lain
-    }
+    const now2 = Math.floor(Date.now() / 1000);
+    const exp2 = current.session?.expires_at ?? 0;
+    if (exp2 - now2 > 60) return; // sudah diperbarui oleh proses lain
 
-    try {
-      // Refresh session dengan timeout
-      const refreshResult = await withTimeout(
-        sb.auth.refreshSession(),
-        8000,
-        'Session refresh timeout'
-      );
-
-      const newToken = refreshResult.data.session?.access_token;
-      if (newToken) {
-        // Update realtime auth dengan timeout
-        await withTimeout(
-          sb.realtime.setAuth(newToken),
-          5000,
-          'Realtime auth update timeout'
-        ).catch(error => {
-          console.error('Realtime auth update failed:', error);
-        });
+    // Coba refresh dengan retry ringan
+    const tryRefresh = async () => {
+      try {
+        const r = await withTimeout(sb.auth.refreshSession(), 8000, "Session refresh timeout");
+        const newToken = r.data.session?.access_token;
+        if (newToken) {
+          // Biasanya tidak perlu, tapi kalau mau biarkan silent fail
+          await withTimeout(sb.realtime.setAuth(newToken), 3000, "Realtime auth update timeout")
+            .catch(() => {});
+        }
+        return true;
+      } catch (e: any) {
+        // Deteksi error yang benar2 invalid (jangan signOut untuk timeout)
+        const msg = (e?.error_description || e?.message || "").toLowerCase();
+        if (msg.includes("invalid_grant") || msg.includes("invalid refresh")) {
+          // refresh token invalid → ini baru alasan kuat untuk sign out
+          await sb.auth.signOut().catch(() => {});
+        }
+        return false;
       }
-    } catch (error) {
-      console.error('Session refresh failed:', error);
-      
-      // Sign out dengan timeout
-      await withTimeout(
-        sb.auth.signOut(),
-        5000,
-        'Sign out timeout'
-      ).catch(error => {
-        console.error('Sign out failed:', error);
-      });
-    }
-  } catch (error) {
-    console.error('Session management error:', error);
+    };
+
+    const ok = await tryRefresh() || await tryRefresh(); // 2x kesempatan
+    // kalau dua2nya gagal tapi bukan invalid_grant → biarkan saja, jangan signOut
   } finally {
-    if (lockResolver) {
-      lockResolver();
-      _refreshLock = null;
-    }
+    if (lockResolver) { lockResolver(); _refreshLock = null; }
   }
 }
+
 
 /** Timeout helper untuk query builder */
 export function withSignal<T>(qb: T, signal: AbortSignal): T {

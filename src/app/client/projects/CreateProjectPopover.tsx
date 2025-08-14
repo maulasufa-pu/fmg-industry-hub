@@ -276,6 +276,10 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     setDeliveryFormat(prev => prev.includes(fmt) ? prev.filter(f => f !== fmt) : [...prev, fmt]);
   };
 
+  // --- tambahkan state draft untuk harga (di dekat state lain Step 2) ---
+  const [priceDraft, setPriceDraft] = useState<Partial<Record<ServiceKey, string>>>({});
+
+  // ...helper commitCustomPrice tetap bisa dipakai (tidak berubah)
   const commitCustomPrice = (key: ServiceKey, raw: string) => {
     const def = defaultPriceOf(key);
     const n = Number(raw);
@@ -284,11 +288,17 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
         const { [key]: _omit, ...rest } = p;
         return rest;
       });
-      return;
+    } else {
+      const clamped = Math.max(def, Math.round(n));
+      setCustomPrices(p => ({ ...p, [key]: clamped }));
     }
-    const clamped = Math.max(def, Math.round(n));
-    setCustomPrices(p => ({ ...p, [key]: clamped }));
+    // bersihkan draft setelah commit
+    setPriceDraft(p => {
+      const { [key]: _omit, ...rest } = p;
+      return rest;
+    });
   };
+
 
   const planPretty: Record<"upfront" | "half" | "milestone", string> = {
     upfront: "100% Up-front (dibayar penuh di awal)",
@@ -391,38 +401,16 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     checked: boolean;
     onChange: (v: boolean) => void;
   }) {
-    const toggle = () => onChange(!checked);
-    const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (e.key === " " || e.key === "Enter") {
-        e.preventDefault();
-        toggle();
-      }
-    };
     return (
-      <>
-        <input id={id} type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="sr-only" />
-        <div
-          role="checkbox"
-          aria-checked={checked}
-          tabIndex={0}
-          onClick={toggle}
-          onKeyDown={onKeyDown}
-          className="w-5 h-5 flex items-center justify-center border border-coolgray-40 rounded-sm bg-white cursor-pointer"
-        >
-          {checked && (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-primary-60">
-              <path
-                fillRule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8.25 8.25a1 1 0 01-1.414 0l-4.25-4.25a1 1 0 111.414-1.414L8 12.586l7.543-7.543a1 1 0 011.414 0z"
-                clipRule="evenodd"
-              />
-            </svg>
-          )}
-        </div>
-      </>
+      <input
+        id={id}
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-5 w-5 rounded border border-coolgray-40 text-primary-60 focus:ring-primary-60"
+      />
     );
   }
-
   // NOTE: komponen selalu mounted; visibilitas pakai class
   return (
     <div
@@ -604,13 +592,14 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                       {Array.from(selectedServices).length === 0 ? (
                         <div className="px-3 py-3 text-sm text-gray-500">Pilih service terlebih dahulu.</div>
                       ) : (
-                        Array.from(selectedServices).map((key) => {
-                          const s = SERVICES.find(x => x.key === key)!;
+                        Array.from(selectedServices).map(k => SERVICES.find(s => s.key === k)!).sort((a,b)=>a.label.localeCompare(b.label)).map((s) => {
+                          const key = s.key;
                           const def = s.price;
                           const inBundle = !!bundle && bundle.includes.includes(key);
                           const custom = customPrices[key];
                           const resolved = inBundle ? 0 : resolvedPriceOf(key);
                           const isCustom = !inBundle && custom != null;
+
                           return (
                             <div key={key} className="grid grid-cols-12 items-center border-t px-3 py-2 text-sm">
                               <div className="col-span-6">
@@ -627,7 +616,12 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                                     min={def}
                                     step={1000}
                                     inputMode="numeric"
-                                    defaultValue={custom ?? def}
+                                    // JADIKAN CONTROLLED:
+                                    value={priceDraft[key] ?? (custom != null ? String(custom) : String(def))}
+                                    onChange={(e) => {
+                                      const v = e.currentTarget.value;
+                                      setPriceDraft(p => ({ ...p, [key]: v }));
+                                    }}
                                     onBlur={(e) => commitCustomPrice(key, e.currentTarget.value)}
                                     className="w-32 rounded-md border border-gray-300 px-2 py-1 text-right text-sm outline-none focus:ring-2 focus:ring-primary-60"
                                   />

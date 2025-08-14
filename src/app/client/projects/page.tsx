@@ -9,6 +9,8 @@ import { ProjectPaginationSection } from "./ProjectPaginationSection";
 import { withSignal, getSupabaseClient } from "@/lib/supabase/client";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
 import CreateProjectPopover from "./CreateProjectPopover";
+import SubmitSuccessModal from "@/components/SubmisSuccessForm";
+
 
 type TabKey = "All Project" | "Active" | "Finished" | "Pending" | "Requested";
 
@@ -36,6 +38,7 @@ const QUERY_COLS =
   "id,project_name,artist_name,genre,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name";
 
 export default function PageContent(): React.JSX.Element {
+
   useFocusWarmAuth();
 
   const router = useRouter();
@@ -48,6 +51,10 @@ export default function PageContent(): React.JSX.Element {
 
   // UI
   const [openCreate, setOpenCreate] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [successProjectId, setSuccessProjectId] = useState<string | null>(null);
+  const [successPlan, setSuccessPlan] = useState<"upfront" | "half" | "milestone">("half");
+
   const [activeTab, setActiveTab] = useState<TabKey>(initialTabFromUrl);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -309,7 +316,19 @@ export default function PageContent(): React.JSX.Element {
           <CreateProjectPopover
             open={openCreate}
             onClose={() => setOpenCreate(false)}
-            onSaved={() => void fetchPage(activeTab, debouncedSearch, pageSafe /* no spinner */)}
+            onSaved={() => {/* refresh table/list kalau perlu */}}
+            onSubmitted={({ projectId, paymentPlan }) => {
+              setSuccessProjectId(projectId);
+              setSuccessPlan(paymentPlan);
+              setSuccessOpen(true); // tampilkan modal sukses DI LUAR form
+            }}
+          />
+
+          <SubmitSuccessModal
+            open={successOpen}
+            onClose={() => setSuccessOpen(false)}
+            projectId={successProjectId}
+            paymentPlan={successPlan}
           />
         </>
       )}

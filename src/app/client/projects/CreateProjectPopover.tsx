@@ -801,7 +801,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                       })}
                     </div>
                   </div>
-
+{/* 
                   <div className="mt-3">
                     <label className="block text-sm text-gray-700">
                       Reference links (YouTube/Spotify/Drive)
@@ -813,7 +813,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                       placeholder="Pisahkan dengan baris baru"
                       className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
                     />
-                  </div>
+                  </div> */}
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <div>
                       <label className="block text-sm text-gray-700">Preferred Engineer</label>

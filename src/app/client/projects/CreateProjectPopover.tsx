@@ -323,7 +323,17 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
         body: JSON.stringify(payload),
       });
 
-      const json = await res.json() as { project_id?: string; error?: string };
+      // SELALU coba baca sebagai text dulu → parse JSON kalau ada body
+      const text = await res.text();
+      const json = text ? JSON.parse(text) as { project_id?: string; error?: string } : {};
+
+      if (!res.ok) {
+        throw new Error(json?.error || `Request failed (${res.status})`);
+      }
+
+      // Berhasil
+      setCreatedProjectId(json.project_id ?? null);
+      setShowSubmitted(true); // tampilkan popover sukses (jangan langsung onClose)
 
       if (!res.ok) throw new Error(json?.error || "Failed to submit project");
 
@@ -371,6 +381,50 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
     );
   };
 
+  // Komponen kecil untuk checkbox kustom
+  function FancyCheckbox({
+    id,
+    checked,
+    onChange,
+  }: {
+    id: string;
+    checked: boolean;
+    onChange: (v: boolean) => void;
+  }) {
+    const toggle = () => onChange(!checked);
+    const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        toggle();
+      }
+    };
+    return (
+      <>
+        {/* input hidden agar tetap bisa di-submit di form kalau perlu */}
+        <input id={id} type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="sr-only" />
+        <div
+          role="checkbox"
+          aria-checked={checked}
+          tabIndex={0}
+          onClick={toggle}
+          onKeyDown={onKeyDown}
+          className="w-5 h-5 flex items-center justify-center border border-coolgray-40 rounded-sm bg-white cursor-pointer"
+        >
+          {checked && (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-primary-60">
+              <path
+                fillRule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8.25 8.25a1 1 0 01-1.414 0l-4.25-4.25a1 1 0 111.414-1.414L8 12.586l7.543-7.543a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+          )}
+        </div>
+      </>
+    );
+  }
+  // END Komponen kecil untuk checkbox kustom
+    
   return (
     <div
       className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/40 backdrop-blur-sm"
@@ -689,7 +743,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
                         ))}
                       </select>
                     </div>
-                    <div className="mt-6 flex items-center gap-2">
+                    {/* <div className="mt-6 flex items-center gap-2">
                       <input
                         id="nda"
                         type="checkbox"
@@ -697,33 +751,39 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
                         onChange={(e) => setNdaRequired(e.target.checked)}
                       />
                       <label htmlFor="nda" className="text-sm text-gray-700">NDA required</label>
-                    </div>
+                    </div> */}
                   </div>
                 </Section>
 
                 {/* Payment */}
                 <Section title="Payment Plan">
-                  <select
-                    value={paymentPlan}
-                    onChange={(e) => setPaymentPlan(e.target.value as typeof paymentPlan)}
-                    className="rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
-                  >
-                    <option value="upfront">100% Up-front</option>
-                    <option value="half">50% DP / 50% Delivery</option>
-                    <option value="milestone">Milestone (25/50/25)</option>
-                  </select>
+                  <div className="flex gap-3">
+                    {[
+                      { value: "upfront", label: "100% Up-front" },
+                      { value: "half", label: "50% DP / 50% Delivery" },
+                      { value: "milestone", label: "Milestone (25/50/25)" },
+                    ].map((opt) => {
+                      const active = paymentPlan === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setPaymentPlan(opt.value as typeof paymentPlan)}
+                          className={`rounded-lg border px-3 py-2 text-sm transition-colors
+                            ${active 
+                              ? "border-primary-60 bg-primary-50 text-white" 
+                              : "border-gray-300 hover:border-primary-60 hover:bg-primary-50/10"}`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </Section>
-
                 {/* Agreement */}
                 <div className="flex items-start gap-2">
-                  <input
-                    id="agree"
-                    type="checkbox"
-                    checked={agree}
-                    onChange={(e) => setAgree(e.target.checked)}
-                    className="mt-1"
-                  />
-                  <label htmlFor="agree" className="text-sm text-gray-700">
+                  <FancyCheckbox id="agree" checked={agree} onChange={setAgree} />
+                  <label htmlFor="agree" className="text-sm text-gray-700 cursor-pointer">
                     I agree with the deliverables & payment plan above.
                   </label>
                 </div>

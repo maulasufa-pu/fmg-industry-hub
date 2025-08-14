@@ -271,7 +271,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
 
       // References posts (background)
       supabase
-        .from("references_posts")
+        .from("project_reference_links")
         .select("id,project_id,author_id,content,media,created_at")
         .eq("project_id", params.id)
         .order("created_at", { ascending: false })
@@ -531,7 +531,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
         driveFiles = await uploadToGoogleDrive(selectedFiles);
       }
       const { data, error } = await supabase
-        .from("references_posts")
+        .from("project_reference_links")
         .insert({
           project_id: params.id,
           author_id: null,

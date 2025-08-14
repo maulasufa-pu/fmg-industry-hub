@@ -139,6 +139,14 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   const [ndaRequired, setNdaRequired] = useState(false);
   const [preferredEngineerId, setPreferredEngineerId] = useState<string>("");
 
+  // --- Step 3 field handlers: preserve scroll juga ---
+  const setStartWithPreserve = withPreservedScroll((v: string) => setStartDate(v));
+  const setDeadlineWithPreserve = withPreservedScroll((v: string) => setDeadline(v));
+  const setEngineerWithPreserve = withPreservedScroll((v: string) => setPreferredEngineerId(v));
+  const setRefsWithPreserve = withPreservedScroll((v: string) => setReferenceLinks(v));
+  const setAgreeWithPreserve = withPreservedScroll((v: boolean) => setAgree(v));
+
+
   const bundle = selectedBundle ? BUNDLES.find(b => b.key === selectedBundle) ?? null : null;
 
   const defaultPriceOf = (key: ServiceKey): number => SERVICES.find(s => s.key === key)?.price ?? 0;
@@ -754,7 +762,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                       <input
                         type="date"
                         value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
+                        onChange={(e) => setStartWithPreserve(e.target.value)}
                         className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
                       />
                     </div>
@@ -763,7 +771,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                       <input
                         type="date"
                         value={deadline}
-                        onChange={(e) => setDeadline(e.target.value)}
+                        onChange={(e) => setDeadlineWithPreserve(e.target.value)}
                         className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
                       />
                     </div>
@@ -795,7 +803,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                     </label>
                     <textarea
                       value={referenceLinks}
-                      onChange={(e) => setReferenceLinks(e.target.value)}
+                      onChange={(e) => setRefsWithPreserve(e.target.value)}
                       rows={2}
                       placeholder="Separate with new line"
                       className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
@@ -807,7 +815,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                       <label className="block text-sm text-gray-700">Preferred Engineer</label>
                       <select
                         value={preferredEngineerId}
-                        onChange={(e) => setPreferredEngineerId(e.target.value)}
+                        onChange={(e) => setEngineerWithPreserve(e.target.value)}
                         className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
                       >
                         <option value="">Alfath Flemmo</option>
@@ -848,7 +856,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
 
                 {/* Agreement */}
                 <div className="flex items-start gap-2">
-                  <FancyCheckbox id="agree" checked={agree} onChange={setAgree} />
+                  <FancyCheckbox id="agree" checked={agree} onChange={setAgreeWithPreserve} />
                   <label htmlFor="agree" className="text-sm text-gray-700 cursor-pointer">
                     I agree with the deliverables & payment plan above.
                   </label>

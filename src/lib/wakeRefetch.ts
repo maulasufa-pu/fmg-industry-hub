@@ -1,1 +1,1 @@
-export const WAKE_EVENT = "wake_refetch" as const;
+export const WAKE_EVENT = 'client-refresh' as const;

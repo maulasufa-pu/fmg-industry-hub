@@ -5,11 +5,7 @@ import Link from "next/link";
 import LogoutButton from "@/components/auth/LogoutButton";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
-type ProfileLite = {
-  fullName: string;
-  email: string;
-  role: string;
-};
+type ProfileLite = { fullName: string; email: string; role: string };
 
 export default function UserMenu() {
   const [open, setOpen] = useState(false);
@@ -17,53 +13,56 @@ export default function UserMenu() {
   const btnRef = useRef<HTMLButtonElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
 
+  // ⬇️ hindari double-binding di StrictMode dev
+  const boundRef = useRef(false);
+
   useEffect(() => {
+    if (boundRef.current) return;
+    boundRef.current = true;
+
     const supabase = getSupabaseClient();
-    let unsub: (() => void) | undefined;
+    let cancelled = false;
+    const subs: Array<() => void> = [];
 
-    const boot = async () => {
-      // await ensureFreshSession();
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user;
-      if (!user) {
-        setProfile(null);
-      } else {
-        const md = user.user_metadata || {};
-        const full =
-          md.full_name ||
-          [md.first_name, md.last_name].filter(Boolean).join(" ") ||
-          user.email?.split("@")[0] ||
-          "User";
-        setProfile({
-          fullName: full,
-          email: user.email || "",
-          role: md.role || "Client",
-        });
-      }
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (cancelled) return;
 
-      const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-        const u = s?.user;
+        const u = session?.user;
         if (!u) {
           setProfile(null);
         } else {
-          const m = u.user_metadata || {};
+          const m = (u.user_metadata ?? {}) as Record<string, unknown>;
           const full =
-            m.full_name ||
+            (m.full_name as string) ||
             [m.first_name, m.last_name].filter(Boolean).join(" ") ||
-            u.email?.split("@")[0] ||
-            "User";
-          setProfile({
-            fullName: full,
-            email: u.email || "",
-            role: m.role || "Client",
-          });
+            (u.email?.split("@")[0] ?? "User");
+          setProfile({ fullName: full, email: u.email ?? "", role: (m.role as string) || "Client" });
         }
-      });
-      unsub = () => sub.subscription.unsubscribe();
-    };
 
-    boot();
-    return () => { unsub?.(); };
+        const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+          if (cancelled) return;
+          const user = s?.user;
+          if (!user) { setProfile(null); return; }
+          const md = (user.user_metadata ?? {}) as Record<string, unknown>;
+          const full =
+            (md.full_name as string) ||
+            [md.first_name, md.last_name].filter(Boolean).join(" ") ||
+            (user.email?.split("@")[0] ?? "User");
+          setProfile({ fullName: full, email: user.email ?? "", role: (md.role as string) || "Client" });
+        });
+        subs.push(() => sub.subscription.unsubscribe());
+      } catch {
+        if (!cancelled) setProfile(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      subs.forEach((u) => u());
+      boundRef.current = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -74,9 +73,8 @@ export default function UserMenu() {
       if (btnRef.current?.contains(t)) return;
       setOpen(false);
     };
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onEsc);
     return () => {

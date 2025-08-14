@@ -130,7 +130,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
   const [startDate, setStartDate] = useState("");
   const [deadline, setDeadline] = useState("");
   const [deliveryFormat, setDeliveryFormat] = useState<string[]>([]);
-  const [referenceLinks, setReferenceLinks] = useState<string>("");
+  const referenceLinksRef = useRef<HTMLTextAreaElement>(null);
   const [paymentPlan, setPaymentPlan] = useState<"upfront" | "half" | "milestone">("half");
   const [agree, setAgree] = useState(false);
   const [ndaRequired, setNdaRequired] = useState(false);
@@ -182,7 +182,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
       startDate: startDate || null,
       deadline: deadline || null,
       deliveryFormat,
-      referenceLinks,
+      referenceLinks: (referenceLinksRef.current?.value ?? ""),
       paymentPlan,
       ndaRequired,
       preferredEngineerId: preferredEngineerId || null,
@@ -247,9 +247,14 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
     setSelectedServices(new Set()); setSelectedBundle(null);
     setCustomPrices({});
     setStartDate(""); setDeadline(""); setDeliveryFormat([]);
-    setReferenceLinks(""); setPaymentPlan("half"); setAgree(false);
+    // setReferenceLinks("");  // HAPUS
+    setPaymentPlan("half"); setAgree(false);
     setNdaRequired(false); setPreferredEngineerId("");
+
+    // kosongkan textarea via ref
+    if (referenceLinksRef.current) referenceLinksRef.current.value = "";
   }, [open]);
+
 
   if (!open) return null;
 
@@ -372,7 +377,12 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="mx-4 my-6 w-full max-w-6xl">
-        <div className="overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
+        <div
+            className="overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
+            onPointerDown={(e) => e.stopPropagation()} // cegah event awal (sebelum focus)
+            onMouseDown={(e) => e.stopPropagation()}   // backup utk browser lama
+            onClick={(e) => e.stopPropagation()}       // opsional: ekstra aman
+          >
           {/* header */}
           <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-white/90 px-5 py-3 backdrop-blur">
             <div className="flex items-center gap-3">
@@ -655,16 +665,16 @@ export default function CreateProjectPopover({ open, onClose, onSaved }: Props):
                   </div>
 
                   <div className="mt-3">
-                    <label className="block text-sm text-gray-700">Reference links (YouTube/Spotify/Drive)</label>
+                    <label className="block text-sm text-gray-700">
+                      Reference links (YouTube/Spotify/Drive)
+                    </label>
                     <textarea
+                      ref={referenceLinksRef}
                       rows={2}
-                      value={referenceLinks}
-                      onChange={(e) => setReferenceLinks(e.target.value)}
                       placeholder="Pisahkan dengan baris baru"
                       className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
                     />
                   </div>
-
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <div>
                       <label className="block text-sm text-gray-700">Preferred Engineer</label>

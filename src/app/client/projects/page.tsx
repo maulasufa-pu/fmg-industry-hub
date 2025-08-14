@@ -181,11 +181,16 @@ export default function PageContent(): React.JSX.Element {
         setTotalCount(count ?? 0);
         setTabCounts(counts);
       } catch (err: unknown) {
-        // Abaikan abort; log error lain
-        const isAbort =
-          (err instanceof DOMException && err.name === "AbortError") ||
-          (typeof err === "object" && err !== null && "name" in err && (err as { name?: string }).name === "AbortError");
-        if (!isAbort) console.error("fetchPage error:", err);
+        const isAbortError = (e: unknown): boolean => {
+          if (e instanceof DOMException && e.name === "AbortError") return true;
+          const x = e as { code?: string; name?: string; message?: string } | null;
+          return !!(
+            x &&
+            (x.name === "AbortError" ||
+            x.code === "20" ||
+            /aborted|AbortError/i.test(x.message || ""))
+          );
+        };
       } finally {
         if (abortRef.current === ac) abortRef.current = null;
         if (isInitial && mountedRef.current) setLoadingInitial(false);

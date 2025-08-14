@@ -19,34 +19,26 @@ export default function RequireAuth({ children }: Props) {
 
   const mountedRef = useRef(false);
   const redirectingRef = useRef(false);
-  const retryTimerRef = useRef<number | null>(null);
-  const lastKickRef = useRef(0);
+  const lastPassiveCheckRef = useRef(0);
 
   const isLoginPage = pathname?.startsWith("/login") ?? false;
 
-  const clearRetry = () => {
-    if (retryTimerRef.current) {
-      window.clearTimeout(retryTimerRef.current);
-      retryTimerRef.current = null;
-    }
-  };
-
-  // getSession aman: kembalikan
-  // - object  : ada session
-  // - null    : tegas tidak ada session
-  // - undefined: gagal cek (timeout/network), jangan langsung redirect
+  // --- getSession aman: kembalikan
+  // - object   : ada session
+  // - null     : tegas tidak ada session
+  // - undefined: gagal cek (timeout/network) → jangan ganggu UI
   const getSessionSafe = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       return session; // session | null
     } catch {
-      return undefined;
+      return undefined; // transient error
     }
   };
 
   const goLoginOnce = async (reason: string) => {
     if (redirectingRef.current || isLoginPage) return;
-    // double-check sebelum redirect
+    // double-check sebelum redirect (hindari balapan)
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session || statusRef.current === "authed") return;
@@ -57,76 +49,81 @@ export default function RequireAuth({ children }: Props) {
     startTransition(() => router.replace(to));
   };
 
-  const checkSession = async (opts?: { retry?: boolean; attempt?: number }) => {
-    const attempt = opts?.attempt ?? 0;
+  const checkSession = async () => {
     const session = await getSessionSafe();
     if (!mountedRef.current) return;
+    if (session) setStatus("authed");
+    else if (session === null) { setStatus("guest"); void goLoginOnce("no-session"); }
+    else setStatus("authed"); // gagal cek (transient) → jangan ganggu UI
+  };
 
-    if (session) {
-      clearRetry();
-      setStatus("authed");
-      return;
-    }
-    if (session === null) {
-      clearRetry();
-      setStatus("guest");
-      void goLoginOnce("no-session");
-      return;
-    }
+  // --- PASSIVE recheck saat balik fokus: tanpa ubah UI, tanpa flicker
+  const userBusy = () => {
+    const el = document.activeElement as HTMLElement | null;
+    return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+  };
 
-    // undefined = gagal cek (transient) -> retry ringan dengan backoff
-    if (opts?.retry !== false) {
-      const backoff = Math.min(300 + attempt * 300, 1500);
-      if (statusRef.current !== "checking") setStatus("checking");
-      clearRetry();
-      retryTimerRef.current = window.setTimeout(() => {
-        if (mountedRef.current) void checkSession({ retry: true, attempt: attempt + 1 });
-      }, backoff) as unknown as number;
+  const passiveRecheckOnFocus = async () => {
+    // throttle 10 detik
+    const now = Date.now();
+    if (now - lastPassiveCheckRef.current < 10_000) return;
+    lastPassiveCheckRef.current = now;
+
+    if (userBusy()) return; // jangan ganggu saat user mengetik / isi form
+
+    // cek diam-diam
+    let s = await getSessionSafe();
+    if (s === undefined) {
+      // transient → grace lalu cek lagi
+      await new Promise((r) => setTimeout(r, 1200));
+      s = await getSessionSafe();
+    }
+    if (!mountedRef.current) return;
+
+    if (s) return; // aman, tidak ubah apapun
+    if (s === null) {
+      // tegas tidak ada session → grace + double-check sebelum redirect
+      await new Promise((r) => setTimeout(r, 1000));
+      if (!mountedRef.current) return;
+      const s2 = await getSessionSafe();
+      if (s2 === null) {
+        setStatus("guest");
+        void goLoginOnce("focus-no-session");
+      }
     }
   };
 
   useEffect(() => {
     mountedRef.current = true;
-    void checkSession({ retry: true });
+    void checkSession();
 
-    // Dengarkan perubahan auth realtime
+    // Dengarkan perubahan auth realtime (tanpa ganggu fokus)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((evt, session) => {
       if (!mountedRef.current) return;
 
       if (evt === "SIGNED_IN" || evt === "TOKEN_REFRESHED") {
-        clearRetry();
         setStatus("authed");
         return;
       }
       if (evt === "SIGNED_OUT") {
-        clearRetry();
         setStatus("guest");
         void goLoginOnce("signed-out");
         return;
       }
 
-      // USER_UPDATED, PASSWORD_RECOVERY, dsb → verifikasi ulang
-      setStatus("checking");
-      void checkSession({ retry: true });
+      // USER_UPDATED, PASSWORD_RECOVERY, dll → verifikasi diam-diam
+      void checkSession();
     });
 
-    // Re-validate saat balik fokus / BFCache
-    const kick = () => {
-      const now = Date.now();
-      if (now - lastKickRef.current < 500) return; // debounce
-      lastKickRef.current = now;
-      if (statusRef.current !== "checking") setStatus("checking");
-      void checkSession({ retry: true, attempt: 0 });
-    };
+    // Recheck pasif saat balik fokus / BFCache (tanpa setStatus("checking"))
+    const onVis = () => { if (document.visibilityState === "visible") { void passiveRecheckOnFocus(); } };
+    const onShow = () => { void passiveRecheckOnFocus(); };
 
-    const onVis = () => { if (document.visibilityState === "visible") kick(); };
-    const onShow = () => kick();
     window.addEventListener("pageshow", onShow);
     document.addEventListener("visibilitychange", onVis);
 
     return () => {
       mountedRef.current = false;
-      clearRetry();
       window.removeEventListener("pageshow", onShow);
       document.removeEventListener("visibilitychange", onVis);
       subscription.unsubscribe();
@@ -141,5 +138,6 @@ export default function RequireAuth({ children }: Props) {
       </div>
     );
   }
+
   return <>{children}</>;
 }

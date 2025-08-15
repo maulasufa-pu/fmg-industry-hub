@@ -192,11 +192,27 @@ export default function AdminProjectsPage(): React.JSX.Element {
 
         const countsP = fetchCounts(ac.signal);
 
-        const listR = await qb as { data: any[] | null; error?: unknown };
-        if (listR.error) {
-          if (isAbortError(listR.error)) return;
-          throw listR.error;
-        }
+        type ProjectSummaryRaw = {
+          id: string;
+          project_name: string;
+          artist_name: string | null;
+          genre: string | null;
+          stage: string | null;
+          status: string | null;
+          latest_update: string | null;
+          is_active: boolean | null;
+          is_finished: boolean | null;
+          assigned_pic: string | null;
+          progress_percent: number | null;
+          budget_amount: number | null;
+          budget_currency: string | null;
+          engineer_name: string | null;
+          anr_name: string | null;
+        };
+        type PostgrestList<T> = { data: T[] | null; error?: unknown };
+
+        const listR = (await qb) as PostgrestList<ProjectSummaryRaw>;
+
         
         const counts = await countsP;
 

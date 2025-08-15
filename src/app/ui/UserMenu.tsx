@@ -5,15 +5,29 @@ import Link from "next/link";
 import LogoutButton from "@/app/auth/LogoutButton";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
-type ProfileLite = { fullName: string; email: string; role: string };
+type Role =
+  | "client"
+  | "admin"
+  | "owner"
+  | "anr"
+  | "engineer"
+  | "composer"
+  | "producer"
+  | "publishing";
+
+type ProfileLite = {
+  fullName: string;
+  email: string;
+  role: Role;
+  avatarUrl: string | null;
+};
 
 export default function UserMenu() {
   const [open, setOpen] = useState(false);
   const [profile, setProfile] = useState<ProfileLite | null>(null);
+
   const btnRef = useRef<HTMLButtonElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
-
-  // ⬇️ hindari double-binding di StrictMode dev
   const boundRef = useRef(false);
 
   useEffect(() => {
@@ -22,9 +36,9 @@ export default function UserMenu() {
 
     const supabase = getSupabaseClient();
     let cancelled = false;
-    const subs: Array<() => void> = [];
 
-    (async () => {
+    /** Ambil profile dari DB (tabel `profiles`) untuk user saat ini */
+    const refreshProfileFromDB = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (cancelled) return;
@@ -32,39 +46,85 @@ export default function UserMenu() {
         const u = session?.user;
         if (!u) {
           setProfile(null);
-        } else {
-          const m = (u.user_metadata ?? {}) as Record<string, unknown>;
-          const full =
-            (m.full_name as string) ||
-            [m.first_name, m.last_name].filter(Boolean).join(" ") ||
-            (u.email?.split("@")[0] ?? "User");
-          setProfile({ fullName: full, email: u.email ?? "", role: (m.role as string) || "Client" });
+          return;
         }
 
-        const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-          if (cancelled) return;
-          const user = s?.user;
-          if (!user) { setProfile(null); return; }
-          const md = (user.user_metadata ?? {}) as Record<string, unknown>;
-          const full =
-            (md.full_name as string) ||
-            [md.first_name, md.last_name].filter(Boolean).join(" ") ||
-            (user.email?.split("@")[0] ?? "User");
-          setProfile({ fullName: full, email: user.email ?? "", role: (md.role as string) || "Client" });
-        });
-        subs.push(() => sub.subscription.unsubscribe());
+        const { data: row, error } = await supabase
+          .from("profiles")
+          .select("name, role, avatar_url")
+          .eq("id", u.id)
+          .maybeSingle();
+
+        // fallback aman kalau profil belum ada (harusnya sudah ada)
+        const fullName =
+          row?.name ||
+          u.user_metadata?.full_name ||
+          [u.user_metadata?.first_name, u.user_metadata?.last_name].filter(Boolean).join(" ") ||
+          u.email?.split("@")[0] ||
+          "User";
+
+        const email = u.email ?? "";
+        const role: Role = (row?.role as Role) || "client";
+        const avatarUrl = (row?.avatar_url as string) ?? null;
+
+        if (!error && !cancelled) {
+          setProfile({ fullName, email, role, avatarUrl });
+        } else if (!cancelled) {
+          // Kalau query error, tetap tampilkan minimal info
+          setProfile({ fullName, email, role, avatarUrl });
+        }
       } catch {
         if (!cancelled) setProfile(null);
+      }
+    };
+
+    // initial load
+    void refreshProfileFromDB();
+
+    // update saat auth berubah
+    const { data: authSub } = supabase.auth.onAuthStateChange(() => {
+      if (!cancelled) void refreshProfileFromDB();
+    });
+
+    // optional: dengar realtime update pada row profile user ini
+    let channel = supabase.channel("realtime:user-profile");
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const uid = session?.user?.id;
+        if (!uid) return;
+
+        channel = supabase
+          .channel("realtime:user-profile:" + uid)
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "profiles", filter: `id=eq.${uid}` },
+            () => void refreshProfileFromDB()
+          );
+
+        void channel.subscribe();
+      } catch {
+        /* ignore realtime errors */
       }
     })();
 
     return () => {
       cancelled = true;
-      subs.forEach((u) => u());
       boundRef.current = false;
+      try {
+        authSub.subscription.unsubscribe();
+      } catch {
+        // ignore
+      }
+      try {
+        void supabase.removeChannel(channel);
+      } catch {
+        // ignore
+      }
     };
   }, []);
 
+  // close popover on outside click / ESC
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
       if (!open) return;
@@ -83,14 +143,20 @@ export default function UserMenu() {
     };
   }, [open]);
 
+  const roleLabel = (r?: Role) =>
+    (r ?? "client").replace(/\b\w/g, (c) => c.toUpperCase());
+
   return (
     <div className="relative">
       <button
         ref={btnRef}
-        onClick={() => setOpen(v => !v)}
-        className="flex w-12 h-12 items-center justify-center rounded-full bg-coolgray-10 hover:bg-coolgray-20 transition-colors"
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-12 w-12 items-center justify-center rounded-full bg-coolgray-10 transition-colors hover:bg-coolgray-20"
+        aria-haspopup="menu"
+        aria-expanded={open}
       >
-        <svg className="w-6 h-6 text-coolgray-90" viewBox="0 0 24 24" fill="none">
+        {/* Avatar sederhana */}
+        <svg className="h-6 w-6 text-coolgray-90" viewBox="0 0 24 24" fill="none" aria-hidden>
           <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Z" stroke="currentColor" strokeWidth="1.5"/>
           <path d="M4 20a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
@@ -99,7 +165,8 @@ export default function UserMenu() {
       {open && (
         <div
           ref={popRef}
-          className="absolute right-0 mt-2 w-72 rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-lg p-3 z-50"
+          role="menu"
+          className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-lg"
         >
           {/* Header info user */}
           <div className="flex items-start gap-3 p-2">
@@ -107,15 +174,15 @@ export default function UserMenu() {
               {(profile?.fullName?.charAt(0) || "U").toUpperCase()}
             </div>
             <div className="min-w-0">
-              <div className="font-medium text-coolgray-90 truncate">
+              <div className="truncate font-medium text-coolgray-90">
                 {profile?.fullName || "Guest"}
               </div>
-              <div className="text-xs text-coolgray-60 truncate">
+              <div className="truncate text-xs text-coolgray-60">
                 {profile?.email || "Read Only"}
               </div>
               {profile && (
-                <div className="text-xs mt-0.5 px-2 py-0.5 rounded-full bg-coolgray-10 text-coolgray-90 w-fit">
-                  {profile.role}
+                <div className="mt-1 w-fit rounded-full bg-coolgray-10 px-2 py-0.5 text-xs text-coolgray-90">
+                  {roleLabel(profile.role)}
                 </div>
               )}
             </div>
@@ -126,33 +193,70 @@ export default function UserMenu() {
           {profile ? (
             <>
               <nav className="flex flex-col gap-1">
+                {/* Tautan umum */}
                 <Link
                   href="/client/profile"
-                  className="px-3 py-2 rounded-lg hover:bg-coolgray-10 text-coolgray-90"
+                  className="rounded-lg px-3 py-2 text-coolgray-90 hover:bg-coolgray-10"
                   onClick={() => setOpen(false)}
                 >
                   View Profile
                 </Link>
                 <Link
                   href="/client/settings"
-                  className="px-3 py-2 rounded-lg hover:bg-coolgray-10 text-coolgray-90"
+                  className="rounded-lg px-3 py-2 text-coolgray-90 hover:bg-coolgray-10"
                   onClick={() => setOpen(false)}
                 >
                   Settings
                 </Link>
+
+                {/* Tautan Admin Panel muncul hanya untuk admin/owner */}
+                {(profile.role === "admin" || profile.role === "owner") && (
+                  <>
+                    <Link
+                      href="/admin/dashboard"
+                      className="rounded-lg px-3 py-2 text-coolgray-90 hover:bg-coolgray-10"
+                      onClick={() => setOpen(false)}
+                    >
+                      Admin Dashboard
+                    </Link>
+                    <Link
+                      href="/admin/projects"
+                      className="rounded-lg px-3 py-2 text-coolgray-90 hover:bg-coolgray-10"
+                      onClick={() => setOpen(false)}
+                    >
+                      Admin Projects
+                    </Link>
+                    <Link
+                      href="/admin/invoices"
+                      className="rounded-lg px-3 py-2 text-coolgray-90 hover:bg-coolgray-10"
+                      onClick={() => setOpen(false)}
+                    >
+                      Admin Invoices
+                    </Link>
+                    {profile.role === "owner" && (
+                      <Link
+                        href="/admin/users"
+                        className="rounded-lg px-3 py-2 text-coolgray-90 hover:bg-coolgray-10"
+                        onClick={() => setOpen(false)}
+                      >
+                        User & Roles
+                      </Link>
+                    )}
+                  </>
+                )}
               </nav>
 
               <hr className="my-3 border-t border-[var(--border)]" />
 
               <div className="px-2 pb-1">
-                <LogoutButton className="w-full h-10 rounded-lg bg-primary-60 text-white hover:bg-primary-70" />
+                <LogoutButton className="h-10 w-full rounded-lg bg-primary-60 text-white hover:bg-primary-70" />
               </div>
             </>
           ) : (
             <div className="px-2 pb-1">
               <Link
                 href="/login"
-                className="block w-full h-10 rounded-lg bg-primary-60 text-white hover:bg-primary-70 text-center leading-10"
+                className="block h-10 w-full rounded-lg bg-primary-60 text-center leading-10 text-white hover:bg-primary-70"
                 onClick={() => setOpen(false)}
               >
                 Login

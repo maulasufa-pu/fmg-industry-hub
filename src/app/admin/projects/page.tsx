@@ -1,19 +1,14 @@
+// E:\FMGIH\fmg-industry-hub\src\app\admin\projects\page.tsx
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
-import AdminProjectTabsSection, {
-  AdminTabKey,
-  PicOption,
-  StageOption,
-  StatusOption,
-} from "@/app/admin/ui/AdminProjectTabsSection";
-import AdminProjectTableSection, { AdminProjectRow } from "@/app/admin/ui/AdminProjectTableSection";
-import AdminProjectPagination from "@/app/admin/ui/AdminProjectPagination";
+import AdminPanel, {
+  AdminTabKey, AdminProjectRow, PicOption, StageOption, StatusOption,
+} from "@/app/admin/ui/AdminPanel";
 
-// contoh util aksi di client (pakai di AdminProjectTableSection toolbar)
 type CountResp = { count: number | null; error: unknown };
 
 const QUERY_COLS =
@@ -53,12 +48,13 @@ export default function AdminProjectsPage(): React.JSX.Element {
   // ---------- data ----------
   const [rows, setRows] = useState<AdminProjectRow[]>([]);
   const [tabCounts, setTabCounts] = useState<Record<AdminTabKey, number | null>>({
-    All: null,
-    Active: null,
-    Finished: null,
-    Pending: null,
-    Unassigned: null,
+    All: null, Active: null, Finished: null, Pending: null, Unassigned: null,
   });
+
+  // filter options (diambil SEKALI di page.tsx, bukan di child)
+  const [picOptions, setPicOptions] = useState<PicOption[]>(["any"]);
+  const [stageOptions, setStageOptions] = useState<StageOption[]>(["any"]);
+  const [statusOptions, setStatusOptions] = useState<StatusOption[]>(["any"]);
 
   // ui state
   const [loadingInitial, setLoadingInitial] = useState(true);
@@ -70,81 +66,92 @@ export default function AdminProjectsPage(): React.JSX.Element {
   // ---------- counts ----------
   const fetchCounts = useCallback(
     async (signal: AbortSignal) => {
-        // builder dasar
-        const base = supabase.from("project_summary").select("id", { count: "exact", head: true });
+      const base = supabase.from("project_summary").select("id", { count: "exact", head: true });
 
-        // fungsi kecil untuk menerapkan SEMUA filter (search + facet)
-        const applyAllFilters = (qb: ReturnType<typeof base["abortSignal"]> extends infer _T
-        ? typeof base
-        : typeof base) => {
+      const applyAllFilters = (qb: ReturnType<typeof base["abortSignal"]> extends infer _T ? typeof base : typeof base) => {
         let b = qb;
         if (q) {
-            const like = `%${q}%`;
-            b = b.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+          const like = `%${q}%`;
+          b = b.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
         }
         if (filterPIC !== "any") b = b.eq("assigned_pic", filterPIC);
         if (filterStage !== "any") b = b.eq("stage", filterStage);
         if (filterStatus !== "any") b = b.eq("status", filterStatus);
         return b.abortSignal(signal);
-        };
+      };
 
-        const allQ = applyAllFilters(base);
-        const actQ = applyAllFilters(base.eq("is_active", true));
-        const finQ = applyAllFilters(base.eq("is_finished", true));
-        const penQ = applyAllFilters(base.eq("is_active", false).eq("is_finished", false));
-        const unQ  = applyAllFilters(base.is("assigned_pic", null));
+      const allQ = applyAllFilters(base);
+      const actQ = applyAllFilters(base.eq("is_active", true));
+      const finQ = applyAllFilters(base.eq("is_finished", true));
+      const penQ = applyAllFilters(base.eq("is_active", false).eq("is_finished", false));
+      const unQ  = applyAllFilters(base.is("assigned_pic", null));
 
-        const [allR, actR, finR, penR, unR] = (await Promise.all([allQ, actQ, finQ, penQ, unQ])) as [
+      const [allR, actR, finR, penR, unR] = (await Promise.all([allQ, actQ, finQ, penQ, unQ])) as [
         CountResp, CountResp, CountResp, CountResp, CountResp
-        ];
+      ];
 
-        if (allR.error) throw allR.error;
-        if (actR.error) throw actR.error;
-        if (finR.error) throw finR.error;
-        if (penR.error) throw penR.error;
-        if (unR.error) throw unR.error;
+      if (allR.error) throw allR.error;
+      if (actR.error) throw actR.error;
+      if (finR.error) throw finR.error;
+      if (penR.error) throw penR.error;
+      if (unR.error) throw unR.error;
 
-        return {
+      return {
         All: allR.count ?? 0,
         Active: actR.count ?? 0,
         Finished: finR.count ?? 0,
         Pending: penR.count ?? 0,
         Unassigned: unR.count ?? 0,
-        } as const;
+      } as const;
     },
     [supabase, q, filterPIC, filterStage, filterStatus]
-    );
+  );
 
+  // ---------- filter options (only page.tsx) ----------
+  const fetchFilterOptions = useCallback(async () => {
+    // ambil nilai unik dari keseluruhan dataset (limit aman)
+    const [picsR, stagesR, statusesR] = await Promise.all([
+      supabase.from("project_summary").select("assigned_pic").not("assigned_pic", "is", null).limit(2000),
+      supabase.from("project_summary").select("stage").not("stage", "is", null).limit(2000),
+      supabase.from("project_summary").select("status").not("status", "is", null).limit(2000),
+    ]);
+
+    const uniq = (arr: (string | null)[]) =>
+      Array.from(new Set(arr.filter((x): x is string => !!x))).sort((a, b) => a.localeCompare(b));
+
+    const picList = ["any", ...uniq((picsR.data ?? []).map(r => r.assigned_pic as string | null))] as PicOption[];
+    const stageList = ["any", ...uniq((stagesR.data ?? []).map(r => r.stage as string | null))] as StageOption[];
+    const statusList = ["any", ...uniq((statusesR.data ?? []).map(r => r.status as string | null))] as StatusOption[];
+
+    setPicOptions(picList);
+    setStageOptions(stageList);
+    setStatusOptions(statusList);
+  }, [supabase]);
 
   // ---------- page data ----------
   const fetchPage = useCallback(
     async (isInitial = false) => {
-        abortRef.current?.abort();
-        const ac = new AbortController();
-        abortRef.current = ac;
+      abortRef.current?.abort();
+      const ac = new AbortController();
+      abortRef.current = ac;
 
-        if (isInitial) setLoadingInitial(true);
-        try {
+      if (isInitial) setLoadingInitial(true);
+      try {
         const from = (page - 1) * pageSize;
         const to = from + pageSize - 1;
 
-        // builder list
         let qb = supabase
-            .from("project_summary")
-            .select(QUERY_COLS, { count: "exact", head: false });
+          .from("project_summary")
+          .select(QUERY_COLS, { count: "exact", head: false });
 
-        // search text
         if (q) {
-            const like = `%${q}%`;
-            qb = qb.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+          const like = `%${q}%`;
+          qb = qb.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
         }
-
-        // facet filters
         if (filterPIC !== "any") qb = qb.eq("assigned_pic", filterPIC);
         if (filterStage !== "any") qb = qb.eq("stage", filterStage);
         if (filterStatus !== "any") qb = qb.eq("status", filterStatus);
 
-        // tab filter
         if (activeTab === "Active") qb = qb.eq("is_active", true);
         else if (activeTab === "Finished") qb = qb.eq("is_finished", true);
         else if (activeTab === "Pending") qb = qb.eq("is_active", false).eq("is_finished", false);
@@ -165,22 +172,23 @@ export default function AdminProjectsPage(): React.JSX.Element {
         setRows(listData ?? []);
         setTotalCount(listCount);
         setTabCounts(counts);
-        } catch (e) {
+      } catch (e) {
         if ((e as { name?: string }).name !== "AbortError") {
-            console.error("admin/projects fetch error:", e);
+          console.error("admin/projects fetch error:", e);
         }
-        } finally {
+      } finally {
         if (abortRef.current === ac) abortRef.current = null;
         if (isInitial) setLoadingInitial(false);
-        }
+      }
     },
     [supabase, page, pageSize, q, activeTab, filterPIC, filterStage, filterStatus, fetchCounts]
-    );
+  );
 
   // initial
   useEffect(() => {
     (async () => {
       await supabase.auth.getSession().catch(() => {});
+      await fetchFilterOptions();           // <-- options sekali, di page.tsx
       await fetchPage(true);
       setDidInit(true);
     })();
@@ -216,7 +224,7 @@ export default function AdminProjectsPage(): React.JSX.Element {
     }
   };
 
-  // bulk actions (NOTE: sesuaikan nama tabel mutasi jika berbeda dari "projects")
+  // bulk actions (mutasi langsung; nama tabel "projects" sesuaikan jika berbeda)
   const bulkAssignPIC = async (ids: string[], pic: string | null) => {
     if (ids.length === 0) return;
     const { error } = await supabase.from("projects").update({ assigned_pic: pic }).in("id", ids);
@@ -236,53 +244,29 @@ export default function AdminProjectsPage(): React.JSX.Element {
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <AdminProjectTabsSection
+      <AdminPanel
         activeTab={activeTab}
         counts={tabCounts}
+        onTabChange={setTabAndUrl}
         search={search}
-        onSearchChange={(v) => {
-          setPage(1);
-          setSearch(v);
-        }}
+        onSearchChange={(v) => { setPage(1); setSearch(v); }}
         filterPIC={filterPIC}
         filterStage={filterStage}
         filterStatus={filterStatus}
-        onFilterPIC={(v) => {
-          setPage(1);
-          setFilterPIC(v);
-        }}
-        onFilterStage={(v) => {
-          setPage(1);
-          setFilterStage(v);
-        }}
-        onFilterStatus={(v) => {
-          setPage(1);
-          setFilterStatus(v);
-        }}
-        onTabChange={(t) => setTabAndUrl(t)}
-        onCreate={() => router.push("/admin/projects/new")}
+        onFilterPIC={(v) => { setPage(1); setFilterPIC(v); }}
+        onFilterStage={(v) => { setPage(1); setFilterStage(v); }}
+        onFilterStatus={(v) => { setPage(1); setFilterStatus(v); }}
+        filterOptions={{ picOptions, stageOptions, statusOptions }}
+        loading={loadingInitial}
+        rows={rows}
+        totalCount={totalCount}
+        currentPage={page}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onOpen={(id) => router.push(`/admin/projects/${id}`)}
+        onBulkAssignPIC={bulkAssignPIC}
+        onBulkMarkFinished={bulkMarkFinished}
       />
-
-      {loadingInitial ? (
-        <div className="rounded-lg border border-gray-200 bg-white p-10 text-center text-gray-500 shadow">
-          Loading projects…
-        </div>
-      ) : (
-        <>
-          <AdminProjectTableSection
-            rows={rows}
-            onOpen={(id) => router.push(`/admin/projects/${id}`)}
-            onBulkAssignPIC={bulkAssignPIC}
-            onBulkMarkFinished={bulkMarkFinished}
-          />
-
-          <AdminProjectPagination
-            currentPage={page}
-            totalPages={Math.max(1, Math.ceil(totalCount / pageSize))}
-            onPageChange={setPage}
-          />
-        </>
-      )}
     </div>
   );
 }

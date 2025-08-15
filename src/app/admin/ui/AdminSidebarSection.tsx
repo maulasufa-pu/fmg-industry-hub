@@ -1,48 +1,27 @@
+// src/app/admin/ui/AdminSidebarSection.tsx  (CLIENT)
 "use client";
-
-import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-// Icon components dari src/icons (PascalCase = nama file.svg)
-import { Dashboard, Folder, Users, Cog } from "@/icons";
+import { Layout, Clipboard, File, Calendar, Document, Users } from "@/icons"; // pakai ikonmu
 
-type Icon = React.ComponentType<React.SVGProps<SVGSVGElement>>;
-type Item = { href: string; label: string; Icon: Icon };
-
-const items: Item[] = [
-  { href: "/admin/dashboard", label: "Dashboard", Icon: Dashboard },
-  { href: "/admin/projects", label: "Projects", Icon: Folder },
-  { href: "/admin/users", label: "Users", Icon: Users },
-  { href: "/admin/settings", label: "Settings", Icon: Cog },
-];
-
-export function AdminSidebarSection(): React.JSX.Element {
-  const pathname = usePathname();
-
+export default function AdminSidebarSection() {
+  const item = (href: string, label: string, Icon: React.FC<React.SVGProps<SVGSVGElement>>) => (
+    <Link href={href} className="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-gray-100">
+      <Icon className="h-5 w-5 text-gray-500 group-hover:text-gray-700" />
+      <span className="text-gray-800">{label}</span>
+    </Link>
+  );
   return (
-    <aside className="w-[260px] min-h-screen border-r bg-white">
-      <div className="p-4">
-        <div className="mb-4 text-base font-semibold">Admin Panel</div>
-        <nav className="space-y-1">
-          {items.map(({ href, label, Icon }) => {
-            const active = pathname === href || pathname?.startsWith(`${href}/`);
-            return (
-              <Link
-                key={href}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={[
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition",
-                  active ? "bg-coolgray-20 font-medium" : "hover:bg-coolgray-20",
-                ].join(" ")}
-              >
-                <Icon className="h-4 w-4 shrink-0" aria-hidden />
-                <span className="truncate">{label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
+    <aside className="sticky top-0 z-10 h-[100svh] w-60 shrink-0 border-r bg-white p-3">
+      <div className="mb-2 px-3 text-xs font-semibold uppercase text-gray-500">Admin Panel</div>
+      <nav className="flex flex-col gap-1">
+        {item("/admin/dashboard", "Dashboard", Layout)}
+        {item("/admin/projects", "Projects", Clipboard)}
+        {item("/admin/invoices", "Invoices", File)}
+        {item("/admin/meetings", "Meetings", Calendar)}
+        {item("/admin/publishing", "Publishing", Document)}
+        {/* Halaman Owner-only ditunjukkan di UI pun ok, server/middleware tetap batasi */}
+        {item("/admin/users", "Users (Owner)", Users)}
+      </nav>
     </aside>
   );
 }

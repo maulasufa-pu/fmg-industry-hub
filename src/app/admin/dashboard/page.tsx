@@ -1,470 +1,131 @@
+// src/app/admin/dashboard/page.tsx
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import { getSupabaseClient, withSignal } from "@/lib/supabase/client";
-import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
+import React, { useEffect, useMemo, useState } from "react";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
-type ProjectRow = {
-  id: string;
-  project_name: string;
-  artist_name: string | null;
-  status: string | null;
-  latest_update: string | null;
-};
-
-type MeetingRow = {
-  id: string;
-  project_id: string | null;
-  title: string;
-  start_at: string; // ISO
-  duration_min: number;
-  link: string | null;
-  notes: string | null;
-  created_at: string;
-};
-
-type InvoiceRow = {
-  id: string;
-  invoice_no: string;
-  client_name: string | null;
-  amount_total: number | null;
-  currency: string | null;
-  status: "draft" | "unpaid" | "paid" | "cancelled";
-  created_at: string | null;
-};
-
-type CountResp = { count: number | null; error: unknown };
-
-const QUERY_PROJECTS = "id,project_name,artist_name,status,latest_update";
-const QUERY_MEETINGS = "id,project_id,title,start_at,duration_min,link,notes,created_at";
-const QUERY_INVOICES = "id,invoice_no,client_name,amount_total,currency,status,created_at";
-
-const Card: React.FC<React.PropsWithChildren<{ title: string; right?: React.ReactNode }>> = ({
-  title,
-  right,
-  children,
-}) => (
-  <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-    <div className="mb-3 flex items-center justify-between">
-      <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
-      {right}
-    </div>
-    {children}
-  </section>
-);
-
-const Stat: React.FC<{ label: string; value: React.ReactNode; to?: string }> = ({ label, value, to }) => {
-  const content = (
-    <div className="rounded-lg border border-gray-200 p-4 transition hover:bg-gray-50">
-      <div className="text-xs text-gray-500">{label}</div>
-      <div className="mt-1 text-2xl font-semibold text-gray-900">{value}</div>
-    </div>
-  );
-  return to ? <Link href={to}>{content}</Link> : content;
-};
+type CountOnly = { count: number | null };
 
 export default function AdminDashboard(): React.JSX.Element {
-  useFocusWarmAuth();
-
   const supabase = useMemo(() => getSupabaseClient(), []);
-  const [loadingInitial, setLoadingInitial] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
+  const [kpi, setKpi] = useState({
+    newRequests: 0,
+    awaitingPayment: 0,
+    unassigned: 0,
+    activeProjects: 0,
+    upcomingMeetings: 0,
+    unpaidInvoices: 0,
+  });
 
-  // Abort + realtime guard
-  const abortRef = useRef<AbortController | null>(null);
-  const rtBoundRef = useRef<boolean>(false);
-  const mountedRef = useRef<boolean>(true);
-
-  // Stats (admin-wide)
-  const [statProjectsAll, setStatProjectsAll] = useState<number | null>(null);
-  const [statProjectsActive, setStatProjectsActive] = useState<number | null>(null);
-  const [statProjectsFinished, setStatProjectsFinished] = useState<number | null>(null);
-  const [statProjectsPending, setStatProjectsPending] = useState<number | null>(null);
-  const [statUsers, setStatUsers] = useState<number | null>(null);
-  const [statInvoicesUnpaid, setStatInvoicesUnpaid] = useState<number | null>(null);
-  const [statMeetingsUpcoming, setStatMeetingsUpcoming] = useState<number | null>(null);
-
-  // Lists
-  const [recentProjects, setRecentProjects] = useState<ProjectRow[]>([]);
-  const [upcomingMeetings, setUpcomingMeetings] = useState<MeetingRow[]>([]);
-  const [recentInvoices, setRecentInvoices] = useState<InvoiceRow[]>([]);
-
-  const fetchAll = useCallback(async () => {
-    // Batalkan request lama sebelum mulai yang baru
-    abortRef.current?.abort();
-    abortRef.current = new AbortController();
-    const ac = abortRef.current;
-
-    setLoadingInitial(true);
+  // Helper kecil untuk ambil count dengan fallback aman
+  const getCountSafe = async (run: () => Promise<CountOnly>): Promise<number> => {
     try {
+      const { count } = await run();
+      return count ?? 0;
+    } catch {
+      return 0;
+    }
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
       const nowIso = new Date().toISOString();
 
-      // ===== Counts (head:true) =====
-      const allP = withSignal(
-        supabase.from("project_summary").select("id", { count: "exact", head: true }),
-        ac.signal
-      ) as unknown as Promise<CountResp>;
-
-      const actP = withSignal(
-        supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("is_active", true),
-        ac.signal
-      ) as unknown as Promise<CountResp>;
-
-      const finP = withSignal(
-        supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("is_finished", true),
-        ac.signal
-      ) as unknown as Promise<CountResp>;
-
-      const penP = withSignal(
-        supabase
+      // Jalankan sequential; jelas dan aman tipe
+      const newRequests = await getCountSafe(async () => {
+        const { count, error } = await supabase
           .from("project_summary")
           .select("id", { count: "exact", head: true })
-          .eq("is_active", false)
-          .eq("is_finished", false),
-        ac.signal
-      ) as unknown as Promise<CountResp>;
+          .eq("status", "requested");
 
-      const usersP = withSignal(
-        supabase.from("profiles").select("id", { count: "exact", head: true }),
-        ac.signal
-      ) as unknown as Promise<CountResp>;
+        if (error) throw error;
+        return { count };
+      });
+      const awaitingPayment = await getCountSafe(async () => {
+        const { count, error } = await supabase
+          .from("project_summary")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "waiting_payment");
+        if (error) throw error;
+        return { count };
+      });
 
-      const invP = withSignal(
-        supabase.from("invoices").select("id", { count: "exact", head: true }).eq("status", "unpaid"),
-        ac.signal
-      ) as unknown as Promise<CountResp>;
+      const unassigned = await getCountSafe(async () => {
+        const { count, error } = await supabase
+          .from("project_summary")
+          .select("id", { count: "exact", head: true })
+          .is("assigned_pic", null);
+        if (error) throw error;
+        return { count };
+      });
 
-      const meetP = withSignal(
-        supabase.from("meetings").select("id", { count: "exact", head: true }).gte("start_at", nowIso),
-        ac.signal
-      ) as unknown as Promise<CountResp>;
+      const activeProjects = await getCountSafe(async () => {
+        const { count, error } = await supabase
+          .from("project_summary")
+          .select("id", { count: "exact", head: true })
+          .eq("is_active", true);
+        if (error) throw error;
+        return { count };
+      });
 
-      // ===== Lists =====
-      const projListP = withSignal(
-        supabase.from("project_summary").select(QUERY_PROJECTS).order("latest_update", { ascending: false }).limit(10),
-        ac.signal
-      )
-        .returns<ProjectRow[]>()
-        .then(({ data, error }) => {
-          if (error) throw error;
-          return data ?? [];
-        });
-
-      const meetingsP = withSignal(
-        supabase
+      const upcomingMeetings = await getCountSafe(async () => {
+        const { count, error } = await supabase
           .from("meetings")
-          .select(QUERY_MEETINGS)
-          .gte("start_at", nowIso)
-          .order("start_at", { ascending: true })
-          .limit(8),
-        ac.signal
-      )
-        .returns<MeetingRow[]>()
-        .then(({ data, error }) => {
-          if (error) throw error;
-          return data ?? [];
-        });
+          .select("id", { count: "exact", head: true })
+          .gte("start_at", nowIso);
+        if (error) throw error;
+        return { count };
+      });
 
-      const invoicesP = withSignal(
-        supabase.from("invoices").select(QUERY_INVOICES).order("created_at", { ascending: false }).limit(8),
-        ac.signal
-      )
-        .returns<InvoiceRow[]>()
-        .then(({ data, error }) => {
-          if (error) throw error;
-          return data ?? [];
-        });
+      const unpaidInvoices = await getCountSafe(async () => {
+        const { count, error } = await supabase
+          .from("invoices")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "unpaid");
+        if (error) throw error;
+        return { count };
+      });
 
-      const [allR, actR, finR, penR, usersR, invR, meetR, projListArr, meetingsArr, invoicesArr] = await Promise.all([
-        allP,
-        actP,
-        finP,
-        penP,
-        usersP,
-        invP,
-        meetP,
-        projListP,
-        meetingsP,
-        invoicesP,
-      ]);
 
-      // Cek error dari count responses
-      const countResults: CountResp[] = [allR, actR, finR, penR, usersR, invR, meetR];
-      for (const r of countResults) {
-        if ((r as CountResp).error) throw (r as CountResp).error;
-      }
-
-      if (!mountedRef.current) return;
-
-      setStatProjectsAll(allR.count ?? 0);
-      setStatProjectsActive(actR.count ?? 0);
-      setStatProjectsFinished(finR.count ?? 0);
-      setStatProjectsPending(penR.count ?? 0);
-      setStatUsers(usersR.count ?? 0);
-      setStatInvoicesUnpaid(invR.count ?? 0);
-      setStatMeetingsUpcoming(meetR.count ?? 0);
-
-      setRecentProjects(projListArr);
-      setUpcomingMeetings(meetingsArr);
-      setRecentInvoices(invoicesArr);
-    } catch (e) {
-      console.error("admin fetchAll error:", e);
-    } finally {
-      if (abortRef.current === ac) abortRef.current = null;
-      if (mountedRef.current) setLoadingInitial(false);
-    }
-  }, [supabase]);
-
-  // Initial load
-  useEffect(() => {
-    mountedRef.current = true;
-    (async () => {
-      try {
-        await supabase.auth.getSession();
-      } catch {
-        // ignore
-      } finally {
-        await fetchAll();
-      }
+      if (!mounted) return;
+      setKpi({ newRequests, awaitingPayment, unassigned, activeProjects, upcomingMeetings, unpaidInvoices });
+      setLoading(false);
     })();
     return () => {
-      mountedRef.current = false;
-      abortRef.current?.abort();
-    };
-  }, [fetchAll, supabase.auth]);
-
-  // Realtime INSERT minimal (meetings + invoices)
-  useEffect(() => {
-    if (rtBoundRef.current) return;
-    rtBoundRef.current = true;
-
-    const channelName = "realtime:admin-dashboard:" + Math.random().toString(36).slice(2);
-    const ch = supabase.channel(channelName);
-
-    ch.on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "meetings" },
-      (payload) => {
-        const row = payload.new as MeetingRow;
-        if (new Date(row.start_at).getTime() < Date.now()) return; // only upcoming
-        setUpcomingMeetings((prev) => {
-          const list = prev ?? [];
-          if (list.some((x) => x.id === row.id)) return list;
-          const next = [row, ...list].sort((a, b) => a.start_at.localeCompare(b.start_at));
-          return next.slice(0, 8);
-        });
-        setStatMeetingsUpcoming((c) => (typeof c === "number" ? c + 1 : (c ?? 0) + 1));
-      }
-    );
-
-    ch.on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "invoices" },
-      (payload) => {
-        const row = payload.new as InvoiceRow;
-        setRecentInvoices((prev) => {
-          const list = prev ?? [];
-          if (list.some((x) => x.id === row.id)) return list;
-          const next = [row, ...list].sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
-          return next.slice(0, 8);
-        });
-        if (row.status === "unpaid") {
-          setStatInvoicesUnpaid((c) => (typeof c === "number" ? c + 1 : (c ?? 0) + 1));
-        }
-      }
-    );
-
-    void ch.subscribe();
-
-    return () => {
-      try {
-        void supabase.removeChannel(ch);
-      } catch (error) {
-        console.error("Failed to remove channel:", error);
-      } finally {
-        rtBoundRef.current = false;
-      }
+      mounted = false;
     };
   }, [supabase]);
 
-  // Refresh data on custom events (/app/admin/AdminShell menembakkan 'admin-wake')
-  useEffect(() => {
-    const onAdminWake = () => void fetchAll();
-    const onAdminRefresh = () => void fetchAll();
-    window.addEventListener("admin-wake", onAdminWake);
-    window.addEventListener("admin-refresh", onAdminRefresh);
-    return () => {
-      window.removeEventListener("admin-wake", onAdminWake);
-      window.removeEventListener("admin-refresh", onAdminRefresh);
-    };
-  }, [fetchAll]);
-
-  if (loadingInitial) {
+  if (loading) {
     return (
       <div className="p-6">
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-gray-500 shadow" data-global-loader="true">
-          Loading admin dashboard…
-        </div>
+        <div className="rounded-xl border bg-white p-8 text-gray-500 shadow">Loading…</div>
       </div>
     );
   }
 
+  const Stat = ({ label, value }: { label: string; value: number }) => (
+    <div className="rounded-lg border p-4">
+      <div className="text-xs text-gray-500">{label}</div>
+      <div className="mt-1 text-2xl font-semibold">{value}</div>
+    </div>
+  );
+
   return (
     <div className="space-y-6 p-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-gray-900">Admin Dashboard</h1>
-        <div className="flex items-center gap-2">
-          <Link href="/admin/projects" className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
-            Projects
-          </Link>
-          <Link href="/admin/users" className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
-            Users
-          </Link>
-          <Link href="/admin/settings" className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
-            Settings
-          </Link>
-        </div>
+        <h1 className="text-lg font-semibold">Admin Dashboard</h1>
       </div>
-
-      {/* Stats */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <Stat label="Projects" value={statProjectsAll ?? 0} to="/admin/projects" />
-        <Stat label="Active" value={statProjectsActive ?? 0} to="/admin/projects?tab=Active" />
-        <Stat label="Finished" value={statProjectsFinished ?? 0} to="/admin/projects?tab=Finished" />
-        <Stat label="Pending" value={statProjectsPending ?? 0} to="/admin/projects?tab=Pending" />
-        <Stat label="Users" value={statUsers ?? 0} to="/admin/users" />
-        <Stat label="Meetings Upcoming" value={statMeetingsUpcoming ?? 0} to="/admin/projects" />
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Recently Updated Projects */}
-        <Card
-          title="Recently Updated Projects"
-          right={
-            <Link href="/admin/projects" className="text-xs text-blue-600 hover:underline">
-              View All
-            </Link>
-          }
-        >
-          {recentProjects.length === 0 ? (
-            <div className="text-sm text-gray-500">No recent updates.</div>
-          ) : (
-            <ul className="divide-y">
-              {recentProjects.map((p) => (
-                <li key={p.id} className="py-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="truncate font-medium text-gray-900">{p.project_name}</div>
-                      <div className="truncate text-xs text-gray-500">{p.artist_name ?? "-"}</div>
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {p.latest_update ? new Date(p.latest_update).toLocaleString("id-ID") : "-"}
-                    </div>
-                  </div>
-                  <div className="mt-1">
-                    <Link
-                      href={`/admin/projects`} // kalau ada detail admin: `/admin/projects/${p.id}`
-                      className="inline-flex items-center rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
-                    >
-                      Open
-                    </Link>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-
-        {/* Upcoming Meetings */}
-        <Card
-          title="Upcoming Meetings"
-          right={
-            <Link href="/admin/projects" className="text-xs text-blue-600 hover:underline">
-              Schedule
-            </Link>
-          }
-        >
-          {upcomingMeetings.length === 0 ? (
-            <div className="text-sm text-gray-500">No upcoming meetings.</div>
-          ) : (
-            <ul className="space-y-3">
-              {upcomingMeetings.map((m) => {
-                const start = new Date(m.start_at);
-                const end = new Date(start.getTime() + (m.duration_min || 0) * 60_000);
-                return (
-                  <li key={m.id} className="rounded-md border border-gray-200 p-3 text-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="truncate font-medium text-gray-800">{m.title}</div>
-                      <div className="text-xs text-gray-500">
-                        {start.toLocaleString("id-ID")} –{" "}
-                        {end.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
-                      </div>
-                    </div>
-                    <div className="mt-1">
-                      {m.link ? (
-                        <a
-                          className="inline-flex items-center rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
-                          href={m.link}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          Join
-                        </a>
-                      ) : (
-                        <span className="text-xs text-gray-400">No link</span>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Card>
-
-        {/* Recent Invoices (global view) */}
-        <Card
-          title="Recent Invoices"
-          right={
-            <span className="text-xs text-gray-400">Global</span>
-          }
-        >
-          {recentInvoices.length === 0 ? (
-            <div className="text-sm text-gray-500">No invoices.</div>
-          ) : (
-            <ul className="space-y-3">
-              {recentInvoices.map((r) => (
-                <li key={r.id} className="rounded-md border border-gray-200 p-3 text-sm">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="truncate font-medium text-gray-900">{r.invoice_no}</div>
-                      <div className="truncate text-xs text-gray-500">{r.client_name ?? "-"}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-gray-900">
-                        {r.amount_total != null
-                          ? `${(r.currency ?? "IDR").toUpperCase()} ${Number(r.amount_total).toLocaleString("id-ID")}`
-                          : "-"}
-                      </div>
-                      <div className="text-xs capitalize text-gray-500">{r.status}</div>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </div>
-
-      {/* Refresh Button */}
-      <div className="flex justify-end">
-        <button
-          onClick={() => void fetchAll()}
-          disabled={loadingInitial}
-          className="mb-4 rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loadingInitial ? "Refreshing..." : "Refresh Data"}
-        </button>
+        <Stat label="New Requests" value={kpi.newRequests} />
+        <Stat label="Awaiting Payment" value={kpi.awaitingPayment} />
+        <Stat label="Unassigned" value={kpi.unassigned} />
+        <Stat label="Active" value={kpi.activeProjects} />
+        <Stat label="Upcoming Meetings" value={kpi.upcomingMeetings} />
+        <Stat label="Unpaid Invoices" value={kpi.unpaidInvoices} />
       </div>
     </div>
   );

@@ -13,6 +13,7 @@ import AdminProjectTabsSection, {
 import AdminProjectTableSection, { AdminProjectRow } from "@/app/admin/ui/AdminProjectTableSection";
 import AdminProjectPagination from "@/app/admin/ui/AdminProjectPagination";
 
+// contoh util aksi di client (pakai di AdminProjectTableSection toolbar)
 type CountResp = { count: number | null; error: unknown };
 
 const QUERY_COLS =
@@ -65,37 +66,6 @@ export default function AdminProjectsPage(): React.JSX.Element {
 
   // abort
   const abortRef = useRef<AbortController | null>(null);
-
-  // ---------- helpers (generic constraints, no intersection nesting) ----------
-//   const applyTextFilter = <T extends { or(expr: string): T }>(qb: T, text: string): T => {
-//     if (!text) return qb;
-//     const like = `%${text}%`;
-//     return qb.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
-//   };
-
-//   const applyFacetFilters = <T extends { eq(col: string, val: unknown): T }>(
-//     qb: T,
-//     pic: PicOption,
-//     stage: StageOption,
-//     status: StatusOption
-//   ): T => {
-//     let out = qb;
-//     if (pic !== "any") out = out.eq("assigned_pic", pic);
-//     if (stage !== "any") out = out.eq("stage", stage);
-//     if (status !== "any") out = out.eq("status", status);
-//     return out;
-//   };
-
-//   const applyTab = <T extends { eq(c: string, v: unknown): T; is(c: string, v: unknown): T }>(
-//     qb: T,
-//     tab: AdminTabKey
-//   ): T => {
-//     if (tab === "Active") return qb.eq("is_active", true);
-//     if (tab === "Finished") return qb.eq("is_finished", true);
-//     if (tab === "Pending") return qb.eq("is_active", false).eq("is_finished", false);
-//     if (tab === "Unassigned") return qb.is("assigned_pic", null);
-//     return qb;
-//   };
 
   // ---------- counts ----------
   const fetchCounts = useCallback(

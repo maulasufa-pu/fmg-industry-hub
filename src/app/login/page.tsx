@@ -3,6 +3,9 @@ import { Suspense } from "react";
 import { LoginSection } from "@/app/ui/LoginSection";
 import RedirectIfAuthenticated from "@/app/auth/RedirectIfAuthenticated";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default function Login(): React.JSX.Element {
   return (
     <>

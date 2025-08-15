@@ -4,7 +4,7 @@
 import React, { useEffect, useRef } from "react";
 import RequireAuth from "@/app/auth/RequireAuth";
 import RequireAdmin from "@/app/auth/RequireAdmin";
-import { AdminSidebarSection } from "@/app/admin/ui/AdminSidebarSection";
+import AdminSidebarSection from "@/app/admin/ui/AdminSidebarSection";
 
 const WAKE_EVENT = "admin-wake";
 const DEBOUNCE_MS = 1500;

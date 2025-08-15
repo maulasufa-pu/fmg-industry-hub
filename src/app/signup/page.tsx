@@ -3,6 +3,9 @@ import { SignUpSection } from "@/app/ui/SignUpSection";
 
 import RedirectIfAuthenticated from "@/app/auth/RedirectIfAuthenticated";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default function SignUpPage() {
   return (
     <>

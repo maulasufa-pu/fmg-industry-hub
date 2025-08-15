@@ -1,6 +1,6 @@
 import React from "react";
 import { Suspense } from "react";
-import { LoginSection } from "@/components/LoginSection";
+import { LoginSection } from "@/app/ui/LoginSection";
 import RedirectIfAuthenticated from "@/app/auth/RedirectIfAuthenticated";
 
 export default function Login(): React.JSX.Element {

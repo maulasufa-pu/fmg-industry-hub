@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import LogoutButton from "@/components/auth/LogoutButton";
+import LogoutButton from "@/app/auth/LogoutButton";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
 type ProfileLite = { fullName: string; email: string; role: string };

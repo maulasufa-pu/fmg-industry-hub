@@ -46,5 +46,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/login", "/signup", "/client/:path*"], // aktifkan /client/* jika blok proteksi di atas di-uncomment
+  matcher: ["/login", "/signup", "/client/:path*", "/admin/:path*"], // aktifkan /client/* jika blok proteksi di atas di-uncomment
 };

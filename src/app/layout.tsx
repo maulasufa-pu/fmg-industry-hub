@@ -2,8 +2,8 @@
 
 "use client";
 import "./globals.css";
-import { HeaderSection } from "@/components/HeaderSection";
-import { LogoSection } from "@/components/LogoSection";
+import { HeaderSection } from "@/app/ui/HeaderSection";
+import { LogoSection } from "@/app/ui/LogoSection";
 import HeaderVisibility from "@/components/ui/HeaderVisibility";
 import { usePathname } from "next/navigation";
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
-import LogoutButton from "@/components/auth/LogoutButton";
+import LogoutButton from "@/app/auth/LogoutButton";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { User, Tags, Plane, Search, Pictures, Home, Folder, Cog, Bell, ChevronDown } from "@/icons";
 import { usePathname, useRouter } from "next/navigation";

@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef } from "react";
-import { WAKE_EVENT } from "@/lib/wakeRefetch";
+import { CLIENT_WAKE_EVENT } from "@/lib/wakeRefetch";
 
 interface WakeRefetchOptions {
   /** Callback untuk menangani error */
@@ -76,11 +76,11 @@ export function useWakeRefetch(
   useEffect(() => {
     mountedRef.current = true;
     const handler = () => void runCallback();
-    window.addEventListener(WAKE_EVENT, handler);
+    window.addEventListener(CLIENT_WAKE_EVENT, handler);
     
     return () => {
       mountedRef.current = false;
-      window.removeEventListener(WAKE_EVENT, handler);
+      window.removeEventListener(CLIENT_WAKE_EVENT, handler);
     };
   }, [runCallback]);
 }

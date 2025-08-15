@@ -4,7 +4,7 @@ import React, { useState } from "react";
 
 import { Bell, ChevronDown, Cog } from "@/icons";
 import type { JSX } from "react";
-import UserMenu from "@/components/UserMenu";
+import UserMenu from "@/app/ui/UserMenu";
 
 
 export const HeaderSection = (): JSX.Element => {

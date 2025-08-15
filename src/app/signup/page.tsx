@@ -1,5 +1,5 @@
 import React from "react";
-import { SignUpSection } from "@/components/SignUpSection";
+import { SignUpSection } from "@/app/ui/SignUpSection";
 
 import RedirectIfAuthenticated from "@/app/auth/RedirectIfAuthenticated";
 

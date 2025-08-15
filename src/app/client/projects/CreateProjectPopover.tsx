@@ -453,16 +453,29 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     onChange: (v: boolean) => void;
   }) {
     return (
-      <input
+      <button
+        type="button"
         id={id}
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="h-5 w-5 rounded border border-coolgray-40 text-primary-60 focus:ring-primary-60"
-      />
+        onClick={() => onChange(!checked)}
+        className="w-5 h-5 flex items-center justify-center border border-coolgray-40 rounded-sm bg-white"
+      >
+        {checked && (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="w-4 h-4 text-primary-60"
+          >
+            <path
+              fillRule="evenodd"
+              d="M16.707 5.293a1 1 0 010 1.414l-8.25 8.25a1 1 0 01-1.414 0l-4.25-4.25a1 1 0 111.414-1.414L8 12.586l7.543-7.543a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+        )}
+      </button>
     );
   }
-
   // NOTE: komponen selalu mounted; visibilitas pakai class
   return (
     <div
@@ -781,8 +794,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                       />
                     </div>
                   </div>
-
-                  <div className="mt-3">
+                  {/* <div className="mt-3">
                     <div className="mb-1 text-sm text-gray-700">Delivery Format</div>
                     <div className="flex flex-wrap gap-2">
                       {["WAV 24-bit","MP3","STEMS","Project File"].map((fmt) => {
@@ -800,7 +812,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                         );
                       })}
                     </div>
-                  </div>
+                  </div> */}
 {/* 
                   <div className="mt-3">
                     <label className="block text-sm text-gray-700">

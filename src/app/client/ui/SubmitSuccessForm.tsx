@@ -18,7 +18,7 @@ type Props = {
   paymentPlan: PaymentPlan;
 };
 
-export default function SubmitSuccessModal({
+export default function SubmitSuccessForm({
   open,
   onClose,
   projectId = null,

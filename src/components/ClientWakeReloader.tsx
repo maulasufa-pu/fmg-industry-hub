@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useCallback, useRef } from "react";
-import { WAKE_EVENT } from "@/lib/wakeRefetch";
+import { CLIENT_WAKE_EVENT } from "@/lib/wakeRefetch";
 
 /**
  * Component untuk memicu re-fetch data ketika tab/window mendapat fokus,
@@ -22,7 +22,7 @@ export default function ClientWakeReloader() {
     const dispatchWithRetry = () => {
       try {
         // Broadcast event untuk trigger refetch data
-        window.dispatchEvent(new Event(WAKE_EVENT));
+        window.dispatchEvent(new Event(CLIENT_WAKE_EVENT));
         lastReloadTime.current = now; // Update waktu hanya jika berhasil
       } catch (error) {
         console.error("Failed to dispatch wake event:", error);

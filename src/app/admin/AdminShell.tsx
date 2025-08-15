@@ -1,29 +1,27 @@
-// app/client/ClientShell.tsx  (CLIENT)
+// src/app/admin/AdminShell.tsx
 "use client";
 
 import React, { useEffect, useRef } from "react";
 import RequireAuth from "@/app/auth/RequireAuth";
-import { SidebarSection } from "@/app/client/ui/SidebarSection";
-// import { getSupabaseClient } from "@/lib/supabase/client"; // tak perlu jika hanya wake event
+import RequireAdmin from "@/app/auth/RequireAdmin";
+import { AdminSidebarSection } from "@/app/admin/ui/AdminSidebarSection";
 
-const WAKE_EVENT = "client-wake";
+const WAKE_EVENT = "admin-wake";
 const DEBOUNCE_MS = 1500;
 
-export default function ClientShell({ children }: { children: React.ReactNode }) {
-  const last = useRef(0);
+export default function AdminShell({ children }: { children: React.ReactNode }): React.JSX.Element {
+  const last = useRef<number>(0);
 
   useEffect(() => {
     const fire = () => {
       const now = Date.now();
       if (now - last.current < DEBOUNCE_MS) return;
       last.current = now;
-      // Satu-satunya hal yang kita lakukan saat fokus/visible:
       window.dispatchEvent(new Event(WAKE_EVENT));
     };
-
     const onFocus = () => fire();
     const onVis = () => { if (document.visibilityState === "visible") fire(); };
-    const onPageShow = () => fire(); // aman untuk BFCache juga
+    const onPageShow = () => fire();
 
     window.addEventListener("focus", onFocus, { passive: true });
     document.addEventListener("visibilitychange", onVis, { passive: true });
@@ -38,11 +36,12 @@ export default function ClientShell({ children }: { children: React.ReactNode })
 
   return (
     <RequireAuth>
-      <div className="flex items-start relative bg-coolgray-10 w-full min-h-screen">
-        <SidebarSection />
-        <main className="flex-1 min-w-0">{children}</main>
-      </div>
+      <RequireAdmin>
+        <div className="flex items-start relative bg-coolgray-10 w-full min-h-screen">
+          <AdminSidebarSection />
+          <main className="flex-1 min-w-0">{children}</main>
+        </div>
+      </RequireAdmin>
     </RequireAuth>
   );
 }
- 

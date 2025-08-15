@@ -9,7 +9,7 @@ import { ProjectPaginationSection } from "./ProjectPaginationSection";
 import { withSignal, getSupabaseClient } from "@/lib/supabase/client";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
 import CreateProjectPopover from "./CreateProjectPopover";
-import SubmitSuccessForm from "@/app/client/ui/SubmitSuccessForm"; // <-- tambahkan ini
+import SubmitSuccessForm from "@/app/client/ui/SubmitSuccessForm";
 
 type TabKey = "All Project" | "Active" | "Finished" | "Pending" | "Requested";
 

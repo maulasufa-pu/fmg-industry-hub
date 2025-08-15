@@ -12,7 +12,7 @@ import AdminPanel, {
 type CountResp = { count: number | null; error: unknown };
 
 const QUERY_COLS =
-  "id,project_name,artist_name,genre,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name";
+  "project_id,title,artist_name,genre,stage,status,updated_at,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name";
 
 function isAbortError(err: unknown): boolean {
   if (!err || typeof err !== "object") return false;
@@ -80,7 +80,7 @@ export default function AdminProjectsPage(): React.JSX.Element {
 
   // bikin base BARU setiap panggilan
   const newBase = () =>
-    supabase.from(VIEW).select("id", { count: "exact", head: true });
+    supabase.from(VIEW).select("id", { count: "planned", head: true });
 
   const fetchCounts = useCallback(
     async (signal: AbortSignal) => {
@@ -164,8 +164,8 @@ export default function AdminProjectsPage(): React.JSX.Element {
         const to = from + pageSize - 1;
 
         let qb = supabase
-          .from("project_summary")
-          .select(QUERY_COLS, { count: "exact", head: false });
+        .from("project_summary")
+        .select(QUERY_COLS /* <- tanpa count */);
 
         if (q) {
           const like = `%${q}%`;
@@ -175,28 +175,55 @@ export default function AdminProjectsPage(): React.JSX.Element {
         if (filterStage !== "any") qb = qb.eq("stage", filterStage);
         if (filterStatus !== "any") qb = qb.eq("status", filterStatus);
 
-        if (activeTab === "Active") qb = qb.eq("is_active", true);
-        else if (activeTab === "Finished") qb = qb.eq("is_finished", true);
-        else if (activeTab === "Pending") qb = qb.eq("is_active", false).eq("is_finished", false);
-        else if (activeTab === "Unassigned") qb = qb.is("assigned_pic", null);
+        if (activeTab === "Active") {
+          qb = qb.eq("is_active", true);
+        } else if (activeTab === "Finished") {
+          qb = qb.eq("is_finished", true);
+        } else if (activeTab === "Pending") {
+          // (is_active IS FALSE OR is_active IS NULL) AND (is_finished IS FALSE OR is_finished IS NULL)
+          qb = qb.or("is_active.is.false,is_active.is.null");
+          qb = qb.or("is_finished.is.false,is_finished.is.null");
+        } else if (activeTab === "Unassigned") {
+          // kalau ada data yang simpan '' (empty string), sebaiknya normalkan di view via NULLIF seperti Opsi 1
+          qb = qb.is("assigned_pic", null);
+        }
 
         qb = qb.order("latest_update", { ascending: false }).range(from, to).abortSignal(ac.signal);
 
         const countsP = fetchCounts(ac.signal);
 
-        const listR = await qb as { data: AdminProjectRow[] | null; count: number | null; error?: unknown };
+        const listR = await qb as { data: any[] | null; error?: unknown };
         if (listR.error) {
-          if (isAbortError(listR.error)) return; // silent abort
+          if (isAbortError(listR.error)) return;
           throw listR.error;
         }
-
+        
         const counts = await countsP;
 
         // jika sudah ada request baru, jangan commit state dari yang lama
         if (abortRef.current !== ac) return;
+        
+        const mapped: AdminProjectRow[] = (listR.data ?? []).map(r => ({
+          id: r.project_id,
+          project_name: r.title,
+          artist_name: r.artist_name ?? null,
+          genre: r.genre ?? null,
+          stage: r.stage ?? null,
+          status: r.status ?? null,
+          latest_update: r.updated_at ?? null,
+          assigned_pic: r.assigned_pic ?? null,
+          progress_percent: r.progress_percent ?? null,
+          budget_amount: r.budget_amount ?? null,
+          budget_currency: r.budget_currency ?? null,
+          engineer_name: r.engineer_name ?? null,
+          anr_name: r.anr_name ?? null,
+        }));
+        setRows(mapped);
 
-        setRows(listR.data ?? []);
-        setTotalCount(listR.count ?? 0);
+
+        setTotalCount(
+          counts[activeTab as keyof typeof counts] ?? 0
+        );
         setTabCounts(counts);
       } catch (e) {
         if (!isAbortError(e)) {
@@ -217,10 +244,18 @@ export default function AdminProjectsPage(): React.JSX.Element {
   useEffect(() => {
     (async () => {
       await supabase.auth.getSession().catch(() => {});
+      const smoke = await supabase
+        .from("project_summary")
+        .select("id,is_active,is_finished,assigned_pic", { count: "exact" })
+        .order("latest_update", { ascending: false })
+        .limit(5);
+
+      console.log("[SMOKE rows]", smoke.data, "count:", smoke.count, "err:", smoke.error);
+
       const VIEW = "project_summary";
       try {
-        const smoke = await supabase.from(VIEW).select("id", { count: "exact", head: true }).limit(1);
-        console.log("[SMOKE]", smoke.count, smoke.error); // <- kalau error.code === "42501" = RLS block
+        const smokee = await supabase.from(VIEW).select("id", { count: "exact", head: true }).limit(1);
+        console.log("[SMOKE]", smokee.count, smokee.error); // <- kalau error.code === "42501" = RLS block
       } catch (e) {
         console.error("[SMOKE ERR]", e);
       }

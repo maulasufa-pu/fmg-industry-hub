@@ -3,26 +3,18 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getSupabaseClient } from "@/lib/supabase/client";
+import { getSupabaseClient, withSignal } from "@/lib/supabase/client";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
 import AdminPanel, {
   AdminTabKey, AdminProjectRow, PicOption, StageOption, StatusOption,
 } from "@/app/admin/ui/AdminPanel";
 
-type CountResp = { count: number | null; error: unknown };
-
+const VIEW = "project_summary";
 const QUERY_COLS =
   "id,project_name,artist_name,genre,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name";
 
-function isAbortError(err: unknown): boolean {
-  if (!err || typeof err !== "object") return false;
-  const anyErr = err as { name?: string; message?: string; code?: string | number };
-  if (anyErr.name === "AbortError") return true;
-  if (typeof anyErr.code === "string" && anyErr.code === "20") return true;
-  if (typeof anyErr.code === "number" && anyErr.code === 20) return true;
-  if (typeof anyErr.message === "string" && anyErr.message.includes("AbortError")) return true;
-  return false;
-}
+type CountResp = { count: number | null; error: unknown };
+type PostgrestList<T> = { data: T[] | null; count: number | null; error?: unknown };
 
 export default function AdminProjectsPage(): React.JSX.Element {
   useFocusWarmAuth();
@@ -43,10 +35,10 @@ export default function AdminProjectsPage(): React.JSX.Element {
   const [filterStage, setFilterStage] = useState<StageOption>("any");
   const [filterStatus, setFilterStatus] = useState<StatusOption>("any");
 
-  // debounce search
-  const [q, setQ] = useState("");
+  // debounce search (samakan dengan client)
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
-    const t = window.setTimeout(() => setQ(search.trim()), 300);
+    const t = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
     return () => window.clearTimeout(t);
   }, [search]);
 
@@ -70,73 +62,80 @@ export default function AdminProjectsPage(): React.JSX.Element {
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [didInit, setDidInit] = useState(false);
 
-  // abort
+  // Abort (samakan gaya client: assign controller baru tiap fetch; tanpa explicit abort sebelumnya)
   const abortRef = useRef<AbortController | null>(null);
 
-  // ---------- counts ----------
-  const VIEW = "project_summary";
-
+  // ---------- counts (berurutan; count: "exact") ----------
   type CountResp = { count: number | null; error: unknown };
 
-  // bikin base BARU setiap panggilan
-  const newBase = () =>
-    supabase.from(VIEW).select("id", { count: "planned", head: true });
+const fetchCounts = useCallback(
+  async (qStr: string, signal: AbortSignal) => {
+    const like = qStr ? `%${qStr}%` : null;
 
-  const fetchCounts = useCallback(
-    async (signal: AbortSignal) => {
-      // apply semua filter (search + facet) ke builder yang DIKIRIM MASUK
-      const applyAllFilters = (qb: ReturnType<typeof newBase>) => {
-        let b = qb;
-        if (q) {
-          const like = `%${q}%`;
-          b = b.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
-        }
-        if (filterPIC !== "any")   b = b.eq("assigned_pic", filterPIC);
-        if (filterStage !== "any") b = b.eq("stage",       filterStage);
-        if (filterStatus !== "any")b = b.eq("status",      filterStatus);
-        return b.abortSignal(signal);
-      };
+    // ALL
+    let allQ = supabase.from(VIEW).select("id", { count: "exact", head: true });
+    if (like) allQ = allQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+    if (filterPIC !== "any")   allQ = allQ.eq("assigned_pic", filterPIC);
+    if (filterStage !== "any") allQ = allQ.eq("stage",       filterStage);
+    if (filterStatus !== "any")allQ = allQ.eq("status",      filterStatus);
+    const allRes = await withSignal(allQ, signal).returns<CountResp>();
 
-      // PENTING: panggil newBase() SETIAP KALI (tidak reuse objek yg sama)
-      const allQ = applyAllFilters(newBase());
-      const actQ = applyAllFilters(newBase().eq("is_active", true));
-      const finQ = applyAllFilters(newBase().eq("is_finished", true));
-      const penQ = applyAllFilters(newBase().eq("is_active", false).eq("is_finished", false));
-      const unQ  = applyAllFilters(newBase().is("assigned_pic", null));
+    // ACTIVE
+    let actQ = supabase.from(VIEW).select("id", { count: "exact", head: true }).eq("is_active", true);
+    if (like) actQ = actQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+    if (filterPIC !== "any")   actQ = actQ.eq("assigned_pic", filterPIC);
+    if (filterStage !== "any") actQ = actQ.eq("stage",       filterStage);
+    if (filterStatus !== "any")actQ = actQ.eq("status",      filterStatus);
+    const actRes = await withSignal(actQ, signal).returns<CountResp>();
 
-      const [allR, actR, finR, penR, unR] = (await Promise.all([
-        allQ, actQ, finQ, penQ, unQ,
-      ])) as [CountResp, CountResp, CountResp, CountResp, CountResp];
+    // FINISHED
+    let finQ = supabase.from(VIEW).select("id", { count: "exact", head: true }).eq("is_finished", true);
+    if (like) finQ = finQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+    if (filterPIC !== "any")   finQ = finQ.eq("assigned_pic", filterPIC);
+    if (filterStage !== "any") finQ = finQ.eq("stage",       filterStage);
+    if (filterStatus !== "any")finQ = finQ.eq("status",      filterStatus);
+    const finRes = await withSignal(finQ, signal).returns<CountResp>();
 
-      // tangani abort dengan tenang
-      const isAbort = (e: unknown) => {
-        const a = e as { name?: string; code?: unknown; message?: string };
-        return a?.name === "AbortError" || a?.code === 20 || a?.code === "20" || a?.message?.includes("AbortError");
-      };
-      const errs = [allR.error, actR.error, finR.error, penR.error, unR.error].filter(Boolean);
-      if (errs.length) {
-        if (errs.every(isAbort)) return tabCounts; // keep existing on abort
-        throw errs[0];
-      }
+    // PENDING (samakan client: strict FALSE)
+    let penQ = supabase.from(VIEW).select("id", { count: "exact", head: true })
+      .eq("is_active", false).eq("is_finished", false);
+    if (like) penQ = penQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+    if (filterPIC !== "any")   penQ = penQ.eq("assigned_pic", filterPIC);
+    if (filterStage !== "any") penQ = penQ.eq("stage",       filterStage);
+    if (filterStatus !== "any")penQ = penQ.eq("status",      filterStatus);
+    const penRes = await withSignal(penQ, signal).returns<CountResp>();
 
-      return {
-        All: allR.count ?? 0,
-        Active: actR.count ?? 0,
-        Finished: finR.count ?? 0,
-        Pending: penR.count ?? 0,
-        Unassigned: unR.count ?? 0,
-      } as const;
-    },
-    [supabase, q, filterPIC, filterStage, filterStatus, tabCounts]
-  );
+    // UNASSIGNED
+    let unQ = supabase.from(VIEW).select("id", { count: "exact", head: true }).is("assigned_pic", null);
+    if (like) unQ = unQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+    if (filterPIC !== "any")   unQ = unQ.eq("assigned_pic", filterPIC);
+    if (filterStage !== "any") unQ = unQ.eq("stage",       filterStage);
+    if (filterStatus !== "any")unQ = unQ.eq("status",      filterStatus);
+    const unRes = await withSignal(unQ, signal).returns<CountResp>();
 
-  // ---------- filter options (only page.tsx) ----------
+    if (allRes.error) throw allRes.error;
+    if (actRes.error) throw actRes.error;
+    if (finRes.error) throw finRes.error;
+    if (penRes.error) throw penRes.error;
+    if (unRes.error) throw unRes.error;
+
+    return {
+      All:        allRes.count ?? 0,
+      Active:     actRes.count ?? 0,
+      Finished:   finRes.count ?? 0,
+      Pending:    penRes.count ?? 0,
+      Unassigned: unRes.count ?? 0,
+    } as Record<AdminTabKey, number>;
+  },
+  [supabase, filterPIC, filterStage, filterStatus]
+);
+
+  // ---------- filter options (only once) ----------
   const fetchFilterOptions = useCallback(async () => {
-    // ambil nilai unik dari keseluruhan dataset (limit aman)
     const [picsR, stagesR, statusesR] = await Promise.all([
-      supabase.from("project_summary").select("assigned_pic").not("assigned_pic", "is", null).limit(2000),
-      supabase.from("project_summary").select("stage").not("stage", "is", null).limit(2000),
-      supabase.from("project_summary").select("status").not("status", "is", null).limit(2000),
+      supabase.from(VIEW).select("assigned_pic").not("assigned_pic", "is", null).limit(2000),
+      supabase.from(VIEW).select("stage").not("stage", "is", null).limit(2000),
+      supabase.from(VIEW).select("status").not("status", "is", null).limit(2000),
     ]);
 
     const uniq = (arr: (string | null)[]) =>
@@ -151,153 +150,84 @@ export default function AdminProjectsPage(): React.JSX.Element {
     setStatusOptions(statusList);
   }, [supabase]);
 
-  // ---------- page data ----------
+  // ---------- page data (samakan pola client) ----------
   const fetchPage = useCallback(
-    async (isInitial = false) => {
-      abortRef.current?.abort();
-      const ac = new AbortController();
-      abortRef.current = ac;
+  async (tab: AdminTabKey, qStr: string, pageIdx: number, isInitial = false) => {
+    abortRef.current = new AbortController();
+    const ac = abortRef.current;
 
-      if (isInitial) setLoadingInitial(true);
-      try {
-        const from = (page - 1) * pageSize;
-        const to = from + pageSize - 1;
+    if (isInitial) setLoadingInitial(true);
+    try {
+      const from = (pageIdx - 1) * pageSize;
+      const to = from + pageSize - 1;
 
-        let qb = supabase
-        .from("project_summary")
-        .select(QUERY_COLS /* <- tanpa count */);
+      let qBuilder = supabase.from(VIEW).select(QUERY_COLS, { count: "exact", head: false });
 
-        if (q) {
-          const like = `%${q}%`;
-          qb = qb.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
-        }
-        if (filterPIC !== "any") qb = qb.eq("assigned_pic", filterPIC);
-        if (filterStage !== "any") qb = qb.eq("stage", filterStage);
-        if (filterStatus !== "any") qb = qb.eq("status", filterStatus);
-
-        if (activeTab === "Active") {
-          qb = qb.eq("is_active", true);
-        } else if (activeTab === "Finished") {
-          qb = qb.eq("is_finished", true);
-        } else if (activeTab === "Pending") {
-          // (is_active IS FALSE OR is_active IS NULL) AND (is_finished IS FALSE OR is_finished IS NULL)
-          qb = qb.or("is_active.is.false,is_active.is.null");
-          qb = qb.or("is_finished.is.false,is_finished.is.null");
-        } else if (activeTab === "Unassigned") {
-          // kalau ada data yang simpan '' (empty string), sebaiknya normalkan di view via NULLIF seperti Opsi 1
-          qb = qb.is("assigned_pic", null);
-        }
-
-        qb = qb.order("latest_update", { ascending: false }).range(from, to).abortSignal(ac.signal);
-
-        const countsP = fetchCounts(ac.signal);
-
-        type ProjectSummaryRaw = {
-          id: string;
-          project_name: string;
-          artist_name: string | null;
-          genre: string | null;
-          stage: string | null;
-          status: string | null;
-          latest_update: string | null;
-          is_active: boolean | null;
-          is_finished: boolean | null;
-          assigned_pic: string | null;
-          progress_percent: number | null;
-          budget_amount: number | null;
-          budget_currency: string | null;
-          engineer_name: string | null;
-          anr_name: string | null;
-        };
-        type PostgrestList<T> = { data: T[] | null; error?: unknown };
-
-        const listR = (await qb) as PostgrestList<ProjectSummaryRaw>;
-
-        
-        const counts = await countsP;
-
-        // jika sudah ada request baru, jangan commit state dari yang lama
-        if (abortRef.current !== ac) return;
-        
-        const mapped: AdminProjectRow[] = (listR.data ?? []).map(r => ({
-          id: r.id,
-          project_name: r.project_name,
-          latest_update: r.latest_update,
-          artist_name: r.artist_name ?? null,
-          genre: r.genre ?? null,
-          stage: r.stage ?? null,
-          status: r.status ?? null,
-          assigned_pic: r.assigned_pic ?? null,
-          progress_percent: r.progress_percent ?? null,
-          budget_amount: r.budget_amount ?? null,
-          budget_currency: r.budget_currency ?? null,
-          engineer_name: r.engineer_name ?? null,
-          anr_name: r.anr_name ?? null,
-        }));
-        setRows(mapped);
-
-        setTotalCount(
-          counts[activeTab as keyof typeof counts] ?? 0
-        );
-        setTabCounts(counts);
-      } catch (e) {
-        if (!isAbortError(e)) {
-          console.error("admin/projects fetch error:", e);
-        }
-      } finally {
-        if (abortRef.current === ac) {
-          abortRef.current = null;
-          if (isInitial) setLoadingInitial(false);
-        }
+      if (qStr) {
+        const like = `%${qStr}%`;
+        qBuilder = qBuilder.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
       }
-    },
-    [supabase, page, pageSize, q, activeTab, filterPIC, filterStage, filterStatus, fetchCounts]
-  );
+      if (filterPIC !== "any")   qBuilder = qBuilder.eq("assigned_pic", filterPIC);
+      if (filterStage !== "any") qBuilder = qBuilder.eq("stage",       filterStage);
+      if (filterStatus !== "any")qBuilder = qBuilder.eq("status",      filterStatus);
+
+      if (tab === "Active")       qBuilder = qBuilder.eq("is_active", true);
+      else if (tab === "Finished")qBuilder = qBuilder.eq("is_finished", true);
+      else if (tab === "Pending") qBuilder = qBuilder.eq("is_active", false).eq("is_finished", false);
+      else if (tab === "Unassigned") qBuilder = qBuilder.is("assigned_pic", null);
+
+      qBuilder = qBuilder.order("latest_update", { ascending: false }).range(from, to);
+
+      const { data, count, error } = await withSignal(qBuilder, ac.signal).returns<AdminProjectRow[]>();
+      if (error) throw error;
+
+      const counts = await fetchCounts(qStr, ac.signal);
+
+      setRows(data ?? []);
+      setTotalCount(count ?? 0);    // ambil dari list (persis client)
+      setTabCounts(counts);
+    } catch (e) {
+      if ((e as { name?: string }).name !== "AbortError") {
+        console.error("admin/projects fetch error:", e);
+      }
+    } finally {
+      if (abortRef.current === ac) abortRef.current = null;
+      if (isInitial) setLoadingInitial(false);
+    }
+  },
+  [supabase, pageSize, filterPIC, filterStage, filterStatus, fetchCounts]
+);
 
 
-  // initial
+  // ---------- initial ----------
   useEffect(() => {
     (async () => {
+      setPage(1);
       await supabase.auth.getSession().catch(() => {});
-      const smoke = await supabase
-        .from("project_summary")
-        .select("id,is_active,is_finished,assigned_pic", { count: "exact" })
-        .order("latest_update", { ascending: false })
-        .limit(5);
-
-      console.log("[SMOKE rows]", smoke.data, "count:", smoke.count, "err:", smoke.error);
-
-      const VIEW = "project_summary";
-      try {
-        const smokee = await supabase.from(VIEW).select("id", { count: "exact", head: true }).limit(1);
-        console.log("[SMOKE]", smokee.count, smokee.error); // <- kalau error.code === "42501" = RLS block
-      } catch (e) {
-        console.error("[SMOKE ERR]", e);
-      }
-      await fetchFilterOptions();           // <-- options sekali, di page.tsx
-      await fetchPage(true);
+      await fetchFilterOptions();
+      await fetchPage(initialTab, "", 1, true);
       setDidInit(true);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // updates on state change (no spinner)
+  // ---------- re-fetch tanpa spinner ----------
   useEffect(() => {
     if (!didInit) return;
-    void fetchPage(false);
-  }, [didInit, activeTab, q, filterPIC, filterStage, filterStatus, page, fetchPage]);
+    void fetchPage(activeTab, debouncedSearch, page, false);
+  }, [didInit, activeTab, debouncedSearch, page, fetchPage, filterPIC, filterStage, filterStatus]);
 
-  // wake/refresh
+  // ---------- wake/refresh ----------
   useEffect(() => {
-    const onWake = () => fetchPage(false);
-    const onRefresh = () => fetchPage(true);
+    const onWake = () => fetchPage(activeTab, debouncedSearch, page, false);
+    const onRefresh = () => fetchPage(activeTab, debouncedSearch, page, true);
     window.addEventListener("admin-wake", onWake);
     window.addEventListener("admin-refresh", onRefresh);
     return () => {
       window.removeEventListener("admin-wake", onWake);
       window.removeEventListener("admin-refresh", onRefresh);
     };
-  }, [fetchPage]);
+  }, [fetchPage, activeTab, debouncedSearch, page]);
 
   // url sync for tab
   const setTabAndUrl = (t: AdminTabKey) => {
@@ -315,7 +245,7 @@ export default function AdminProjectsPage(): React.JSX.Element {
     if (ids.length === 0) return;
     const { error } = await supabase.from("projects").update({ assigned_pic: pic }).in("id", ids);
     if (error) console.error(error);
-    await fetchPage(false);
+    await fetchPage(activeTab, debouncedSearch, page, false);
   };
 
   const bulkMarkFinished = async (ids: string[]) => {
@@ -325,7 +255,7 @@ export default function AdminProjectsPage(): React.JSX.Element {
       .update({ status: "finished", is_finished: true, is_active: false })
       .in("id", ids);
     if (error) console.error(error);
-    await fetchPage(false);
+    await fetchPage(activeTab, debouncedSearch, page, false);
   };
 
   return (

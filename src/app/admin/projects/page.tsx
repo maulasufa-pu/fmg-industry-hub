@@ -14,6 +14,16 @@ type CountResp = { count: number | null; error: unknown };
 const QUERY_COLS =
   "id,project_name,artist_name,genre,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name";
 
+function isAbortError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const anyErr = err as { name?: string; message?: string; code?: string | number };
+  if (anyErr.name === "AbortError") return true;
+  if (typeof anyErr.code === "string" && anyErr.code === "20") return true;
+  if (typeof anyErr.code === "number" && anyErr.code === 20) return true;
+  if (typeof anyErr.message === "string" && anyErr.message.includes("AbortError")) return true;
+  return false;
+}
+
 export default function AdminProjectsPage(): React.JSX.Element {
   useFocusWarmAuth();
 
@@ -66,46 +76,51 @@ export default function AdminProjectsPage(): React.JSX.Element {
   // ---------- counts ----------
   const fetchCounts = useCallback(
     async (signal: AbortSignal) => {
-      const base = supabase.from("project_summary").select("id", { count: "exact", head: true });
+      try {
+        const base = supabase.from("project_summary").select("id", { count: "exact", head: true });
 
-      const applyAllFilters = (qb: ReturnType<typeof base["abortSignal"]> extends infer _T ? typeof base : typeof base) => {
-        let b = qb;
-        if (q) {
-          const like = `%${q}%`;
-          b = b.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+        const applyAllFilters = (qb: typeof base) => {
+          let b = qb;
+          if (q) {
+            const like = `%${q}%`;
+            b = b.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+          }
+          if (filterPIC !== "any") b = b.eq("assigned_pic", filterPIC);
+          if (filterStage !== "any") b = b.eq("stage", filterStage);
+          if (filterStatus !== "any") b = b.eq("status", filterStatus);
+          return b.abortSignal(signal);
+        };
+
+        const [allR, actR, finR, penR, unR] = (await Promise.all([
+          applyAllFilters(base),
+          applyAllFilters(base.eq("is_active", true)),
+          applyAllFilters(base.eq("is_finished", true)),
+          applyAllFilters(base.eq("is_active", false).eq("is_finished", false)),
+          applyAllFilters(base.is("assigned_pic", null)),
+        ])) as [CountResp, CountResp, CountResp, CountResp, CountResp];
+
+        // abaikan abort
+        const errs = [allR.error, actR.error, finR.error, penR.error, unR.error].filter(Boolean);
+        if (errs.length) {
+          if (errs.every(isAbortError)) return tabCounts; // keep existing
+          throw errs[0];
         }
-        if (filterPIC !== "any") b = b.eq("assigned_pic", filterPIC);
-        if (filterStage !== "any") b = b.eq("stage", filterStage);
-        if (filterStatus !== "any") b = b.eq("status", filterStatus);
-        return b.abortSignal(signal);
-      };
 
-      const allQ = applyAllFilters(base);
-      const actQ = applyAllFilters(base.eq("is_active", true));
-      const finQ = applyAllFilters(base.eq("is_finished", true));
-      const penQ = applyAllFilters(base.eq("is_active", false).eq("is_finished", false));
-      const unQ  = applyAllFilters(base.is("assigned_pic", null));
-
-      const [allR, actR, finR, penR, unR] = (await Promise.all([allQ, actQ, finQ, penQ, unQ])) as [
-        CountResp, CountResp, CountResp, CountResp, CountResp
-      ];
-
-      if (allR.error) throw allR.error;
-      if (actR.error) throw actR.error;
-      if (finR.error) throw finR.error;
-      if (penR.error) throw penR.error;
-      if (unR.error) throw unR.error;
-
-      return {
-        All: allR.count ?? 0,
-        Active: actR.count ?? 0,
-        Finished: finR.count ?? 0,
-        Pending: penR.count ?? 0,
-        Unassigned: unR.count ?? 0,
-      } as const;
+        return {
+          All: allR.count ?? 0,
+          Active: actR.count ?? 0,
+          Finished: finR.count ?? 0,
+          Pending: penR.count ?? 0,
+          Unassigned: unR.count ?? 0,
+        } as const;
+      } catch (e) {
+        if (isAbortError(e)) return tabCounts; // keep existing
+        throw e;
+      }
     },
-    [supabase, q, filterPIC, filterStage, filterStatus]
+    [supabase, q, filterPIC, filterStage, filterStatus, tabCounts]
   );
+
 
   // ---------- filter options (only page.tsx) ----------
   const fetchFilterOptions = useCallback(async () => {
@@ -161,28 +176,34 @@ export default function AdminProjectsPage(): React.JSX.Element {
 
         const countsP = fetchCounts(ac.signal);
 
-        const listR = await qb;
-        if ((listR as { error?: unknown }).error) throw (listR as { error: unknown }).error;
-
-        const listData = (listR as { data: unknown }).data as AdminProjectRow[] | null;
-        const listCount = (listR as { count: number | null }).count ?? 0;
+        const listR = await qb as { data: AdminProjectRow[] | null; count: number | null; error?: unknown };
+        if (listR.error) {
+          if (isAbortError(listR.error)) return; // silent abort
+          throw listR.error;
+        }
 
         const counts = await countsP;
 
-        setRows(listData ?? []);
-        setTotalCount(listCount);
+        // jika sudah ada request baru, jangan commit state dari yang lama
+        if (abortRef.current !== ac) return;
+
+        setRows(listR.data ?? []);
+        setTotalCount(listR.count ?? 0);
         setTabCounts(counts);
       } catch (e) {
-        if ((e as { name?: string }).name !== "AbortError") {
+        if (!isAbortError(e)) {
           console.error("admin/projects fetch error:", e);
         }
       } finally {
-        if (abortRef.current === ac) abortRef.current = null;
-        if (isInitial) setLoadingInitial(false);
+        if (abortRef.current === ac) {
+          abortRef.current = null;
+          if (isInitial) setLoadingInitial(false);
+        }
       }
     },
     [supabase, page, pageSize, q, activeTab, filterPIC, filterStage, filterStatus, fetchCounts]
   );
+
 
   // initial
   useEffect(() => {

@@ -209,6 +209,13 @@ export default function AdminProjectsPage(): React.JSX.Element {
   useEffect(() => {
     (async () => {
       await supabase.auth.getSession().catch(() => {});
+      const VIEW = "project_summary";
+      try {
+        const smoke = await supabase.from(VIEW).select("id", { count: "exact", head: true }).limit(1);
+        console.log("[SMOKE]", smoke.count, smoke.error); // <- kalau error.code === "42501" = RLS block
+      } catch (e) {
+        console.error("[SMOKE ERR]", e);
+      }
       await fetchFilterOptions();           // <-- options sekali, di page.tsx
       await fetchPage(true);
       setDidInit(true);

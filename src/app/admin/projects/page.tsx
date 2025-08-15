@@ -205,6 +205,12 @@ const fetchCounts = useCallback(
       setPage(1);
       await supabase.auth.getSession().catch(() => {});
       await fetchFilterOptions();
+      const smokeList = await supabase
+        .from("project_summary")
+        .select("id,project_name", { count: "exact" })
+        .order("latest_update", { ascending: false })
+        .limit(3);
+      console.log("[ADMIN/SMOKE] count=", smokeList.count, "err=", smokeList.error, "data=", smokeList.data);
       await fetchPage(initialTab, "", 1, true);
       setDidInit(true);
     })();
@@ -245,6 +251,12 @@ const fetchCounts = useCallback(
     if (ids.length === 0) return;
     const { error } = await supabase.from("projects").update({ assigned_pic: pic }).in("id", ids);
     if (error) console.error(error);
+    const smokeList = await supabase
+      .from("project_summary")
+      .select("id,project_name", { count: "exact" })
+      .order("latest_update", { ascending: false })
+      .limit(3);
+    console.log("[ADMIN/SMOKE] count=", smokeList.count, "err=", smokeList.error, "data=", smokeList.data);
     await fetchPage(activeTab, debouncedSearch, page, false);
   };
 
@@ -255,6 +267,12 @@ const fetchCounts = useCallback(
       .update({ status: "finished", is_finished: true, is_active: false })
       .in("id", ids);
     if (error) console.error(error);
+    const smokeList = await supabase
+      .from("project_summary")
+      .select("id,project_name", { count: "exact" })
+      .order("latest_update", { ascending: false })
+      .limit(3);
+    console.log("[ADMIN/SMOKE] count=", smokeList.count, "err=", smokeList.error, "data=", smokeList.data);
     await fetchPage(activeTab, debouncedSearch, page, false);
   };
 

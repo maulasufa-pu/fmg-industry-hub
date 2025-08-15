@@ -1,54 +1,76 @@
 // src/app/auth/RequireAdmin.tsx
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
-import type { Role } from "@/lib/roles";
 
+type Role = "client" | "admin" | "owner";
 type Guard = "checking" | "ok";
 
 export default function RequireAdmin({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const supabase = useMemo(() => getSupabaseClient(), []);
+
   const [state, setState] = useState<Guard>("checking");
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
   useEffect(() => {
-    let mounted = true;
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        router.replace(`/login?redirectedFrom=${encodeURIComponent(pathname || "/admin")}`);
+        const to = `/login?redirectedFrom=${encodeURIComponent(pathname || "/admin/dashboard")}`;
+        router.replace(to);
         return;
       }
 
-      // env override: jika email ada di OWNER_EMAILS, langsung lolos
-      const raw = process.env.NEXT_PUBLIC_OWNER_EMAILS || ""; // jika mau expose allowlist utk client guard
+      // Allowlist email di client (hanya jika kamu memang mau)
+      const raw = process.env.NEXT_PUBLIC_OWNER_EMAILS || "";
       const allow = raw.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
-      const email = session.user.email?.toLowerCase() ?? "";
-      if (allow.includes(email)) { if (mounted) setState("ok"); return; }
+      const email = (session.user.email || "").toLowerCase();
+      if (allow.length && allow.includes(email)) {
+        if (mountedRef.current) setState("ok");
+        return;
+      }
 
-      const { data, error } = await supabase
+      // Ambil role dari DB
+      const { data: prof, error } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", session.user.id)
-        .single();
+        .maybeSingle();
 
-      if (error) { router.replace("/client/dashboard"); return; }
-
-      const role = data?.role as Role | undefined;
-      if (role !== "owner" && role !== "admin") {
+      if (error) {
+        // fallback aman: anggap bukan admin
         router.replace("/client/dashboard");
         return;
       }
-      if (mounted) setState("ok");
+
+      const role = (prof?.role ?? "client") as Role;
+      const isAdminLike = role === "admin" || role === "owner";
+
+      if (!isAdminLike) {
+        router.replace("/client/dashboard");
+        return;
+      }
+
+      // Admin/Owner OK
+      if (mountedRef.current) {
+        // smooth UX
+        router.prefetch("/admin/dashboard");
+        setState("ok");
+      }
     })();
-    return () => { mounted = false; };
   }, [supabase, router, pathname]);
 
   if (state !== "ok") {
-    return <div className="min-h-[40vh] grid place-items-center text-sm text-coolgray-60">Checking access…</div>;
+    return (
+      <div className="min-h-[40vh] grid place-items-center text-sm text-coolgray-60">
+        Checking access…
+      </div>
+    );
   }
   return <>{children}</>;
 }

@@ -5,10 +5,15 @@ import React, { useEffect, useMemo, useRef, useState, startTransition } from "re
 import { usePathname, useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
-type Props = { children: React.ReactNode };
+type Props = {
+  children: React.ReactNode;
+  /** Target area yang diharapkan halaman ini */
+  area?: "any" | "client" | "admin";
+};
 type GuardStatus = "checking" | "authed" | "guest";
+type Role = "client" | "admin" | "owner";
 
-export default function RequireAuth({ children }: Props) {
+export default function RequireAuth({ children, area = "any" }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const supabase = useMemo(() => getSupabaseClient(), []);
@@ -21,6 +26,7 @@ export default function RequireAuth({ children }: Props) {
   const redirectingRef = useRef(false);
   const retryTimerRef = useRef<number | null>(null);
   const lastKickRef = useRef(0);
+  const roleCheckedRef = useRef(false);
 
   const isLoginPage = pathname?.startsWith("/login") ?? false;
 
@@ -31,10 +37,7 @@ export default function RequireAuth({ children }: Props) {
     }
   };
 
-  // getSession aman: kembalikan
-  // - object  : ada session
-  // - null    : tegas tidak ada session
-  // - undefined: gagal cek (timeout/network), jangan langsung redirect
+  // getSession aman
   const getSessionSafe = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -44,17 +47,20 @@ export default function RequireAuth({ children }: Props) {
     }
   };
 
-  const goLoginOnce = async (reason: string) => {
+  const goLoginOnce = async () => {
     if (redirectingRef.current || isLoginPage) return;
     // double-check sebelum redirect
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session || statusRef.current === "authed") return;
-    } catch { /* abaikan */ }
+    } catch { /* ignore */ }
 
     redirectingRef.current = true;
-    const to = `/login?redirectedFrom=${encodeURIComponent(pathname || "/client")}`;
-    startTransition(() => router.replace(to));
+    const to = `/login?redirectedFrom=${encodeURIComponent(pathname || (area === "admin" ? "/admin/dashboard" : "/client/dashboard"))}`;
+    startTransition(() => {
+      router.prefetch("/login");
+      router.replace(to);
+    });
   };
 
   const checkSession = async (opts?: { retry?: boolean; attempt?: number }) => {
@@ -65,16 +71,21 @@ export default function RequireAuth({ children }: Props) {
     if (session) {
       clearRetry();
       setStatus("authed");
+      // Jika halaman mensyaratkan area tertentu, cek role sekali
+      if (!roleCheckedRef.current && area !== "any") {
+        roleCheckedRef.current = true;
+        void checkRoleGate(session.user.id, area);
+      }
       return;
     }
     if (session === null) {
       clearRetry();
       setStatus("guest");
-      void goLoginOnce("no-session");
+      void goLoginOnce();
       return;
     }
 
-    // undefined = gagal cek (transient) -> retry ringan dengan backoff
+    // undefined = gagal cek -> retry
     if (opts?.retry !== false) {
       const backoff = Math.min(300 + attempt * 300, 1500);
       if (statusRef.current !== "checking") setStatus("checking");
@@ -85,27 +96,57 @@ export default function RequireAuth({ children }: Props) {
     }
   };
 
+  const checkRoleGate = async (userId: string, expected: "client" | "admin") => {
+    // Ambil role dari DB
+    try {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", userId)
+        .maybeSingle();
+
+      const role = (prof?.role ?? "client") as Role;
+      const isAdminLike = role === "admin" || role === "owner";
+
+      if (expected === "admin" && !isAdminLike) {
+        router.prefetch("/client/dashboard");
+        startTransition(() => router.replace("/client/dashboard"));
+        return;
+      }
+      if (expected === "client" && isAdminLike) {
+        router.prefetch("/admin/dashboard");
+        startTransition(() => router.replace("/admin/dashboard"));
+        return;
+      }
+      // else: cocok, stay
+    } catch {
+      // Kalau gagal baca role, biar UX aman: jangan mengusir user yang sudah authed
+      // (server-side guard/middleware tetap akan menolak jika tak berhak)
+    }
+  };
+
   useEffect(() => {
     mountedRef.current = true;
+    roleCheckedRef.current = false;
     void checkSession({ retry: true });
 
     // Dengarkan perubahan auth realtime
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((evt, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((evt) => {
       if (!mountedRef.current) return;
 
       if (evt === "SIGNED_IN" || evt === "TOKEN_REFRESHED") {
         clearRetry();
         setStatus("authed");
+        roleCheckedRef.current = false; // re-check gate on fresh token
         return;
       }
       if (evt === "SIGNED_OUT") {
         clearRetry();
         setStatus("guest");
-        void goLoginOnce("signed-out");
+        void goLoginOnce();
         return;
       }
 
-      // USER_UPDATED, PASSWORD_RECOVERY, dsb → verifikasi ulang
       setStatus("checking");
       void checkSession({ retry: true });
     });
@@ -116,6 +157,7 @@ export default function RequireAuth({ children }: Props) {
       if (now - lastKickRef.current < 500) return; // debounce
       lastKickRef.current = now;
       if (statusRef.current !== "checking") setStatus("checking");
+      roleCheckedRef.current = false;
       void checkSession({ retry: true, attempt: 0 });
     };
 
@@ -132,7 +174,7 @@ export default function RequireAuth({ children }: Props) {
       subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supabase, isLoginPage, pathname]);
+  }, [supabase, isLoginPage, pathname, area]);
 
   if (status !== "authed") {
     return (

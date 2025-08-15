@@ -35,7 +35,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }):
   }, []);
 
   return (
-    <RequireAuth>
+    <RequireAuth area="admin">
       <RequireAdmin>
         <div className="flex items-start relative bg-coolgray-10 w-full min-h-screen">
           <AdminSidebarSection />

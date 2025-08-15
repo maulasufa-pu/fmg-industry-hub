@@ -37,7 +37,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
   }, []);
 
   return (
-    <RequireAuth>
+    <RequireAuth area="client">
       <div className="flex items-start relative bg-coolgray-10 w-full min-h-screen">
         <SidebarSection />
         <main className="flex-1 min-w-0">{children}</main>

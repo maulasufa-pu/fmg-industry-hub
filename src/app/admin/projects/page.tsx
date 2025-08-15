@@ -74,53 +74,61 @@ export default function AdminProjectsPage(): React.JSX.Element {
   const abortRef = useRef<AbortController | null>(null);
 
   // ---------- counts ----------
+  const VIEW = "project_summary";
+
+  type CountResp = { count: number | null; error: unknown };
+
+  // bikin base BARU setiap panggilan
+  const newBase = () =>
+    supabase.from(VIEW).select("id", { count: "exact", head: true });
+
   const fetchCounts = useCallback(
     async (signal: AbortSignal) => {
-      try {
-        const base = supabase.from("project_summary").select("id", { count: "exact", head: true });
-
-        const applyAllFilters = (qb: typeof base) => {
-          let b = qb;
-          if (q) {
-            const like = `%${q}%`;
-            b = b.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
-          }
-          if (filterPIC !== "any") b = b.eq("assigned_pic", filterPIC);
-          if (filterStage !== "any") b = b.eq("stage", filterStage);
-          if (filterStatus !== "any") b = b.eq("status", filterStatus);
-          return b.abortSignal(signal);
-        };
-
-        const [allR, actR, finR, penR, unR] = (await Promise.all([
-          applyAllFilters(base),
-          applyAllFilters(base.eq("is_active", true)),
-          applyAllFilters(base.eq("is_finished", true)),
-          applyAllFilters(base.eq("is_active", false).eq("is_finished", false)),
-          applyAllFilters(base.is("assigned_pic", null)),
-        ])) as [CountResp, CountResp, CountResp, CountResp, CountResp];
-
-        // abaikan abort
-        const errs = [allR.error, actR.error, finR.error, penR.error, unR.error].filter(Boolean);
-        if (errs.length) {
-          if (errs.every(isAbortError)) return tabCounts; // keep existing
-          throw errs[0];
+      // apply semua filter (search + facet) ke builder yang DIKIRIM MASUK
+      const applyAllFilters = (qb: ReturnType<typeof newBase>) => {
+        let b = qb;
+        if (q) {
+          const like = `%${q}%`;
+          b = b.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
         }
+        if (filterPIC !== "any")   b = b.eq("assigned_pic", filterPIC);
+        if (filterStage !== "any") b = b.eq("stage",       filterStage);
+        if (filterStatus !== "any")b = b.eq("status",      filterStatus);
+        return b.abortSignal(signal);
+      };
 
-        return {
-          All: allR.count ?? 0,
-          Active: actR.count ?? 0,
-          Finished: finR.count ?? 0,
-          Pending: penR.count ?? 0,
-          Unassigned: unR.count ?? 0,
-        } as const;
-      } catch (e) {
-        if (isAbortError(e)) return tabCounts; // keep existing
-        throw e;
+      // PENTING: panggil newBase() SETIAP KALI (tidak reuse objek yg sama)
+      const allQ = applyAllFilters(newBase());
+      const actQ = applyAllFilters(newBase().eq("is_active", true));
+      const finQ = applyAllFilters(newBase().eq("is_finished", true));
+      const penQ = applyAllFilters(newBase().eq("is_active", false).eq("is_finished", false));
+      const unQ  = applyAllFilters(newBase().is("assigned_pic", null));
+
+      const [allR, actR, finR, penR, unR] = (await Promise.all([
+        allQ, actQ, finQ, penQ, unQ,
+      ])) as [CountResp, CountResp, CountResp, CountResp, CountResp];
+
+      // tangani abort dengan tenang
+      const isAbort = (e: unknown) => {
+        const a = e as { name?: string; code?: unknown; message?: string };
+        return a?.name === "AbortError" || a?.code === 20 || a?.code === "20" || a?.message?.includes("AbortError");
+      };
+      const errs = [allR.error, actR.error, finR.error, penR.error, unR.error].filter(Boolean);
+      if (errs.length) {
+        if (errs.every(isAbort)) return tabCounts; // keep existing on abort
+        throw errs[0];
       }
+
+      return {
+        All: allR.count ?? 0,
+        Active: actR.count ?? 0,
+        Finished: finR.count ?? 0,
+        Pending: penR.count ?? 0,
+        Unassigned: unR.count ?? 0,
+      } as const;
     },
     [supabase, q, filterPIC, filterStage, filterStatus, tabCounts]
   );
-
 
   // ---------- filter options (only page.tsx) ----------
   const fetchFilterOptions = useCallback(async () => {

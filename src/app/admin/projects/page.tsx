@@ -12,7 +12,7 @@ import AdminPanel, {
 type CountResp = { count: number | null; error: unknown };
 
 const QUERY_COLS =
-  "project_id,title,artist_name,genre,stage,status,updated_at,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name";
+  "id,project_name,artist_name,genre,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name";
 
 function isAbortError(err: unknown): boolean {
   if (!err || typeof err !== "object") return false;
@@ -204,13 +204,13 @@ export default function AdminProjectsPage(): React.JSX.Element {
         if (abortRef.current !== ac) return;
         
         const mapped: AdminProjectRow[] = (listR.data ?? []).map(r => ({
-          id: r.project_id,
-          project_name: r.title,
+          id: r.id,
+          project_name: r.project_name,
+          latest_update: r.latest_update,
           artist_name: r.artist_name ?? null,
           genre: r.genre ?? null,
           stage: r.stage ?? null,
           status: r.status ?? null,
-          latest_update: r.updated_at ?? null,
           assigned_pic: r.assigned_pic ?? null,
           progress_percent: r.progress_percent ?? null,
           budget_amount: r.budget_amount ?? null,
@@ -219,7 +219,6 @@ export default function AdminProjectsPage(): React.JSX.Element {
           anr_name: r.anr_name ?? null,
         }));
         setRows(mapped);
-
 
         setTotalCount(
           counts[activeTab as keyof typeof counts] ?? 0

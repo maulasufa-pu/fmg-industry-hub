@@ -201,37 +201,52 @@ const fetchCounts = useCallback(
 
   // ---------- initial ----------
   useEffect(() => {
+    let mounted = true; // guard kalau komponen unmount di tengah async
+
     (async () => {
-      setPage(1);
-      await supabase.auth.getSession().catch(() => {});
-      await fetchFilterOptions();
-      // 1) Hit langsung VIEW
-      const v = await supabase
-        .from("project_summary")
-        .select("id", { count: "exact", head: true })
-        .limit(1);
-      console.log("[SMOKE view]", { count: v.count, err: v.error });
+      try {
+        setPage(1);
 
-      // 2) Bandingkan ke tabel dasar 'projects'
-      const p = await supabase
-        .from("projects")
-        .select("id", { count: "exact", head: true })
-        .limit(1);
-      console.log("[SMOKE projects]", { count: p.count, err: p.error });
+        // 1) Ambil session SEKALI
+        const sess = await supabase.auth.getSession().catch(() => null);
 
-      // 3) Lihat user & role (buat cek login/claim)
-      const s = await supabase.auth.getSession();
-      console.log("[SMOKE user]", {
-        uid: s.data.session?.user?.id ?? null,
-        role: s.data.session?.user?.app_metadata?.role ?? null,
-      });
+        // 2) Ambil opsi filter (sekali di page)
+        await fetchFilterOptions();
 
-      // 4) Log ENV (sepotong, jangan full key)
-      console.log("[SMOKE env]", (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").slice(0, 25));
-      await fetchPage(initialTab, "", 1, true);
-      setDidInit(true);
+        // 3) Smoke checks
+        const v = await supabase
+          .from("project_summary")
+          .select("id", { count: "exact", head: true }); // limit(1) tidak perlu saat head:true
+        console.log("[SMOKE view]", { count: v.count, err: v.error });
+
+        const p = await supabase
+          .from("projects")
+          .select("id", { count: "exact", head: true });
+        console.log("[SMOKE projects]", { count: p.count, err: p.error });
+
+        console.log("[SMOKE user]", {
+          uid: sess?.data.session?.user?.id ?? null,
+          role: sess?.data.session?.user?.app_metadata?.role ?? null,
+        });
+
+        console.log(
+          "[SMOKE env]",
+          (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").slice(0, 25)
+        );
+
+        // 4) Load page pertama
+        await fetchPage(initialTab, "", 1, true);
+
+        if (mounted) setDidInit(true);
+      } catch (e) {
+        console.error("[ADMIN init] error:", e);
+      }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    return () => {
+      mounted = false;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ---------- re-fetch tanpa spinner ----------
@@ -268,12 +283,7 @@ const fetchCounts = useCallback(
     if (ids.length === 0) return;
     const { error } = await supabase.from("projects").update({ assigned_pic: pic }).in("id", ids);
     if (error) console.error(error);
-    const smokeList = await supabase
-      .from("project_summary")
-      .select("id,project_name", { count: "exact" })
-      .order("latest_update", { ascending: false })
-      .limit(3);
-    console.log("[ADMIN/SMOKE] count=", smokeList.count, "err=", smokeList.error, "data=", smokeList.data);
+    
     await fetchPage(activeTab, debouncedSearch, page, false);
   };
 
@@ -284,12 +294,7 @@ const fetchCounts = useCallback(
       .update({ status: "finished", is_finished: true, is_active: false })
       .in("id", ids);
     if (error) console.error(error);
-    const smokeList = await supabase
-      .from("project_summary")
-      .select("id,project_name", { count: "exact" })
-      .order("latest_update", { ascending: false })
-      .limit(3);
-    console.log("[ADMIN/SMOKE] count=", smokeList.count, "err=", smokeList.error, "data=", smokeList.data);
+    
     await fetchPage(activeTab, debouncedSearch, page, false);
   };
 

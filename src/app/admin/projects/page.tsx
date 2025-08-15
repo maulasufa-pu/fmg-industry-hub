@@ -205,12 +205,29 @@ const fetchCounts = useCallback(
       setPage(1);
       await supabase.auth.getSession().catch(() => {});
       await fetchFilterOptions();
-      const smokeList = await supabase
+      // 1) Hit langsung VIEW
+      const v = await supabase
         .from("project_summary")
-        .select("id,project_name", { count: "exact" })
-        .order("latest_update", { ascending: false })
-        .limit(3);
-      console.log("[ADMIN/SMOKE] count=", smokeList.count, "err=", smokeList.error, "data=", smokeList.data);
+        .select("id", { count: "exact", head: true })
+        .limit(1);
+      console.log("[SMOKE view]", { count: v.count, err: v.error });
+
+      // 2) Bandingkan ke tabel dasar 'projects'
+      const p = await supabase
+        .from("projects")
+        .select("id", { count: "exact", head: true })
+        .limit(1);
+      console.log("[SMOKE projects]", { count: p.count, err: p.error });
+
+      // 3) Lihat user & role (buat cek login/claim)
+      const s = await supabase.auth.getSession();
+      console.log("[SMOKE user]", {
+        uid: s.data.session?.user?.id ?? null,
+        role: s.data.session?.user?.app_metadata?.role ?? null,
+      });
+
+      // 4) Log ENV (sepotong, jangan full key)
+      console.log("[SMOKE env]", (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").slice(0, 25));
       await fetchPage(initialTab, "", 1, true);
       setDidInit(true);
     })();

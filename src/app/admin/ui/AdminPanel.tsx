@@ -81,9 +81,9 @@ type Props = {
 };
 
 const headers: Array<{ key: keyof AdminProjectRow | "client" | "song" | "album" | "budget"; label: string; sortable?: boolean }> = [
-  { key: "client", label: "Nama Client", sortable: true },
-  { key: "song",   label: "Judul Lagu"  },
-  { key: "album",  label: "Judul Album" },
+  { key: "client", label: "Client Name", sortable: true },
+  { key: "song",   label: "Song Title"  },
+  { key: "album",  label: "Album Title" },
   { key: "genre",  label: "Genre"       },
   { key: "assigned_pic", label: "PIC"   },
   { key: "budget", label: "Budget"      },
@@ -339,17 +339,20 @@ export default function AdminPanel({
                           <User className="h-6 w-6 text-gray-600" />
                         </div>
                         <div className="min-w-0">
-                          <div className="truncate font-semibold text-gray-800">{r.artist_name ?? "-"}</div>
+                          <div className="truncate font-semibold text-gray-800">{r.client_name ?? "-"}</div>
                           </div>
                         </div>
                       </td>
 
-                      {/* Judul Album */}
+                      {/* Judul Lagu */}
+                    <td className="border-t px-4 py-3 text-gray-700">{r.project_name ?? "-"}</td>
+
+                    {/* Album Title */}
                     <td className="border-t px-4 py-3 text-gray-700">{r.album_title ?? "-"}</td>
 
                     {/* Genre */}
                     <td className="border-t px-4 py-3 text-gray-700">{r.genre ?? "-"}</td>
-
+                    
                     {/* PIC */}
                     <td className="border-t px-4 py-3 text-gray-700">{r.assigned_pic ?? "-"}</td>
 

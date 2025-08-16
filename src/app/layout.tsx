@@ -9,7 +9,7 @@ import { usePathname } from "next/navigation";
 
 function MainContainer({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isApp = pathname?.startsWith("/client"); // halaman sidebar
+  const isApp = pathname?.startsWith("/client") || pathname?.startsWith("/admin")  ; // halaman sidebar
 
   const wrapperCls = isApp
     ? "w-full" 
@@ -20,7 +20,7 @@ function MainContainer({ children }: { children: React.ReactNode }) {
 
 function Footer() {
   const pathname = usePathname();
-  const isApp = pathname?.startsWith("/client");
+  const isApp = pathname?.startsWith("/client") || pathname?.startsWith("/admin")  ; // halaman sidebar
 
   if (isApp) return null; // sembunyiin footer di halaman app
   return (

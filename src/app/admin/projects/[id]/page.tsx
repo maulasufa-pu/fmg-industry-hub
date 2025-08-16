@@ -120,6 +120,13 @@ const Card: React.FC<React.PropsWithChildren<{ title: string; right?: React.Reac
   </section>
 );
 
+type ProjectAssignmentUpdate = {
+  anr_name: string | null;
+  engineer_name: string | null;
+  composer_name?: string | null;
+  producer_name?: string | null;
+};
+
 export default function AdminProjectDetailPage(): React.JSX.Element {
   useFocusWarmAuth();
 
@@ -157,9 +164,17 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
     payment_plan: "",
   });
 
-  const [activeTab, setActiveTab] = useState<"overview" | "drafts" | "references" | "discussion" | "meetings">(
-    (searchParams.get("tab") as any) ?? "overview"
-  );
+  type TabKey = "overview" | "drafts" | "references" | "discussion" | "meetings";
+
+  const TABS: TabKey[] = ["overview", "drafts", "references", "discussion", "meetings"];
+
+  const initialTab: TabKey = (() => {
+    const q = searchParams.get("tab");
+    return (TABS as readonly string[]).includes(q ?? "") ? (q as TabKey) : "overview";
+  })();
+
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
+
 
   const [teamOptions, setTeamOptions] = useState<TeamOption[]>([]); // optional source for datalist
   const realtimeBoundRef = useRef(false);
@@ -196,8 +211,8 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
         setAnrName(proj.anr_name ?? "");
         setEngineerName(proj.engineer_name ?? "");
         // composer/producer mungkin belum ada di view → tetap kosong
-        setComposerName((proj as any)?.composer_name ?? "");
-        setProducerName((proj as any)?.producer_name ?? "");
+        setComposerName(proj.composer_name ?? "");
+        setProducerName(proj.producer_name ?? "");
 
         // Overview read-only mirror
         setView({
@@ -228,7 +243,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
         .eq("project_id", params.id)
         .order("version", { ascending: false })
         .returns<DraftRow[]>()
-        .then(({ data }) => mounted && setDrafts(data ?? []));
+        .then(({ data }) => { if (mounted) setDrafts(data ?? []); });
 
       supabase
         .from("revisions")
@@ -346,39 +361,39 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
 
   const saveAssignments = async (): Promise<void> => {
     try {
-      // Selalu simpan A&R & Engineer (kolom sudah ada)
-      const basePayload: Record<string, string | null> = {
+        const basePayload: ProjectAssignmentUpdate = {
         anr_name: anrName.trim() || null,
         engineer_name: engineerName.trim() || null,
-      };
+        composer_name: composerName.trim() || null,
+        producer_name: producerName.trim() || null,
+        };
 
-      // Opsional: simpan composer/producer jika kolom tersedia
-      // Agar aman dari error "column does not exist", cek via RPC ringan (skip di sini), atau
-      // langsung tambahkan kolom di DB sesuai SQL di bawah.
-      // Jika kamu SUDAH menambah kolom, baris di bawah bisa diaktifkan:
-      (basePayload as any).composer_name = composerName.trim() || null;
-      (basePayload as any).producer_name = producerName.trim() || null;
+        const { error } = await supabase
+        .from("projects")
+        .update(basePayload)
+        .eq("project_id", params.id);
+        if (error) throw error;
 
-      const { error } = await supabase.from("projects").update(basePayload).eq("project_id", params.id);
-      if (error) throw error;
-
-      setProject((p) =>
+        setProject((p) =>
         p
-          ? {
-              ...p,
-              anr_name: basePayload.anr_name,
-              engineer_name: basePayload.engineer_name,
-              composer_name: (basePayload as any).composer_name ?? (p as any).composer_name,
-              producer_name: (basePayload as any).producer_name ?? (p as any).producer_name,
+            ? {
+                ...p,
+                anr_name: basePayload.anr_name,
+                engineer_name: basePayload.engineer_name,
+                composer_name:
+                basePayload.composer_name !== undefined ? basePayload.composer_name : p.composer_name,
+                producer_name:
+                basePayload.producer_name !== undefined ? basePayload.producer_name : p.producer_name,
             }
-          : p
-      );
-      alert("Assignments saved.");
+            : p
+        );
+        alert("Assignments saved.");
     } catch (e) {
-      console.error(e);
-      alert("Gagal menyimpan assignments. Cek kolom/permission.");
+        console.error(e);
+        alert("Gagal menyimpan assignments. Cek kolom/permission.");
     }
-  };
+    };
+
 
   if (loading) {
     return (

@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import RequireRole from "@/app/auth/RequireRole";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
 type GlobalRole = "client" | "admin" | "owner";
@@ -68,6 +69,7 @@ export default function UsersPage(): React.JSX.Element {
   if (loading) return <div className="p-6">Loading users…</div>;
 
   return (
+    <RequireRole allow={["owner", "admin"]}>
     <div className="p-6 space-y-4">
       <h1 className="text-lg font-semibold">Users (Owner)</h1>
       <table className="w-full rounded-lg border bg-white shadow">
@@ -117,5 +119,6 @@ export default function UsersPage(): React.JSX.Element {
         </tbody>
       </table>
     </div>
+    </RequireRole>
   );
 }

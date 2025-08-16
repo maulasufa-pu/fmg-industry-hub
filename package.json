@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "generate:roles": "node scripts/generate-roles.mjs",
+    "prebuild": "node scripts/generate-roles.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -38,6 +40,7 @@
     "@types/react-dom": "^19.1.7",
     "autoprefixer": "^10.4.21",
     "babel-jest": "^30.0.5",
+    "dotenv": "^17.2.1",
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
     "jest": "^30.0.5",

@@ -9,11 +9,11 @@ import AdminPanel, {
   AdminTabKey, AdminProjectRow, PicOption, StageOption, StatusOption,
 } from "@/app/admin/ui/AdminPanel";
 
-const VIEW = "project_summary";
+const VIEW = "project_summary_ext"; // Ganti dari "project_summary"
 
 // Kolom yang tersedia di VIEW sekarang (urutkan sesuai view)
 const QUERY_COLS =
-  "id,project_name,client_name,artist_name,album_title,genre,sub_genre,description,payment_plan,start_date,deadline,delivery_format,nda_required,preferred_engineer_id,preferred_engineer_name,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name";
+  "id,project_name,artist_name,album_title,genre,sub_genre,description,payment_plan,start_date,deadline,delivery_format,nda_required,preferred_engineer_id,preferred_engineer_name,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name,client_name";
 
 // === Tipe row yang dikembalikan oleh VIEW ===
 type DbProjectSummary = {

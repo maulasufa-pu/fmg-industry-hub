@@ -27,21 +27,23 @@ const BundleSchema = z.object({
 const PayloadSchema = z.object({
   songTitle: z.string().min(1),
   artistName: z.string().default("").optional(),
+  albumTitle: z.string().default("").optional(), // <— TAMBAHKAN
   genre: z.string().default("").optional(),
   subGenre: z.string().default("").optional(),
   description: z.string().default("").optional(),
   selectedServices: z.array(ServiceSchema).default([]),
   bundle: BundleSchema.nullable().optional(),
-  startDate: z.string().nullable().optional(),   // "YYYY-MM-DD"
-  deadline: z.string().nullable().optional(),    // "YYYY-MM-DD"
+  startDate: z.string().nullable().optional(),
+  deadline: z.string().nullable().optional(),
   deliveryFormat: z.array(z.string()).optional(),
-  referenceLinks: z.string().optional(),         // newline separated
+  referenceLinks: z.string().optional(),
   paymentPlan: z.enum(["upfront", "half", "milestone"]),
   ndaRequired: z.boolean().optional(),
   preferredEngineerId: z.string().uuid().nullable().optional(),
   total: z.number().finite().nonnegative(),
-  status: z.enum(["requested", "pending", "in_progress", "revision", "approved", "published", "archived", "cancelled"]).optional(),
+  status: z.enum(["requested","pending","in_progress","revision","approved","published","archived","cancelled"]).optional(),
 });
+
 
 /** ---------- handler ---------- */
 export async function GET(req: Request) {
@@ -107,30 +109,32 @@ export async function POST(req: Request) {
       ? `Bundle: ${body.bundle.label} — ${idr(body.bundle.bundlePrice)}`
       : null;
 
-    const desc = [
-      body.description?.trim(),
-      "",
-      "— Requested Services —",
-      ...(bundleLine ? [bundleLine] : []),
-      ...serviceLines,
-      "",
-      `Total Estimate: ${idr(body.total)}`,
-      "",
-      "— Preferences —",
-      startDate ? `Start: ${startDate}` : null,
-      deadline ? `Deadline: ${deadline}` : null,
-      body.deliveryFormat?.length ? `Delivery: ${body.deliveryFormat.join(", ")}` : null,
-      body.referenceLinks?.trim() ? `Refs:\n${body.referenceLinks.trim()}` : null,
-      `Payment Plan: ${body.paymentPlan}`,
-      `NDA Required: ${body.ndaRequired ? "Yes" : "No"}`,
-      "",
-      `Song Title: ${body.songTitle || "-"}`,
-      `Artist: ${body.artistName || "-"}`,
-      `Genre: ${body.genre || "-"}${body.subGenre ? " / " + body.subGenre : ""}`,
-      body.preferredEngineerId ? `Preferred Engineer: ${body.preferredEngineerId}` : null,
-    ]
-      .filter(Boolean)
-      .join("\n");
+    // const desc = [
+    //   body.description?.trim(),
+    //   "",
+    //   "— Requested Services —",
+    //   ...(bundleLine ? [bundleLine] : []),
+    //   ...serviceLines,
+    //   "",
+    //   `Total Estimate: ${idr(body.total)}`,
+    //   "",
+    //   "— Preferences —",
+    //   startDate ? `Start: ${startDate}` : null,
+    //   deadline ? `Deadline: ${deadline}` : null,
+    //   body.deliveryFormat?.length ? `Delivery: ${body.deliveryFormat.join(", ")}` : null,
+    //   body.referenceLinks?.trim() ? `Refs:\n${body.referenceLinks.trim()}` : null,
+    //   `Payment Plan: ${body.paymentPlan}`,
+    //   `NDA Required: ${body.ndaRequired ? "Yes" : "No"}`,
+    //   "",
+    //   `Song Title: ${body.songTitle || "-"}`,
+    //   `Artist: ${body.artistName || "-"}`,
+    //   `Genre: ${body.genre || "-"}${body.subGenre ? " / " + body.subGenre : ""}`,
+    //   body.preferredEngineerId ? `Preferred Engineer: ${body.preferredEngineerId}` : null,
+    // ]
+    //   .filter(Boolean)
+    //   .join("\n");
+
+      const rawDescription = body.description?.trim() || null;
 
     // service-role client (no session)
     const srv = createClient(url, serviceKey, {
@@ -145,15 +149,24 @@ export async function POST(req: Request) {
         client_id: uid,
         title: body.songTitle || "(Untitled)",
         artist_name: body.artistName || null,
+        album_title: body.albumTitle || null,      // <— SIMPAN DI SINI
         genre: body.genre || null,
+        sub_genre: body.subGenre || null,
         stage: "drafting",
         status: body.status ?? "requested",
-        description: desc,
+        description: rawDescription,               // description murni
         budget_amount: clampInt(body.total) || null,
         budget_currency: "IDR",
+        payment_plan: body.paymentPlan,            // jika kolom ada
+        start_date: startDate,
+        deadline: deadline,
+        delivery_format: body.deliveryFormat ?? null,
+        nda_required: body.ndaRequired ?? null,
+        preferred_engineer_id: body.preferredEngineerId ?? null,
       })
       .select("project_id")
       .single<ProjectInsertResult>();
+
     if (projErr) throw projErr;
     const projectId = proj.project_id;
 

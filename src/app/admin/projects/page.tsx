@@ -11,7 +11,7 @@ import AdminPanel, {
 
 const VIEW = "project_summary";
 const QUERY_COLS =
-  "id,project_name,artist_name,genre,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name";
+  "id,project_name,artist_name,album_title,genre,sub_genre,description,payment_plan,start_date,deadline,delivery_format,nda_required,preferred_engineer_id,preferred_engineer_name,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name";
 
 type CountResp = { count: number | null; error: unknown };
 type PostgrestList<T> = { data: T[] | null; count: number | null; error?: unknown };
@@ -165,7 +165,18 @@ const fetchCounts = useCallback(
 
       if (qStr) {
         const like = `%${qStr}%`;
-        qBuilder = qBuilder.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+        qBuilder = qBuilder.or(
+          [
+            `project_name.ilike.${like}`,
+            `artist_name.ilike.${like}`,
+            `album_title.ilike.${like}`,
+            `genre.ilike.${like}`,
+            `sub_genre.ilike.${like}`,
+            `description.ilike.${like}`,
+            `delivery_format.ilike.${like}`,
+            `payment_plan.ilike.${like}`
+          ].join(",")
+        );
       }
       if (filterPIC !== "any")   qBuilder = qBuilder.eq("assigned_pic", filterPIC);
       if (filterStage !== "any") qBuilder = qBuilder.eq("stage",       filterStage);
@@ -178,14 +189,41 @@ const fetchCounts = useCallback(
 
       qBuilder = qBuilder.order("latest_update", { ascending: false }).range(from, to);
 
-      const { data, count, error } = await withSignal(qBuilder, ac.signal).returns<AdminProjectRow[]>();
-      if (error) throw error;
+      const { data, count, error } = await withSignal(qBuilder, ac.signal).returns<any[]>();
+        if (error) throw error;
 
-      const counts = await fetchCounts(qStr, ac.signal);
+        const mapped: AdminProjectRow[] = (data ?? []).map((r) => ({
+          id: r.id,
+          project_name: r.project_name,
+          artist_name: r.artist_name ?? null,
+          album_title: r.album_title ?? null,
+          genre: r.genre ?? null,
+          sub_genre: r.sub_genre ?? null,
+          description: r.description ?? null,
+          payment_plan: r.payment_plan ?? null,
+          start_date: r.start_date ?? null,
+          deadline: r.deadline ?? null,
+          delivery_format: r.delivery_format ?? null,
+          nda_required: r.nda_required ?? null,
+          preferred_engineer_id: r.preferred_engineer_id ?? null,
+          preferred_engineer_name: r.preferred_engineer_name ?? null,
 
-      setRows(data ?? []);
-      setTotalCount(count ?? 0);    // ambil dari list (persis client)
-      setTabCounts(counts);
+          stage: r.stage ?? null,
+          status: r.status ?? null,
+          latest_update: r.latest_update ?? null,
+          assigned_pic: r.assigned_pic ?? null,
+          progress_percent: r.progress_percent ?? null,
+          budget_amount: r.budget_amount ?? null,
+          budget_currency: r.budget_currency ?? null,
+          engineer_name: r.engineer_name ?? null,
+          anr_name: r.anr_name ?? null,
+        }));
+        const counts = await fetchCounts(qStr, ac.signal);
+        setTabCounts(counts);
+        setRows(mapped);
+        setTotalCount(count ?? 0);
+
+      
     } catch (e) {
       if ((e as { name?: string }).name !== "AbortError") {
         console.error("admin/projects fetch error:", e);

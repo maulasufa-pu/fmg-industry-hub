@@ -413,13 +413,6 @@ export default function AdminPanel({
                             <div className="text-gray-800">{r.progress_percent ?? 0}%</div>
                           </div>
 
-                          <div className="mt-3">
-                            <div className="text-gray-500 mb-1">Description / Synopsis:</div>
-                            <div className="whitespace-pre-wrap rounded-md border p-3 text-sm text-gray-800 bg-gray-50">
-                              {r.description?.trim() || "(no description)"}
-                            </div>
-                          </div>
-
                           <div className="mt-4">
                             <button
                               className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-100"
@@ -444,6 +437,13 @@ export default function AdminPanel({
 
                             <div className="text-gray-500">A&R:</div>
                             <div className="text-gray-800">{r.anr_name ?? "-"}</div>
+                          </div>
+                        </div>
+
+                        <div className="col-span-2 mt-3">
+                          <div className="text-gray-500 mb-1">Description / Synopsis:</div>
+                          <div className="whitespace-pre-wrap rounded-md border p-3 text-sm text-gray-800 bg-gray-50">
+                            {r.description?.trim() || "(no description)"}
                           </div>
                         </div>
                       </div>

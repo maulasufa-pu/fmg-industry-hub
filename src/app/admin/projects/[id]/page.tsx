@@ -18,14 +18,18 @@ type ProjectStatus =
   | "archived"
   | "cancelled";
 
+/** Disesuaikan dengan alur bisnis */
 type ProjectStage =
-  | "brief"
-  | "pre_production"
-  | "recording"
-  | "editing"
-  | "mixing"
-  | "mastering"
-  | "delivery";
+  | "request_review"        // request baru masuk, menunggu verifikasi admin
+  | "awaiting_payment"      // menunggu pembayaran klien
+  | "assign_team"           // assign A&R/Engineer/Composer/Producer/Sound Designer
+  | "draft1_work"           // pengerjaan draft 1
+  | "draft1_review"         // review draft 1 oleh client + QC A&R
+  | "finalization"          // finalisasi mixing/mastering
+  | "metadata"              // pengisian metadata
+  | "agreement"             // penandatanganan agreement/kontrak
+  | "publishing"            // kirim ke distributor & proses rilis
+  | "post_release";         // monitoring setelah rilis
 
 type ProjectSummary = {
   id: string;
@@ -370,6 +374,30 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
     cancelled: "Cancelled",
   };
 
+  const setStatus = async (status: ProjectStatus): Promise<void> => {
+    try {
+      const { error } = await supabase.from("projects").update({ status }).eq("project_id", params.id);
+      if (error) throw error;
+      setProject((p) => (p ? { ...p, status } : p));
+      setEdit((s) => ({ ...s, status }));
+    } catch (e) {
+      console.error(e);
+      alert("Gagal update status (cek RLS).");
+    }
+  };
+
+  const setStage = async (stage: ProjectStage): Promise<void> => {
+    try {
+      const { error } = await supabase.from("projects").update({ stage }).eq("project_id", params.id);
+      if (error) throw error;
+      setProject((p) => (p ? { ...p, stage } : p));
+      setEdit((s) => ({ ...s, stage }));
+    } catch (e) {
+      console.error(e);
+      alert("Gagal update stage (cek RLS).");
+    }
+  };
+
   const saveProject = async (): Promise<void> => {
     if (!project) return;
     setSaving(true);
@@ -440,73 +468,13 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
     }
   };
 
-  const quickSetStatus = async (status: ProjectStatus): Promise<void> => {
-    setEdit((s) => ({ ...s, status }));
-    try {
-      const { error } = await supabase.from("projects").update({ status }).eq("project_id", params.id);
-      if (error) throw error;
-      setProject((p) => (p ? { ...p, status } : p));
-    } catch (e) {
-      console.error(e);
-      alert("Gagal update status (cek RLS).");
-    }
-  };
-
-  const quickSetStage = async (stage: string): Promise<void> => {
-    setEdit((s) => ({ ...s, stage }));
-    try {
-      const { error } = await supabase.from("projects").update({ stage }).eq("project_id", params.id);
-      if (error) throw error;
-      setProject((p) => (p ? { ...p, stage } : p));
-    } catch (e) {
-      console.error(e);
-      alert("Gagal update stage (cek RLS).");
-    }
-  };
-
-  const deleteReference = async (id: string): Promise<void> => {
-    if (!confirm("Hapus link referensi ini?")) return;
-    try {
-      const { error } = await supabase.from("project_reference_links").delete().eq("id", id);
-      if (error) throw error;
-      setLinks((prev) => (prev ? prev.filter((l) => l.id !== id) : prev));
-    } catch (e) {
-      console.error(e);
-      alert("Gagal hapus link (cek RLS).");
-    }
-  };
-
-  const deleteMessage = async (id: string): Promise<void> => {
-    if (!confirm("Hapus pesan diskusi ini?")) return;
-    try {
-      const { error } = await supabase.from("discussion_messages").delete().eq("id", id);
-      if (error) throw error;
-      setMessages((prev) => (prev ? prev.filter((m) => m.id !== id) : prev));
-    } catch (e) {
-      console.error(e);
-      alert("Gagal hapus pesan (cek RLS).");
-    }
-  };
-
-  const cancelMeeting = async (id: string): Promise<void> => {
-    if (!confirm("Batalkan meeting ini?")) return;
-    try {
-      const { error } = await supabase.from("meetings").delete().eq("id", id);
-      if (error) throw error;
-      setMeetings((prev) => (prev ? prev.filter((m) => m.id !== id) : prev));
-    } catch (e) {
-      console.error(e);
-      alert("Gagal membatalkan meeting (cek RLS).");
-    }
-  };
-
   if (loading) {
     return (
       <div className="p-6">
         <div className="rounded-xl border border-gray-200 bg-white p-8 text-gray-500 shadow">Loading project…</div>
       </div>
     );
-    }
+  }
 
   if (!project) {
     return (
@@ -531,7 +499,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
         </ol>
       </nav>
 
-      {/* Admin header: summary + quick controls */}
+      {/* Header: Summary + Quick controls + Workflow actions */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card
           title="Project Summary"
@@ -572,12 +540,12 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
               <label className="mb-1 block text-xs text-gray-500">Status</label>
               <select
                 value={edit.status}
-                onChange={(e) => quickSetStatus(e.target.value as ProjectStatus)}
+                onChange={(e) => setStatus(e.target.value as ProjectStatus)}
                 className="w-full rounded-md border border-gray-300 px-2 py-1.5"
               >
                 {(["pending","in_progress","revision","approved","published","archived","cancelled"] as ProjectStatus[]).map((s) => (
                   <option key={s} value={s}>
-                    {s}
+                    {s} — {statusLabelMap[s]}
                   </option>
                 ))}
               </select>
@@ -587,10 +555,21 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
               <label className="mb-1 block text-xs text-gray-500">Stage</label>
               <select
                 value={edit.stage}
-                onChange={(e) => quickSetStage(e.target.value)}
+                onChange={(e) => setStage(e.target.value as ProjectStage)}
                 className="w-full rounded-md border border-gray-300 px-2 py-1.5"
               >
-                {["brief","pre_production","recording","editing","mixing","mastering","delivery"].map((s) => (
+                {[
+                  "request_review",
+                  "awaiting_payment",
+                  "assign_team",
+                  "draft1_work",
+                  "draft1_review",
+                  "finalization",
+                  "metadata",
+                  "agreement",
+                  "publishing",
+                  "post_release",
+                ].map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>
@@ -616,44 +595,120 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
           </div>
         </Card>
 
-        {/* Assignments */}
-        <Card title="Assignments">
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <label className="mb-1 block text-xs text-gray-500">PIC</label>
-              <input
-                value={edit.assigned_pic}
-                onChange={(e) => setEdit((p) => ({ ...p, assigned_pic: e.target.value }))}
-                className="w-full rounded-md border border-gray-300 px-2 py-1.5"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-gray-500">Engineer</label>
-              <input
-                value={edit.engineer_name}
-                onChange={(e) => setEdit((p) => ({ ...p, engineer_name: e.target.value }))}
-                className="w-full rounded-md border border-gray-300 px-2 py-1.5"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-gray-500">A&R</label>
-              <input
-                value={edit.anr_name}
-                onChange={(e) => setEdit((p) => ({ ...p, anr_name: e.target.value }))}
-                className="w-full rounded-md border border-gray-300 px-2 py-1.5"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-gray-500">Preferred Engineer</label>
-              <input
-                value={edit.preferred_engineer_name}
-                onChange={(e) => setEdit((p) => ({ ...p, preferred_engineer_name: e.target.value }))}
-                className="w-full rounded-md border border-gray-300 px-2 py-1.5"
-              />
-            </div>
+        {/* Workflow actions sesuai alur */}
+        <Card title="Workflow Actions">
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <button
+              onClick={async () => {
+                await setStatus("in_progress");
+                await setStage("awaiting_payment");
+              }}
+              className="rounded-md bg-gray-800 px-3 py-2 text-white hover:bg-black"
+            >
+              Accept Project
+            </button>
+            <button
+              onClick={async () => {
+                await setStage("assign_team");
+              }}
+              className="rounded-md border px-3 py-2 hover:bg-gray-50"
+            >
+              Mark Payment Received
+            </button>
+            <button
+              onClick={async () => {
+                await setStage("draft1_work");
+              }}
+              className="rounded-md border px-3 py-2 hover:bg-gray-50"
+            >
+              Move to Draft 1
+            </button>
+            <button
+              onClick={async () => {
+                await setStatus("revision");
+                await setStage("draft1_review");
+              }}
+              className="rounded-md bg-amber-600 px-3 py-2 text-white hover:bg-amber-700"
+            >
+              Request Revision
+            </button>
+            <button
+              onClick={async () => {
+                await setStatus("approved");
+                await setStage("metadata");
+              }}
+              className="rounded-md bg-emerald-600 px-3 py-2 text-white hover:bg-emerald-700"
+            >
+              Approve Final
+            </button>
+            <button
+              onClick={async () => {
+                await setStage("publishing");
+              }}
+              className="rounded-md bg-blue-600 px-3 py-2 text-white hover:bg-blue-700"
+            >
+              Send to Publishing
+            </button>
+            <button
+              onClick={async () => {
+                await setStatus("published");
+                await setStage("post_release");
+              }}
+              className="rounded-md bg-indigo-600 px-3 py-2 text-white hover:bg-indigo-700 col-span-2"
+            >
+              Mark Released
+            </button>
           </div>
         </Card>
       </div>
+
+      {/* Assignments */}
+      <Card title="Assignments">
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <label className="mb-1 block text-xs text-gray-500">PIC</label>
+            <input
+              value={edit.assigned_pic}
+              onChange={(e) => setEdit((p) => ({ ...p, assigned_pic: e.target.value }))}
+              className="w-full rounded-md border border-gray-300 px-2 py-1.5"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-500">Engineer</label>
+            <input
+              value={edit.engineer_name}
+              onChange={(e) => setEdit((p) => ({ ...p, engineer_name: e.target.value }))}
+              className="w-full rounded-md border border-gray-300 px-2 py-1.5"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-500">A&amp;R</label>
+            <input
+              value={edit.anr_name}
+              onChange={(e) => setEdit((p) => ({ ...p, anr_name: e.target.value }))}
+              className="w-full rounded-md border border-gray-300 px-2 py-1.5"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-500">Preferred Engineer</label>
+            <input
+              value={edit.preferred_engineer_name}
+              onChange={(e) => setEdit((p) => ({ ...p, preferred_engineer_name: e.target.value }))}
+              className="w-full rounded-md border border-gray-300 px-2 py-1.5"
+            />
+          </div>
+          {/* Jika kamu nanti menambah kolom composer/producer/sound_designer di DB, tinggal tambahkan input di sini */}
+        </div>
+        <div className="mt-3 flex justify-end">
+          <button
+            onClick={saveProject}
+            disabled={saving}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
+          >
+            {saving ? "Saving…" : "Save Changes"}
+          </button>
+        </div>
+      </Card>
 
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-gray-200">
@@ -815,16 +870,6 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
               </label>
             </div>
           </Card>
-
-          <div className="lg:col-span-3 flex items-center justify-end">
-            <button
-              onClick={saveProject}
-              disabled={saving}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
-            >
-              {saving ? "Saving…" : "Save Changes"}
-            </button>
-          </div>
         </div>
       )}
 
@@ -858,16 +903,11 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
                         >
                           Open
                         </a>
-                        {/* Admin actions example: mark approved / request revision / publish */}
                         <button
                           onClick={async () => {
                             try {
-                              const { error } = await supabase
-                                .from("projects")
-                                .update({ status: "approved" as ProjectStatus })
-                                .eq("project_id", params.id);
-                              if (error) throw error;
-                              setProject((p) => (p ? { ...p, status: "approved" } : p));
+                              await setStatus("approved");
+                              await setStage("metadata");
                             } catch (e) {
                               console.error(e);
                               alert("Gagal set Approved.");
@@ -875,7 +915,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
                           }}
                           className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs text-white hover:bg-emerald-700"
                         >
-                          Approve
+                          Approve Final
                         </button>
                         <button
                           onClick={async () => {
@@ -897,12 +937,8 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
                                   created_at: new Date().toISOString(),
                                 },
                               ]);
-                              const { error: e2 } = await supabase
-                                .from("projects")
-                                .update({ status: "revision" as ProjectStatus })
-                                .eq("project_id", params.id);
-                              if (e2) throw e2;
-                              setProject((p) => (p ? { ...p, status: "revision" } : p));
+                              await setStatus("revision");
+                              await setStage("draft1_review");
                             } catch (e) {
                               console.error(e);
                               alert("Gagal request revision.");
@@ -915,20 +951,29 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
                         <button
                           onClick={async () => {
                             try {
-                              const { error } = await supabase
-                                .from("projects")
-                                .update({ status: "published" as ProjectStatus })
-                                .eq("project_id", params.id);
-                              if (error) throw error;
-                              setProject((p) => (p ? { ...p, status: "published" } : p));
+                              await setStage("publishing");
                             } catch (e) {
                               console.error(e);
-                              alert("Gagal mark as Published.");
+                              alert("Gagal kirim ke Publishing.");
                             }
                           }}
                           className="rounded-md bg-blue-600 px-3 py-1.5 text-xs text-white hover:bg-blue-700"
                         >
-                          Mark as Finished
+                          Send to Publishing
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await setStatus("published");
+                              await setStage("post_release");
+                            } catch (e) {
+                              console.error(e);
+                              alert("Gagal mark Released.");
+                            }
+                          }}
+                          className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs text-white hover:bg-indigo-700"
+                        >
+                          Mark Released
                         </button>
                       </div>
 
@@ -957,7 +1002,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
           </Card>
 
           <Card title="Notes / QA Checklist">
-            <div className="text-sm text-gray-500">Tempat admin menyimpan catatan QC internal.</div>
+            <div className="text-sm text-gray-500">Tempat admin/A&amp;R menyimpan catatan QC internal (draft 1 → final).</div>
           </Card>
         </div>
       )}
@@ -976,12 +1021,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
                   <li key={l.id} className="rounded-md border border-gray-200 p-3">
                     <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
                       <span>{l.created_at ? new Date(l.created_at).toLocaleString("id-ID") : ""}</span>
-                      <button
-                        onClick={() => deleteReference(l.id)}
-                        className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
-                      >
-                        Delete
-                      </button>
+                      <DeleteReferenceButton id={l.id} onDeleted={() => setLinks((prev) => (prev ? prev.filter((x) => x.id !== l.id) : prev))} />
                     </div>
                     <a href={l.url} target="_blank" rel="noreferrer" className="break-all text-blue-600 hover:underline">
                       {l.url}
@@ -1019,13 +1059,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
                     </div>
                     <div className="whitespace-pre-wrap text-sm text-gray-800">{m.content}</div>
                     <div className="mt-2 flex gap-2">
-                      <button
-                        onClick={() => deleteMessage(m.id)}
-                        className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
-                      >
-                        Delete
-                      </button>
-                      {/* kamu bisa tambahkan "Pin" kalau ada kolom is_pinned */}
+                      <DeleteMessageButton id={m.id} onDeleted={() => setMessages((prev) => (prev ? prev.filter((x) => x.id !== m.id) : prev))} />
                     </div>
                   </li>
                 ))}
@@ -1070,12 +1104,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
                       ) : (
                         <span className="text-xs text-gray-400">No link</span>
                       )}
-                      <button
-                        onClick={() => cancelMeeting(m.id)}
-                        className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
-                      >
-                        Cancel
-                      </button>
+                      <CancelMeetingButton id={m.id} onCancelled={() => setMeetings((prev) => (prev ? prev.filter((x) => x.id !== m.id) : prev))} />
                     </div>
                   </li>
                 );
@@ -1085,6 +1114,74 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
         </Card>
       )}
     </div>
+  );
+}
+
+/** ---------- small button components (supaya tidak duplikasi fungsi) ---------- */
+
+function DeleteReferenceButton({ id, onDeleted }: { id: string; onDeleted: () => void }) {
+  const supabase = useMemo(() => getSupabaseClient(), []);
+  return (
+    <button
+      onClick={async () => {
+        if (!confirm("Hapus link referensi ini?")) return;
+        try {
+          const { error } = await supabase.from("project_reference_links").delete().eq("id", id);
+          if (error) throw error;
+          onDeleted();
+        } catch (e) {
+          console.error(e);
+          alert("Gagal hapus link (cek RLS).");
+        }
+      }}
+      className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
+    >
+      Delete
+    </button>
+  );
+}
+
+function DeleteMessageButton({ id, onDeleted }: { id: string; onDeleted: () => void }) {
+  const supabase = useMemo(() => getSupabaseClient(), []);
+  return (
+    <button
+      onClick={async () => {
+        if (!confirm("Hapus pesan diskusi ini?")) return;
+        try {
+          const { error } = await supabase.from("discussion_messages").delete().eq("id", id);
+          if (error) throw error;
+          onDeleted();
+        } catch (e) {
+          console.error(e);
+          alert("Gagal hapus pesan (cek RLS).");
+        }
+      }}
+      className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
+    >
+      Delete
+    </button>
+  );
+}
+
+function CancelMeetingButton({ id, onCancelled }: { id: string; onCancelled: () => void }) {
+  const supabase = useMemo(() => getSupabaseClient(), []);
+  return (
+    <button
+      onClick={async () => {
+        if (!confirm("Batalkan meeting ini?")) return;
+        try {
+          const { error } = await supabase.from("meetings").delete().eq("id", id);
+          if (error) throw error;
+          onCancelled();
+        } catch (e) {
+          console.error(e);
+          alert("Gagal membatalkan meeting (cek RLS).");
+        }
+      }}
+      className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
+    >
+      Cancel
+    </button>
   );
 }
 

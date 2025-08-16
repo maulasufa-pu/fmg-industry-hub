@@ -47,7 +47,7 @@ export default function ClientShell({
         className="flex items-start relative bg-coolgray-10 w-full min-h-screen"
         data-role={role}
       >
-        <SidebarSection role={role} />
+        <SidebarSection/>
         <main className="flex-1 min-w-0">{children}</main>
       </div>
     </RequireAuth>

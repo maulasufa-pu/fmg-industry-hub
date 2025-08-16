@@ -7,19 +7,18 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 import { User, Tags, Plane, Search, Pictures, Home, Folder, Cog, Bell, ChevronDown } from "@/icons";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
-import type { UserRole } from "@/lib/roles";
-import { ROLE_LABEL } from "@/lib/roles";
 
 type ProfileLite = {
   fullName: string;
   email: string;
+  role: string;
   avatar_path?: string | null;
 };
 
 const BUCKET = "avatars";
 const USE_PUBLIC_BUCKET = true;
 
-export function SidebarSection({ role }: { role: UserRole }) {
+export function SidebarSection() {
   const supabase = useMemo(() => getSupabaseClient(), []);
   const router = useRouter();
   const pathname = usePathname() || "";
@@ -28,12 +27,11 @@ export function SidebarSection({ role }: { role: UserRole }) {
   const [activeMenuItem, setActiveMenuItem] = useState("");
   const [open, setOpen] = useState(false);
   const [profile, setProfile] = useState<ProfileLite | null>(null);
+
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const btnRef = useRef<HTMLButtonElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
-
-  const isGuest = role === "guest";
 
   // helper: buat URL dari path storage
   const refreshAvatarUrl = useCallback(async (path: string | null) => {
@@ -45,14 +43,15 @@ export function SidebarSection({ role }: { role: UserRole }) {
       const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 10);
       setAvatarUrl(error ? null : data.signedUrl);
     }
-  }, [supabase]);
+  }, [supabase, setAvatarUrl]);
 
-  // Ambil profile Supabase + avatar path (hanya identitas dasar; role diambil dari prop)
+  // Ambil profile Supabase + avatar path
   useEffect(() => {
     let unsub: (() => void) | undefined;
     let mounted = true;
 
     const boot = async () => {
+      // await ensureFreshSession();
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
 
@@ -69,6 +68,7 @@ export function SidebarSection({ role }: { role: UserRole }) {
           user.email?.split("@")[0] ||
           "User";
 
+        // ambil avatar_path dari metadata, kalau kosong cek tabel profiles
         let p = (md.avatar_path as string | undefined) || null;
         if (!p) {
           const { data: row } = await supabase
@@ -84,14 +84,16 @@ export function SidebarSection({ role }: { role: UserRole }) {
         setProfile({
           fullName: full,
           email: user.email || "",
+          role: md.role || "Client",
           avatar_path: p,
         });
         await refreshAvatarUrl(p);
       }
 
-      const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session2) => {
+      // subscribe perubahan auth
+      const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
         if (!mounted) return;
-        const u = session2?.user;
+        const u = session?.user;
         if (!u) {
           setProfile(null);
           setAvatarUrl(null);
@@ -116,6 +118,7 @@ export function SidebarSection({ role }: { role: UserRole }) {
           setProfile({
             fullName: full2,
             email: u.email || "",
+            role: m.role || "Client",
             avatar_path: p2,
           });
           await refreshAvatarUrl(p2);
@@ -149,33 +152,21 @@ export function SidebarSection({ role }: { role: UserRole }) {
     };
   }, [open]);
 
-  // Menu role-aware
-  const menuItems = useMemo(() => {
-    const base = [
-      { id: "Dashboard", icon: Home, label: "Dashboard", href: "/client/dashboard" },
-      { id: "Projects", icon: Folder, label: "Projects", href: "/client/projects" },
-      { id: "Invoices", icon: Tags, label: "Invoices", href: "/client/invoices" },
-      { id: "Publishing", icon: Pictures, label: "Publishing", href: "/client/publishing" },
-      { id: "Reports", icon: Plane, label: "Reports", badge: "99+", hasDropdown: true, href: "/client/reports" },
-    ];
-
-    if (isGuest) {
-      // Guest: tampilkan menu minimal
-      return [
-        base[0], // Dashboard
-        base[1], // Projects (read-only/marketing, terserah implementasi kamu)
-      ];
-    }
-
-    // Client / role lain: tampilkan semua client features
-    return base;
-  }, [isGuest]);
+  const menuItems = useMemo(() => ([
+    { id: "Dashboard", icon: Home, label: "Dashboard", href: "/client/dashboard" },
+    { id: "Projects", icon: Folder, label: "Projects", href: "/client/projects" },
+    { id: "Invoices", icon: Tags, label: "Invoices", href: "/client/invoices" },
+    { id: "Publishing", icon: Pictures, label: "Publishing", href: "/client/publishing" },
+    { id: "Reports", icon: Plane, label: "Reports", badge: "99+", hasDropdown: true, href: "/client/reports" },
+  ]), []);
 
   // Deteksi URL dan set menu aktif
   useEffect(() => {
     const match = menuItems.find((item) => pathname.startsWith(item.href));
     if (match) setActiveMenuItem(match.id);
   }, [pathname, menuItems]);
+
+
 
   const itemBase =
     "group relative flex items-center gap-3 w-full px-3 py-3 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coolgray-30";
@@ -191,11 +182,12 @@ export function SidebarSection({ role }: { role: UserRole }) {
       className="flex flex-col w-64 min-h-screen items-start gap-4 px-4 py-6 bg-defaultwhite border-r border-coolgray-20"
       role="navigation"
       aria-label="Main navigation"
-      data-role={role}
     >
       <header className="flex flex-col items-center gap-2.5 self-stretch w-full">
         <div className="inline-flex items-start gap-1">
-          <div className="inline-flex items-center justify-center">{/* logo */}</div>
+          <div className="inline-flex items-center justify-center">
+            {/* <img className="w-6 h-6" alt="Flemmo Music logo" src={rectangle14Stroke} /> */}
+          </div>
           <div className="inline-flex flex-col items-end justify-center">
             <h1 className="font-heading-4 text-coolgray-60">Flemmo Music</h1>
             <p className="font-body-XS text-coolgray-60 -mt-1">Global Industry Hub</p>
@@ -216,16 +208,14 @@ export function SidebarSection({ role }: { role: UserRole }) {
             aria-label="User profile"
             aria-haspopup="menu"
             aria-expanded={open}
-            onClick={() => setOpen((v) => !v)}
+            onClick={() => setOpen((v: boolean) => !v)}
             className={`${qaBtnBase} rounded-full`}
-            disabled={isGuest}
-            title={isGuest ? "Login untuk membuka menu" : undefined}
           >
             <span className="pointer-events-none absolute inset-0 rounded-full bg-black/5 opacity-0 group-active:opacity-100 transition-opacity duration-150" />
-            <User className={`text-coolgray-90 group-hover:text-primary-90 transition-colors ${isGuest ? "opacity-50" : ""}`} />
+            <User className="text-coolgray-90 group-hover:text-primary-90 transition-colors" />
           </button>
 
-          {open && !isGuest && (
+          {open && (
             <div
               ref={popRef}
               role="menu"
@@ -249,34 +239,54 @@ export function SidebarSection({ role }: { role: UserRole }) {
                 </div>
                 <div className="min-w-0">
                   <div className="font-medium text-coolgray-90 truncate">
-                    {profile?.fullName || "User"}
+                    {profile?.fullName || "Guest"}
                   </div>
                   <div className="text-xs text-coolgray-60 truncate">
-                    {profile?.email || ""}
+                    {profile?.email || "Read Only"}
                   </div>
-                  {/* badge role dari prop */}
-                  <div className="text-xs mt-0.5 px-2 py-0.5 rounded-full bg-coolgray-10 text-coolgray-90 w-fit">
-                    {ROLE_LABEL[role] ?? role}
-                  </div>
+                  {profile && (
+                    <div className="text-xs mt-0.5 px-2 py-0.5 rounded-full bg-coolgray-10 text-coolgray-90 w-fit">
+                      {profile.role}
+                    </div>
+                  )}
                 </div>
               </div>
 
               <hr className="my-3 border-t border-[var(--border)]" />
 
-              <nav className="flex flex-col gap-1">
-                <Link href="/client/settings" className="px-3 py-2 rounded-lg hover:bg-coolgray-10 text-coolgray-90">
-                  View Profile
-                </Link>
-                <Link href="/client/settings" className="px-3 py-2 rounded-lg hover:bg-coolgray-10 text-coolgray-90">
-                  Settings
-                </Link>
-              </nav>
+              {profile ? (
+                <>
+                  <nav className="flex flex-col gap-1">
+                    <Link
+                      href="/client/settings"
+                      className="px-3 py-2 rounded-lg hover:bg-coolgray-10 text-coolgray-90"
+                    >
+                      View Profile
+                    </Link>
+                    <Link
+                      href="/client/settings"
+                      className="px-3 py-2 rounded-lg hover:bg-coolgray-10 text-coolgray-90"
+                    >
+                      Settings
+                    </Link>
+                  </nav>
 
-              <hr className="my-3 border-t border-[var(--border)]" />
+                  <hr className="my-3 border-t border-[var(--border)]" />
 
-              <div className="px-2 pb-1">
-                <LogoutButton className="w-full h-10 rounded-lg bg-primary-60 text-white hover:bg-primary-70" />
-              </div>
+                  <div className="px-2 pb-1">
+                    <LogoutButton className="w-full h-10 rounded-lg bg-primary-60 text-white hover:bg-primary-70" />
+                  </div>
+                </>
+              ) : (
+                <div className="px-2 pb-1">
+                  <Link
+                    href="/login"
+                    className="block w-full h-10 rounded-lg bg-primary-60 text-white hover:bg-primary-70 text-center leading-10"
+                  >
+                    Login
+                  </Link>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -285,31 +295,22 @@ export function SidebarSection({ role }: { role: UserRole }) {
           aria-label="Settings"
           className={qaBtnBase}
           onClick={() => router.push("/client/settings")}
-          disabled={isGuest}
-          title={isGuest ? "Login untuk membuka settings" : undefined}
         >
           <span className="pointer-events-none absolute inset-0 rounded-lg bg-black/5 opacity-0 group-active:opacity-100 transition-opacity duration-150" />
-          <Cog className={`text-coolgray-90 group-hover:text-primary-90 transition-colors ${isGuest ? "opacity-50" : ""}`} />
+          <Cog className="text-coolgray-90 group-hover:text-primary-90 transition-colors" />
         </button>
 
         {/* Notifications */}
-        <button
-          aria-label="Notifications"
-          className={qaBtnBase}
-          disabled={isGuest}
-          title={isGuest ? "Login untuk melihat notifikasi" : undefined}
-        >
+        <button aria-label="Notifications" className={qaBtnBase}>
           <span className="pointer-events-none absolute inset-0 rounded-lg bg-black/5 opacity-0 group-active:opacity-100 transition-opacity duration-150" />
-          <Bell className={`text-coolgray-90 group-hover:text-primary-90 transition-colors ${isGuest ? "opacity-50" : ""}`} />
-          {!isGuest && (
-            <span
-              aria-label="9 notifications"
-              className="absolute -top-0.5 -right-1.5 flex items-center justify-center min-w-[18px] h-[18px]
+          <Bell className="text-coolgray-90 group-hover:text-primary-90 transition-colors" />
+          <span
+            aria-label="9 notifications"
+            className="absolute -top-0.5 -right-1.5 flex items-center justify-center min-w-[18px] h-[18px]
                        rounded-full bg-red-500 text-[10px] font-medium text-white shadow-md shadow-red-500/30"
-            >
-              9
-            </span>
-          )}
+          >
+            9
+          </span>
         </button>
       </div>
 
@@ -333,6 +334,7 @@ export function SidebarSection({ role }: { role: UserRole }) {
           {menuItems.map((item, i) => {
             const Icon = item.icon;
             const isActive = activeMenuItem === item.id;
+
             return (
               <li key={item.id} className={i === 0 ? "" : "border-t border-divider"}>
                 <Link
@@ -359,7 +361,7 @@ export function SidebarSection({ role }: { role: UserRole }) {
                     }
                   />
                   <span className="flex-1 text-left font-other-menu-m">{item.label}</span>
-                  {!isGuest && item.badge && (
+                  {item.badge && (
                     <span className="inline-flex items-center px-[6px] py-[2px] rounded-xl bg-red-500 text-[10px] font-medium text-white shadow-md shadow-red-500/30">
                       {item.badge}
                     </span>
@@ -378,18 +380,6 @@ export function SidebarSection({ role }: { role: UserRole }) {
           })}
         </ul>
       </nav>
-
-      {/* Footer CTA untuk guest */}
-      {isGuest && (
-        <div className="w-full mt-4">
-          <Link
-            href="/login"
-            className="block w-full h-10 rounded-lg bg-primary-60 text-white hover:bg-primary-70 text-center leading-10"
-          >
-            Login / Register
-          </Link>
-        </div>
-      )}
     </aside>
   );
 }

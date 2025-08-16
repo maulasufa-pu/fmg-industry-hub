@@ -10,34 +10,37 @@ export type PicOption = "any" | string;
 export type StageOption = "any" | string;
 export type StatusOption = "any" | string;
 
+// === Row UI utk Admin ===
 export type AdminProjectRow = {
   id: string;
-  project_name: string;               // Judul Lagu
-  artist_name: string | null;         // Nama Client
+
+  // Info utama (tabel)
+  artist_name: string | null;           // Nama client (COALESCE dari view)
+  project_name: string;
   album_title: string | null;
   genre: string | null;
+  assigned_pic: string | null;
+  budget_amount: number | null;
+  budget_currency: string | null;
+
+  // Info tambahan (search/expanded)
   sub_genre: string | null;
   description: string | null;
   payment_plan: string | null;
-  start_date: string | null;          // ISO
-  deadline: string | null;            // ISO
+  start_date: string | null;
+  deadline: string | null;
   delivery_format: string | null;
   nda_required: boolean | null;
   preferred_engineer_id: string | null;
   preferred_engineer_name: string | null;
 
-  // existing
   stage: string | null;
   status: string | null;
   latest_update: string | null;
-  assigned_pic: string | null;
   progress_percent: number | null;
-  budget_amount: number | null;
-  budget_currency: string | null;
   engineer_name: string | null;
   anr_name: string | null;
 };
-
 
 type FilterOptions = {
   picOptions: PicOption[];
@@ -75,6 +78,15 @@ type Props = {
   onBulkAssignPIC: (ids: string[], pic: string | null) => Promise<void>;
   onBulkMarkFinished: (ids: string[]) => Promise<void>;
 };
+
+const headers: Array<{ key: keyof AdminProjectRow | "client" | "song" | "album" | "budget"; label: string; sortable?: boolean }> = [
+  { key: "client", label: "Nama Client", sortable: true },
+  { key: "song",   label: "Judul Lagu"  },
+  { key: "album",  label: "Judul Album" },
+  { key: "genre",  label: "Genre"       },
+  { key: "assigned_pic", label: "PIC"   },
+  { key: "budget", label: "Budget"      },
+];
 
 export default function AdminPanel({
   activeTab, counts, onTabChange,
@@ -278,39 +290,14 @@ export default function AdminPanel({
                 </th>
 
                 {/* === Kolom yang diminta admin === */}
-                <th className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">Nama Client</span>
-                    <ArrowDown className="text-gray-600" />
-                  </div>
-                </th>
-                <th className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">Judul Lagu</span>
-                    <ArrowDown className="text-gray-600" />
-                  </div>
-                </th>
-                <th className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">Judul Album</span>
-                  </div>
-                </th>
-                <th className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">Genre</span>
-                  </div>
-                </th>
-                <th className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">PIC</span>
-                  </div>
-                </th>
-                <th className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">Budget</span>
-                  </div>
-                </th>
-
+                {headers.map((h) => (
+                  <th key={h.key as string} className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">{h.label}</span>
+                      {h.sortable && <ArrowDown className="text-gray-600" />}
+                    </div>
+                  </th>
+                ))}
                 <th className="w-10 p-3" />
               </tr>
             </thead>
@@ -318,6 +305,10 @@ export default function AdminPanel({
             <tbody>
               {rows.map((r) => {
                 const isExpanded = expanded.has(r.id);
+                const budget =
+                  r.budget_amount != null
+                    ? `${(r.budget_currency ?? "IDR").toUpperCase()} ${Number(r.budget_amount).toLocaleString("id-ID")}`
+                    : "-";
                 return (
                   <React.Fragment key={r.id}>
                     <tr
@@ -342,145 +333,118 @@ export default function AdminPanel({
 
                       {/* Nama Client */}
                       <td className="border-t px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-gray-200">
-                            <User className="h-6 w-6 text-gray-600" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="truncate font-semibold text-gray-800">
-                              {r.artist_name ?? "-"}
-                            </div>
+                      <div className="flex items-center gap-3">
+                        <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-gray-200">
+                          <User className="h-6 w-6 text-gray-600" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="truncate font-semibold text-gray-800">{r.artist_name ?? "-"}</div>
                           </div>
                         </div>
                       </td>
 
-                      {/* Judul Lagu */}
-                      <td className="border-t px-4 py-3 text-gray-700">
-                        {r.project_name}
-                      </td>
+                      {/* Judul Album */}
+                    <td className="border-t px-4 py-3 text-gray-700">{r.album_title ?? "-"}</td>
 
-                      {/* Genre / Sub-genre */}
-                      <td className="border-t px-4 py-3 text-gray-700">
-                        {r.genre ?? "-"}{r.sub_genre ? ` / ${r.sub_genre}` : ""}
-                      </td>
+                    {/* Genre */}
+                    <td className="border-t px-4 py-3 text-gray-700">{r.genre ?? "-"}</td>
 
-                      {/* Jenis Service — kalau service_type ada, ganti ke itu */}
-                      <td className="border-t px-4 py-3 text-gray-700">
-                        {r.payment_plan ?? "-"}
-                      </td>
+                    {/* PIC */}
+                    <td className="border-t px-4 py-3 text-gray-700">{r.assigned_pic ?? "-"}</td>
 
-                      {/* Budget */}
-                      <td className="border-t px-4 py-3 text-gray-700">
-                        {r.budget_amount != null
-                          ? `${(r.budget_currency ?? "IDR").toUpperCase()} ${Number(r.budget_amount).toLocaleString("id-ID")}`
-                          : "-"}
-                      </td>
+                    {/* Budget */}
+                    <td className="border-t px-4 py-3 text-gray-700">{budget}</td>
 
-                      {/* Timeline */}
-                      <td className="border-t px-4 py-3 text-gray-700">
-                        {r.start_date ? new Date(r.start_date).toLocaleDateString("id-ID") : "-"}
-                        {" → "}
-                        {r.deadline ? new Date(r.deadline).toLocaleDateString("id-ID") : "-"}
-                      </td>
-
-                      <td className="border-t p-3 text-center">
-                        <button
-                          className={`h-6 w-6 text-gray-600 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleExpand(r.id);
-                          }}
-                          aria-label="Toggle details"
-                        >
-                          <ChevronDown />
-                        </button>
+                    <td className="border-t p-3 text-center">
+                      <button
+                        className={`h-6 w-6 text-gray-600 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleExpand(r.id);
+                        }}
+                        aria-label="Toggle details"
+                      >
+                        <ChevronDown />
+                      </button>
                       </td>
                     </tr>
 
                     {/* Expanded */}
-                    <tr
-                      className={`bg-gray-50 transition-[opacity,transform] duration-300 ease-in-out ${
-                        isExpanded ? "scale-y-100 opacity-100" : "scale-y-95 opacity-0"
-                      }`}
-                      style={{ visibility: isExpanded ? "visible" : "collapse" }}
-                    >
-                      <td colSpan={8} className="p-4">
-                        <div className="grid grid-cols-2 gap-6">
-                          <div className="rounded-md border border-gray-200 bg-white p-4">
-                            <div className="mb-2 text-sm font-medium text-gray-700">Overview</div>
-                              <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-700">
-                                <div className="text-gray-500">Stage:</div>
-                                <div className="text-gray-800">{r.stage ?? "-"}</div>
+                  <tr
+                    className={`bg-gray-50 transition-[opacity,transform] duration-300 ease-in-out ${
+                      isExpanded ? "scale-y-100 opacity-100" : "scale-y-95 opacity-0"
+                    }`}
+                    style={{ visibility: isExpanded ? "visible" : "collapse" }}
+                  >
+                    <td colSpan={8} className="p-4">
+                      <div className="grid grid-cols-2 gap-6">
+                        <div className="rounded-md border border-gray-200 bg-white p-4">
+                          <div className="mb-2 text-sm font-medium text-gray-700">Detail Permintaan</div>
+                          <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-700">
+                            <div className="text-gray-500">Sub-Genre:</div>
+                            <div className="text-gray-800">{r.sub_genre ?? "-"}</div>
 
-                                <div className="text-gray-500">Status:</div>
-                                <div className="text-gray-800">{r.status ?? "-"}</div>
+                            <div className="text-gray-500">Payment Plan:</div>
+                            <div className="text-gray-800">{r.payment_plan ?? "-"}</div>
 
-                                <div className="text-gray-500">Latest Update:</div>
-                                <div className="text-gray-800">
-                                  {r.latest_update ? new Date(r.latest_update).toLocaleString("id-ID") : "-"}
-                                </div>
+                            <div className="text-gray-500">Delivery Format:</div>
+                            <div className="text-gray-800">{r.delivery_format ?? "-"}</div>
 
-                                <div className="text-gray-500">Progress:</div>
-                                <div className="text-gray-800">{r.progress_percent ?? 0}%</div>
+                            <div className="text-gray-500">NDA Required:</div>
+                            <div className="text-gray-800">{r.nda_required ? "Yes" : r.nda_required === false ? "No" : "-"}</div>
 
-                                <div className="text-gray-500">Engineer (Assigned):</div>
-                                <div className="text-gray-800">{r.engineer_name ?? "-"}</div>
+                            <div className="text-gray-500">Preferred Engineer:</div>
+                            <div className="text-gray-800">{r.preferred_engineer_name ?? "-"}</div>
 
-                                <div className="text-gray-500">A&R:</div>
-                                <div className="text-gray-800">{r.anr_name ?? "-"}</div>
+                            <div className="text-gray-500">Start Date:</div>
+                            <div className="text-gray-800">{r.start_date ? new Date(r.start_date).toLocaleString("id-ID") : "-"}</div>
 
-                                <div className="text-gray-500">Preferred Engineer:</div>
-                                <div className="text-gray-800">{r.preferred_engineer_name ?? "-"}</div>
+                            <div className="text-gray-500">Deadline:</div>
+                            <div className="text-gray-800">{r.deadline ? new Date(r.deadline).toLocaleString("id-ID") : "-"}</div>
 
-                                <div className="text-gray-500">Delivery Format:</div>
-                                <div className="text-gray-800">{r.delivery_format ?? "-"}</div>
+                            <div className="text-gray-500">Latest Update:</div>
+                            <div className="text-gray-800">{r.latest_update ? new Date(r.latest_update).toLocaleString("id-ID") : "-"}</div>
 
-                                <div className="text-gray-500">Payment Plan:</div>
-                                <div className="text-gray-800">{r.payment_plan ?? "-"}</div>
+                            <div className="text-gray-500">Progress:</div>
+                            <div className="text-gray-800">{r.progress_percent ?? 0}%</div>
+                          </div>
 
-                                <div className="text-gray-500">Start Date:</div>
-                                <div className="text-gray-800">{r.start_date ? new Date(r.start_date).toLocaleDateString("id-ID") : "-"}</div>
-
-                                <div className="text-gray-500">Deadline:</div>
-                                <div className="text-gray-800">{r.deadline ? new Date(r.deadline).toLocaleDateString("id-ID") : "-"}</div>
-
-                                <div className="text-gray-500">NDA Required:</div>
-                                <div className="text-gray-800">{r.nda_required == null ? "-" : r.nda_required ? "Yes" : "No"}</div>
-
-                                <div className="text-gray-500">Budget:</div>
-                                <div className="text-gray-800">
-                                  {r.budget_amount != null
-                                    ? `${(r.budget_currency ?? "IDR").toUpperCase()} ${Number(r.budget_amount).toLocaleString("id-ID")}`
-                                    : "-"}
-                                </div>
-                              </div>
-                              <div className="rounded-md border border-gray-200 bg-white p-4 mt-4">
-                                <div className="mb-2 text-sm font-medium text-gray-700">Description / Synopsis</div>
-                                <div className="whitespace-pre-wrap text-sm text-gray-800">{r.description ?? "-"}</div>
-                              </div>
-
-                            <div className="mt-4">
-                              <button
-                                className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-100"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onOpen(r.id);
-                                }}
-                              >
-                                Open Project
-                              </button>
+                          <div className="mt-3">
+                            <div className="text-gray-500 mb-1">Description / Synopsis:</div>
+                            <div className="whitespace-pre-wrap rounded-md border p-3 text-sm text-gray-800 bg-gray-50">
+                              {r.description?.trim() || "(no description)"}
                             </div>
                           </div>
 
-                          <div className="rounded-md border border-gray-200 bg-white p-4">
-                            <div className="mb-2 text-sm font-medium text-gray-700">Admin Notes</div>
-                            <div className="text-sm text-gray-500">
-                              (Tempatkan ringkasan internal, flags, atau action log khusus admin di sini.)
-                            </div>
+                          <div className="mt-4">
+                            <button
+                              className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-100"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onOpen(r.id);
+                              }}
+                            >
+                              Open Project
+                            </button>
                           </div>
                         </div>
-                      </td>
-                    </tr>
+
+                        <div className="rounded-md border border-gray-200 bg-white p-4">
+                          <div className="mb-2 text-sm font-medium text-gray-700">Assignment</div>
+                          <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-700">
+                            <div className="text-gray-500">PIC:</div>
+                            <div className="text-gray-800">{r.assigned_pic ?? "-"}</div>
+
+                            <div className="text-gray-500">Engineer:</div>
+                            <div className="text-gray-800">{r.engineer_name ?? "-"}</div>
+
+                            <div className="text-gray-500">A&R:</div>
+                            <div className="text-gray-800">{r.anr_name ?? "-"}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
                   </React.Fragment>
                 );
               })}

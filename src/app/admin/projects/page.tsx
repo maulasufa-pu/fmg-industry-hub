@@ -1,4 +1,4 @@
-// E:\FMGIH\fmg-industry-hub\src\app\admin\projects\page.tsx
+// src/app/admin/projects/page.tsx
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -10,11 +10,42 @@ import AdminPanel, {
 } from "@/app/admin/ui/AdminPanel";
 
 const VIEW = "project_summary";
+
+// Kolom yang tersedia di VIEW sekarang (urutkan sesuai view)
 const QUERY_COLS =
   "id,project_name,artist_name,album_title,genre,sub_genre,description,payment_plan,start_date,deadline,delivery_format,nda_required,preferred_engineer_id,preferred_engineer_name,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name";
 
+// === Tipe row yang dikembalikan oleh VIEW ===
+type DbProjectSummary = {
+  id: string;
+  project_name: string;
+  artist_name: string | null;
+  album_title: string | null;
+  genre: string | null;
+  sub_genre: string | null;
+  description: string | null;
+  payment_plan: string | null;         // di view dicast ke text
+  start_date: string | null;           // timestamp -> string ISO
+  deadline: string | null;
+  delivery_format: string | null;
+  nda_required: boolean | null;
+  preferred_engineer_id: string | null;
+  preferred_engineer_name: string | null;
+
+  stage: string | null;
+  status: string | null;
+  latest_update: string | null;        // timestamp
+  is_active: boolean | null;
+  is_finished: boolean | null;
+  assigned_pic: string | null;
+  progress_percent: number | null;
+  budget_amount: number | null;
+  budget_currency: string | null;
+  engineer_name: string | null;
+  anr_name: string | null;
+};
+
 type CountResp = { count: number | null; error: unknown };
-type PostgrestList<T> = { data: T[] | null; count: number | null; error?: unknown };
 
 export default function AdminProjectsPage(): React.JSX.Element {
   useFocusWarmAuth();
@@ -53,7 +84,7 @@ export default function AdminProjectsPage(): React.JSX.Element {
     All: null, Active: null, Finished: null, Pending: null, Unassigned: null,
   });
 
-  // filter options (diambil SEKALI di page.tsx, bukan di child)
+  // filter options
   const [picOptions, setPicOptions] = useState<PicOption[]>(["any"]);
   const [stageOptions, setStageOptions] = useState<StageOption[]>(["any"]);
   const [statusOptions, setStatusOptions] = useState<StatusOption[]>(["any"]);
@@ -62,75 +93,67 @@ export default function AdminProjectsPage(): React.JSX.Element {
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [didInit, setDidInit] = useState(false);
 
-  // Abort (samakan gaya client: assign controller baru tiap fetch; tanpa explicit abort sebelumnya)
+  // Abort
   const abortRef = useRef<AbortController | null>(null);
 
-  // ---------- counts (berurutan; count: "exact") ----------
-  type CountResp = { count: number | null; error: unknown };
+  // ---------- counts ----------
+  const fetchCounts = useCallback(
+    async (qStr: string, signal: AbortSignal) => {
+      const like = qStr ? `%${qStr}%` : null;
 
-const fetchCounts = useCallback(
-  async (qStr: string, signal: AbortSignal) => {
-    const like = qStr ? `%${qStr}%` : null;
+      let allQ = supabase.from(VIEW).select("id", { count: "exact", head: true });
+      if (like) allQ = allQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like},album_title.ilike.${like},sub_genre.ilike.${like},description.ilike.${like},delivery_format.ilike.${like},payment_plan.ilike.${like}`);
+      if (filterPIC !== "any")   allQ = allQ.eq("assigned_pic", filterPIC);
+      if (filterStage !== "any") allQ = allQ.eq("stage",       filterStage);
+      if (filterStatus !== "any")allQ = allQ.eq("status",      filterStatus);
+      const allRes = await withSignal(allQ, signal).returns<CountResp>();
 
-    // ALL
-    let allQ = supabase.from(VIEW).select("id", { count: "exact", head: true });
-    if (like) allQ = allQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
-    if (filterPIC !== "any")   allQ = allQ.eq("assigned_pic", filterPIC);
-    if (filterStage !== "any") allQ = allQ.eq("stage",       filterStage);
-    if (filterStatus !== "any")allQ = allQ.eq("status",      filterStatus);
-    const allRes = await withSignal(allQ, signal).returns<CountResp>();
+      let actQ = supabase.from(VIEW).select("id", { count: "exact", head: true }).eq("is_active", true);
+      if (like) actQ = actQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like},album_title.ilike.${like},sub_genre.ilike.${like},description.ilike.${like},delivery_format.ilike.${like},payment_plan.ilike.${like}`);
+      if (filterPIC !== "any")   actQ = actQ.eq("assigned_pic", filterPIC);
+      if (filterStage !== "any") actQ = actQ.eq("stage",       filterStage);
+      if (filterStatus !== "any")actQ = actQ.eq("status",      filterStatus);
+      const actRes = await withSignal(actQ, signal).returns<CountResp>();
 
-    // ACTIVE
-    let actQ = supabase.from(VIEW).select("id", { count: "exact", head: true }).eq("is_active", true);
-    if (like) actQ = actQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
-    if (filterPIC !== "any")   actQ = actQ.eq("assigned_pic", filterPIC);
-    if (filterStage !== "any") actQ = actQ.eq("stage",       filterStage);
-    if (filterStatus !== "any")actQ = actQ.eq("status",      filterStatus);
-    const actRes = await withSignal(actQ, signal).returns<CountResp>();
+      let finQ = supabase.from(VIEW).select("id", { count: "exact", head: true }).eq("is_finished", true);
+      if (like) finQ = finQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like},album_title.ilike.${like},sub_genre.ilike.${like},description.ilike.${like},delivery_format.ilike.${like},payment_plan.ilike.${like}`);
+      if (filterPIC !== "any")   finQ = finQ.eq("assigned_pic", filterPIC);
+      if (filterStage !== "any") finQ = finQ.eq("stage",       filterStage);
+      if (filterStatus !== "any")finQ = finQ.eq("status",      filterStatus);
+      const finRes = await withSignal(finQ, signal).returns<CountResp>();
 
-    // FINISHED
-    let finQ = supabase.from(VIEW).select("id", { count: "exact", head: true }).eq("is_finished", true);
-    if (like) finQ = finQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
-    if (filterPIC !== "any")   finQ = finQ.eq("assigned_pic", filterPIC);
-    if (filterStage !== "any") finQ = finQ.eq("stage",       filterStage);
-    if (filterStatus !== "any")finQ = finQ.eq("status",      filterStatus);
-    const finRes = await withSignal(finQ, signal).returns<CountResp>();
+      let penQ = supabase.from(VIEW).select("id", { count: "exact", head: true }).eq("is_active", false).eq("is_finished", false);
+      if (like) penQ = penQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like},album_title.ilike.${like},sub_genre.ilike.${like},description.ilike.${like},delivery_format.ilike.${like},payment_plan.ilike.${like}`);
+      if (filterPIC !== "any")   penQ = penQ.eq("assigned_pic", filterPIC);
+      if (filterStage !== "any") penQ = penQ.eq("stage",       filterStage);
+      if (filterStatus !== "any")penQ = penQ.eq("status",      filterStatus);
+      const penRes = await withSignal(penQ, signal).returns<CountResp>();
 
-    // PENDING (samakan client: strict FALSE)
-    let penQ = supabase.from(VIEW).select("id", { count: "exact", head: true })
-      .eq("is_active", false).eq("is_finished", false);
-    if (like) penQ = penQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
-    if (filterPIC !== "any")   penQ = penQ.eq("assigned_pic", filterPIC);
-    if (filterStage !== "any") penQ = penQ.eq("stage",       filterStage);
-    if (filterStatus !== "any")penQ = penQ.eq("status",      filterStatus);
-    const penRes = await withSignal(penQ, signal).returns<CountResp>();
+      let unQ = supabase.from(VIEW).select("id", { count: "exact", head: true }).is("assigned_pic", null);
+      if (like) unQ = unQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like},album_title.ilike.${like},sub_genre.ilike.${like},description.ilike.${like},delivery_format.ilike.${like},payment_plan.ilike.${like}`);
+      if (filterPIC !== "any")   unQ = unQ.eq("assigned_pic", filterPIC);
+      if (filterStage !== "any") unQ = unQ.eq("stage",       filterStage);
+      if (filterStatus !== "any")unQ = unQ.eq("status",      filterStatus);
+      const unRes = await withSignal(unQ, signal).returns<CountResp>();
 
-    // UNASSIGNED
-    let unQ = supabase.from(VIEW).select("id", { count: "exact", head: true }).is("assigned_pic", null);
-    if (like) unQ = unQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
-    if (filterPIC !== "any")   unQ = unQ.eq("assigned_pic", filterPIC);
-    if (filterStage !== "any") unQ = unQ.eq("stage",       filterStage);
-    if (filterStatus !== "any")unQ = unQ.eq("status",      filterStatus);
-    const unRes = await withSignal(unQ, signal).returns<CountResp>();
+      if (allRes.error) throw allRes.error;
+      if (actRes.error) throw actRes.error;
+      if (finRes.error) throw finRes.error;
+      if (penRes.error) throw penRes.error;
+      if (unRes.error) throw unRes.error;
 
-    if (allRes.error) throw allRes.error;
-    if (actRes.error) throw actRes.error;
-    if (finRes.error) throw finRes.error;
-    if (penRes.error) throw penRes.error;
-    if (unRes.error) throw unRes.error;
+      return {
+        All:        allRes.count ?? 0,
+        Active:     actRes.count ?? 0,
+        Finished:   finRes.count ?? 0,
+        Pending:    penRes.count ?? 0,
+        Unassigned: unRes.count ?? 0,
+      } as Record<AdminTabKey, number>;
+    },
+    [supabase, filterPIC, filterStage, filterStatus]
+  );
 
-    return {
-      All:        allRes.count ?? 0,
-      Active:     actRes.count ?? 0,
-      Finished:   finRes.count ?? 0,
-      Pending:    penRes.count ?? 0,
-      Unassigned: unRes.count ?? 0,
-    } as Record<AdminTabKey, number>;
-  },
-  [supabase, filterPIC, filterStage, filterStatus]
-);
-
-  // ---------- filter options (only once) ----------
+  // ---------- filter options ----------
   const fetchFilterOptions = useCallback(async () => {
     const [picsR, stagesR, statusesR] = await Promise.all([
       supabase.from(VIEW).select("assigned_pic").not("assigned_pic", "is", null).limit(2000),
@@ -150,92 +173,92 @@ const fetchCounts = useCallback(
     setStatusOptions(statusList);
   }, [supabase]);
 
-  // ---------- page data (samakan pola client) ----------
+  // ---------- page data ----------
   const fetchPage = useCallback(
-  async (tab: AdminTabKey, qStr: string, pageIdx: number, isInitial = false) => {
-    abortRef.current = new AbortController();
-    const ac = abortRef.current;
+    async (tab: AdminTabKey, qStr: string, pageIdx: number, isInitial = false) => {
+      abortRef.current = new AbortController();
+      const ac = abortRef.current;
 
-    if (isInitial) setLoadingInitial(true);
-    try {
-      const from = (pageIdx - 1) * pageSize;
-      const to = from + pageSize - 1;
+      if (isInitial) setLoadingInitial(true);
+      try {
+        const from = (pageIdx - 1) * pageSize;
+        const to = from + pageSize - 1;
 
-      let qBuilder = supabase.from(VIEW).select(QUERY_COLS, { count: "exact", head: false });
+        let qBuilder = supabase.from(VIEW).select(QUERY_COLS, { count: "exact", head: false });
 
-      if (qStr) {
-        const like = `%${qStr}%`;
-        qBuilder = qBuilder.or(
-          [
-            `project_name.ilike.${like}`,
-            `artist_name.ilike.${like}`,
-            `album_title.ilike.${like}`,
-            `genre.ilike.${like}`,
-            `sub_genre.ilike.${like}`,
-            `description.ilike.${like}`,
-            `delivery_format.ilike.${like}`,
-            `payment_plan.ilike.${like}`
-          ].join(",")
-        );
-      }
-      if (filterPIC !== "any")   qBuilder = qBuilder.eq("assigned_pic", filterPIC);
-      if (filterStage !== "any") qBuilder = qBuilder.eq("stage",       filterStage);
-      if (filterStatus !== "any")qBuilder = qBuilder.eq("status",      filterStatus);
+        if (qStr) {
+          const like = `%${qStr}%`;
+          qBuilder = qBuilder.or(
+            [
+              `project_name.ilike.${like}`,
+              `artist_name.ilike.${like}`,
+              `album_title.ilike.${like}`,
+              `genre.ilike.${like}`,
+              `sub_genre.ilike.${like}`,
+              `description.ilike.${like}`,
+              `delivery_format.ilike.${like}`,
+              `payment_plan.ilike.${like}`,
+            ].join(",")
+          );
+        }
+        if (filterPIC !== "any")   qBuilder = qBuilder.eq("assigned_pic", filterPIC);
+        if (filterStage !== "any") qBuilder = qBuilder.eq("stage",       filterStage);
+        if (filterStatus !== "any")qBuilder = qBuilder.eq("status",      filterStatus);
 
-      if (tab === "Active")       qBuilder = qBuilder.eq("is_active", true);
-      else if (tab === "Finished")qBuilder = qBuilder.eq("is_finished", true);
-      else if (tab === "Pending") qBuilder = qBuilder.eq("is_active", false).eq("is_finished", false);
-      else if (tab === "Unassigned") qBuilder = qBuilder.is("assigned_pic", null);
+        if (tab === "Active")            qBuilder = qBuilder.eq("is_active", true);
+        else if (tab === "Finished")     qBuilder = qBuilder.eq("is_finished", true);
+        else if (tab === "Pending")      qBuilder = qBuilder.eq("is_active", false).eq("is_finished", false);
+        else if (tab === "Unassigned")   qBuilder = qBuilder.is("assigned_pic", null);
 
-      qBuilder = qBuilder.order("latest_update", { ascending: false }).range(from, to);
+        qBuilder = qBuilder.order("latest_update", { ascending: false }).range(from, to);
 
-      const { data, count, error } =
-        await withSignal(qBuilder, ac.signal).returns<AdminProjectRow[]>();
+        const { data, count, error } =
+          await withSignal(qBuilder, ac.signal).returns<DbProjectSummary[]>();
         if (error) throw error;
 
+        // Map ke tipe UI (AdminProjectRow)
         const mapped: AdminProjectRow[] = (data ?? []).map((r) => ({
           id: r.id,
           project_name: r.project_name,
-          artist_name: r.artist_name ?? null,
-          album_title: r.album_title ?? null,
-          genre: r.genre ?? null,
-          sub_genre: r.sub_genre ?? null,
-          description: r.description ?? null,
-          payment_plan: r.payment_plan ?? null,
-          start_date: r.start_date ?? null,
-          deadline: r.deadline ?? null,
-          delivery_format: r.delivery_format ?? null,
-          nda_required: r.nda_required ?? null,
-          preferred_engineer_id: r.preferred_engineer_id ?? null,
-          preferred_engineer_name: r.preferred_engineer_name ?? null,
+          artist_name: r.artist_name,
+          album_title: r.album_title,
+          genre: r.genre,
+          sub_genre: r.sub_genre,
+          description: r.description,
+          payment_plan: r.payment_plan,
+          start_date: r.start_date,
+          deadline: r.deadline,
+          delivery_format: r.delivery_format,
+          nda_required: r.nda_required,
+          preferred_engineer_id: r.preferred_engineer_id,
+          preferred_engineer_name: r.preferred_engineer_name,
 
-          stage: r.stage ?? null,
-          status: r.status ?? null,
-          latest_update: r.latest_update ?? null,
-          assigned_pic: r.assigned_pic ?? null,
-          progress_percent: r.progress_percent ?? null,
-          budget_amount: r.budget_amount ?? null,
-          budget_currency: r.budget_currency ?? null,
-          engineer_name: r.engineer_name ?? null,
-          anr_name: r.anr_name ?? null,
+          stage: r.stage,
+          status: r.status,
+          latest_update: r.latest_update,
+          assigned_pic: r.assigned_pic,
+          progress_percent: r.progress_percent,
+          budget_amount: r.budget_amount,
+          budget_currency: r.budget_currency,
+          engineer_name: r.engineer_name,
+          anr_name: r.anr_name,
         }));
+
         const counts = await fetchCounts(qStr, ac.signal);
         setTabCounts(counts);
         setRows(mapped);
         setTotalCount(count ?? 0);
-
-      
-    } catch (e) {
-      if ((e as { name?: string }).name !== "AbortError") {
-        console.error("admin/projects fetch error:", e);
+      } catch (e) {
+        if ((e as { name?: string }).name !== "AbortError") {
+          console.error("admin/projects fetch error:", e);
+        }
+      } finally {
+        if (abortRef.current === ac) abortRef.current = null;
+        if (isInitial) setLoadingInitial(false);
       }
-    } finally {
-      if (abortRef.current === ac) abortRef.current = null;
-      if (isInitial) setLoadingInitial(false);
-    }
-  },
-  [supabase, pageSize, filterPIC, filterStage, filterStatus, fetchCounts]
-);
+    },
+    [supabase, pageSize, filterPIC, filterStage, filterStatus, fetchCounts]
+  );
 
 
   // ---------- initial ----------

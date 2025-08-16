@@ -189,7 +189,8 @@ const fetchCounts = useCallback(
 
       qBuilder = qBuilder.order("latest_update", { ascending: false }).range(from, to);
 
-      const { data, count, error } = await withSignal(qBuilder, ac.signal).returns<any[]>();
+      const { data, count, error } =
+        await withSignal(qBuilder, ac.signal).returns<AdminProjectRow[]>();
         if (error) throw error;
 
         const mapped: AdminProjectRow[] = (data ?? []).map((r) => ({

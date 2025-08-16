@@ -13,28 +13,28 @@ const VIEW = "project_summary";
 
 // Kolom yang tersedia di VIEW sekarang (urutkan sesuai view)
 const QUERY_COLS =
-  "id,project_name,artist_name,album_title,genre,sub_genre,description,payment_plan,start_date,deadline,delivery_format,nda_required,preferred_engineer_id,preferred_engineer_name,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name";
+  "id,project_name,client_name,artist_name,album_title,genre,sub_genre,description,payment_plan,start_date,deadline,delivery_format,nda_required,preferred_engineer_id,preferred_engineer_name,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name";
 
 // === Tipe row yang dikembalikan oleh VIEW ===
 type DbProjectSummary = {
   id: string;
   project_name: string;
+  client_name: string | null;         // NEW
   artist_name: string | null;
   album_title: string | null;
   genre: string | null;
   sub_genre: string | null;
   description: string | null;
-  payment_plan: string | null;         // di view dicast ke text
-  start_date: string | null;           // timestamp -> string ISO
+  payment_plan: string | null;
+  start_date: string | null;
   deadline: string | null;
   delivery_format: string | null;
   nda_required: boolean | null;
   preferred_engineer_id: string | null;
   preferred_engineer_name: string | null;
-
   stage: string | null;
   status: string | null;
-  latest_update: string | null;        // timestamp
+  latest_update: string | null;
   is_active: boolean | null;
   is_finished: boolean | null;
   assigned_pic: string | null;
@@ -96,41 +96,54 @@ export default function AdminProjectsPage(): React.JSX.Element {
   // Abort
   const abortRef = useRef<AbortController | null>(null);
 
+  const buildSearchOr = (like: string) =>
+  [
+    `project_name.ilike.${like}`,
+    `client_name.ilike.${like}`,
+    `artist_name.ilike.${like}`,
+    `genre.ilike.${like}`,
+    `album_title.ilike.${like}`,
+    `sub_genre.ilike.${like}`,
+    `description.ilike.${like}`,
+    `delivery_format.ilike.${like}`,
+    `payment_plan.ilike.${like}`,
+  ].join(",");
+
   // ---------- counts ----------
   const fetchCounts = useCallback(
     async (qStr: string, signal: AbortSignal) => {
       const like = qStr ? `%${qStr}%` : null;
 
       let allQ = supabase.from(VIEW).select("id", { count: "exact", head: true });
-      if (like) allQ = allQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like},album_title.ilike.${like},sub_genre.ilike.${like},description.ilike.${like},delivery_format.ilike.${like},payment_plan.ilike.${like}`);
+      if (like) allQ = allQ.or(buildSearchOr(like));
       if (filterPIC !== "any")   allQ = allQ.eq("assigned_pic", filterPIC);
       if (filterStage !== "any") allQ = allQ.eq("stage",       filterStage);
       if (filterStatus !== "any")allQ = allQ.eq("status",      filterStatus);
       const allRes = await withSignal(allQ, signal).returns<CountResp>();
 
       let actQ = supabase.from(VIEW).select("id", { count: "exact", head: true }).eq("is_active", true);
-      if (like) actQ = actQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like},album_title.ilike.${like},sub_genre.ilike.${like},description.ilike.${like},delivery_format.ilike.${like},payment_plan.ilike.${like}`);
+      if (like) actQ = actQ.or(buildSearchOr(like));
       if (filterPIC !== "any")   actQ = actQ.eq("assigned_pic", filterPIC);
       if (filterStage !== "any") actQ = actQ.eq("stage",       filterStage);
       if (filterStatus !== "any")actQ = actQ.eq("status",      filterStatus);
       const actRes = await withSignal(actQ, signal).returns<CountResp>();
 
       let finQ = supabase.from(VIEW).select("id", { count: "exact", head: true }).eq("is_finished", true);
-      if (like) finQ = finQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like},album_title.ilike.${like},sub_genre.ilike.${like},description.ilike.${like},delivery_format.ilike.${like},payment_plan.ilike.${like}`);
+      if (like) finQ = finQ.or(buildSearchOr(like));
       if (filterPIC !== "any")   finQ = finQ.eq("assigned_pic", filterPIC);
       if (filterStage !== "any") finQ = finQ.eq("stage",       filterStage);
       if (filterStatus !== "any")finQ = finQ.eq("status",      filterStatus);
       const finRes = await withSignal(finQ, signal).returns<CountResp>();
 
       let penQ = supabase.from(VIEW).select("id", { count: "exact", head: true }).eq("is_active", false).eq("is_finished", false);
-      if (like) penQ = penQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like},album_title.ilike.${like},sub_genre.ilike.${like},description.ilike.${like},delivery_format.ilike.${like},payment_plan.ilike.${like}`);
+      if (like) penQ = penQ.or(buildSearchOr(like));
       if (filterPIC !== "any")   penQ = penQ.eq("assigned_pic", filterPIC);
       if (filterStage !== "any") penQ = penQ.eq("stage",       filterStage);
       if (filterStatus !== "any")penQ = penQ.eq("status",      filterStatus);
       const penRes = await withSignal(penQ, signal).returns<CountResp>();
 
       let unQ = supabase.from(VIEW).select("id", { count: "exact", head: true }).is("assigned_pic", null);
-      if (like) unQ = unQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like},album_title.ilike.${like},sub_genre.ilike.${like},description.ilike.${like},delivery_format.ilike.${like},payment_plan.ilike.${like}`);
+      if (like) unQ = unQ.or(buildSearchOr(like));
       if (filterPIC !== "any")   unQ = unQ.eq("assigned_pic", filterPIC);
       if (filterStage !== "any") unQ = unQ.eq("stage",       filterStage);
       if (filterStatus !== "any")unQ = unQ.eq("status",      filterStatus);
@@ -191,6 +204,7 @@ export default function AdminProjectsPage(): React.JSX.Element {
           qBuilder = qBuilder.or(
             [
               `project_name.ilike.${like}`,
+              `client_name.ilike.${like}`,     // NEW
               `artist_name.ilike.${like}`,
               `album_title.ilike.${like}`,
               `genre.ilike.${like}`,
@@ -220,6 +234,7 @@ export default function AdminProjectsPage(): React.JSX.Element {
         const mapped: AdminProjectRow[] = (data ?? []).map((r) => ({
           id: r.id,
           project_name: r.project_name,
+          client_name: r.client_name,          // NEW
           artist_name: r.artist_name,
           album_title: r.album_title,
           genre: r.genre,
@@ -232,7 +247,6 @@ export default function AdminProjectsPage(): React.JSX.Element {
           nda_required: r.nda_required,
           preferred_engineer_id: r.preferred_engineer_id,
           preferred_engineer_name: r.preferred_engineer_name,
-
           stage: r.stage,
           status: r.status,
           latest_update: r.latest_update,
@@ -243,6 +257,7 @@ export default function AdminProjectsPage(): React.JSX.Element {
           engineer_name: r.engineer_name,
           anr_name: r.anr_name,
         }));
+
 
         const counts = await fetchCounts(qStr, ac.signal);
         setTabCounts(counts);

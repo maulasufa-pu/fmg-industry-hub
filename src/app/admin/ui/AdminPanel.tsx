@@ -15,6 +15,7 @@ export type AdminProjectRow = {
   id: string;
 
   // Info utama (tabel)
+  client_name: string | null;
   artist_name: string | null;           // Nama client (COALESCE dari view)
   project_name: string;
   album_title: string | null;

@@ -18,18 +18,17 @@ type ProjectStatus =
   | "archived"
   | "cancelled";
 
-/** Disesuaikan dengan alur bisnis */
 type ProjectStage =
-  | "request_review"        // request baru masuk, menunggu verifikasi admin
-  | "awaiting_payment"      // menunggu pembayaran klien
-  | "assign_team"           // assign A&R/Engineer/Composer/Producer/Sound Designer
-  | "draft1_work"           // pengerjaan draft 1
-  | "draft1_review"         // review draft 1 oleh client + QC A&R
-  | "finalization"          // finalisasi mixing/mastering
-  | "metadata"              // pengisian metadata
-  | "agreement"             // penandatanganan agreement/kontrak
-  | "publishing"            // kirim ke distributor & proses rilis
-  | "post_release";         // monitoring setelah rilis
+  | "request_review"
+  | "awaiting_payment"
+  | "assign_team"
+  | "draft1_work"
+  | "draft1_review"
+  | "finalization"
+  | "metadata"
+  | "agreement"
+  | "publishing"
+  | "post_release";
 
 type ProjectSummary = {
   id: string;
@@ -52,8 +51,11 @@ type ProjectSummary = {
   budget_amount: number | null;
   budget_currency: string | null;
   assigned_pic: string | null;
-  engineer_name: string | null;
-  anr_name: string | null;
+  engineer_name: string | null;  // Audio Engineer
+  anr_name: string | null;       // A&R
+  /** Optional jika kamu tambahkan kolom ini di DB */
+  composer_name?: string | null;
+  producer_name?: string | null;
   latest_update: string | null;
 };
 
@@ -101,6 +103,9 @@ type ReferenceLinkRow = {
   created_at: string | null;
 };
 
+/** Sumber opsi dropdown (optional) */
+type TeamOption = { id: string; name: string; role: string };
+
 const Card: React.FC<React.PropsWithChildren<{ title: string; right?: React.ReactNode }>> = ({
   title,
   right,
@@ -115,31 +120,14 @@ const Card: React.FC<React.PropsWithChildren<{ title: string; right?: React.Reac
   </section>
 );
 
-const Tag = ({ children }: { children: React.ReactNode }) => (
-  <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
-    {children}
-  </span>
-);
-
-const ProgressBar = ({ value = 0 }: { value?: number | null }) => {
-  const pct = Math.max(0, Math.min(100, Number(value ?? 0)));
-  return (
-    <div className="h-2 overflow-hidden rounded-full bg-gray-200">
-      <div className="h-full bg-blue-600 transition-[width] duration-500 ease-in-out" style={{ width: `${pct}%` }} />
-    </div>
-  );
-};
-
 export default function AdminProjectDetailPage(): React.JSX.Element {
   useFocusWarmAuth();
 
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
-
   const supabase = useMemo(() => getSupabaseClient(), []);
 
-  // ---- data states
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState<ProjectSummary | null>(null);
   const [drafts, setDrafts] = useState<DraftRow[] | null>(null);
@@ -148,50 +136,44 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
   const [messages, setMessages] = useState<DiscussionMessage[] | null>(null);
   const [meetings, setMeetings] = useState<MeetingRow[] | null>(null);
 
-  // ---- admin controls local form
-  const [edit, setEdit] = useState({
+  // Assignment state (editable)
+  const [anrName, setAnrName] = useState<string>("");
+  const [composerName, setComposerName] = useState<string>("");
+  const [producerName, setProducerName] = useState<string>("");
+  const [engineerName, setEngineerName] = useState<string>("");
+
+  // Read-only mirror for Overview
+  const [view, setView] = useState({
     project_name: "",
     artist_name: "",
     album_title: "",
     genre: "",
     sub_genre: "",
-    payment_plan: "" as string,
-    start_date: "" as string,
-    deadline: "" as string,
-    delivery_format: "",
-    nda_required: false,
-    preferred_engineer_id: "" as string,
-    preferred_engineer_name: "" as string,
-    stage: "" as string,
-    status: "pending" as ProjectStatus,
-    progress_percent: 0,
-    budget_amount: "" as string,
-    budget_currency: "" as string,
-    assigned_pic: "" as string,
-    engineer_name: "" as string,
-    anr_name: "" as string,
-    description: "" as string,
+    start_date: "",
+    deadline: "",
+    description: "",
+    budget_amount: "",
+    budget_currency: "IDR",
+    payment_plan: "",
   });
 
-  const [saving, setSaving] = useState(false);
-
   const [activeTab, setActiveTab] = useState<"overview" | "drafts" | "references" | "discussion" | "meetings">(
-    (searchParams.get("tab") as "overview" | "drafts" | "references" | "discussion" | "meetings") ?? "overview"
+    (searchParams.get("tab") as any) ?? "overview"
   );
 
+  const [teamOptions, setTeamOptions] = useState<TeamOption[]>([]); // optional source for datalist
   const realtimeBoundRef = useRef(false);
 
   const raceWithTimeout = <T,>(p: PromiseLike<T>, ms = 8000): Promise<T> =>
     Promise.race([Promise.resolve(p), new Promise<T>((_, rj) => setTimeout(() => rj(new Error("timeout")), ms))]);
 
-  // ---- load initial
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
         await supabase.auth.getSession();
 
-        // project summary
+        // summary
         const { data: proj, error: perr } = await raceWithTimeout(
           supabase
             .from("project_summary")
@@ -209,28 +191,27 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
         if (!mounted) return;
 
         setProject(proj);
-        setEdit({
+
+        // Assignments (editable)
+        setAnrName(proj.anr_name ?? "");
+        setEngineerName(proj.engineer_name ?? "");
+        // composer/producer mungkin belum ada di view → tetap kosong
+        setComposerName((proj as any)?.composer_name ?? "");
+        setProducerName((proj as any)?.producer_name ?? "");
+
+        // Overview read-only mirror
+        setView({
           project_name: proj.project_name,
           artist_name: proj.artist_name ?? "",
           album_title: proj.album_title ?? "",
           genre: proj.genre ?? "",
           sub_genre: proj.sub_genre ?? "",
-          payment_plan: proj.payment_plan ?? "",
           start_date: proj.start_date ? proj.start_date.slice(0, 10) : "",
           deadline: proj.deadline ? proj.deadline.slice(0, 10) : "",
-          delivery_format: proj.delivery_format ?? "",
-          nda_required: Boolean(proj.nda_required),
-          preferred_engineer_id: proj.preferred_engineer_id ?? "",
-          preferred_engineer_name: proj.preferred_engineer_name ?? "",
-          stage: (proj.stage as string) ?? "",
-          status: proj.status,
-          progress_percent: Number(proj.progress_percent ?? 0),
+          description: proj.description ?? "",
           budget_amount: proj.budget_amount != null ? String(proj.budget_amount) : "",
           budget_currency: (proj.budget_currency ?? "IDR").toUpperCase(),
-          assigned_pic: proj.assigned_pic ?? "",
-          engineer_name: proj.engineer_name ?? "",
-          anr_name: proj.anr_name ?? "",
-          description: proj.description ?? "",
+          payment_plan: proj.payment_plan ?? "",
         });
       } catch (e) {
         console.error(e);
@@ -247,22 +228,14 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
         .eq("project_id", params.id)
         .order("version", { ascending: false })
         .returns<DraftRow[]>()
-        .then(({ data, error }) => {
-          if (!mounted) return;
-          if (error) console.error(error);
-          setDrafts(data ?? []);
-        });
+        .then(({ data }) => mounted && setDrafts(data ?? []));
 
       supabase
         .from("revisions")
         .select("revision_id,draft_id,requested_by,reason,created_at")
         .order("created_at", { ascending: false })
         .returns<RevisionRow[]>()
-        .then(({ data, error }) => {
-          if (!mounted) return;
-          if (error) console.error(error);
-          setRevisions(data ?? []);
-        });
+        .then(({ data }) => mounted && setRevisions(data ?? []));
 
       supabase
         .from("project_reference_links")
@@ -270,11 +243,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
         .eq("project_id", params.id)
         .order("created_at", { ascending: false })
         .returns<ReferenceLinkRow[]>()
-        .then(({ data, error }) => {
-          if (!mounted) return;
-          if (error) console.error(error);
-          setLinks(data ?? []);
-        });
+        .then(({ data }) => mounted && setLinks(data ?? []));
 
       supabase
         .from("discussion_messages")
@@ -282,11 +251,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
         .eq("project_id", params.id)
         .order("created_at", { ascending: false })
         .returns<DiscussionMessage[]>()
-        .then(({ data, error }) => {
-          if (!mounted) return;
-          if (error) console.error(error);
-          setMessages(data ?? []);
-        });
+        .then(({ data }) => mounted && setMessages(data ?? []));
 
       supabase
         .from("meetings")
@@ -294,11 +259,19 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
         .eq("project_id", params.id)
         .order("start_at", { ascending: false })
         .returns<MeetingRow[]>()
-        .then(({ data, error }) => {
-          if (!mounted) return;
-          if (error) console.error(error);
-          setMeetings(data ?? []);
-        });
+        .then(({ data }) => mounted && setMeetings(data ?? []));
+
+      // Optional: load team options (abaikan error jika tabel tidak ada)
+      try {
+        const { data } = await supabase
+            .from("team_members")
+            .select("id,name,role")
+            .returns<TeamOption[]>();
+
+        if (mounted) setTeamOptions(data ?? []);
+        } catch (error) {
+        // handle error
+        }
     })();
 
     return () => {
@@ -306,7 +279,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
     };
   }, [params.id, router, supabase]);
 
-  // realtime minimal (discussion & meetings insert)
+  // realtime (diskusi + meetings)
   useEffect(() => {
     if (!project) return;
     if (realtimeBoundRef.current) return;
@@ -348,38 +321,12 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
     };
   }, [project, supabase]);
 
-  // revisions by draft
-  const revByDraft = useMemo(() => {
-    const m = new Map<string, RevisionRow[]>();
-    (revisions ?? []).forEach((r) => {
-      const arr = m.get(r.draft_id) ?? [];
-      arr.push(r);
-      m.set(r.draft_id, arr);
-    });
-    for (const [k, arr] of m.entries()) {
-      arr.sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? ""));
-      m.set(k, arr);
-    }
-    return m;
-  }, [revisions]);
-
-  // ---- helpers
-  const statusLabelMap: Record<ProjectStatus, string> = {
-    pending: "Not Started",
-    in_progress: "In Progress",
-    revision: "Under Review",
-    approved: "Approved",
-    published: "Published",
-    archived: "Archived",
-    cancelled: "Cancelled",
-  };
-
+  // helpers
   const setStatus = async (status: ProjectStatus): Promise<void> => {
     try {
       const { error } = await supabase.from("projects").update({ status }).eq("project_id", params.id);
       if (error) throw error;
       setProject((p) => (p ? { ...p, status } : p));
-      setEdit((s) => ({ ...s, status }));
     } catch (e) {
       console.error(e);
       alert("Gagal update status (cek RLS).");
@@ -391,80 +338,45 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
       const { error } = await supabase.from("projects").update({ stage }).eq("project_id", params.id);
       if (error) throw error;
       setProject((p) => (p ? { ...p, stage } : p));
-      setEdit((s) => ({ ...s, stage }));
     } catch (e) {
       console.error(e);
       alert("Gagal update stage (cek RLS).");
     }
   };
 
-  const saveProject = async (): Promise<void> => {
-    if (!project) return;
-    setSaving(true);
+  const saveAssignments = async (): Promise<void> => {
     try {
-      const payload = {
-        project_name: edit.project_name.trim() || null,
-        artist_name: edit.artist_name.trim() || null,
-        album_title: edit.album_title.trim() || null,
-        genre: edit.genre.trim() || null,
-        sub_genre: edit.sub_genre.trim() || null,
-        description: edit.description.trim() || null,
-        payment_plan: edit.payment_plan || null,
-        start_date: edit.start_date ? new Date(edit.start_date).toISOString() : null,
-        deadline: edit.deadline ? new Date(edit.deadline).toISOString() : null,
-        delivery_format: edit.delivery_format.trim() || null,
-        nda_required: Boolean(edit.nda_required),
-        preferred_engineer_id: edit.preferred_engineer_id || null,
-        preferred_engineer_name: edit.preferred_engineer_name.trim() || null,
-        stage: (edit.stage || null) as ProjectStage | null,
-        status: edit.status as ProjectStatus,
-        progress_percent: Number.isFinite(Number(edit.progress_percent))
-          ? Math.max(0, Math.min(100, Math.round(Number(edit.progress_percent))))
-          : 0,
-        budget_amount: edit.budget_amount ? Number(edit.budget_amount) : null,
-        budget_currency: edit.budget_currency.trim() || null,
-        assigned_pic: edit.assigned_pic.trim() || null,
-        engineer_name: edit.engineer_name.trim() || null,
-        anr_name: edit.anr_name.trim() || null,
+      // Selalu simpan A&R & Engineer (kolom sudah ada)
+      const basePayload: Record<string, string | null> = {
+        anr_name: anrName.trim() || null,
+        engineer_name: engineerName.trim() || null,
       };
 
-      const { error } = await supabase.from("projects").update(payload).eq("project_id", params.id);
+      // Opsional: simpan composer/producer jika kolom tersedia
+      // Agar aman dari error "column does not exist", cek via RPC ringan (skip di sini), atau
+      // langsung tambahkan kolom di DB sesuai SQL di bawah.
+      // Jika kamu SUDAH menambah kolom, baris di bawah bisa diaktifkan:
+      (basePayload as any).composer_name = composerName.trim() || null;
+      (basePayload as any).producer_name = producerName.trim() || null;
+
+      const { error } = await supabase.from("projects").update(basePayload).eq("project_id", params.id);
       if (error) throw error;
 
-      // refresh header state (optimistic)
       setProject((p) =>
         p
           ? {
               ...p,
-              project_name: payload.project_name ?? p.project_name,
-              artist_name: payload.artist_name ?? p.artist_name,
-              album_title: payload.album_title ?? p.album_title,
-              genre: payload.genre ?? p.genre,
-              sub_genre: payload.sub_genre ?? p.sub_genre,
-              description: payload.description ?? p.description,
-              payment_plan: payload.payment_plan ?? p.payment_plan,
-              start_date: payload.start_date ?? p.start_date,
-              deadline: payload.deadline ?? p.deadline,
-              delivery_format: payload.delivery_format ?? p.delivery_format,
-              nda_required: payload.nda_required,
-              preferred_engineer_id: payload.preferred_engineer_id,
-              preferred_engineer_name: payload.preferred_engineer_name ?? p.preferred_engineer_name,
-              stage: (payload.stage as string | null) ?? p.stage,
-              status: payload.status ?? p.status,
-              progress_percent: payload.progress_percent ?? p.progress_percent,
-              budget_amount: payload.budget_amount ?? p.budget_amount,
-              budget_currency: payload.budget_currency ?? p.budget_currency,
-              assigned_pic: payload.assigned_pic ?? p.assigned_pic,
-              engineer_name: payload.engineer_name ?? p.engineer_name,
-              anr_name: payload.anr_name ?? p.anr_name,
+              anr_name: basePayload.anr_name,
+              engineer_name: basePayload.engineer_name,
+              composer_name: (basePayload as any).composer_name ?? (p as any).composer_name,
+              producer_name: (basePayload as any).producer_name ?? (p as any).producer_name,
             }
           : p
       );
+      alert("Assignments saved.");
     } catch (e) {
       console.error(e);
-      alert("Gagal menyimpan perubahan. Periksa RLS/permission untuk tabel 'projects'.");
-    } finally {
-      setSaving(false);
+      alert("Gagal menyimpan assignments. Cek kolom/permission.");
     }
   };
 
@@ -484,6 +396,10 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
     );
   }
 
+  // Helper untuk opsi datalist per role
+  const optsFor = (roleKey: string) =>
+    teamOptions.filter((o) => o.role?.toLowerCase() === roleKey).map((o) => o.name);
+
   return (
     <div className="p-6 space-y-6">
       {/* Breadcrumb */}
@@ -499,105 +415,10 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
         </ol>
       </nav>
 
-      {/* Header: Summary + Quick controls + Workflow actions */}
+      {/* Actions only (Project summary & Quick controls removed) */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card
-          title="Project Summary"
-          right={
-            <div className="flex items-center gap-2">
-              <Tag>{(project.stage as string) || "No Stage"}</Tag>
-              <Tag>{project.status}</Tag>
-            </div>
-          }
-        >
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between gap-4">
-              <span className="w-32 text-gray-500">Project</span>
-              <span className="flex-1 text-gray-800">{project.project_name}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="w-32 text-gray-500">Artist</span>
-              <span className="flex-1 text-gray-800">{project.artist_name ?? "-"}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="w-32 text-gray-500">Genre</span>
-              <span className="flex-1 text-gray-800">{project.genre ?? "-"}</span>
-            </div>
-            <div className="pt-2">
-              <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
-                <span>Overall Progress</span>
-                <span>{project.progress_percent ?? 0}%</span>
-              </div>
-              <ProgressBar value={project.progress_percent} />
-            </div>
-          </div>
-        </Card>
-
-        {/* Quick edits */}
-        <Card title="Quick Controls">
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="col-span-2">
-              <label className="mb-1 block text-xs text-gray-500">Status</label>
-              <select
-                value={edit.status}
-                onChange={(e) => setStatus(e.target.value as ProjectStatus)}
-                className="w-full rounded-md border border-gray-300 px-2 py-1.5"
-              >
-                {(["pending","in_progress","revision","approved","published","archived","cancelled"] as ProjectStatus[]).map((s) => (
-                  <option key={s} value={s}>
-                    {s} — {statusLabelMap[s]}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="col-span-2">
-              <label className="mb-1 block text-xs text-gray-500">Stage</label>
-              <select
-                value={edit.stage}
-                onChange={(e) => setStage(e.target.value as ProjectStage)}
-                className="w-full rounded-md border border-gray-300 px-2 py-1.5"
-              >
-                {[
-                  "request_review",
-                  "awaiting_payment",
-                  "assign_team",
-                  "draft1_work",
-                  "draft1_review",
-                  "finalization",
-                  "metadata",
-                  "agreement",
-                  "publishing",
-                  "post_release",
-                ].map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="col-span-2">
-              <label className="mb-1 block text-xs text-gray-500">Progress (%)</label>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                value={edit.progress_percent}
-                onChange={(e) => {
-                  const v = Number(e.target.value);
-                  setEdit((p) => ({ ...p, progress_percent: v }));
-                }}
-                className="w-full"
-              />
-              <div className="mt-1 text-xs text-gray-600">{edit.progress_percent}%</div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Workflow actions sesuai alur */}
-        <Card title="Workflow Actions">
-          <div className="grid grid-cols-2 gap-2 text-sm">
+        <Card title="Actions">
+          <div className="grid grid-cols-1 gap-2 text-sm">
             <button
               onClick={async () => {
                 await setStatus("in_progress");
@@ -607,108 +428,88 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
             >
               Accept Project
             </button>
+          </div>
+        </Card>
+
+        {/* Project Assignment */}
+        <Card title="Project Assignment">
+          {/* A&R, Composer, Producer, Audio Engineer — datalist: bisa pilih & bisa ketik */}
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="col-span-2">
+              <label className="mb-1 block text-xs text-gray-500">A&amp;R</label>
+              <input
+                list="anrOptions"
+                value={anrName}
+                onChange={(e) => setAnrName(e.target.value)}
+                placeholder="Ketik atau pilih…"
+                className="w-full rounded-md border border-gray-300 px-3 py-2"
+              />
+              <datalist id="anrOptions">
+                {optsFor("a&r").concat(optsFor("anr")).map((name) => (
+                  <option key={`anr-${name}`} value={name} />
+                ))}
+              </datalist>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Composer</label>
+              <input
+                list="composerOptions"
+                value={composerName}
+                onChange={(e) => setComposerName(e.target.value)}
+                placeholder="Ketik atau pilih…"
+                className="w-full rounded-md border border-gray-300 px-3 py-2"
+              />
+              <datalist id="composerOptions">
+                {optsFor("composer").map((name) => (
+                  <option key={`composer-${name}`} value={name} />
+                ))}
+              </datalist>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Producer</label>
+              <input
+                list="producerOptions"
+                value={producerName}
+                onChange={(e) => setProducerName(e.target.value)}
+                placeholder="Ketik atau pilih…"
+                className="w-full rounded-md border border-gray-300 px-3 py-2"
+              />
+              <datalist id="producerOptions">
+                {optsFor("producer").map((name) => (
+                  <option key={`producer-${name}`} value={name} />
+                ))}
+              </datalist>
+            </div>
+
+            <div className="col-span-2 md:col-span-1">
+              <label className="mb-1 block text-xs text-gray-500">Audio Engineer</label>
+              <input
+                list="engineerOptions"
+                value={engineerName}
+                onChange={(e) => setEngineerName(e.target.value)}
+                placeholder="Ketik atau pilih…"
+                className="w-full rounded-md border border-gray-300 px-3 py-2"
+              />
+              <datalist id="engineerOptions">
+                {optsFor("engineer").concat(optsFor("audio engineer")).map((name) => (
+                  <option key={`engineer-${name}`} value={name} />
+                ))}
+              </datalist>
+            </div>
+          </div>
+
+          <div className="mt-3 flex justify-end">
             <button
-              onClick={async () => {
-                await setStage("assign_team");
-              }}
-              className="rounded-md border px-3 py-2 hover:bg-gray-50"
+              onClick={saveAssignments}
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
             >
-              Mark Payment Received
-            </button>
-            <button
-              onClick={async () => {
-                await setStage("draft1_work");
-              }}
-              className="rounded-md border px-3 py-2 hover:bg-gray-50"
-            >
-              Move to Draft 1
-            </button>
-            <button
-              onClick={async () => {
-                await setStatus("revision");
-                await setStage("draft1_review");
-              }}
-              className="rounded-md bg-amber-600 px-3 py-2 text-white hover:bg-amber-700"
-            >
-              Request Revision
-            </button>
-            <button
-              onClick={async () => {
-                await setStatus("approved");
-                await setStage("metadata");
-              }}
-              className="rounded-md bg-emerald-600 px-3 py-2 text-white hover:bg-emerald-700"
-            >
-              Approve Final
-            </button>
-            <button
-              onClick={async () => {
-                await setStage("publishing");
-              }}
-              className="rounded-md bg-blue-600 px-3 py-2 text-white hover:bg-blue-700"
-            >
-              Send to Publishing
-            </button>
-            <button
-              onClick={async () => {
-                await setStatus("published");
-                await setStage("post_release");
-              }}
-              className="rounded-md bg-indigo-600 px-3 py-2 text-white hover:bg-indigo-700 col-span-2"
-            >
-              Mark Released
+              Save Assignments
             </button>
           </div>
         </Card>
       </div>
-
-      {/* Assignments */}
-      <Card title="Assignments">
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <label className="mb-1 block text-xs text-gray-500">PIC</label>
-            <input
-              value={edit.assigned_pic}
-              onChange={(e) => setEdit((p) => ({ ...p, assigned_pic: e.target.value }))}
-              className="w-full rounded-md border border-gray-300 px-2 py-1.5"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-500">Engineer</label>
-            <input
-              value={edit.engineer_name}
-              onChange={(e) => setEdit((p) => ({ ...p, engineer_name: e.target.value }))}
-              className="w-full rounded-md border border-gray-300 px-2 py-1.5"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-500">A&amp;R</label>
-            <input
-              value={edit.anr_name}
-              onChange={(e) => setEdit((p) => ({ ...p, anr_name: e.target.value }))}
-              className="w-full rounded-md border border-gray-300 px-2 py-1.5"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-500">Preferred Engineer</label>
-            <input
-              value={edit.preferred_engineer_name}
-              onChange={(e) => setEdit((p) => ({ ...p, preferred_engineer_name: e.target.value }))}
-              className="w-full rounded-md border border-gray-300 px-2 py-1.5"
-            />
-          </div>
-          {/* Jika kamu nanti menambah kolom composer/producer/sound_designer di DB, tinggal tambahkan input di sini */}
-        </div>
-        <div className="mt-3 flex justify-end">
-          <button
-            onClick={saveProject}
-            disabled={saving}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
-          >
-            {saving ? "Saving…" : "Save Changes"}
-          </button>
-        </div>
-      </Card>
 
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-gray-200">
@@ -733,141 +534,65 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
         })}
       </div>
 
-      {/* OVERVIEW & EDIT FORM */}
+      {/* OVERVIEW (read-only) */}
       {activeTab === "overview" && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <Card title="Main Info">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <Card title="Main Info (Read-only)">
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="col-span-2">
-                <label className="mb-1 block text-xs text-gray-500">Project Name</label>
-                <input
-                  value={edit.project_name}
-                  onChange={(e) => setEdit((p) => ({ ...p, project_name: e.target.value }))}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2"
-                />
+                <label className="mb-1 block text-xs text-gray-500">Project Title</label>
+                <input value={view.project_name} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-500">Artist</label>
-                <input
-                  value={edit.artist_name}
-                  onChange={(e) => setEdit((p) => ({ ...p, artist_name: e.target.value }))}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2"
-                />
+                <label className="mb-1 block text-xs text-gray-500">Artist Name</label>
+                <input value={view.artist_name} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-500">Album</label>
-                <input
-                  value={edit.album_title}
-                  onChange={(e) => setEdit((p) => ({ ...p, album_title: e.target.value }))}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2"
-                />
+                <label className="mb-1 block text-xs text-gray-500">Album Title</label>
+                <input value={view.album_title} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
               </div>
-
               <div>
                 <label className="mb-1 block text-xs text-gray-500">Genre</label>
-                <input
-                  value={edit.genre}
-                  onChange={(e) => setEdit((p) => ({ ...p, genre: e.target.value }))}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2"
-                />
+                <input value={view.genre} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-500">Sub-Genre</label>
-                <input
-                  value={edit.sub_genre}
-                  onChange={(e) => setEdit((p) => ({ ...p, sub_genre: e.target.value }))}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2"
-                />
+                <label className="mb-1 block text-xs text-gray-500">Sub-genre</label>
+                <input value={view.sub_genre} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
               </div>
-
-              <div className="col-span-2">
-                <label className="mb-1 block text-xs text-gray-500">Description</label>
-                <textarea
-                  value={edit.description}
-                  onChange={(e) => setEdit((p) => ({ ...p, description: e.target.value }))}
-                  rows={4}
-                  className="w-full rounded-md border border-gray-300 p-3"
-                />
-              </div>
-            </div>
-          </Card>
-
-          <Card title="Budget & Payment">
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <label className="mb-1 block text-xs text-gray-500">Budget Amount</label>
-                <input
-                  inputMode="decimal"
-                  value={edit.budget_amount}
-                  onChange={(e) => setEdit((p) => ({ ...p, budget_amount: e.target.value }))}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2"
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-gray-500">Currency</label>
-                <input
-                  value={edit.budget_currency}
-                  onChange={(e) => setEdit((p) => ({ ...p, budget_currency: e.target.value.toUpperCase() }))}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2"
-                  placeholder="IDR"
-                />
-              </div>
-
-              <div className="col-span-2">
-                <label className="mb-1 block text-xs text-gray-500">Payment Plan</label>
-                <select
-                  value={edit.payment_plan}
-                  onChange={(e) => setEdit((p) => ({ ...p, payment_plan: e.target.value }))}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2"
-                >
-                  <option value="">(select)</option>
-                  <option value="upfront">100% Up-front</option>
-                  <option value="half">50% DP / 50% Delivery</option>
-                  <option value="milestone">Milestone (25–50–25)</option>
-                </select>
-              </div>
-            </div>
-          </Card>
-
-          <Card title="Schedule & NDA / Delivery">
-            <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <label className="mb-1 block text-xs text-gray-500">Start Date</label>
-                <input
-                  type="date"
-                  value={edit.start_date}
-                  onChange={(e) => setEdit((p) => ({ ...p, start_date: e.target.value }))}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2"
-                />
+                <input value={view.start_date} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
               </div>
               <div>
                 <label className="mb-1 block text-xs text-gray-500">Deadline</label>
-                <input
-                  type="date"
-                  value={edit.deadline}
-                  onChange={(e) => setEdit((p) => ({ ...p, deadline: e.target.value }))}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2"
-                />
+                <input value={view.deadline} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
               </div>
-
               <div className="col-span-2">
-                <label className="mb-1 block text-xs text-gray-500">Delivery Format</label>
-                <input
-                  value={edit.delivery_format}
-                  onChange={(e) => setEdit((p) => ({ ...p, delivery_format: e.target.value }))}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                <label className="mb-1 block text-xs text-gray-500">Description</label>
+                <textarea
+                  value={view.description}
+                  disabled
+                  rows={4}
+                  className="w-full rounded-md border border-gray-200 bg-gray-50 p-3"
                 />
               </div>
+            </div>
+          </Card>
 
-              <label className="col-span-2 inline-flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={edit.nda_required}
-                  onChange={(e) => setEdit((p) => ({ ...p, nda_required: e.target.checked }))}
-                />
-                NDA Required
-              </label>
+          <Card title="Budget & Payment (Read-only)">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">Budget Amount</label>
+                <input value={view.budget_amount} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">Currency</label>
+                <input value={view.budget_currency} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
+              </div>
+              <div className="col-span-2">
+                <label className="mb-1 block text-xs text-gray-500">Payment Plan</label>
+                <input value={view.payment_plan || ""} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
+              </div>
             </div>
           </Card>
         </div>
@@ -882,7 +607,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
             ) : drafts.length ? (
               <ul className="space-y-3 text-sm">
                 {drafts.map((d) => {
-                  const list = revByDraft.get(d.draft_id) ?? [];
+                  const list = (revisions ?? []).filter((r) => r.draft_id === d.draft_id);
                   return (
                     <li key={d.draft_id} className="rounded-md border border-gray-200 p-3">
                       <div className="flex items-center justify-between">
@@ -903,78 +628,6 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
                         >
                           Open
                         </a>
-                        <button
-                          onClick={async () => {
-                            try {
-                              await setStatus("approved");
-                              await setStage("metadata");
-                            } catch (e) {
-                              console.error(e);
-                              alert("Gagal set Approved.");
-                            }
-                          }}
-                          className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs text-white hover:bg-emerald-700"
-                        >
-                          Approve Final
-                        </button>
-                        <button
-                          onClick={async () => {
-                            const reason = window.prompt("Alasan/revisi?");
-                            if (reason === null) return;
-                            try {
-                              const { error } = await supabase.from("revisions").insert({
-                                draft_id: d.draft_id,
-                                reason,
-                              });
-                              if (error) throw error;
-                              setRevisions((prev) => [
-                                ...(prev ?? []),
-                                {
-                                  revision_id: crypto.randomUUID(),
-                                  draft_id: d.draft_id,
-                                  requested_by: null,
-                                  reason,
-                                  created_at: new Date().toISOString(),
-                                },
-                              ]);
-                              await setStatus("revision");
-                              await setStage("draft1_review");
-                            } catch (e) {
-                              console.error(e);
-                              alert("Gagal request revision.");
-                            }
-                          }}
-                          className="rounded-md bg-amber-600 px-3 py-1.5 text-xs text-white hover:bg-amber-700"
-                        >
-                          Request Revision
-                        </button>
-                        <button
-                          onClick={async () => {
-                            try {
-                              await setStage("publishing");
-                            } catch (e) {
-                              console.error(e);
-                              alert("Gagal kirim ke Publishing.");
-                            }
-                          }}
-                          className="rounded-md bg-blue-600 px-3 py-1.5 text-xs text-white hover:bg-blue-700"
-                        >
-                          Send to Publishing
-                        </button>
-                        <button
-                          onClick={async () => {
-                            try {
-                              await setStatus("published");
-                              await setStage("post_release");
-                            } catch (e) {
-                              console.error(e);
-                              alert("Gagal mark Released.");
-                            }
-                          }}
-                          className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs text-white hover:bg-indigo-700"
-                        >
-                          Mark Released
-                        </button>
                       </div>
 
                       {list.length > 0 && (
@@ -1021,7 +674,10 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
                   <li key={l.id} className="rounded-md border border-gray-200 p-3">
                     <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
                       <span>{l.created_at ? new Date(l.created_at).toLocaleString("id-ID") : ""}</span>
-                      <DeleteReferenceButton id={l.id} onDeleted={() => setLinks((prev) => (prev ? prev.filter((x) => x.id !== l.id) : prev))} />
+                      <DeleteReferenceButton
+                        id={l.id}
+                        onDeleted={() => setLinks((prev) => (prev ? prev.filter((x) => x.id !== l.id) : prev))}
+                      />
                     </div>
                     <a href={l.url} target="_blank" rel="noreferrer" className="break-all text-blue-600 hover:underline">
                       {l.url}
@@ -1059,7 +715,10 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
                     </div>
                     <div className="whitespace-pre-wrap text-sm text-gray-800">{m.content}</div>
                     <div className="mt-2 flex gap-2">
-                      <DeleteMessageButton id={m.id} onDeleted={() => setMessages((prev) => (prev ? prev.filter((x) => x.id !== m.id) : prev))} />
+                      <DeleteMessageButton
+                        id={m.id}
+                        onDeleted={() => setMessages((prev) => (prev ? prev.filter((x) => x.id !== m.id) : prev))}
+                      />
                     </div>
                   </li>
                 ))}
@@ -1104,7 +763,10 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
                       ) : (
                         <span className="text-xs text-gray-400">No link</span>
                       )}
-                      <CancelMeetingButton id={m.id} onCancelled={() => setMeetings((prev) => (prev ? prev.filter((x) => x.id !== m.id) : prev))} />
+                      <CancelMeetingButton
+                        id={m.id}
+                        onCancelled={() => setMeetings((prev) => (prev ? prev.filter((x) => x.id !== m.id) : prev))}
+                      />
                     </div>
                   </li>
                 );
@@ -1117,7 +779,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
   );
 }
 
-/** ---------- small button components (supaya tidak duplikasi fungsi) ---------- */
+/** ---------- small button components ---------- */
 
 function DeleteReferenceButton({ id, onDeleted }: { id: string; onDeleted: () => void }) {
   const supabase = useMemo(() => getSupabaseClient(), []);
@@ -1201,8 +863,6 @@ function ReferenceAdder({
     const raw = url.trim();
     if (!raw) return;
     try {
-      // simple validate
-      // eslint-disable-next-line no-new
       new URL(raw);
     } catch {
       alert("URL tidak valid.");

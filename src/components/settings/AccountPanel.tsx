@@ -113,20 +113,20 @@ export default function AccountPanel() {
   );
 
   return (
-    <section className="flex flex-col items-start gap-6 p-4 w-full bg-defaultwhite border border-coolgray-20">
+    <section className="flex flex-col items-start gap-6 p-4 w-full bg-defaultwhite dark:bg-gray-900 border border-coolgray-20">
       <div className="flex items-center justify-between w-full">
         <h2 className="font-heading-6 text-coolgray-90">Account</h2>
         <ProviderBadge />
       </div>
 
-      {err && <p className="text-[13px] text-red-600 -mt-2">{err}</p>}
+      {err && <p className="text-[13px] text-red-600 dark:text-red-200 -mt-2">{err}</p>}
       {ok && <p className="text-[13px] text-green-700 -mt-2">{ok}</p>}
 
       <form onSubmit={handleSave} className="flex flex-col w-[616px] items-start gap-4">
         {/* Email (read-only) */}
         <div className="flex flex-col gap-1 w-full">
           <label className="font-body-s text-coolgray-90">Email</label>
-          <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-b border-coolgray-30">
+          <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-[var(--border)] border-coolgray-30">
             <input
               type="email"
               value={email}
@@ -143,7 +143,7 @@ export default function AccountPanel() {
         {isEmailUser && (
           <div className="flex flex-col gap-1 w-full">
             <label className="font-body-s text-coolgray-90">Current Password</label>
-            <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-b border-coolgray-30">
+            <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-[var(--border)] border-coolgray-30">
               <input
                 type="password"
                 value={currentPassword}
@@ -162,7 +162,7 @@ export default function AccountPanel() {
           <label className="font-body-s text-coolgray-90">
             {isEmailUser ? "New Password" : "Set Password"}
           </label>
-          <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-b border-coolgray-30">
+          <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-[var(--border)] border-coolgray-30">
             <input
               type="password"
               value={newPassword}
@@ -180,7 +180,7 @@ export default function AccountPanel() {
 
         <div className="flex flex-col gap-1 w-full">
           <label className="font-body-s text-coolgray-90">Confirm New Password</label>
-          <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-b border-coolgray-30">
+          <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-[var(--border)] border-coolgray-30">
             <input
               type="password"
               value={confirmNew}

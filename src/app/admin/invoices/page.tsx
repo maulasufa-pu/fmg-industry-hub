@@ -76,14 +76,14 @@ export default function AdminInvoicesPage(): React.JSX.Element {
         </div>
       </div>
 
-      <div className="flex gap-1 border-b pb-2">
+      <div className="flex gap-1 border-[var(--border)] pb-2">
         {Tabs.map(t => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={[
               "px-3 py-1.5 text-sm rounded-md",
-              tab === t.key ? "bg-blue-600 text-white" : "hover:bg-gray-100"
+              tab === t.key ? "bg-blue-600 text-white" : "hover:bg-gray-100 dark:bg-gray-800"
             ].join(" ")}
           >
             {t.label}
@@ -92,12 +92,12 @@ export default function AdminInvoicesPage(): React.JSX.Element {
       </div>
 
       {loading ? (
-        <div className="rounded-lg border bg-white p-8 text-gray-500 shadow">Loading…</div>
+        <div className="rounded-lg border bg-white dark:bg-gray-900 p-8 text-gray-500 dark:text-gray-400 dark:text-gray-400 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25">Loading…</div>
       ) : rows.length === 0 ? (
-        <div className="rounded-lg border bg-white p-8 text-gray-500 shadow">No invoices found.</div>
+        <div className="rounded-lg border bg-white dark:bg-gray-900 p-8 text-gray-500 dark:text-gray-400 dark:text-gray-400 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25">No invoices found.</div>
       ) : (
-        <table className="w-full rounded-lg border bg-white shadow">
-          <thead className="bg-gray-50 text-left text-sm">
+        <table className="w-full rounded-lg border bg-white dark:bg-gray-900 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25">
+          <thead className="bg-gray-50 dark:bg-gray-800 text-left text-sm">
             <tr>
               <th className="p-3">Invoice</th>
               <th className="p-3">Client</th>

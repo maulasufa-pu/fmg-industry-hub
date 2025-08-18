@@ -1,923 +1,491 @@
 // src/app/admin/projects/[id]/page.tsx
 "use client";
 
-export const dynamic = "force-dynamic";
-
-import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { motion, Variants } from "framer-motion";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
-import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
 
-type ProjectStatus =
-  | "pending"
-  | "in_progress"
-  | "revision"
-  | "approved"
-  | "published"
-  | "archived"
-  | "cancelled";
+// Shared types
+import type {
+  ProjectSummary,
+  TabKey,
+  TeamMember,
+  StaffRole,
+  TeamRoleOptions,
+  CurrentAssignments
+} from "./types";
 
-type ProjectStage =
-  | "request_review"
-  | "awaiting_payment"
-  | "assign_team"
-  | "draft1_work"
-  | "draft1_review"
-  | "finalization"
-  | "metadata"
-  | "agreement"
-  | "publishing"
-  | "post_release";
+import HeroSection from "./components/HeroSection";
+import TeamAssignmentSection from "./components/TeamAssignmentSection";
+import ProjectControlsSection from "./components/ProjectControlsSection";
+import { hasAccess, UserAccess, ACCESS_RULES } from "./components/access-control";
 
-type ProjectSummary = {
-  id: string;
-  project_name: string;
-  artist_name: string | null;
-  album_title: string | null;
-  genre: string | null;
-  sub_genre: string | null;
-  description: string | null;
-  payment_plan: string | null;
-  start_date: string | null;
-  deadline: string | null;
-  delivery_format: string | null;
-  nda_required: boolean | null;
-  preferred_engineer_id: string | null;
-  preferred_engineer_name: string | null;
-  stage: ProjectStage | string | null;
-  status: ProjectStatus;
-  progress_percent: number | null;
-  budget_amount: number | null;
-  budget_currency: string | null;
-  assigned_pic: string | null;
-  engineer_name: string | null;  // Audio Engineer
-  anr_name: string | null;       // A&R
-  /** Optional jika kamu tambahkan kolom ini di DB */
-  composer_name?: string | null;
-  producer_name?: string | null;
-  latest_update: string | null;
+import OverviewTab from "./components/tabs/OverviewTab";
+import DraftsTab from "./components/tabs/DraftsTab";
+import ReferencesTab from "./components/tabs/ReferencesTab";
+import DiscussionTab from "./components/tabs/DiscussionTab";
+import MeetingsTab from "./components/tabs/MeetingsTab";
+import PublishingTab from "./components/tabs/PublishingTab";
+
+const pageVariants: Variants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { 
+    opacity: 1, 
+    scale: 1,
+    transition: { 
+      duration: 0.5, 
+      ease: "easeOut" as const,
+      staggerChildren: 0.1 
+    }
+  }
 };
 
-type DraftRow = {
-  draft_id: string;
-  project_id: string;
-  file_path: string;
-  uploaded_by: string | null;
-  version: number;
-  created_at: string | null;
-};
+const ROLES = ["anr", "composer", "producer", "engineer", "publisher"] as const;
+const orFilter = ROLES.map((r) => `staff_role.cs.{${r}}`).join(",");
 
-type RevisionRow = {
-  revision_id: string;
-  draft_id: string;
-  requested_by: string | null;
-  reason: string | null;
-  created_at: string | null;
-};
+type RoleKey = "anr" | "composer" | "producer" | "engineer" | "publisher";
+const ASSIGNABLE_ROLES: ReadonlyArray<Exclude<RoleKey, "publisher">> = ["anr", "composer", "producer", "engineer"] as const;
 
-type DiscussionMessage = {
-  id: string;
-  project_id: string;
-  author_id: string | null;
-  content: string;
-  created_at: string;
-};
-
-type MeetingRow = {
-  id: string;
-  project_id: string;
-  title: string;
-  start_at: string; // ISO
-  duration_min: number;
-  link: string | null;
-  notes: string | null;
-  created_by: string | null;
-  created_at: string;
-};
-
-type ReferenceLinkRow = {
-  id: string;
-  project_id: string;
-  url: string;
-  created_at: string | null;
-};
-
-/** Sumber opsi dropdown (optional) */
-type TeamOption = { id: string; name: string; role: string };
-
-const Card: React.FC<React.PropsWithChildren<{ title: string; right?: React.ReactNode }>> = ({
-  title,
-  right,
-  children,
-}) => (
-  <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-    <div className="mb-3 flex items-center justify-between">
-      <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
-      {right}
-    </div>
-    {children}
-  </section>
-);
-
-type ProjectAssignmentUpdate = {
-  anr_name: string | null;
-  engineer_name: string | null;
-  composer_name?: string | null;
-  producer_name?: string | null;
-};
-
-export default function AdminProjectDetailPage(): React.JSX.Element {
-  useFocusWarmAuth();
-
+export default function AdminProjectDetailPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = useMemo(() => getSupabaseClient(), []);
 
+  // Core state
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState<ProjectSummary | null>(null);
-  const [drafts, setDrafts] = useState<DraftRow[] | null>(null);
-  const [revisions, setRevisions] = useState<RevisionRow[] | null>(null);
-  const [links, setLinks] = useState<ReferenceLinkRow[] | null>(null);
-  const [messages, setMessages] = useState<DiscussionMessage[] | null>(null);
-  const [meetings, setMeetings] = useState<MeetingRow[] | null>(null);
+  const [userAccess, setUserAccess] = useState<UserAccess | null>(null);
+  const [activeTab, setActiveTab] = useState<TabKey>("overview");
+  const [assignmentsLoading, setAssignmentsLoading] = useState<boolean>(true); // ← optional
 
-  // Assignment state (editable)
-  const [anrName, setAnrName] = useState<string>("");
-  const [composerName, setComposerName] = useState<string>("");
-  const [producerName, setProducerName] = useState<string>("");
-  const [engineerName, setEngineerName] = useState<string>("");
 
-  // Read-only mirror for Overview
-  const [view, setView] = useState({
-    project_name: "",
-    artist_name: "",
-    album_title: "",
-    genre: "",
-    sub_genre: "",
-    start_date: "",
-    deadline: "",
-    description: "",
-    budget_amount: "",
-    budget_currency: "IDR",
-    payment_plan: "",
+  // Team assignment state
+  const [currentAssignments, setCurrentAssignments] = useState<CurrentAssignments>({
+    anr: "",
+    composer: "",
+    producer: "",
+    engineer: "",
+    publisher: "",
+  });
+  const [teamRoleOptions, setTeamRoleOptions] = useState<TeamRoleOptions>({
+    anr: [],
+    composer: [],
+    producer: [],
+    engineer: [],
+    publisher: [],
   });
 
-  type TabKey = "overview" | "drafts" | "references" | "discussion" | "meetings";
+  // Tab data state
+  const [drafts, setDrafts] = useState<any[] | null>(null);
+  const [revisions, setRevisions] = useState<any[] | null>(null);
+  const [links, setLinks] = useState<any[] | null>(null);
+  const [messages, setMessages] = useState<any[] | null>(null);
+  const [meetings, setMeetings] = useState<any[] | null>(null);
 
-  const TABS: TabKey[] = ["overview", "drafts", "references", "discussion", "meetings"];
+  // ====== ALGORTIMA (helpers) ======
 
-  const initialTab: TabKey = (() => {
-    const q = searchParams.get("tab");
-    return (TABS as readonly string[]).includes(q ?? "") ? (q as TabKey) : "overview";
-  })();
-
-  const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
-
-
-  const [teamOptions, setTeamOptions] = useState<TeamOption[]>([]); // optional source for datalist
-  const realtimeBoundRef = useRef(false);
-
-  const raceWithTimeout = <T,>(p: PromiseLike<T>, ms = 8000): Promise<T> =>
-    Promise.race([Promise.resolve(p), new Promise<T>((_, rj) => setTimeout(() => rj(new Error("timeout")), ms))]);
+  // Load current assignments dari database (shared function)
+  const loadCurrentAssignments = useCallback(async () => {
+    setAssignmentsLoading(true); // ← optional
+    try {
+      const response = await fetch(`/api/assignments?project_id=${params.id}`, {
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result: { success: boolean; assignments?: CurrentAssignments; error?: string } = await response.json();
+      if (result.success && result.assignments) {
+        setCurrentAssignments(result.assignments);
+      } else {
+        throw new Error(result.error || "Failed to load assignments");
+      }
+    } catch (e) {
+      console.warn("Load current assignments failed:", e);
+      setCurrentAssignments({ anr: "", composer: "", producer: "", engineer: "", publisher: "" });
+    } finally {
+      setAssignmentsLoading(false); // ← optional
+    }
+  }, [params.id]);
 
   useEffect(() => {
+    void loadCurrentAssignments();
+  }, [loadCurrentAssignments]);
+
+
+  // Helper untuk mendapatkan nama lengkap
+  const getFullName = (member: TeamMember): string => {
+    const firstName = member.first_name || "";
+    const lastName = member.last_name || "";
+    return [firstName, lastName].filter(Boolean).join(" ") || member.email || "Unknown";
+  };
+
+  // Helper untuk opsi dropdown per role
+  const getTeamOptionsForRole = (role: keyof TeamRoleOptions): TeamMember[] => {
+    return teamRoleOptions[role] || [];
+  };
+
+  // cari profile.id berdasarkan teks input (nama/email) + role option
+  const findProfileIdByDisplay = (display: string, roleKey: keyof TeamRoleOptions): string | null => {
+    if (!display?.trim()) return null;
+    const list = getTeamOptionsForRole(roleKey);
+    const lower = display.trim().toLowerCase();
+
+    const exact = list.find((m) => getFullName(m).toLowerCase() === lower);
+    if (exact) return exact.id;
+
+    const byEmail = list.find((m) => (m.email ?? "").toLowerCase() === lower);
+    if (byEmail) return byEmail.id;
+
+    const contains = list.filter(
+      (m) => getFullName(m).toLowerCase().includes(lower) || (m.email ?? "").toLowerCase().includes(lower)
+    );
+    if (contains.length === 1) return contains[0].id;
+
+    return null;
+  };
+
+  // non-upsert: matikan yang aktif lalu insert baris baru (aman dengan partial unique index)
+  const assignOne = async (projectId: string, role: "anr" | "composer" | "producer" | "engineer", userId: string) => {
+    const { error: e1 } = await supabase
+      .from("assignments")
+      .update({ active: false, unassigned_at: new Date().toISOString() })
+      .eq("project_id", projectId)
+      .eq("role", role)
+      .eq("active", true);
+    if (e1) throw e1;
+
+    const { error: e2 } = await supabase.from("assignments").insert({
+      assignment_id: (globalThis.crypto as Crypto | undefined)?.randomUUID?.() ?? undefined,
+      project_id: projectId,
+      role,
+      user_id: userId,
+      assigned_by: (await supabase.auth.getUser()).data.user?.id ?? null,
+      assigned_at: new Date().toISOString(),
+      active: true,
+    });
+    if (e2) throw e2;
+  };
+
+  // ambil nama tampilan dari profiles.id (tidak dipakai kalau API sudah balikin display)
+  const getDisplayNameById = (
+    profiles: Array<{ id: string; first_name: string | null; last_name: string | null; email: string | null }>,
+    id: string | null
+  ) => {
+    if (!id) return "";
+    const p = profiles.find((x) => x.id === id);
+    if (!p) return "";
+    const full = [p.first_name ?? "", p.last_name ?? ""].filter(Boolean).join(" ");
+    return full || p.email || "";
+  };
+
+  // Improved timeout handler
+  const raceWithTimeout = <T,>(promise: PromiseLike<T>, ms = 8000, errorMessage = "Request timed out"): Promise<T> =>
+    Promise.race([
+      Promise.resolve(promise),
+      new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`${errorMessage} (${ms}ms)`)), ms)),
+    ]);
+
+  // ====== LOAD ALL DATA ======
+  useEffect(() => {
     let mounted = true;
-    (async () => {
+
+    const loadData = async () => {
       try {
-        await supabase.auth.getSession();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { setLoading(false); return; }
 
-        // summary
-        const { data: proj, error: perr } = await raceWithTimeout(
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("main_role, staff_role")
+          .eq("id", user.id)
+          .single();
+
+        if (!profile || !mounted) { setLoading(false); return; }
+
+        const access: UserAccess = {
+          main_role: profile.main_role,
+          staff_role: profile.staff_role || [],
+        };
+        setUserAccess(access);
+
+        const { data: projectData } = await supabase
+          .from("project_summary")
+          .select("*")
+          .eq("project_id", params.id)
+          .single();
+
+        if (projectData && mounted) setProject(projectData);
+
+        type StaffListRow = {
+          id: string;
+          first_name: string | null;
+          last_name: string | null;
+          email: string | null;
+          main_role: string | null;
+          staff_role: string[];         // enum[] di-serialize sebagai string[]
+          full_name: string | null;
+          is_anr: boolean;
+          is_composer: boolean;
+          is_producer: boolean;
+          is_engineer: boolean;
+          is_publisher: boolean;
+        };
+
+        const { data: staff, error: staffErr } = await raceWithTimeout(
           supabase
-            .from("project_summary")
-            .select(
-              "id,project_name,artist_name,album_title,genre,sub_genre,description,payment_plan,start_date,deadline,delivery_format,nda_required,preferred_engineer_id,preferred_engineer_name,stage,status,progress_percent,budget_amount,budget_currency,assigned_pic,engineer_name,anr_name,latest_update"
-            )
-            .eq("id", params.id)
-            .maybeSingle<ProjectSummary>()
+            .from("staff_list")
+            .select("id, first_name, last_name, email, main_role, staff_role, full_name, is_anr, is_composer, is_producer, is_engineer, is_publisher"),
+          8000,
+          "Fetch staff_list"
         );
-        if (perr || !proj) {
-          console.error(perr);
-          router.replace("/admin/projects");
-          return;
+
+        if (staffErr) {
+          console.error("Error fetching staff_list:", staffErr.message ?? staffErr);
         }
-        if (!mounted) return;
 
-        setProject(proj);
+        if (staff && mounted) {
+          const toMember = (s: StaffListRow) => ({
+            id: s.id,
+            first_name: s.first_name,
+            last_name: s.last_name,
+            email: s.email,
+            staff_role: s.staff_role,
+            main_role: s.main_role,
+          }) as TeamMember;
 
-        // Assignments (editable)
-        setAnrName(proj.anr_name ?? "");
-        setEngineerName(proj.engineer_name ?? "");
-        // composer/producer mungkin belum ada di view → tetap kosong
-        setComposerName(proj.composer_name ?? "");
-        setProducerName(proj.producer_name ?? "");
+          const options: TeamRoleOptions = {
+            anr:       staff.filter(s => s.is_anr).map(toMember),
+            composer:  staff.filter(s => s.is_composer).map(toMember),
+            producer:  staff.filter(s => s.is_producer).map(toMember),
+            engineer:  staff.filter(s => s.is_engineer).map(toMember),
+            publisher: staff.filter(s => s.is_publisher).map(toMember),
+          };
+          setTeamRoleOptions(options);
+        }
 
-        // Overview read-only mirror
-        setView({
-          project_name: proj.project_name,
-          artist_name: proj.artist_name ?? "",
-          album_title: proj.album_title ?? "",
-          genre: proj.genre ?? "",
-          sub_genre: proj.sub_genre ?? "",
-          start_date: proj.start_date ? proj.start_date.slice(0, 10) : "",
-          deadline: proj.deadline ? proj.deadline.slice(0, 10) : "",
-          description: proj.description ?? "",
-          budget_amount: proj.budget_amount != null ? String(proj.budget_amount) : "",
-          budget_currency: (proj.budget_currency ?? "IDR").toUpperCase(),
-          payment_plan: proj.payment_plan ?? "",
-        });
-      } catch (e) {
-        console.error(e);
-        router.replace("/admin/projects");
-        return;
+        // ⬇️ setelah options siap, load assignments dari API
+        } catch (error) {
+        console.error("Error loading project data:", error);
       } finally {
         if (mounted) setLoading(false);
       }
-
-      // background loads
-      supabase
-        .from("drafts")
-        .select("draft_id,project_id,file_path,uploaded_by,version,created_at")
-        .eq("project_id", params.id)
-        .order("version", { ascending: false })
-        .returns<DraftRow[]>()
-        .then(({ data }) => { if (mounted) setDrafts(data ?? []); });
-
-      supabase
-        .from("revisions")
-        .select("revision_id,draft_id,requested_by,reason,created_at")
-        .order("created_at", { ascending: false })
-        .returns<RevisionRow[]>()
-        .then(({ data }) => mounted && setRevisions(data ?? []));
-
-      supabase
-        .from("project_reference_links")
-        .select("id,project_id,url,created_at")
-        .eq("project_id", params.id)
-        .order("created_at", { ascending: false })
-        .returns<ReferenceLinkRow[]>()
-        .then(({ data }) => mounted && setLinks(data ?? []));
-
-      supabase
-        .from("discussion_messages")
-        .select("id,project_id,author_id,content,created_at")
-        .eq("project_id", params.id)
-        .order("created_at", { ascending: false })
-        .returns<DiscussionMessage[]>()
-        .then(({ data }) => mounted && setMessages(data ?? []));
-
-      supabase
-        .from("meetings")
-        .select("id,project_id,title,start_at,duration_min,link,notes,created_by,created_at")
-        .eq("project_id", params.id)
-        .order("start_at", { ascending: false })
-        .returns<MeetingRow[]>()
-        .then(({ data }) => mounted && setMeetings(data ?? []));
-
-      // Optional: load team options (abaikan error jika tabel tidak ada)
-      try {
-        const { data } = await supabase
-            .from("team_members")
-            .select("id,name,role")
-            .returns<TeamOption[]>();
-
-        if (mounted) setTeamOptions(data ?? []);
-        } catch (error) {
-        // handle error
-        }
-    })();
-
-    return () => {
-      mounted = false;
     };
-  }, [params.id, router, supabase]);
 
-  // realtime (diskusi + meetings)
+    loadData();
+    return () => { mounted = false; };
+  }, [params.id, supabase, loadCurrentAssignments]);
+
+  // ====== LAZY TAB LOAD (biarkan sesuai punyamu) ======
   useEffect(() => {
-    if (!project) return;
-    if (realtimeBoundRef.current) return;
-    realtimeBoundRef.current = true;
-
-    const ch = supabase.channel(`realtime:admin-project:${project.id}`);
-
-    ch.on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "discussion_messages", filter: `project_id=eq.${project.id}` },
-      (payload) => {
-        const row = payload.new as DiscussionMessage;
-        setMessages((prev) => {
-          const list = prev ?? [];
-          if (list.some((x) => x.id === row.id)) return list;
-          return [...list, row];
-        });
-      }
-    );
-
-    ch.on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "meetings", filter: `project_id=eq.${project.id}` },
-      (payload) => {
-        const row = payload.new as MeetingRow;
-        setMeetings((prev) => {
-          const list = prev ?? [];
-          if (list.some((x) => x.id === row.id)) return list;
-          return [row, ...list].sort((a, b) => b.start_at.localeCompare(a.start_at));
-        });
-      }
-    );
-
-    void ch.subscribe();
-
-    return () => {
-      void supabase.removeChannel(ch);
-      realtimeBoundRef.current = false;
-    };
-  }, [project, supabase]);
-
-  // helpers
-  const setStatus = async (status: ProjectStatus): Promise<void> => {
-    try {
-      const { error } = await supabase.from("projects").update({ status }).eq("project_id", params.id);
-      if (error) throw error;
-      setProject((p) => (p ? { ...p, status } : p));
-    } catch (e) {
-      console.error(e);
-      alert("Gagal update status (cek RLS).");
-    }
-  };
-
-  const setStage = async (stage: ProjectStage): Promise<void> => {
-    try {
-      const { error } = await supabase.from("projects").update({ stage }).eq("project_id", params.id);
-      if (error) throw error;
-      setProject((p) => (p ? { ...p, stage } : p));
-    } catch (e) {
-      console.error(e);
-      alert("Gagal update stage (cek RLS).");
-    }
-  };
-
-  const saveAssignments = async (): Promise<void> => {
-    try {
-        const basePayload: ProjectAssignmentUpdate = {
-        anr_name: anrName.trim() || null,
-        engineer_name: engineerName.trim() || null,
-        composer_name: composerName.trim() || null,
-        producer_name: producerName.trim() || null,
-        };
-
-        const { error } = await supabase
-        .from("projects")
-        .update(basePayload)
-        .eq("project_id", params.id);
-        if (error) throw error;
-
-        setProject((p) =>
-        p
-            ? {
-                ...p,
-                anr_name: basePayload.anr_name,
-                engineer_name: basePayload.engineer_name,
-                composer_name:
-                basePayload.composer_name !== undefined ? basePayload.composer_name : p.composer_name,
-                producer_name:
-                basePayload.producer_name !== undefined ? basePayload.producer_name : p.producer_name,
+    if (!project || !userAccess) return;
+    let mounted = true;
+    const loadTabData = async () => {
+      try {
+        switch (activeTab) {
+          case "drafts":
+            if (hasAccess(userAccess, ACCESS_RULES.DRAFTS) && !drafts) {
+              const { data } = await supabase
+                .from("drafts")
+                .select("*")
+                .eq("project_id", params.id)
+                .order("created_at", { ascending: false });
+              if (mounted) setDrafts(data || []);
             }
-            : p
-        );
-        alert("Assignments saved.");
-    } catch (e) {
-        console.error(e);
-        alert("Gagal menyimpan assignments. Cek kolom/permission.");
-    }
+            break;
+          case "references":
+            if (hasAccess(userAccess, ACCESS_RULES.REFERENCES) && !links) {
+              const { data } = await supabase
+                .from("reference_links")
+                .select("*")
+                .eq("project_id", params.id)
+                .order("created_at", { ascending: false });
+              if (mounted) setLinks(data || []);
+            }
+            break;
+          case "discussion":
+            if (hasAccess(userAccess, ACCESS_RULES.DISCUSSION) && !messages) {
+              const { data } = await supabase
+                .from("discussion_messages")
+                .select("*")
+                .eq("project_id", params.id)
+                .order("created_at", { ascending: false });
+              if (mounted) setMessages(data || []);
+            }
+            break;
+          case "meetings":
+            if (hasAccess(userAccess, ACCESS_RULES.MEETINGS) && !meetings) {
+              const { data } = await supabase
+                .from("meetings")
+                .select("*")
+                .eq("project_id", params.id)
+                .order("start_at", { ascending: false });
+              if (mounted) setMeetings(data || []);
+            }
+            break;
+        }
+      } catch (error) {
+        console.error("Error loading tab data:", error);
+      }
     };
+    loadTabData();
+    return () => { mounted = false; };
+  }, [activeTab, project, userAccess, params.id, supabase, drafts, links, messages, meetings]);
 
+  // ====== ACTIONS ======
 
+  // Simpan assignment sesuai algoritma (non-upsert -> deactivate + insert)
+  const handleSaveAssignmentsAlgo = async (draft: CurrentAssignments) => {
+    if (!project) return;
+
+    const projectId = project.project_id;
+    const ops: Array<Promise<unknown>> = [];
+
+    ASSIGNABLE_ROLES.forEach((role) => {
+      const display = draft[role];
+      const userId = findProfileIdByDisplay(display, role);
+      if (userId) {
+        ops.push(raceWithTimeout(assignOne(projectId, role, userId), 8000, `Assign ${role} timeout`));
+      }
+    });
+
+    // NOTE: publisher sengaja tidak diproses sesuai definisi assignOne yang kamu berikan
+
+    await Promise.all(ops);
+    await loadCurrentAssignments();
+  };
+
+  const handleRemoveAssignment = async (role: StaffRole) => {
+    if (!project) return;
+    try {
+      // hanya proses role yang ada di table assignments
+      if ((ASSIGNABLE_ROLES as readonly string[]).includes(role)) {
+        const { error } = await supabase
+          .from("assignments")
+          .update({ active: false, unassigned_at: new Date().toISOString() })
+          .eq("project_id", project.project_id)
+          .eq("role", role)
+          .eq("active", true);
+        if (error) throw error;
+      }
+      await loadCurrentAssignments();
+    } catch (err) {
+      console.error("Failed to remove assignment:", err);
+    }
+  };
+
+  const handleAcceptProject = async () => {
+    if (!project) return;
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .update({ status: "in_progress", stage: "awaiting_payment" })
+        .eq("project_id", project.project_id);
+      if (error) throw error;
+      setProject(prev => prev ? { ...prev, status: "in_progress", stage: "awaiting_payment" } : prev);
+    } catch (err) {
+      console.error("Failed to accept project:", err);
+    }
+  };
+
+  const handlePutOnHold = async () => {
+    if (!project) return;
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .update({ status: "pending" })
+        .eq("project_id", project.project_id);
+      if (error) throw error;
+      setProject(prev => prev ? { ...prev, status: "pending" } : prev);
+    } catch (err) {
+      console.error("Failed to put project on hold:", err);
+    }
+  };
+
+  // ====== RENDER ======
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-gray-500 shadow">Loading project…</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-6 flex items-center justify-center">
+        <motion.div className="text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <div className="text-2xl mb-4">🎵</div>
+          <div className="text-lg font-medium text-gray-700 dark:text-gray-200">
+            Loading project details...
+          </div>
+        </motion.div>
       </div>
     );
   }
 
-  if (!project) {
+  if (!project || !userAccess) {
     return (
-      <div className="p-6">
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-gray-500 shadow">Project not found.</div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
+        <motion.div
+          className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-8 text-center shadow dark:shadow-gray-800/25"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+        >
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+            Project Not Found
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300">
+            The requested project could not be found or you don&apos;t have access to it.
+          </p>
+        </motion.div>
       </div>
     );
   }
 
-  // Helper untuk opsi datalist per role
-  const optsFor = (roleKey: string) =>
-    teamOptions.filter((o) => o.role?.toLowerCase() === roleKey).map((o) => o.name);
-
-  return (
-    <div className="p-6 space-y-6">
-      {/* Breadcrumb */}
-      <nav className="text-sm text-gray-500">
-        <ol className="flex items-center gap-2">
-          <li>
-            <Link href="/admin/projects" className="hover:underline">
-              Projects (Admin)
-            </Link>
-          </li>
-          <li>›</li>
-          <li className="max-w-[50vw] truncate font-medium text-gray-800">{project.project_name}</li>
-        </ol>
-      </nav>
-
-      {/* Actions only (Project summary & Quick controls removed) */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card title="Actions">
-          <div className="grid grid-cols-1 gap-2 text-sm">
-            <button
-              onClick={async () => {
-                await setStatus("in_progress");
-                await setStage("awaiting_payment");
-              }}
-              className="rounded-md bg-gray-800 px-3 py-2 text-white hover:bg-black"
-            >
-              Accept Project
-            </button>
-          </div>
-        </Card>
-
-        {/* Project Assignment */}
-        <Card title="Project Assignment">
-          {/* A&R, Composer, Producer, Audio Engineer — datalist: bisa pilih & bisa ketik */}
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="col-span-2">
-              <label className="mb-1 block text-xs text-gray-500">A&amp;R</label>
-              <input
-                list="anrOptions"
-                value={anrName}
-                onChange={(e) => setAnrName(e.target.value)}
-                placeholder="Ketik atau pilih…"
-                className="w-full rounded-md border border-gray-300 px-3 py-2"
-              />
-              <datalist id="anrOptions">
-                {optsFor("a&r").concat(optsFor("anr")).map((name) => (
-                  <option key={`anr-${name}`} value={name} />
-                ))}
-              </datalist>
-            </div>
-
-            <div>
-              <label className="mb-1 block text-xs text-gray-500">Composer</label>
-              <input
-                list="composerOptions"
-                value={composerName}
-                onChange={(e) => setComposerName(e.target.value)}
-                placeholder="Ketik atau pilih…"
-                className="w-full rounded-md border border-gray-300 px-3 py-2"
-              />
-              <datalist id="composerOptions">
-                {optsFor("composer").map((name) => (
-                  <option key={`composer-${name}`} value={name} />
-                ))}
-              </datalist>
-            </div>
-
-            <div>
-              <label className="mb-1 block text-xs text-gray-500">Producer</label>
-              <input
-                list="producerOptions"
-                value={producerName}
-                onChange={(e) => setProducerName(e.target.value)}
-                placeholder="Ketik atau pilih…"
-                className="w-full rounded-md border border-gray-300 px-3 py-2"
-              />
-              <datalist id="producerOptions">
-                {optsFor("producer").map((name) => (
-                  <option key={`producer-${name}`} value={name} />
-                ))}
-              </datalist>
-            </div>
-
-            <div className="col-span-2 md:col-span-1">
-              <label className="mb-1 block text-xs text-gray-500">Audio Engineer</label>
-              <input
-                list="engineerOptions"
-                value={engineerName}
-                onChange={(e) => setEngineerName(e.target.value)}
-                placeholder="Ketik atau pilih…"
-                className="w-full rounded-md border border-gray-300 px-3 py-2"
-              />
-              <datalist id="engineerOptions">
-                {optsFor("engineer").concat(optsFor("audio engineer")).map((name) => (
-                  <option key={`engineer-${name}`} value={name} />
-                ))}
-              </datalist>
-            </div>
-          </div>
-
-          <div className="mt-3 flex justify-end">
-            <button
-              onClick={saveAssignments}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
-            >
-              Save Assignments
-            </button>
-          </div>
-        </Card>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-gray-200">
-        {[
-          { key: "overview", label: "Overview & Details" },
-          { key: "drafts", label: "Drafts" },
-          { key: "references", label: "References" },
-          { key: "discussion", label: "Discussion" },
-          { key: "meetings", label: "Meetings" },
-        ].map((t) => {
-          const k = t.key as typeof activeTab;
-          const act = activeTab === k;
-          return (
-            <button
-              key={t.key}
-              onClick={() => setActiveTab(k)}
-              className={`px-3 py-2 text-sm ${act ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-600 hover:text-blue-600"}`}
-            >
-              {t.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* OVERVIEW (read-only) */}
-      {activeTab === "overview" && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <Card title="Main Info (Read-only)">
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="col-span-2">
-                <label className="mb-1 block text-xs text-gray-500">Project Title</label>
-                <input value={view.project_name} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-gray-500">Artist Name</label>
-                <input value={view.artist_name} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-gray-500">Album Title</label>
-                <input value={view.album_title} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-gray-500">Genre</label>
-                <input value={view.genre} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-gray-500">Sub-genre</label>
-                <input value={view.sub_genre} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-gray-500">Start Date</label>
-                <input value={view.start_date} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-gray-500">Deadline</label>
-                <input value={view.deadline} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
-              </div>
-              <div className="col-span-2">
-                <label className="mb-1 block text-xs text-gray-500">Description</label>
-                <textarea
-                  value={view.description}
-                  disabled
-                  rows={4}
-                  className="w-full rounded-md border border-gray-200 bg-gray-50 p-3"
-                />
-              </div>
-            </div>
-          </Card>
-
-          <Card title="Budget & Payment (Read-only)">
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <label className="mb-1 block text-xs text-gray-500">Budget Amount</label>
-                <input value={view.budget_amount} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-gray-500">Currency</label>
-                <input value={view.budget_currency} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
-              </div>
-              <div className="col-span-2">
-                <label className="mb-1 block text-xs text-gray-500">Payment Plan</label>
-                <input value={view.payment_plan || ""} disabled className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2" />
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* DRAFTS */}
-      {activeTab === "drafts" && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <Card title="Drafts (Admin)">
-            {drafts === null ? (
-              <div className="text-sm text-gray-500">Loading drafts…</div>
-            ) : drafts.length ? (
-              <ul className="space-y-3 text-sm">
-                {drafts.map((d) => {
-                  const list = (revisions ?? []).filter((r) => r.draft_id === d.draft_id);
-                  return (
-                    <li key={d.draft_id} className="rounded-md border border-gray-200 p-3">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-800">v{d.version}</span>
-                        <span className="text-xs text-gray-500">
-                          {d.created_at ? new Date(d.created_at).toLocaleString("id-ID") : "-"}
-                        </span>
-                      </div>
-                      <div className="mt-1 break-all text-gray-600">{d.file_path}</div>
-                      <div className="mt-1 text-xs text-gray-500">Uploaded by: {d.uploaded_by ?? "-"}</div>
-
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <a
-                          href={d.file_path}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
-                        >
-                          Open
-                        </a>
-                      </div>
-
-                      {list.length > 0 && (
-                        <div className="mt-3 rounded-md bg-gray-50 p-2">
-                          <div className="mb-1 text-xs font-medium text-gray-700">Revision History</div>
-                          <ul className="space-y-1">
-                            {list.map((rv) => (
-                              <li key={rv.revision_id} className="text-xs text-gray-600">
-                                <span className="font-medium">{rv.requested_by ?? "Unknown"}</span> — {rv.reason ?? "-"}
-                                <span className="ml-2 text-[11px] text-gray-400">
-                                  {rv.created_at ? new Date(rv.created_at).toLocaleString("id-ID") : ""}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <div className="text-sm text-gray-500">Belum ada draft.</div>
-            )}
-          </Card>
-
-          <Card title="Notes / QA Checklist">
-            <div className="text-sm text-gray-500">Tempat admin/A&amp;R menyimpan catatan QC internal (draft 1 → final).</div>
-          </Card>
-        </div>
-      )}
-
-      {/* REFERENCES */}
-      {activeTab === "references" && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <Card title="References Feed">
-            {links === null ? (
-              <div className="text-sm text-gray-500">Loading…</div>
-            ) : links.length === 0 ? (
-              <div className="text-sm text-gray-500">Belum ada link.</div>
-            ) : (
-              <ul className="space-y-3 text-sm">
-                {links.map((l) => (
-                  <li key={l.id} className="rounded-md border border-gray-200 p-3">
-                    <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
-                      <span>{l.created_at ? new Date(l.created_at).toLocaleString("id-ID") : ""}</span>
-                      <DeleteReferenceButton
-                        id={l.id}
-                        onDeleted={() => setLinks((prev) => (prev ? prev.filter((x) => x.id !== l.id) : prev))}
-                      />
-                    </div>
-                    <a href={l.url} target="_blank" rel="noreferrer" className="break-all text-blue-600 hover:underline">
-                      {l.url}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-
-          <Card title="Add Reference (Admin)">
-            <ReferenceAdder
-              projectId={params.id}
-              onAdded={(row) => setLinks((prev) => (prev ? [row, ...prev] : [row]))}
-            />
-          </Card>
-        </div>
-      )}
-
-      {/* DISCUSSION */}
-      {activeTab === "discussion" && (
-        <Card title="Discussion (Admin moderation)">
-          <div className="flex flex-col gap-3">
-            {messages === null ? (
-              <div className="text-sm text-gray-500">Loading…</div>
-            ) : messages.length === 0 ? (
-              <div className="text-sm text-gray-500">Belum ada pesan.</div>
-            ) : (
-              <ul className="space-y-3">
-                {messages.map((m) => (
-                  <li key={m.id} className="rounded-md border border-gray-200 p-2">
-                    <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
-                      <span>{m.author_id ?? "Anon"}</span>
-                      <span>{new Date(m.created_at).toLocaleString("id-ID")}</span>
-                    </div>
-                    <div className="whitespace-pre-wrap text-sm text-gray-800">{m.content}</div>
-                    <div className="mt-2 flex gap-2">
-                      <DeleteMessageButton
-                        id={m.id}
-                        onDeleted={() => setMessages((prev) => (prev ? prev.filter((x) => x.id !== m.id) : prev))}
-                      />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </Card>
-      )}
-
-      {/* MEETINGS */}
-      {activeTab === "meetings" && (
-        <Card title="Meetings (Admin)">
-          {meetings === null ? (
-            <div className="text-sm text-gray-500">Loading…</div>
-          ) : meetings.length === 0 ? (
-            <div className="text-sm text-gray-500">Belum ada meeting.</div>
-          ) : (
-            <ul className="space-y-3">
-              {meetings.map((m) => {
-                const start = new Date(m.start_at);
-                const end = new Date(start.getTime() + m.duration_min * 60_000);
-                return (
-                  <li key={m.id} className="rounded-md border border-gray-200 p-3 text-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="font-medium text-gray-800">{m.title}</div>
-                      <div className="text-xs text-gray-500">
-                        {start.toLocaleString("id-ID")} –{" "}
-                        {end.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
-                      </div>
-                    </div>
-                    {m.notes && <div className="mt-1 text-gray-700">{m.notes}</div>}
-                    <div className="mt-2 flex items-center gap-2">
-                      {m.link ? (
-                        <a
-                          className="inline-flex items-center rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
-                          href={m.link}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          Join
-                        </a>
-                      ) : (
-                        <span className="text-xs text-gray-400">No link</span>
-                      )}
-                      <CancelMeetingButton
-                        id={m.id}
-                        onCancelled={() => setMeetings((prev) => (prev ? prev.filter((x) => x.id !== m.id) : prev))}
-                      />
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Card>
-      )}
-    </div>
-  );
-}
-
-/** ---------- small button components ---------- */
-
-function DeleteReferenceButton({ id, onDeleted }: { id: string; onDeleted: () => void }) {
-  const supabase = useMemo(() => getSupabaseClient(), []);
-  return (
-    <button
-      onClick={async () => {
-        if (!confirm("Hapus link referensi ini?")) return;
-        try {
-          const { error } = await supabase.from("project_reference_links").delete().eq("id", id);
-          if (error) throw error;
-          onDeleted();
-        } catch (e) {
-          console.error(e);
-          alert("Gagal hapus link (cek RLS).");
-        }
-      }}
-      className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
-    >
-      Delete
-    </button>
-  );
-}
-
-function DeleteMessageButton({ id, onDeleted }: { id: string; onDeleted: () => void }) {
-  const supabase = useMemo(() => getSupabaseClient(), []);
-  return (
-    <button
-      onClick={async () => {
-        if (!confirm("Hapus pesan diskusi ini?")) return;
-        try {
-          const { error } = await supabase.from("discussion_messages").delete().eq("id", id);
-          if (error) throw error;
-          onDeleted();
-        } catch (e) {
-          console.error(e);
-          alert("Gagal hapus pesan (cek RLS).");
-        }
-      }}
-      className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
-    >
-      Delete
-    </button>
-  );
-}
-
-function CancelMeetingButton({ id, onCancelled }: { id: string; onCancelled: () => void }) {
-  const supabase = useMemo(() => getSupabaseClient(), []);
-  return (
-    <button
-      onClick={async () => {
-        if (!confirm("Batalkan meeting ini?")) return;
-        try {
-          const { error } = await supabase.from("meetings").delete().eq("id", id);
-          if (error) throw error;
-          onCancelled();
-        } catch (e) {
-          console.error(e);
-          alert("Gagal membatalkan meeting (cek RLS).");
-        }
-      }}
-      className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
-    >
-      Cancel
-    </button>
-  );
-}
-
-/** ---------- child component: add reference (admin) ---------- */
-function ReferenceAdder({
-  projectId,
-  onAdded,
-}: {
-  projectId: string;
-  onAdded: (row: ReferenceLinkRow) => void;
-}): React.JSX.Element {
-  const supabase = useMemo(() => getSupabaseClient(), []);
-  const [url, setUrl] = useState("");
-  const [posting, setPosting] = useState(false);
-
-  const add = useCallback(async () => {
-    const raw = url.trim();
-    if (!raw) return;
-    try {
-      new URL(raw);
-    } catch {
-      alert("URL tidak valid.");
-      return;
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "overview":
+        return <OverviewTab project={project} />;
+      case "drafts":
+        return <DraftsTab drafts={drafts} revisions={revisions} />;
+      case "references":
+        return <ReferencesTab project={project} links={links} setLinks={setLinks} />;
+      case "discussion":
+        return <DiscussionTab project={project} messages={messages} setMessages={setMessages} />;
+      case "meetings":
+        return <MeetingsTab project={project} meetings={meetings} setMeetings={setMeetings} />;
+      case "publishing":
+        return <PublishingTab project={project} />;
+      default:
+        return null;
     }
-    setPosting(true);
-    try {
-      const { data, error } = await supabase
-        .from("project_reference_links")
-        .insert({ project_id: projectId, url: raw })
-        .select("id,project_id,url,created_at")
-        .single<ReferenceLinkRow>();
-      if (error) throw error;
-      onAdded(data);
-      setUrl("");
-    } catch (e) {
-      console.error(e);
-      alert("Gagal menambah link (cek RLS 'project_reference_links').");
-    } finally {
-      setPosting(false);
-    }
-  }, [projectId, supabase, url, onAdded]);
+  };
 
   return (
-    <div className="space-y-3">
-      <input
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        placeholder="Paste URL…"
-        className="w-full rounded-md border border-gray-300 p-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-      />
-      <div className="flex justify-end">
-        <button
-          disabled={posting || !url.trim()}
-          onClick={add}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
-        >
-          {posting ? "Posting…" : "Add Link"}
-        </button>
-      </div>
-    </div>
+    <motion.div
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4 lg:p-8 space-y-8"
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {hasAccess(userAccess, ACCESS_RULES.HERO_SECTION) && (
+        <HeroSection
+          project={project}
+          showRightActions={hasAccess(userAccess, ACCESS_RULES.RIGHT_ACTIONS)}
+          onAcceptProject={handleAcceptProject}
+          onPutOnHold={handlePutOnHold}
+        />
+      )}
+
+      {hasAccess(userAccess, ACCESS_RULES.TEAM_ASSIGNMENTS) && (
+        <TeamAssignmentSection
+          project={project}
+          currentAssignments={currentAssignments}
+          teamRoleOptions={teamRoleOptions}
+          onSaveAssignments={handleSaveAssignmentsAlgo} 
+          onRemoveAssignment={handleRemoveAssignment}
+        />
+      )}
+
+      <ProjectControlsSection
+        project={project}
+        userAccess={userAccess}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      >
+        {renderTabContent()}
+      </ProjectControlsSection>
+    </motion.div>
   );
 }

@@ -10,18 +10,18 @@ import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
 
 type ProjectSummary = {
   id: string;
-  project_name: string;
+  title: string;
   artist_name: string | null;
   genre: string | null;
   stage: string | null;
   status: "pending" | "in_progress" | "revision" | "approved" | "published" | "archived" | "cancelled";
   progress_percent: number | null;
-  budget_amount: number | null;
-  budget_currency: string | null;
-  assigned_pic: string | null;
-  engineer_name: string | null;
-  anr_name: string | null;
-  latest_update: string | null;
+  updated_at: string;
+  composer_id: string | null;
+  producer_id: string | null;
+  anr_id: string | null;
+  engineer_id: string | null;
+  publisher_id: string | null;
 };
 
 type DraftRow = {
@@ -69,9 +69,9 @@ type ReferenceLinkRow = {
 };
 
 const Card: React.FC<React.PropsWithChildren<{ title: string; right?: React.ReactNode }>> = ({ title, right, children }) => (
-  <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+  <section className="rounded-xl border border-gray-200 dark:border-gray-600 dark:border-gray-600 bg-white dark:bg-gray-900 p-4 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-sm">
     <div className="mb-3 flex items-center justify-between">
-      <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
+      <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100 dark:text-gray-100">{title}</h3>
       {right}
     </div>
     {children}
@@ -79,7 +79,7 @@ const Card: React.FC<React.PropsWithChildren<{ title: string; right?: React.Reac
 );
 
 const Tag = ({ children }: { children: React.ReactNode }) => (
-  <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+  <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs text-gray-700 dark:text-gray-200">
     {children}
   </span>
 );
@@ -87,7 +87,7 @@ const Tag = ({ children }: { children: React.ReactNode }) => (
 const ProgressBar = ({ value = 0 }: { value?: number | null }) => {
   const pct = Math.max(0, Math.min(100, Number(value ?? 0)));
   return (
-    <div className="h-2 overflow-hidden rounded-full bg-gray-200">
+    <div className="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700 dark:bg-gray-700">
       <div className="h-full bg-blue-600 transition-[width] duration-500 ease-in-out" style={{ width: `${pct}%` }} />
     </div>
   );
@@ -162,7 +162,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
           supabase
             .from("project_summary")
             .select(
-              "id,project_name,artist_name,genre,stage,status,progress_percent,budget_amount,budget_currency,assigned_pic,engineer_name,anr_name,latest_update"
+              "id,title,artist_name,genre,stage,status,progress_percent,updated_at,composer_id,producer_id,anr_id,engineer_id,publisher_id"
             )
             .eq("id", params.id)
             .maybeSingle<ProjectSummary>()
@@ -530,7 +530,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
   if (loading) {
     return (
       <div className="p-6">
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-gray-500 shadow">Loading project…</div>
+        <div className="rounded-xl border border-gray-200 dark:border-gray-600 dark:border-gray-600 bg-white dark:bg-gray-900 p-8 text-gray-500 dark:text-gray-400 dark:text-gray-400 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25">Loading project…</div>
       </div>
     );
   }
@@ -538,7 +538,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
   if (!project) {
     return (
       <div className="p-6">
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-gray-500 shadow">Project not found.</div>
+        <div className="rounded-xl border border-gray-200 dark:border-gray-600 dark:border-gray-600 bg-white dark:bg-gray-900 p-8 text-gray-500 dark:text-gray-400 dark:text-gray-400 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25">Project not found.</div>
       </div>
     );
   }
@@ -556,7 +556,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
   return (
     <div className="p-6 space-y-6">
       {/* Breadcrumb */}
-      <nav className="text-sm text-gray-500">
+      <nav className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
         <ol className="flex items-center gap-2">
           <li>
             <Link href="/client/projects" className="hover:underline">
@@ -570,7 +570,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
             </Link>
           </li>
           <li>›</li>
-          <li className="max-w-[50vw] truncate font-medium text-gray-800">{project.project_name}</li>
+          <li className="max-w-[50vw] truncate font-medium text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.title}</li>
         </ol>
       </nav>
 
@@ -579,19 +579,19 @@ export default function ProjectDetailPage(): React.JSX.Element {
         <Card title="Brief Details" right={<Tag>{statusLabelMap[project.status]}</Tag>}>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between gap-4">
-              <span className="w-32 text-gray-500">Project</span>
-              <span className="flex-1 text-gray-800">{project.project_name}</span>
+              <span className="w-32 text-gray-500 dark:text-gray-400 dark:text-gray-400">Project</span>
+              <span className="flex-1 text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.title}</span>
             </div>
             <div className="flex justify-between gap-4">
-              <span className="w-32 text-gray-500">Artist</span>
-              <span className="flex-1 text-gray-800">{project.artist_name ?? "-"}</span>
+              <span className="w-32 text-gray-500 dark:text-gray-400 dark:text-gray-400">Artist</span>
+              <span className="flex-1 text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.artist_name ?? "-"}</span>
             </div>
             <div className="flex justify-between gap-4">
-              <span className="w-32 text-gray-500">Genre</span>
-              <span className="flex-1 text-gray-800">{project.genre ?? "-"}</span>
+              <span className="w-32 text-gray-500 dark:text-gray-400 dark:text-gray-400">Genre</span>
+              <span className="flex-1 text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.genre ?? "-"}</span>
             </div>
             <div className="pt-2">
-              <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
+              <div className="mb-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">
                 <span>Overall Progress</span>
                 <span>{project.progress_percent ?? 0}%</span>
               </div>
@@ -600,28 +600,40 @@ export default function ProjectDetailPage(): React.JSX.Element {
           </div>
         </Card>
 
-        <Card title="Budget">
-          <div className="text-sm text-gray-800">
-            {project.budget_amount != null
-              ? `${(project.budget_currency ?? "IDR").toUpperCase()} ${Number(project.budget_amount).toLocaleString("id-ID")}`
-              : "-"}
+        <Card title="Last Updated">
+          <div className="text-sm text-gray-800 dark:text-gray-100 dark:text-gray-100">
+            {new Date(project.updated_at).toLocaleString("id-ID")}
           </div>
         </Card>
 
-        <Card title="Team Assigned">
+        <Card title="Team Assignments">
           <div className="grid grid-cols-2 gap-y-2 text-sm">
-            <span className="text-gray-500">PIC</span>
-            <span className="text-gray-800">{project.assigned_pic ?? "-"}</span>
-            <span className="text-gray-500">Engineer</span>
-            <span className="text-gray-800">{project.engineer_name ?? "-"}</span>
-            <span className="text-gray-500">A&R</span>
-            <span className="text-gray-800">{project.anr_name ?? "-"}</span>
+            <span className="text-gray-500 dark:text-gray-400 dark:text-gray-400">Composer</span>
+            <span className={`text-sm px-2 py-1 rounded ${project.composer_id ? 'bg-green-100 text-green-800' : 'text-gray-500 dark:text-gray-400 dark:text-gray-400'}`}>
+              {project.composer_id ? 'Assigned' : 'Unassigned'}
+            </span>
+            <span className="text-gray-500 dark:text-gray-400 dark:text-gray-400">Producer</span>
+            <span className={`text-sm px-2 py-1 rounded ${project.producer_id ? 'bg-blue-100 text-blue-800' : 'text-gray-500 dark:text-gray-400 dark:text-gray-400'}`}>
+              {project.producer_id ? 'Assigned' : 'Unassigned'}
+            </span>
+            <span className="text-gray-500 dark:text-gray-400 dark:text-gray-400">A&R</span>
+            <span className={`text-sm px-2 py-1 rounded ${project.anr_id ? 'bg-yellow-100 text-yellow-800' : 'text-gray-500 dark:text-gray-400 dark:text-gray-400'}`}>
+              {project.anr_id ? 'Assigned' : 'Unassigned'}
+            </span>
+            <span className="text-gray-500 dark:text-gray-400 dark:text-gray-400">Engineer</span>
+            <span className={`text-sm px-2 py-1 rounded ${project.engineer_id ? 'bg-purple-100 text-purple-800' : 'text-gray-500 dark:text-gray-400 dark:text-gray-400'}`}>
+              {project.engineer_id ? 'Assigned' : 'Unassigned'}
+            </span>
+            <span className="text-gray-500 dark:text-gray-400 dark:text-gray-400">Publisher</span>
+            <span className={`text-sm px-2 py-1 rounded ${project.publisher_id ? 'bg-pink-100 text-pink-800' : 'text-gray-500 dark:text-gray-400 dark:text-gray-400'}`}>
+              {project.publisher_id ? 'Assigned' : 'Unassigned'}
+            </span>
           </div>
         </Card>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-gray-200">
+      <div className="flex items-center gap-2 border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600">
         {[
           { key: "drafts", label: "Draft & Revision" },
           { key: "references", label: "References" },
@@ -632,7 +644,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
             <button
               key={t.key}
               onClick={() => setActiveTab(t.key as typeof activeTab)}
-              className={`px-3 py-2 text-sm ${act ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-600 hover:text-blue-600"}`}
+              className={`px-3 py-2 text-sm ${act ? "border-[var(--border)]-2 border-blue-600 text-sky-600 dark:text-sky-200" : "text-neutral-600 dark:text-neutral-200 dark:text-gray-200 hover:text-sky-600 dark:text-sky-200"}`}
             >
               {t.label}
             </button>
@@ -645,30 +657,30 @@ export default function ProjectDetailPage(): React.JSX.Element {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card title="Latest Drafts">
             {drafts === null ? (
-              <div className="text-sm text-gray-500">Loading drafts…</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">Loading drafts…</div>
             ) : drafts.length ? (
               <ul className="space-y-3 text-sm">
                 {drafts.map((d) => {
                   const list = revByDraft.get(d.draft_id) ?? [];
                   return (
-                    <li key={d.draft_id} className="rounded-md border border-gray-200 p-3">
+                    <li key={d.draft_id} className="rounded-md border border-gray-200 dark:border-gray-600 dark:border-gray-600 p-3">
                       <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-800">v{d.version}</span>
-                        <span className="text-xs text-gray-500">
+                        <span className="font-medium text-gray-800 dark:text-gray-100 dark:text-gray-100">v{d.version}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">
                           {d.created_at ? new Date(d.created_at).toLocaleString("id-ID") : "-"}
                         </span>
                       </div>
 
-                      <div className="mt-1 break-all text-gray-600">{d.file_path}</div>
+                      <div className="mt-1 break-all text-neutral-600 dark:text-neutral-200 dark:text-gray-200">{d.file_path}</div>
 
-                      <div className="mt-1 text-xs text-gray-500">Uploaded by: {d.uploaded_by ?? "-"}</div>
+                      <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">Uploaded by: {d.uploaded_by ?? "-"}</div>
 
                       <div className="mt-3 flex flex-wrap gap-2">
                         <a
                           href={d.file_path}
                           target="_blank"
                           rel="noreferrer"
-                          className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
+                          className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50 dark:bg-gray-800"
                         >
                           Open
                         </a>
@@ -702,11 +714,11 @@ export default function ProjectDetailPage(): React.JSX.Element {
                       </div>
 
                       {list.length > 0 && (
-                        <div className="mt-3 rounded-md bg-gray-50 p-2">
-                          <div className="mb-1 text-xs font-medium text-gray-700">Revision History</div>
+                        <div className="mt-3 rounded-md bg-gray-50 dark:bg-gray-800 p-2">
+                          <div className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Revision History</div>
                           <ul className="space-y-1">
                             {list.map((rv) => (
-                              <li key={rv.revision_id} className="text-xs text-gray-600">
+                              <li key={rv.revision_id} className="text-xs text-neutral-600 dark:text-neutral-200 dark:text-gray-200">
                                 <span className="font-medium">{rv.requested_by ?? "Unknown"}</span> — {rv.reason ?? "-"}
                                 <span className="ml-2 text-[11px] text-gray-400">
                                   {rv.created_at ? new Date(rv.created_at).toLocaleString("id-ID") : ""}
@@ -721,12 +733,12 @@ export default function ProjectDetailPage(): React.JSX.Element {
                 })}
               </ul>
             ) : (
-              <div className="text-sm text-gray-500">Belum ada draft.</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">Belum ada draft.</div>
             )}
           </Card>
 
           <Card title="Notes">
-            <div className="text-sm text-gray-500">Simpan catatan review, checklist QC, atau link referensi terkait draft di sini.</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">Simpan catatan review, checklist QC, atau link referensi terkait draft di sini.</div>
           </Card>
         </div>
       )}
@@ -736,14 +748,14 @@ export default function ProjectDetailPage(): React.JSX.Element {
           {/* Composer: add link */}
           <Card
             title="Add a reference link"
-            right={<span className="text-xs text-gray-500">{isAddingLink ? "Posting…" : ""}</span>}
+            right={<span className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">{isAddingLink ? "Posting…" : ""}</span>}
           >
             <div className="space-y-3">
               <input
                 value={newLinkUrl}
                 onChange={(e) => setNewLinkUrl(e.target.value)}
                 placeholder="Paste URL (YouTube/Spotify/Drive/website)…"
-                className="w-full rounded-md border border-gray-300 p-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:border-gray-600 p-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
               />
               <div className="flex justify-end">
                 <button
@@ -760,18 +772,18 @@ export default function ProjectDetailPage(): React.JSX.Element {
           {/* Feed */}
           <Card title="References Feed" right={null}>
             {links === null ? (
-              <div className="text-sm text-gray-500">Loading…</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">Loading…</div>
             ) : links.length === 0 ? (
-              <div className="text-sm text-gray-500">Belum ada link.</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">Belum ada link.</div>
             ) : (
               <ul className="space-y-4">
                 {links.map((l) => (
-                  <li key={l.id} className="rounded-md border border-gray-200 p-3 text-sm">
-                    <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
+                  <li key={l.id} className="rounded-md border border-gray-200 dark:border-gray-600 dark:border-gray-600 p-3 text-sm">
+                    <div className="mb-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">
                       <span>Link</span>
                       <span>{l.created_at ? new Date(l.created_at).toLocaleString("id-ID") : ""}</span>
                     </div>
-                    <a href={l.url} target="_blank" rel="noreferrer" className="break-all text-blue-600 hover:underline">
+                    <a href={l.url} target="_blank" rel="noreferrer" className="break-all text-sky-600 dark:text-sky-200 hover:underline">
                       {l.url}
                     </a>
                   </li>
@@ -781,29 +793,29 @@ export default function ProjectDetailPage(): React.JSX.Element {
           </Card>
 
           <Card title="Filters (optional)">
-            <div className="text-sm text-gray-500">Tambahkan filter by domain/type kalau perlu.</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">Tambahkan filter by domain/type kalau perlu.</div>
           </Card>
         </div>
       )}
 
       {activeTab === "discussion" && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <Card title="Discussion" right={<span className="text-xs text-gray-500">{isSending ? "Sending…" : ""}</span>}>
+          <Card title="Discussion" right={<span className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">{isSending ? "Sending…" : ""}</span>}>
             <div className="flex h-[420px] flex-col">
-              <div className="flex-1 overflow-y-auto rounded-md border border-gray-200 p-3">
+              <div className="flex-1 overflow-y-auto rounded-md border border-gray-200 dark:border-gray-600 dark:border-gray-600 p-3">
                 {messages === null ? (
-                  <div className="text-sm text-gray-500">Loading…</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">Loading…</div>
                 ) : messages.length === 0 ? (
-                  <div className="text-sm text-gray-500">Belum ada pesan.</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">Belum ada pesan.</div>
                 ) : (
                   <ul className="space-y-3">
                     {messages.map((m) => (
-                      <li key={m.id} className="rounded-md border border-gray-200 p-2">
-                        <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
+                      <li key={m.id} className="rounded-md border border-gray-200 dark:border-gray-600 dark:border-gray-600 p-2">
+                        <div className="mb-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">
                           <span>{m.author_id ?? "Anon"}</span>
                           <span>{new Date(m.created_at).toLocaleString("id-ID")}</span>
                         </div>
-                        <div className="whitespace-pre-wrap text-sm text-gray-800">{m.content}</div>
+                        <div className="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-100 dark:text-gray-100">{m.content}</div>
                       </li>
                     ))}
                   </ul>
@@ -815,7 +827,7 @@ export default function ProjectDetailPage(): React.JSX.Element {
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder="Tulis pesan…"
-                  className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                  className="flex-1 rounded-md border border-gray-300 dark:border-gray-600 dark:border-gray-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
                 />
                 <button
                   onClick={sendMessage}
@@ -832,32 +844,32 @@ export default function ProjectDetailPage(): React.JSX.Element {
             <div className="mb-3 flex items-center justify-between">
               <button
                 onClick={() => setShowMeetingForm((s) => !s)}
-                className="rounded-md border px-3 py-1.5 text-xs hover:bg-gray-50"
+                className="rounded-md border px-3 py-1.5 text-xs hover:bg-gray-50 dark:bg-gray-800"
               >
                 {showMeetingForm ? "Close" : "New Meeting"}
               </button>
             </div>
 
             {showMeetingForm && (
-              <div className="mb-4 space-y-3 rounded-md border border-gray-200 p-3">
+              <div className="mb-4 space-y-3 rounded-md border border-gray-200 dark:border-gray-600 dark:border-gray-600 p-3">
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     value={meetingForm.title}
                     onChange={(e) => setMeetingForm((p) => ({ ...p, title: e.target.value }))}
                     placeholder="Title"
-                    className="col-span-2 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                    className="col-span-2 rounded-md border border-gray-300 dark:border-gray-600 dark:border-gray-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
                   />
                   <input
                     type="date"
                     value={meetingForm.date}
                     onChange={(e) => setMeetingForm((p) => ({ ...p, date: e.target.value }))}
-                    className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                    className="rounded-md border border-gray-300 dark:border-gray-600 dark:border-gray-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
                   />
                   <input
                     type="time"
                     value={meetingForm.time}
                     onChange={(e) => setMeetingForm((p) => ({ ...p, time: e.target.value }))}
-                    className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                    className="rounded-md border border-gray-300 dark:border-gray-600 dark:border-gray-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
                   />
                   <input
                     type="number"
@@ -866,21 +878,21 @@ export default function ProjectDetailPage(): React.JSX.Element {
                     value={meetingForm.durationMin}
                     onChange={(e) => setMeetingForm((p) => ({ ...p, durationMin: Number(e.target.value) }))}
                     placeholder="Duration (min)"
-                    className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                    className="rounded-md border border-gray-300 dark:border-gray-600 dark:border-gray-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
                   />
                   <textarea
                     value={meetingForm.notes}
                     onChange={(e) => setMeetingForm((p) => ({ ...p, notes: e.target.value }))}
                     placeholder="Notes (optional)"
                     rows={2}
-                    className="col-span-2 w-full resize-none rounded-md border border-gray-300 p-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                    className="col-span-2 w-full resize-none rounded-md border border-gray-300 dark:border-gray-600 dark:border-gray-600 p-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
                   />
                   <select
                     value={meetingForm.provider}
                     onChange={(e) =>
                       setMeetingForm((p) => ({ ...p, provider: e.target.value as "zoom" | "google" }))
                     }
-                    className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                    className="rounded-md border border-gray-300 dark:border-gray-600 dark:border-gray-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
                   >
                     <option value="google">Google Meet</option>
                     <option value="zoom">Zoom</option>
@@ -899,30 +911,30 @@ export default function ProjectDetailPage(): React.JSX.Element {
             )}
 
             <div>
-              <div className="mb-2 text-xs font-medium text-gray-700">Upcoming & Past</div>
+              <div className="mb-2 text-xs font-medium text-gray-700 dark:text-gray-200">Upcoming & Past</div>
               {meetings === null ? (
-                <div className="text-sm text-gray-500">Loading…</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">Loading…</div>
               ) : meetings.length === 0 ? (
-                <div className="text-sm text-gray-500">Belum ada meeting.</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">Belum ada meeting.</div>
               ) : (
                 <ul className="space-y-3">
                   {meetings.map((m) => {
                     const start = new Date(m.start_at);
                     const end = new Date(start.getTime() + m.duration_min * 60_000);
                     return (
-                      <li key={m.id} className="rounded-md border border-gray-200 p-3 text-sm">
+                      <li key={m.id} className="rounded-md border border-gray-200 dark:border-gray-600 dark:border-gray-600 p-3 text-sm">
                         <div className="flex items-center justify-between">
-                          <div className="font-medium text-gray-800">{m.title}</div>
-                          <div className="text-xs text-gray-500">
+                          <div className="font-medium text-gray-800 dark:text-gray-100 dark:text-gray-100">{m.title}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">
                             {start.toLocaleString("id-ID")} –{" "}
                             {end.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
                           </div>
                         </div>
-                        {m.notes && <div className="mt-1 text-gray-700">{m.notes}</div>}
+                        {m.notes && <div className="mt-1 text-gray-700 dark:text-gray-200">{m.notes}</div>}
                         <div className="mt-2">
                           {m.link ? (
                             <a
-                              className="inline-flex items-center rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
+                              className="inline-flex items-center rounded-md border px-2 py-1 text-xs hover:bg-gray-50 dark:bg-gray-800"
                               href={m.link}
                               target="_blank"
                               rel="noreferrer"

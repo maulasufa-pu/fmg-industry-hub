@@ -92,7 +92,7 @@ export const SettingsSection = () => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("first_name, last_name, artist_name, location, phone_number, avatar_path")
+        .select("first_name, last_name, artist_name, location, phone_number, avatar_path, avatar_url")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -107,7 +107,15 @@ export const SettingsSection = () => {
           phoneNumber: data.phone_number ?? "",
         });
         setAvatarPath(data.avatar_path ?? null);
-        await refreshAvatarUrl(data.avatar_path ?? null);
+
+        // ⬇️ prioritas: pakai Storage path; kalau gak ada, pakai avatar_url eksternal
+        if (data.avatar_path) {
+          await refreshAvatarUrl(data.avatar_path);
+        } else if (typeof data.avatar_url === "string" && data.avatar_url.length > 0) {
+          setAvatarUrl(data.avatar_url);
+        } else {
+          setAvatarUrl(null);
+        }
       }
       setLoading(false);
     })();
@@ -198,7 +206,7 @@ export const SettingsSection = () => {
 
       const { error: dbErr } = await supabase
         .from("profiles")
-        .update({ avatar_path: path })
+        .update({ avatar_path: path, avatar_url: null }) // ⬅️ tambahkan avatar_url: null
         .eq("id", user.id);
       if (dbErr) throw dbErr;
 
@@ -228,7 +236,7 @@ export const SettingsSection = () => {
       }
       const { error: dbErr } = await supabase
         .from("profiles")
-        .update({ avatar_path: null })
+        .update({ avatar_path: null, avatar_url: null }) // ⬅️ kosongkan juga avatar_url
         .eq("id", user.id);
       if (dbErr) throw dbErr;
 
@@ -263,7 +271,7 @@ export const SettingsSection = () => {
       <div className="flex items-start gap-6 relative self-stretch w-full">
         {/* left nav */}
         <nav
-          className="flex-col w-[220px] items-start p-2 bg-defaultwhite border border-coolgray-20 flex"
+          className="flex-col w-[220px] items-start p-2 bg-defaultwhite dark:bg-gray-900 border border-coolgray-20 flex"
           role="navigation"
           aria-label="Settings navigation"
         >
@@ -289,13 +297,13 @@ export const SettingsSection = () => {
           {activeMenuItem === "Edit Profile" && (
             <>
               {/* profile photo */}
-              <section className="flex flex-col items-start gap-6 p-4 w-full bg-defaultwhite border border-coolgray-20">
+              <section className="flex flex-col items-start gap-6 p-4 w-full bg-defaultwhite dark:bg-gray-900 border border-coolgray-20">
                 <div className="flex-col items-start justify-center gap-4 flex w-full">
                   <h2 className="font-heading-6 text-coolgray-90">Profile Photo</h2>
                 </div>
 
                 <div className="flex items-start gap-12 w-full">
-                  <div className="inline-flex items-center gap-6 pr-12 border-r border-coolgray-20">
+                  <div className="inline-flex items-center gap-6 pr-12 border-[var(--border)] border-coolgray-20">
                     <div
                       className="flex w-24 h-24 items-center justify-center bg-coolgray-10 rounded-full overflow-hidden"
                       role="img"
@@ -336,7 +344,7 @@ export const SettingsSection = () => {
                         type="button"
                         className="text-primary-90 disabled:opacity-60"
                         onClick={onRemoveAvatar}
-                        disabled={uploading || !avatarPath}
+                        disabled={uploading || (!avatarPath && !avatarUrl)} // ← sebelumnya: uploading || !avatarPath
                       >
                         remove
                       </button>
@@ -357,13 +365,13 @@ export const SettingsSection = () => {
               </section>
 
               {/* form */}
-              <section className="flex flex-col items-start gap-6 p-4 w-full bg-defaultwhite border border-coolgray-20">
+              <section className="flex flex-col items-start gap-6 p-4 w-full bg-defaultwhite dark:bg-gray-900 border border-coolgray-20">
                 <div className="flex-col items-start justify-center gap-4 flex w-full">
                   <h2 className="font-heading-6 text-coolgray-90">User Details</h2>
                 </div>
 
                 {err && (
-                  <p className="text-[13px] text-red-600 -mt-2">{err}</p>
+                  <p className="text-[13px] text-red-600 dark:text-red-200 -mt-2">{err}</p>
                 )}
 
                 <form
@@ -378,7 +386,7 @@ export const SettingsSection = () => {
                       <label htmlFor="firstName" className="font-body-s text-coolgray-90">
                         First Name
                       </label>
-                      <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-b border-coolgray-30">
+                      <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-[var(--border)] border-coolgray-30">
                         <input
                           id="firstName"
                           type="text"
@@ -395,7 +403,7 @@ export const SettingsSection = () => {
                       <label htmlFor="lastName" className="font-body-s text-coolgray-90">
                         Last Name
                       </label>
-                      <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-b border-coolgray-30">
+                      <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-[var(--border)] border-coolgray-30">
                         <input
                           id="lastName"
                           type="text"
@@ -413,7 +421,7 @@ export const SettingsSection = () => {
                     <label htmlFor="artistName" className="font-body-s text-coolgray-90">
                       Artist Name
                     </label>
-                    <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-b border-coolgray-30">
+                    <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-[var(--border)] border-coolgray-30">
                       <input
                         id="artistName"
                         type="text"
@@ -430,7 +438,7 @@ export const SettingsSection = () => {
                     <label htmlFor="location" className="font-body-s text-coolgray-90">
                       Location
                     </label>
-                    <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-b border-coolgray-30">
+                    <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-[var(--border)] border-coolgray-30">
                       <input
                         id="location"
                         type="text"
@@ -447,7 +455,7 @@ export const SettingsSection = () => {
                     <label htmlFor="phoneNumber" className="font-body-s text-coolgray-90">
                       Phone Number
                     </label>
-                    <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-b border-coolgray-30">
+                    <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-[var(--border)] border-coolgray-30">
                       <input
                         id="phoneNumber"
                         type="tel"

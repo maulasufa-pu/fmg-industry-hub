@@ -1,51 +1,86 @@
 // src/app/admin/projects/page.tsx
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getSupabaseClient, withSignal } from "@/lib/supabase/client";
+import { getSupabaseClient } from "@/lib/supabase/client";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
 import AdminPanel, {
   AdminTabKey, AdminProjectRow, PicOption, StageOption, StatusOption,
 } from "@/app/admin/ui/AdminPanel";
 
-const VIEW = "project_summary_ext"; // Ganti dari "project_summary"
+const VIEW = "project_summary";
 
-// Kolom yang tersedia di VIEW sekarang (urutkan sesuai view)
 const QUERY_COLS =
-  "id,project_name,artist_name,album_title,genre,sub_genre,description,payment_plan,start_date,deadline,delivery_format,nda_required,preferred_engineer_id,preferred_engineer_name,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name,client_name";
+  "project_id,title,status,stage,updated_at,client_id,artist_name,genre,progress_percent,composer_id,producer_id,anr_id,engineer_id,publisher_id,client_first_name,client_last_name";
 
-// === Tipe row yang dikembalikan oleh VIEW ===
-type DbProjectSummary = {
-  id: string;
-  project_name: string;
-  client_name: string | null;         // NEW
-  artist_name: string | null;
-  album_title: string | null;
-  genre: string | null;
-  sub_genre: string | null;
-  description: string | null;
-  payment_plan: string | null;
-  start_date: string | null;
-  deadline: string | null;
-  delivery_format: string | null;
-  nda_required: boolean | null;
-  preferred_engineer_id: string | null;
-  preferred_engineer_name: string | null;
-  stage: string | null;
-  status: string | null;
-  latest_update: string | null;
-  is_active: boolean | null;
-  is_finished: boolean | null;
-  assigned_pic: string | null;
-  progress_percent: number | null;
-  budget_amount: number | null;
-  budget_currency: string | null;
-  engineer_name: string | null;
-  anr_name: string | null;
+// Function to fetch assignment names for projects
+const fetchAssignmentNames = async (supabase: any, projectIds: string[]) => {
+  if (projectIds.length === 0) return {};
+  
+  try {
+    // Get assignments data directly from assignments_view with staff_first_name
+    const { data: assignments, error: assignmentsError } = await supabase
+      .from('assignment_view')
+      .select('project_id, user_id, role, staff_first_name')
+      .in('project_id', projectIds)
+      .eq('active', true);
+
+    if (assignmentsError) {
+      console.warn('Assignments view fetch error:', assignmentsError);
+      return {};
+    }
+
+    if (!assignments || assignments.length === 0) return {};
+
+    // Group assignments by project_id and role using staff_first_name from view
+    const assignmentMap: Record<string, Record<string, string>> = {};
+    
+    assignments.forEach((assignment: any) => {
+      const projectId = assignment.project_id;
+      const userId = assignment.user_id;
+      const role = assignment.role;
+      const staffName = assignment.staff_first_name?.trim() || "";
+      
+      if (!assignmentMap[projectId]) {
+        assignmentMap[projectId] = {};
+      }
+      
+      // Use staff_first_name from assignments_view
+      assignmentMap[projectId][role] = staffName || `User ${userId}`;
+    });
+    
+    return assignmentMap;
+
+  } catch (error) {
+    console.warn('Assignment names fetch error:', error);
+    return {};
+  }
 };
 
-type CountResp = { count: number | null; error: unknown };
+type ProfileName = {
+  first_name: string | null;
+  last_name: string | null;
+};
+
+type DbProjectSummary = {
+  project_id: string;
+  title: string;
+  status: string | null;
+  stage: string | null;
+  updated_at: string;
+  client_id: string | null;
+  artist_name: string | null;
+  genre: string | null;
+  progress_percent: number | null;
+  composer_id: string | null;
+  producer_id: string | null;
+  anr_id: string | null;
+  engineer_id: string | null;
+  publisher_id: string | null;
+  client_first_name: string | null;
+  client_last_name: string | null;
+};
 
 export default function AdminProjectsPage(): React.JSX.Element {
   useFocusWarmAuth();
@@ -54,8 +89,23 @@ export default function AdminProjectsPage(): React.JSX.Element {
   const params = useSearchParams();
   const supabase = useMemo(() => getSupabaseClient(), []);
 
+  type ProfileRow = {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+  };
+
+  const getClientName = (row: DbProjectSummary): string => {
+    const first = row.client_first_name?.trim() ?? "";
+    const last = row.client_last_name?.trim() ?? "";
+    let full = (first || last) ? `${first} ${last}`.trim() : "-";
+    if (full.length > 25) full = `${full.slice(0, 22)}...`;
+    return full;
+  };
+
+
   // ---------- tabs ----------
-  const validTabs: AdminTabKey[] = ["All", "Active", "Finished", "Pending", "Unassigned"];
+  const validTabs: AdminTabKey[] = ["All", "Active", "Finished", "Pending", "Unassigned", "Requested"];
   const initialTabRaw = (params.get("tab") as AdminTabKey) || "All";
   const initialTab: AdminTabKey = validTabs.includes(initialTabRaw) ? initialTabRaw : "All";
   const [activeTab, setActiveTab] = useState<AdminTabKey>(initialTab);
@@ -66,7 +116,7 @@ export default function AdminProjectsPage(): React.JSX.Element {
   const [filterStage, setFilterStage] = useState<StageOption>("any");
   const [filterStatus, setFilterStatus] = useState<StatusOption>("any");
 
-  // debounce search (samakan dengan client)
+  // debounce search
   const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
@@ -81,7 +131,7 @@ export default function AdminProjectsPage(): React.JSX.Element {
   // ---------- data ----------
   const [rows, setRows] = useState<AdminProjectRow[]>([]);
   const [tabCounts, setTabCounts] = useState<Record<AdminTabKey, number | null>>({
-    All: null, Active: null, Finished: null, Pending: null, Unassigned: null,
+    All: null, Active: null, Finished: null, Pending: null, Unassigned: null, Requested: null
   });
 
   // filter options
@@ -91,315 +141,204 @@ export default function AdminProjectsPage(): React.JSX.Element {
 
   // ui state
   const [loadingInitial, setLoadingInitial] = useState(true);
-  const [didInit, setDidInit] = useState(false);
 
-  // Abort
-  const abortRef = useRef<AbortController | null>(null);
-
-  const buildSearchOr = (like: string) =>
-  [
-    `project_name.ilike.${like}`,
-    `client_name.ilike.${like}`,
-    `artist_name.ilike.${like}`,
-    `genre.ilike.${like}`,
-    `album_title.ilike.${like}`,
-    `sub_genre.ilike.${like}`,
-    `description.ilike.${like}`,
-    `delivery_format.ilike.${like}`,
-    `payment_plan.ilike.${like}`,
-  ].join(",");
-
-  // ---------- counts ----------
-  const fetchCounts = useCallback(
-    async (qStr: string, signal: AbortSignal) => {
-      const like = qStr ? `%${qStr}%` : null;
-
-      let allQ = supabase.from(VIEW).select("id", { count: "exact", head: true });
-      if (like) allQ = allQ.or(buildSearchOr(like));
-      if (filterPIC !== "any")   allQ = allQ.eq("assigned_pic", filterPIC);
-      if (filterStage !== "any") allQ = allQ.eq("stage",       filterStage);
-      if (filterStatus !== "any")allQ = allQ.eq("status",      filterStatus);
-      const allRes = await withSignal(allQ, signal).returns<CountResp>();
-
-      let actQ = supabase.from(VIEW).select("id", { count: "exact", head: true }).eq("is_active", true);
-      if (like) actQ = actQ.or(buildSearchOr(like));
-      if (filterPIC !== "any")   actQ = actQ.eq("assigned_pic", filterPIC);
-      if (filterStage !== "any") actQ = actQ.eq("stage",       filterStage);
-      if (filterStatus !== "any")actQ = actQ.eq("status",      filterStatus);
-      const actRes = await withSignal(actQ, signal).returns<CountResp>();
-
-      let finQ = supabase.from(VIEW).select("id", { count: "exact", head: true }).eq("is_finished", true);
-      if (like) finQ = finQ.or(buildSearchOr(like));
-      if (filterPIC !== "any")   finQ = finQ.eq("assigned_pic", filterPIC);
-      if (filterStage !== "any") finQ = finQ.eq("stage",       filterStage);
-      if (filterStatus !== "any")finQ = finQ.eq("status",      filterStatus);
-      const finRes = await withSignal(finQ, signal).returns<CountResp>();
-
-      let penQ = supabase.from(VIEW).select("id", { count: "exact", head: true }).eq("is_active", false).eq("is_finished", false);
-      if (like) penQ = penQ.or(buildSearchOr(like));
-      if (filterPIC !== "any")   penQ = penQ.eq("assigned_pic", filterPIC);
-      if (filterStage !== "any") penQ = penQ.eq("stage",       filterStage);
-      if (filterStatus !== "any")penQ = penQ.eq("status",      filterStatus);
-      const penRes = await withSignal(penQ, signal).returns<CountResp>();
-
-      let unQ = supabase.from(VIEW).select("id", { count: "exact", head: true }).is("assigned_pic", null);
-      if (like) unQ = unQ.or(buildSearchOr(like));
-      if (filterPIC !== "any")   unQ = unQ.eq("assigned_pic", filterPIC);
-      if (filterStage !== "any") unQ = unQ.eq("stage",       filterStage);
-      if (filterStatus !== "any")unQ = unQ.eq("status",      filterStatus);
-      const unRes = await withSignal(unQ, signal).returns<CountResp>();
-
-      if (allRes.error) throw allRes.error;
-      if (actRes.error) throw actRes.error;
-      if (finRes.error) throw finRes.error;
-      if (penRes.error) throw penRes.error;
-      if (unRes.error) throw unRes.error;
+  // SIMPLE COUNTS - NO BS
+  const fetchCounts = useCallback(async () => {
+    try {
+      // Create separate queries for each count to avoid conflicts
+      const [all, active, finished, pending, unassigned, requested] = await Promise.all([
+        supabase.from(VIEW).select("project_id", { count: "estimated", head: true }),
+        supabase.from(VIEW).select("project_id", { count: "estimated", head: true }).eq("status", "in_progress"),
+        supabase.from(VIEW).select("project_id", { count: "estimated", head: true }).eq("status", "finished"),
+        supabase.from(VIEW).select("project_id", { count: "estimated", head: true }).in("status", ["pending"]),
+        supabase.from(VIEW).select("project_id", { count: "estimated", head: true })
+          .is("composer_id", null)
+          .is("producer_id", null)
+          .is("anr_id", null)
+          .is("engineer_id", null)
+          .is("publisher_id", null),
+        supabase.from(VIEW).select("project_id", { count: "estimated", head: true }).eq("status", "requested"),
+      ]);
 
       return {
-        All:        allRes.count ?? 0,
-        Active:     actRes.count ?? 0,
-        Finished:   finRes.count ?? 0,
-        Pending:    penRes.count ?? 0,
-        Unassigned: unRes.count ?? 0,
-      } as Record<AdminTabKey, number>;
-    },
-    [supabase, filterPIC, filterStage, filterStatus]
-  );
-
-  // ---------- filter options ----------
-  const fetchFilterOptions = useCallback(async () => {
-    const [picsR, stagesR, statusesR] = await Promise.all([
-      supabase.from(VIEW).select("assigned_pic").not("assigned_pic", "is", null).limit(2000),
-      supabase.from(VIEW).select("stage").not("stage", "is", null).limit(2000),
-      supabase.from(VIEW).select("status").not("status", "is", null).limit(2000),
-    ]);
-
-    const uniq = (arr: (string | null)[]) =>
-      Array.from(new Set(arr.filter((x): x is string => !!x))).sort((a, b) => a.localeCompare(b));
-
-    const picList = ["any", ...uniq((picsR.data ?? []).map(r => r.assigned_pic as string | null))] as PicOption[];
-    const stageList = ["any", ...uniq((stagesR.data ?? []).map(r => r.stage as string | null))] as StageOption[];
-    const statusList = ["any", ...uniq((statusesR.data ?? []).map(r => r.status as string | null))] as StatusOption[];
-
-    setPicOptions(picList);
-    setStageOptions(stageList);
-    setStatusOptions(statusList);
+        All: all.count || 0,
+        Active: active.count || 0,
+        Finished: finished.count || 0,
+        Pending: pending.count || 0,
+        Unassigned: unassigned.count || 0,
+        Requested: requested.count || 0,
+      };
+    } catch (err) {
+      console.warn("Count error:", err);
+      return { All: 0, Active: 0, Finished: 0, Pending: 0, Unassigned: 0, Requested: 0 };
+    }
   }, [supabase]);
 
-  // ---------- page data ----------
-  const fetchPage = useCallback(
-    async (tab: AdminTabKey, qStr: string, pageIdx: number, isInitial = false) => {
-      abortRef.current = new AbortController();
-      const ac = abortRef.current;
+  // SIMPLE DATA FETCH - NO BS
+  const fetchPage = useCallback(async (tab: AdminTabKey, pageNum: number) => {
+    try {
+      const from = (pageNum - 1) * pageSize;
+      const to = from + pageSize - 1;
 
-      if (isInitial) setLoadingInitial(true);
-      try {
-        const from = (pageIdx - 1) * pageSize;
-        const to = from + pageSize - 1;
+      let query = supabase.from(VIEW).select(QUERY_COLS, { count: "estimated" });
 
-        let qBuilder = supabase.from(VIEW).select(QUERY_COLS, { count: "exact", head: false });
+      // Apply tab filter
+      if (tab === "Active") query = query.eq("status", "in_progress");
+      else if (tab === "Finished") query = query.eq("status", "completed");
+      else if (tab === "Pending") query = query.in("status", ["pending", "on_hold"]);
+      else if (tab === "Unassigned") {
+        query = query
+          .is("composer_id", null)
+          .is("producer_id", null)
+          .is("anr_id", null)
+          .is("engineer_id", null)
+          .is("publisher_id", null);
+      }
 
-        if (qStr) {
-          const like = `%${qStr}%`;
-          qBuilder = qBuilder.or(
-            [
-              `project_name.ilike.${like}`,
-              `client_name.ilike.${like}`,     // NEW
-              `artist_name.ilike.${like}`,
-              `album_title.ilike.${like}`,
-              `genre.ilike.${like}`,
-              `sub_genre.ilike.${like}`,
-              `description.ilike.${like}`,
-              `delivery_format.ilike.${like}`,
-              `payment_plan.ilike.${like}`,
-            ].join(",")
-          );
-        }
-        if (filterPIC !== "any")   qBuilder = qBuilder.eq("assigned_pic", filterPIC);
-        if (filterStage !== "any") qBuilder = qBuilder.eq("stage",       filterStage);
-        if (filterStatus !== "any")qBuilder = qBuilder.eq("status",      filterStatus);
+      // Apply search
+      if (debouncedSearch) {
+        const like = `%${debouncedSearch}%`;
+        query = query.or(`title.ilike.${like},artist_name.ilike.${like}`);
+      }
 
-        if (tab === "Active")            qBuilder = qBuilder.eq("is_active", true);
-        else if (tab === "Finished")     qBuilder = qBuilder.eq("is_finished", true);
-        else if (tab === "Pending")      qBuilder = qBuilder.eq("is_active", false).eq("is_finished", false);
-        else if (tab === "Unassigned")   qBuilder = qBuilder.is("assigned_pic", null);
+      // Apply filters - Note: PIC filtering now requires a different approach with assignments
+      // For now, skip PIC filtering until we can implement assignment-based filtering
+      if (filterStage !== "any") query = query.eq("stage", filterStage);
+      if (filterStatus !== "any") query = query.eq("status", filterStatus);
 
-        qBuilder = qBuilder.order("latest_update", { ascending: false }).range(from, to);
+      // Execute
+      const { data, count, error } = await query
+        .order("updated_at", { ascending: false })
+        .range(from, to);
 
-        const { data, count, error } =
-          await withSignal(qBuilder, ac.signal).returns<DbProjectSummary[]>();
-        if (error) throw error;
+      if (error) throw error;
 
-        // Map ke tipe UI (AdminProjectRow)
-        const mapped: AdminProjectRow[] = (data ?? []).map((r) => ({
-          id: r.id,
-          project_name: r.project_name,
-          client_name: r.client_name,          // NEW
-          artist_name: r.artist_name,
-          album_title: r.album_title,
-          genre: r.genre,
-          sub_genre: r.sub_genre,
-          description: r.description,
-          payment_plan: r.payment_plan,
-          start_date: r.start_date,
-          deadline: r.deadline,
-          delivery_format: r.delivery_format,
-          nda_required: r.nda_required,
-          preferred_engineer_id: r.preferred_engineer_id,
-          preferred_engineer_name: r.preferred_engineer_name,
-          stage: r.stage,
+      const clientIds = (data ?? []).map(r => r.client_id).filter((v): v is string => Boolean(v));
+      const projectIds = (data ?? []).map(r => r.project_id);
+
+      // Fetch assignment names for these projects
+      const assignmentNames = await fetchAssignmentNames(supabase, projectIds);
+
+      const mapped: AdminProjectRow[] = (data ?? []).map((r: DbProjectSummary) => {
+        const assignments = assignmentNames[r.project_id] || {};
+        
+        return {
+          project_id: r.project_id,
+          title: r.title,
           status: r.status,
-          latest_update: r.latest_update,
-          assigned_pic: r.assigned_pic,
+          stage: r.stage,
+          updated_at: r.updated_at,
+          client_id: r.client_id,
+          client_name: r.client_id ? getClientName(r) : "-",
+          artist_name: r.artist_name,
+          genre: r.genre,
           progress_percent: r.progress_percent,
-          budget_amount: r.budget_amount,
-          budget_currency: r.budget_currency,
-          engineer_name: r.engineer_name,
-          anr_name: r.anr_name,
-        }));
+          composer_id: r.composer_id,
+          composer_name: assignments['composer'] || null,
+          producer_id: r.producer_id,
+          producer_name: assignments['producer'] || null,
+          anr_id: r.anr_id,
+          anr_name: assignments['anr'] || null,
+          engineer_id: r.engineer_id,
+          engineer_name: assignments['engineer'] || null,
+          publisher_id: r.publisher_id,
+          publisher_name: assignments['publisher'] || null,
+        };
+      });
 
+      setRows(mapped);
+      setTotalCount(count || 0);
 
-        const counts = await fetchCounts(qStr, ac.signal);
-        setTabCounts(counts);
-        setRows(mapped);
-        setTotalCount(count ?? 0);
-      } catch (e) {
-        if ((e as { name?: string }).name !== "AbortError") {
-          console.error("admin/projects fetch error:", e);
-        }
-      } finally {
-        if (abortRef.current === ac) abortRef.current = null;
-        if (isInitial) setLoadingInitial(false);
-      }
-    },
-    [supabase, pageSize, filterPIC, filterStage, filterStatus, fetchCounts]
-  );
-
-
-  // ---------- initial ----------
-  useEffect(() => {
-    let mounted = true; // guard kalau komponen unmount di tengah async
-
-    (async () => {
-      try {
-        setPage(1);
-
-        // 1) Ambil session SEKALI
-        const sess = await supabase.auth.getSession().catch(() => null);
-
-        // 2) Ambil opsi filter (sekali di page)
-        await fetchFilterOptions();
-
-        // 3) Smoke checks
-        const v = await supabase
-          .from("project_summary")
-          .select("id", { count: "exact", head: true }); // limit(1) tidak perlu saat head:true
-        console.log("[SMOKE view]", { count: v.count, err: v.error });
-
-        const p = await supabase
-          .from("projects")
-          .select("id", { count: "exact", head: true });
-        console.log("[SMOKE projects]", { count: p.count, err: p.error });
-
-        console.log("[SMOKE user]", {
-          uid: sess?.data.session?.user?.id ?? null,
-          role: sess?.data.session?.user?.app_metadata?.role ?? null,
-        });
-
-        console.log(
-          "[SMOKE env]",
-          (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").slice(0, 25)
-        );
-
-        // 4) Load page pertama
-        await fetchPage(initialTab, "", 1, true);
-
-        if (mounted) setDidInit(true);
-      } catch (e) {
-        console.error("[ADMIN init] error:", e);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // ---------- re-fetch tanpa spinner ----------
-  useEffect(() => {
-    if (!didInit) return;
-    void fetchPage(activeTab, debouncedSearch, page, false);
-  }, [didInit, activeTab, debouncedSearch, page, fetchPage, filterPIC, filterStage, filterStatus]);
-
-  // ---------- wake/refresh ----------
-  useEffect(() => {
-    const onWake = () => fetchPage(activeTab, debouncedSearch, page, false);
-    const onRefresh = () => fetchPage(activeTab, debouncedSearch, page, true);
-    window.addEventListener("admin-wake", onWake);
-    window.addEventListener("admin-refresh", onRefresh);
-    return () => {
-      window.removeEventListener("admin-wake", onWake);
-      window.removeEventListener("admin-refresh", onRefresh);
-    };
-  }, [fetchPage, activeTab, debouncedSearch, page]);
-
-  // url sync for tab
-  const setTabAndUrl = (t: AdminTabKey) => {
-    setPage(1);
-    setActiveTab(t);
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("tab", t);
-      router.replace(url.pathname + "?" + url.searchParams.toString());
+    } catch (error) {
+      console.warn("Fetch error:", error);
+      setRows([]);
+      setTotalCount(0);
+    } finally {
+      setLoadingInitial(false);
     }
+  }, [supabase, pageSize, debouncedSearch, filterPIC, filterStage, filterStatus]);
+
+  // Load counts on mount
+  useEffect(() => {
+    fetchCounts().then(setTabCounts);
+  }, [fetchCounts]);
+
+  // Load data when filters change
+  useEffect(() => {
+    fetchPage(activeTab, page);
+  }, [fetchPage, activeTab, page]);
+
+  // Load filter options
+  useEffect(() => {
+    const loadOptions = async () => {
+      try {
+        const { data } = await supabase.from(VIEW).select("stage,status");
+        
+        const stages = [...new Set((data || []).map(r => r.stage).filter(Boolean))];
+        const statuses = [...new Set((data || []).map(r => r.status).filter(Boolean))];
+
+        setPicOptions(["any"]); // PIC filtering disabled for now with new schema
+        setStageOptions(["any", ...stages]);
+        setStatusOptions(["any", ...statuses]);
+      } catch (err) {
+        console.warn("Options load error:", err);
+      }
+    };
+    loadOptions();
+  }, [supabase]);
+
+  const handleTabChange = (tab: AdminTabKey) => {
+    setActiveTab(tab);
+    setPage(1);
+    router.push(`/admin/projects?tab=${tab}`);
   };
 
-  // bulk actions (mutasi langsung; nama tabel "projects" sesuaikan jika berbeda)
-  const bulkAssignPIC = async (ids: string[], pic: string | null) => {
-    if (ids.length === 0) return;
-    const { error } = await supabase.from("projects").update({ assigned_pic: pic }).in("id", ids);
-    if (error) console.error(error);
-    
-    await fetchPage(activeTab, debouncedSearch, page, false);
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
   };
 
-  const bulkMarkFinished = async (ids: string[]) => {
-    if (ids.length === 0) return;
-    const { error } = await supabase
-      .from("projects")
-      .update({ status: "finished", is_finished: true, is_active: false })
-      .in("id", ids);
-    if (error) console.error(error);
-    
-    await fetchPage(activeTab, debouncedSearch, page, false);
+  const handleOpen = (project_id: string) => {
+    router.push(`/admin/projects/${project_id}`);
+  };
+
+  const handleBulkAssignPIC = async (ids: string[], pic: string | null) => {
+    // TODO: Implement bulk assign
+    console.log("Bulk assign PIC:", ids, pic);
+  };
+
+  const handleBulkMarkFinished = async (ids: string[]) => {
+    // TODO: Implement bulk mark finished
+    console.log("Bulk mark finished:", ids);
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <AdminPanel
-        activeTab={activeTab}
-        counts={tabCounts}
-        onTabChange={setTabAndUrl}
-        search={search}
-        onSearchChange={(v) => { setPage(1); setSearch(v); }}
-        filterPIC={filterPIC}
-        filterStage={filterStage}
-        filterStatus={filterStatus}
-        onFilterPIC={(v) => { setPage(1); setFilterPIC(v); }}
-        onFilterStage={(v) => { setPage(1); setFilterStage(v); }}
-        onFilterStatus={(v) => { setPage(1); setFilterStatus(v); }}
-        filterOptions={{ picOptions, stageOptions, statusOptions }}
-        loading={loadingInitial}
-        rows={rows}
-        totalCount={totalCount}
-        currentPage={page}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        onOpen={(id) => router.push(`/admin/projects/${id}`)}
-        onBulkAssignPIC={bulkAssignPIC}
-        onBulkMarkFinished={bulkMarkFinished}
-      />
-    </div>
+    <div className="flex flex-col gap-6">
+    <AdminPanel
+      rows={rows}
+      counts={tabCounts}
+      activeTab={activeTab}
+      onTabChange={handleTabChange}
+      search={search}
+      onSearchChange={setSearch}
+      filterPIC={filterPIC}
+      filterStage={filterStage}
+      filterStatus={filterStatus}
+      onFilterPIC={setFilterPIC}
+      onFilterStage={setFilterStage}
+      onFilterStatus={setFilterStatus}
+      filterOptions={{
+        picOptions,
+        stageOptions,
+        statusOptions,
+      }}
+      loading={loadingInitial}
+      totalCount={totalCount}
+      currentPage={page}
+      pageSize={pageSize}
+      onPageChange={handlePageChange}
+      onOpen={handleOpen}
+      onBulkAssignPIC={handleBulkAssignPIC}
+      onBulkMarkFinished={handleBulkMarkFinished}
+    /></div>
   );
 }

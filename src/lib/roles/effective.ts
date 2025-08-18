@@ -3,7 +3,7 @@ import type { UserRole } from "@/lib/roles";
 import { getSupabaseClient, ensureFreshSession } from "@/lib/supabase/client";
 
 const PRIORITY: UserRole[] = [
-  "owner","admin","anr","producer","composer","audio_engineer","publishing","client","guest",
+  "owner","admin","anr","producer","composer","engineer","publisher","client","guest",
 ];
 
 export async function getEffectiveRole(): Promise<UserRole> {
@@ -15,14 +15,38 @@ export async function getEffectiveRole(): Promise<UserRole> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return "guest";
 
-  const { data, error } = await supabase
-    .from("app_user_roles")
-    .select("role")
-    .eq("auth_user_id", user.id);
+  try {
+    // Get user profile with main_role and staff_role
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("main_role, staff_role")
+      .eq("id", user.id)
+      .single();
 
-  if (error || !data?.length) return "client";
+    if (error || !profile) return "client";
 
-  const roles = data.map(r => r.role as UserRole);
-  for (const r of PRIORITY) if (roles.includes(r)) return r;
-  return "client";
+    // Combine main_role and staff_role for priority checking
+    const allRoles: string[] = [];
+    
+    // Add main_role (global permission)
+    if (profile.main_role) {
+      allRoles.push(profile.main_role);
+    }
+    
+    // Add staff_role array (functional roles)
+    if (profile.staff_role && Array.isArray(profile.staff_role)) {
+      allRoles.push(...profile.staff_role);
+    }
+
+    // Find highest priority role
+    const roles = allRoles as UserRole[];
+    for (const r of PRIORITY) {
+      if (roles.includes(r)) return r;
+    }
+    
+    return "client";
+  } catch (err) {
+    console.warn('Failed to get effective role:', err);
+    return "client";
+  }
 }

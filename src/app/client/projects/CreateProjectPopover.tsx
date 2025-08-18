@@ -243,10 +243,16 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     (async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id,name")
-        .eq("role", "engineer")
-        .order("name", { ascending: true })
-        .returns<EngineerRow[]>();
+        .select("id, first_name, last_name, main_role, staff_role")
+        .or("main_role.eq.admin,staff_role.cs.{engineer}")
+        .order("first_name", { ascending: true })
+        .returns<Array<{
+          id: string; 
+          first_name: string | null; 
+          last_name: string | null;
+          main_role: string | null;
+          staff_role: string[] | null;
+        }>>();
 
       if (ac.signal.aborted) return;
       if (error) {
@@ -258,7 +264,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
         setEngineers(
           (data ?? []).map((r) => ({
             id: r.id,
-            name: r.name ?? "Unnamed",
+            name: [r.first_name, r.last_name].filter(Boolean).join(" ") || "Unnamed",
           }))
         );
       }
@@ -419,7 +425,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   /** ---------- UI ---------- */
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <section className="space-y-2">
-      <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
+      <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100 dark:text-gray-100">{title}</h3>
       {children}
     </section>
   );
@@ -438,7 +444,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
         type="button"
         id={id}
         onClick={() => onChange(!checked)}
-        className="w-5 h-5 flex items-center justify-center border border-coolgray-40 rounded-sm bg-white"
+        className="w-5 h-5 flex items-center justify-center border border-coolgray-40 rounded-sm bg-white dark:bg-gray-900"
       >
         {checked && (
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-primary-60">
@@ -461,16 +467,16 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
         onClick={() => toggleService(s.service_key)}
         className={[
           "group relative flex items-start gap-3 rounded-xl border px-3 py-3 text-left transition",
-          active ? "border-primary-60 bg-primary-50/10" : "border-gray-200 hover:border-gray-300 hover:bg-gray-50",
+          active ? "border-primary-60 bg-primary-50/10" : "border-gray-200 dark:border-gray-600 dark:border-gray-600 hover:border-gray-300 dark:border-gray-600 dark:border-gray-600 hover:bg-gray-50 dark:bg-gray-800",
         ].join(" ")}
         onMouseDown={(e) => e.preventDefault()}
       >
-        <div className={["mt-0.5 h-4 w-4 rounded border", active ? "bg-primary-60 border-primary-60" : "bg-white border-gray-300"].join(" ")} />
+        <div className={["mt-0.5 h-4 w-4 rounded border", active ? "bg-primary-60 border-primary-60" : "bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 dark:border-gray-600"].join(" ")} />
         <div className="min-w-0">
-          <div className="text-sm font-medium text-gray-900">
+          <div className="text-sm font-medium text-gray-900 dark:text-white">
             {s.label}{s.is_subscription ? " • /mo" : ""}
           </div>
-          <div className="text-xs text-gray-500">{idr(Number(s.price))}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">{idr(Number(s.price))}</div>
         </div>
       </button>
     );
@@ -480,7 +486,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   return (
     <div
       className={[
-        "fixed inset-0 z-40 flex items-start justify-center bg-black/40 backdrop-blur-sm transition",
+        "fixed inset-0 z-40 flex items-start justify-center bg-black/40  transition",
         open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
       ].join(" ")}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -499,24 +505,24 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     >
       <div className="mx-4 my-6 w-full max-w-6xl">
         <div
-          className="overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
+          className="overflow-hidden rounded-2xl bg-white dark:bg-gray-900 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-2xl ring-1 ring-black/5"
           onPointerDown={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
           {/* header */}
-          <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-white/90 px-5 py-3 backdrop-blur">
+          <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-[var(--border)] bg-white dark:bg-gray-900/90 px-5 py-3 backdrop-blur">
             <div className="flex items-center gap-3">
-              <h2 className="text-base font-semibold text-gray-900">Order Form</h2>
-              <div className="text-xs text-gray-500">Step {step} of 3</div>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">Order Form</h2>
+              <div className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">Step {step} of 3</div>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-60"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-gray-100 dark:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-60"
               aria-label="Close"
             >
-              <Close className="h-5 w-5 text-gray-600" />
+              <Close className="h-5 w-5 text-neutral-600 dark:text-neutral-200 dark:text-gray-200" />
             </button>
           </div>
 
@@ -525,41 +531,41 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
             {step === 1 && (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">Song Title</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Song Title</label>
                   <input
                     value={songTitle}
                     onChange={(e) => setSongTitle(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
+                    className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:border-gray-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
                     placeholder="e.g., 'Aurora'"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Album Title</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Album Title</label>
                   <input
                     value={albumTitle}
                     onChange={(e) => setAlbumTitle(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
+                    className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:border-gray-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
                     placeholder="Optional"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Artist Name</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Artist Name</label>
                   <input
                     value={artistName}
                     onChange={(e) => setArtistName(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
+                    className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:border-gray-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
                     placeholder="Artist"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Genre</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Genre</label>
                   <select
                     value={genre}
                     onChange={(e) => setGenre(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
+                    className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:border-gray-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
                   >
                     <option value="" disabled>Choose genre</option>
                     {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
@@ -567,11 +573,11 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Sub-genre</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Sub-genre</label>
                   <select
                     value={subGenre}
                     onChange={(e) => setSubGenre(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
+                    className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:border-gray-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-60"
                   >
                     <option value="" disabled>Choose sub-genre</option>
                     {SUBGENRES.map((sg) => <option key={sg} value={sg}>{sg}</option>)}
@@ -579,22 +585,22 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">Song Synopsis / Description</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Song Synopsis / Description</label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={4}
                     className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 ${
-                      description.trim().length < MIN_DESC ? "border-red-300 focus:ring-red-400" : "border-gray-300 focus:ring-primary-60"
+                      description.trim().length < MIN_DESC ? "border-red-300 focus:ring-red-400" : "border-gray-300 dark:border-gray-600 dark:border-gray-600 focus:ring-primary-60"
                     }`}
                     placeholder={`Write a synopsis / description about the project (min ${MIN_DESC} characters)`}
                   />
                   <div className="mt-1 flex items-center justify-between text-xs">
-                    <span className={description.trim().length < MIN_DESC ? "text-red-600" : "text-gray-500"}>
+                    <span className={description.trim().length < MIN_DESC ? "text-red-600 dark:text-red-200" : "text-gray-500 dark:text-gray-400 dark:text-gray-400"}>
                       {description.trim().length}/{MIN_DESC} characters
                     </span>
                     {description.trim().length < MIN_DESC && (
-                      <span className="text-red-600">Please add more details to reach at least {MIN_DESC} characters.</span>
+                      <span className="text-red-600 dark:text-red-200">Please add more details to reach at least {MIN_DESC} characters.</span>
                     )}
                   </div>
                 </div>
@@ -630,21 +636,21 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                           onClick={() => setBundleWithPreserve(active ? null : b.id)}
                           className={[
                             "rounded-xl border px-4 py-3 text-left transition",
-                            active ? "border-primary-60 bg-primary-50/10" : "border-gray-200 hover:border-gray-300 hover:bg-gray-50",
+                            active ? "border-primary-60 bg-primary-50/10" : "border-gray-200 dark:border-gray-600 dark:border-gray-600 hover:border-gray-300 dark:border-gray-600 dark:border-gray-600 hover:bg-gray-50 dark:bg-gray-800",
                           ].join(" ")}
                           onMouseDown={(e) => e.preventDefault()}
                         >
                           <div className="flex items-start justify-between">
                             <div>
-                              <div className="text-sm font-semibold text-gray-900">{b.label}</div>
-                              {b.note && <div className="mt-0.5 text-xs text-gray-600">{b.note}</div>}
-                              <div className="mt-1 text-xs text-gray-500">
+                              <div className="text-sm font-semibold text-gray-900 dark:text-white">{b.label}</div>
+                              {b.note && <div className="mt-0.5 text-xs text-neutral-600 dark:text-neutral-200 dark:text-gray-200">{b.note}</div>}
+                              <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">
                                 Includes: {b.items.map(it => it.label).join(", ")}
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-sm font-semibold text-gray-900">{idr(Number(b.bundle_price))}</div>
-                              <div className="text-xs text-green-600">Save {idr(saved)}</div>
+                              <div className="text-sm font-semibold text-gray-900 dark:text-white">{idr(Number(b.bundle_price))}</div>
+                              <div className="text-xs text-green-600 dark:text-green-200">Save {idr(saved)}</div>
                             </div>
                           </div>
                         </button>
@@ -655,8 +661,8 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
 
                 {/* Custom Price Editor */}
                 <Section title="Service Details">
-                  <div className="rounded-xl border border-gray-200">
-                    <div className="grid grid-cols-12 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-500">
+                  <div className="rounded-xl border border-gray-200 dark:border-gray-600 dark:border-gray-600">
+                    <div className="grid grid-cols-12 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">
                       <div className="col-span-6">Service</div>
                       <div className="col-span-2 text-right">Default Price</div>
                       <div className="col-span-2 text-right">Premium Price</div>
@@ -664,7 +670,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                     </div>
                     <div>
                       {Array.from(selectedServices).length === 0 ? (
-                        <div className="px-3 py-3 text-sm text-gray-500">Pilih service terlebih dahulu.</div>
+                        <div className="px-3 py-3 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">Pilih service terlebih dahulu.</div>
                       ) : (
                         Array.from(selectedServices)
                           .map(k => services.find(s => s.service_key === k))
@@ -681,7 +687,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                             return (
                               <div key={key} className="grid grid-cols-12 items-center border-t px-3 py-2 text-sm">
                                 <div className="col-span-6">
-                                  <div className="font-medium text-gray-800">
+                                  <div className="font-medium text-gray-800 dark:text-gray-100 dark:text-gray-100">
                                     {s.label}{s.is_subscription ? " • /mo" : ""}
                                   </div>
                                   {inBundle && (
@@ -690,7 +696,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                                     </div>
                                   )}
                                 </div>
-                                <div className="col-span-2 text-right text-gray-700">{idr(def)}</div>
+                                <div className="col-span-2 text-right text-gray-700 dark:text-gray-200">{idr(def)}</div>
                                 <div className="col-span-2 text-right">
                                   {inBundle ? (
                                     <span className="text-xs text-gray-400">—</span>
@@ -706,17 +712,17 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                                         setPriceDraft(p => ({ ...p, [key]: v }));
                                       }}
                                       onBlur={(e) => commitCustomPrice(key, e.currentTarget.value)}
-                                      className="w-32 rounded-md border border-gray-300 px-2 py-1 text-right text-sm outline-none focus:ring-2 focus:ring-primary-60"
+                                      className="w-32 rounded-md border border-gray-300 dark:border-gray-600 dark:border-gray-600 px-2 py-1 text-right text-sm outline-none focus:ring-2 focus:ring-primary-60"
                                     />
                                   )}
                                 </div>
                                 <div className="col-span-2 text-right">
                                   {inBundle ? (
-                                    <span className="font-medium text-gray-900">{idr(resolved)}</span>
+                                    <span className="font-medium text-gray-900 dark:text-white">{idr(resolved)}</span>
                                   ) : isCustom ? (
-                                    <span className="font-semibold text-gray-900"><span aria-hidden>★ </span>{idr(resolved)}</span>
+                                    <span className="font-semibold text-gray-900 dark:text-white"><span aria-hidden>★ </span>{idr(resolved)}</span>
                                   ) : (
-                                    <span className="font-medium text-gray-900">{idr(resolved)}</span>
+                                    <span className="font-medium text-gray-900 dark:text-white">{idr(resolved)}</span>
                                   )}
                                 </div>
                               </div>
@@ -735,13 +741,13 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                 <Section title="Review">
                   <div className="rounded-xl border p-3 text-sm">
                     <div className="grid gap-2 sm:grid-cols-2">
-                      <div><span className="text-gray-500">Song</span><div className="font-medium">{songTitle || "-"}</div></div>
-                      <div><span className="text-gray-500">Artist</span><div className="font-medium">{artistName || "-"}</div></div>
-                      <div><span className="text-gray-500">Album</span><div className="font-medium">{albumTitle || "-"}</div></div>
-                      <div><span className="text-gray-500">Genre</span><div className="font-medium">{genre || "-"}{subGenre ? ` / ${subGenre}` : ""}</div></div>
+                      <div><span className="text-gray-500 dark:text-gray-400 dark:text-gray-400">Song</span><div className="font-medium">{songTitle || "-"}</div></div>
+                      <div><span className="text-gray-500 dark:text-gray-400 dark:text-gray-400">Artist</span><div className="font-medium">{artistName || "-"}</div></div>
+                      <div><span className="text-gray-500 dark:text-gray-400 dark:text-gray-400">Album</span><div className="font-medium">{albumTitle || "-"}</div></div>
+                      <div><span className="text-gray-500 dark:text-gray-400 dark:text-gray-400">Genre</span><div className="font-medium">{genre || "-"}{subGenre ? ` / ${subGenre}` : ""}</div></div>
                     </div>
                     <div className="mt-3">
-                      <div className="text-gray-500">Services</div>
+                      <div className="text-gray-500 dark:text-gray-400 dark:text-gray-400">Services</div>
                       <ul className="list-disc pl-5">
                         {Array.from(selectedServices).map((k) => {
                           const s = services.find((x) => x.service_key === k);
@@ -770,7 +776,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                     </div>
                     {description?.trim() && (
                       <div className="mt-3">
-                        <div className="text-gray-500">Description</div>
+                        <div className="text-gray-500 dark:text-gray-400 dark:text-gray-400">Description</div>
                         <div className="whitespace-pre-wrap">{description}</div>
                       </div>
                     )}
@@ -781,7 +787,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                 <Section title="Preferences">
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="block text-sm text-gray-700">Project Start</label>
+                      <label className="block text-sm text-gray-700 dark:text-gray-200">Project Start</label>
                       <input
                         type="date"
                         value={startDate}
@@ -790,7 +796,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                       />
                     </div>
                     <div>
-                      <label className="block text-sm text-gray-700">Project End</label>
+                      <label className="block text-sm text-gray-700 dark:text-gray-200">Project End</label>
                       <input
                         type="date"
                         value={deadline}
@@ -802,7 +808,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
 
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="block text-sm text-gray-700">Preferred Engineer</label>
+                      <label className="block text-sm text-gray-700 dark:text-gray-200">Preferred Engineer</label>
                       <select
                         value={preferredEngineerId}
                         onChange={(e) => setEngineerWithPreserve(e.target.value)}
@@ -834,7 +840,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                           className={`rounded-lg border px-3 py-2 text-sm transition-colors
                             ${active
                               ? "border-primary-60 bg-primary-50 text-white"
-                              : "border-gray-300 hover:border-primary-60 hover:bg-primary-50/10"}`}
+                              : "border-gray-300 dark:border-gray-600 dark:border-gray-600 hover:border-primary-60 hover:bg-primary-50/10"}`}
                           onMouseDown={(e) => e.preventDefault()}
                         >
                           {opt.label}
@@ -847,7 +853,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                 {/* Agreement */}
                 <div className="flex items-start gap-2">
                   <FancyCheckbox id="agree" checked={agree} onChange={setAgreeWithPreserve} />
-                  <label htmlFor="agree" className="text-sm text-gray-700 cursor-pointer">
+                  <label htmlFor="agree" className="text-sm text-gray-700 dark:text-gray-200 cursor-pointer">
                     I agree with the deliverables & payment plan above.
                   </label>
                 </div>
@@ -856,18 +862,18 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
           </div>
 
           {/* footer */}
-          <div className="border-t bg-white/90 px-5 py-3 backdrop-blur">
+          <div className="border-t bg-white dark:bg-gray-900/90 px-5 py-3 backdrop-blur">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-sm text-gray-700">
+              <div className="text-sm text-gray-700 dark:text-gray-200">
                 <span className="font-medium">Total:</span>{" "}
-                <span className="font-semibold text-gray-900">{idr(total)}</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{idr(total)}</span>
                 {selectedBundle && <span className="ml-2 text-xs text-primary-60">(Bundle Applied)</span>}
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                  className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:bg-gray-800"
                 >
                   Close
                 </button>
@@ -876,7 +882,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                   <button
                     type="button"
                     onClick={() => goStep(step === 3 ? 2 : 1)}
-                    className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                    className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:bg-gray-800"
                   >
                     Back
                   </button>
@@ -891,7 +897,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                         ? !(songTitle.trim() && description.trim().length >= MIN_DESC)
                         : (selectedServices.size === 0 && !selectedBundleId)
                     }
-                    className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-110 disabled:opacity-50"
+                    className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-sm hover:brightness-110 disabled:opacity-50"
                   >
                     Next
                   </button>
@@ -900,14 +906,14 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                     type="button"
                     onClick={handleSubmit}
                     disabled={saving || !agree || !songTitle.trim()}
-                    className="inline-flex items-center rounded-lg bg-primary-60 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-95 disabled:opacity-60"
+                    className="inline-flex items-center rounded-lg bg-primary-60 px-4 py-2 text-sm font-semibold text-white shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-sm hover:brightness-95 disabled:opacity-60"
                   >
                     {saving ? "Sending Request..." : "Send Request"}
                   </button>
                 )}
               </div>
             </div>
-            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+            {error && <p className="mt-2 text-sm text-red-600 dark:text-red-200">{error}</p>}
           </div>
         </div>
       </div>

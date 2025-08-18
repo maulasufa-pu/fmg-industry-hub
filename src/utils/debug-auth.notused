@@ -1,0 +1,74 @@
+// // src/utils/debug-auth.ts
+// import { getSupabaseClient } from "@/lib/supabase/client";
+
+// // Helper to get effective role from profile
+// function getEffectiveRoleFromProfile(profile: any) {
+//   if (!profile) return "client";
+  
+//   const allRoles: string[] = [];
+//   if (profile.main_role) allRoles.push(profile.main_role);
+//   if (profile.staff_role && Array.isArray(profile.staff_role)) {
+//     allRoles.push(...profile.staff_role);
+//   }
+  
+//   // Priority: owner > admin > others
+//   if (allRoles.includes("owner")) return "owner";
+//   if (allRoles.includes("admin")) return "admin";
+//   return "client";
+// }
+
+// function canUserAccessAdmin(profile: any) {
+//   const effectiveRole = getEffectiveRoleFromProfile(profile);
+//   return effectiveRole === "admin" || effectiveRole === "owner";
+// }
+
+// export async function debugUserRole() {
+//   const supabase = getSupabaseClient();
+  
+//   try {
+//     // Get current session
+//     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+//     if (sessionError) {
+//       console.error("Session error:", sessionError);
+//       return { error: "Session error", details: sessionError };
+//     }
+    
+//     if (!session) {
+//       console.log("No active session");
+//       return { error: "No active session" };
+//     }
+    
+//     console.log("Session user:", session.user);
+//     console.log("User ID:", session.user.id);
+    
+//     // Get profile data
+//     const { data: profile, error: profileError } = await supabase
+//       .from("profiles")
+//       .select("*")
+//       .eq("id", session.user.id)
+//       .maybeSingle();
+      
+//     if (profileError) {
+//       console.error("Profile error:", profileError);
+//       return { error: "Profile error", details: profileError, userId: session.user.id };
+//     }
+    
+//     console.log("Profile data:", profile);
+    
+//     return {
+//       success: true,
+//       userId: session.user.id,
+//       userEmail: session.user.email,
+//       profile,
+//       mainRole: profile?.main_role,
+//       staffRoles: profile?.staff_role,
+//       effectiveRole: getEffectiveRoleFromProfile(profile),
+//       canAccessAdmin: canUserAccessAdmin(profile)
+//     };
+    
+//   } catch (err) {
+//     console.error("Debug error:", err);
+//     return { error: "Unexpected error", details: err };
+//   }
+// }

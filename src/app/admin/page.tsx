@@ -14,9 +14,9 @@ export default async function AdminIndex() {
       redirect("/admin/producer/board");
     case "composer":
       redirect("/admin/composer/assigned");
-    case "audio_engineer":
+    case "engineer":
       redirect("/admin/engineer/queue");
-    case "publishing":
+    case "publisher":
       redirect("/admin/publishing/dashboard");
     default:
       redirect("/client"); // client/guest diarahkan keluar area admin

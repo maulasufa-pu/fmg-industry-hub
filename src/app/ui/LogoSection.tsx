@@ -83,7 +83,7 @@ const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             onSubmit={handleSubscribe}
             className="inline-flex items-center gap-4 relative flex-[0_0_auto]"
           >
-            <div className="inline-flex h-12 items-center gap-2 px-4 py-3 relative flex-[0_0_auto] bg-coolgray-10 border-b [border-bottom-style:solid] border-coolgray-30">
+            <div className="inline-flex h-12 items-center gap-2 px-4 py-3 relative flex-[0_0_auto] bg-coolgray-10 border-[var(--border)] [border-bottom-style:solid] border-coolgray-30">
               <Envelope className="!relative !w-6 !h-6" />
               <input
                 type="email"

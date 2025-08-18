@@ -27,9 +27,9 @@ const QUERY_COLS =
   "id,invoice_no,client_name,project_id,issue_date,due_date,currency,amount_total,status,notes,created_at";
 
 const Card: React.FC<React.PropsWithChildren<{ title: string; right?: React.ReactNode }>> = ({ title, right, children }) => (
-  <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+  <section className="rounded-xl border border-gray-200 dark:border-gray-600 dark:border-gray-600 bg-white dark:bg-gray-900 p-4 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-sm">
     <div className="mb-3 flex items-center justify-between">
-      <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
+      <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100 dark:text-gray-100">{title}</h3>
       {right}
     </div>
     {children}
@@ -213,13 +213,13 @@ export default function InvoicesPage(): React.JSX.Element {
             value={search}
             onChange={(e) => { setPage(1); setSearch(e.target.value); }}
             placeholder="Search invoice no / client…"
-            className="h-9 rounded-md border border-gray-300 px-3 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+            className="h-9 rounded-md border border-gray-300 dark:border-gray-600 dark:border-gray-600 px-3 text-sm outline-none focus:ring-2 focus:ring-blue-600"
           />
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-gray-200">
+      <div className="flex items-center gap-2 border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600">
         {(["All", "Unpaid", "Paid", "Draft"] as TabKey[]).map((t) => {
           const active = activeTab === t;
           return (
@@ -228,8 +228,8 @@ export default function InvoicesPage(): React.JSX.Element {
               onClick={() => setTab(t)}
               className={`px-3 py-2 text-sm ${
                 active
-                  ? "border-b-2 border-blue-600 text-blue-600"
-                  : "text-gray-600 hover:text-blue-600"
+                  ? "border-[var(--border)]-2 border-blue-600 text-sky-600 dark:text-sky-200"
+                  : "text-neutral-600 dark:text-neutral-200 dark:text-gray-200 hover:text-sky-600 dark:text-sky-200"
               }`}
             >
               {t}
@@ -240,25 +240,25 @@ export default function InvoicesPage(): React.JSX.Element {
 
       {/* List */}
       {loadingInitial ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-gray-500 shadow">
+        <div className="rounded-xl border border-gray-200 dark:border-gray-600 dark:border-gray-600 bg-white dark:bg-gray-900 p-8 text-gray-500 dark:text-gray-400 dark:text-gray-400 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25">
           Loading invoices…
         </div>
       ) : (
         <Card
           title="Invoices"
           right={
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">
               {totalCount.toLocaleString("id-ID")} total
             </span>
           }
         >
           {rows.length === 0 ? (
-            <div className="text-sm text-gray-500">No invoices found.</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">No invoices found.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
-                  <tr className="text-left text-gray-500">
+                  <tr className="text-left text-gray-500 dark:text-gray-400 dark:text-gray-400">
                     <th className="px-3 py-2">Invoice No</th>
                     <th className="px-3 py-2">Client</th>
                     <th className="px-3 py-2">Issue</th>
@@ -271,7 +271,7 @@ export default function InvoicesPage(): React.JSX.Element {
                 <tbody>
                   {rows.map((r) => (
                     <tr key={r.id} className="border-t">
-                      <td className="px-3 py-2 font-medium text-gray-800">{r.invoice_no}</td>
+                      <td className="px-3 py-2 font-medium text-gray-800 dark:text-gray-100 dark:text-gray-100">{r.invoice_no}</td>
                       <td className="px-3 py-2">{r.client_name ?? "-"}</td>
                       <td className="px-3 py-2">{r.issue_date ? new Date(r.issue_date).toLocaleDateString("id-ID") : "-"}</td>
                       <td className="px-3 py-2">{r.due_date ? new Date(r.due_date).toLocaleDateString("id-ID") : "-"}</td>
@@ -284,7 +284,7 @@ export default function InvoicesPage(): React.JSX.Element {
                       <td className="px-3 py-2">
                         <button
                           onClick={() => openInvoice(r.id)}
-                          className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
+                          className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50 dark:bg-gray-800"
                         >
                           Open
                         </button>
@@ -298,19 +298,19 @@ export default function InvoicesPage(): React.JSX.Element {
 
           {/* Pagination */}
           <div className="mt-4 flex items-center justify-between">
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">
               Page {pageSafe} / {Math.max(1, Math.ceil(totalCount / pageSize))}
             </div>
             <div className="flex items-center gap-2">
               <button
-                className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50 disabled:opacity-50"
+                className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50 dark:bg-gray-800 disabled:opacity-50"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={pageSafe <= 1}
               >
                 Prev
               </button>
               <button
-                className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50 disabled:opacity-50"
+                className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50 dark:bg-gray-800 disabled:opacity-50"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={pageSafe >= totalPages}
               >

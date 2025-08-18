@@ -80,7 +80,7 @@ export const ProjectTableSection = ({
   const ProgressBar = ({ value = 0 }: { value?: number | null }) => {
     const pct = Math.max(0, Math.min(100, Number(value ?? 0)));
     return (
-      <div className="h-2 overflow-hidden rounded-full bg-gray-200">
+      <div className="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700 dark:bg-gray-700">
         <div
           className="h-full bg-blue-600 transition-[width] duration-500 ease-in-out"
           style={{ width: `${pct}%` }}
@@ -92,36 +92,36 @@ export const ProjectTableSection = ({
   // ---------- empty ----------
   if (rows.length === 0) {
     return (
-      <div className="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white p-10 shadow-lg">
-        <span className="text-base font-medium text-gray-500">{emptyText}</span>
+      <div className="flex w-full items-center justify-center rounded-lg border border-gray-200 dark:border-gray-600 dark:border-gray-600 bg-white dark:bg-gray-900 p-10 shadow-lg dark:shadow-slate-900/25">
+        <span className="text-base font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">{emptyText}</span>
       </div>
     );
   }
 
   return (
-    <table className="w-full border-collapse overflow-hidden rounded-lg bg-white shadow-lg" role="table">
+    <table className="w-full border-collapse overflow-hidden rounded-lg bg-white dark:bg-gray-900 shadow-lg dark:shadow-slate-900/25" role="table">
       <thead>
-        <tr className="h-12 bg-gray-100 text-gray-700">
-          <th className="w-12 border-b border-gray-200 p-3 text-center">
+        <tr className="h-12 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200">
+          <th className="w-12 border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 p-3 text-center">
             <input
               type="checkbox"
               checked={selectAll}
               onChange={handleSelectAll}
-              className="h-5 w-5 cursor-pointer appearance-none rounded-sm border border-gray-300 checked:bg-blue-600 focus:ring-2 focus:ring-blue-500"
+              className="h-5 w-5 cursor-pointer appearance-none rounded-sm border border-gray-300 dark:border-gray-600 dark:border-gray-600 checked:bg-blue-600 focus:ring-2 focus:ring-blue-500"
               aria-label="Select all rows"
             />
           </th>
 
           {tableHeaders.map((header) => (
-            <th key={header.key as string} className="border-b border-gray-200 px-4 py-3 text-left">
+            <th key={header.key as string} className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 px-4 py-3 text-left">
               <div className="flex items-center gap-2">
                 <span className="font-semibold">{header.label}</span>
-                {header.hasSort && <ArrowDown className="text-gray-600" />}
+                {header.hasSort && <ArrowDown className="text-neutral-600 dark:text-neutral-200 dark:text-gray-200" />}
               </div>
             </th>
           ))}
 
-          <th className="w-10 border-b border-gray-200 p-3 text-center" />
+          <th className="w-10 border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 p-3 text-center" />
         </tr>
       </thead>
 
@@ -131,7 +131,7 @@ export const ProjectTableSection = ({
           return (
             <React.Fragment key={project.id}>
               <tr
-                className="group cursor-pointer hover:bg-gray-50"
+                className="group cursor-pointer hover:bg-gray-50 dark:bg-gray-800"
                 onClick={() => toggleRowExpand(project.id)}
                 onDoubleClick={(e: React.MouseEvent<HTMLTableRowElement>) => {
                   e.stopPropagation();
@@ -139,34 +139,34 @@ export const ProjectTableSection = ({
                 }}
                 aria-expanded={isExpanded}
               >
-                <td className="border-b border-gray-200 p-3 text-center">
+                <td className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 p-3 text-center">
                   <input
                     type="checkbox"
                     checked={selectedRows.has(project.id)}
                     onChange={() => handleRowSelection(project.id)}
                     onClick={(e) => e.stopPropagation()}
-                    className="h-5 w-5 cursor-pointer appearance-none rounded-sm border border-gray-300 checked:bg-blue-600 focus:ring-2 focus:ring-blue-500"
+                    className="h-5 w-5 cursor-pointer appearance-none rounded-sm border border-gray-300 dark:border-gray-600 dark:border-gray-600 checked:bg-blue-600 focus:ring-2 focus:ring-blue-500"
                     aria-label={`Select row ${project.projectName}`}
                   />
                 </td>
 
                 {/* Author */}
-                <td className="border-b border-gray-200 px-4 py-3">
+                <td className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 px-4 py-3">
                   <div className="flex items-center gap-4">
-                    <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-gray-200">
-                      <User className="h-6 w-6 text-gray-600" />
+                    <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700 dark:bg-gray-700">
+                      <User className="h-6 w-6 text-neutral-600 dark:text-neutral-200 dark:text-gray-200" />
                     </div>
                     <div className="min-w-0">
-                      <div className="truncate font-semibold text-gray-800">{project.projectName}</div>
-                      <div className="truncate text-sm text-gray-500">{project.artistName ?? "-"}</div>
+                      <div className="truncate font-semibold text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.projectName}</div>
+                      <div className="truncate text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">{project.artistName ?? "-"}</div>
                     </div>
                   </div>
                 </td>
 
-                <td className="border-b border-gray-200 px-4 py-3 text-gray-700">{project.genre ?? "-"}</td>
-                <td className="border-b border-gray-200 px-4 py-3 text-gray-700">{project.stage ?? "-"}</td>
-                <td className="border-b border-gray-200 px-4 py-3 text-gray-700">{project.progressStatus}</td>
-                <td className="border-b border-gray-200 px-4 py-3 text-gray-700">
+                <td className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 px-4 py-3 text-gray-700 dark:text-gray-200">{project.genre ?? "-"}</td>
+                <td className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 px-4 py-3 text-gray-700 dark:text-gray-200">{project.stage ?? "-"}</td>
+                <td className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 px-4 py-3 text-gray-700 dark:text-gray-200">{project.progressStatus}</td>
+                <td className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 px-4 py-3 text-gray-700 dark:text-gray-200">
                   {project.latestUpdate
                     ? new Date(project.latestUpdate).toLocaleDateString("id-ID", {
                         day: "2-digit",
@@ -177,17 +177,17 @@ export const ProjectTableSection = ({
                 </td>
 
                 <td
-                  className="border-b border-gray-200 px-4 py-3"
+                  className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 px-4 py-3"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
+                  <div className="rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1 text-sm text-gray-700 dark:text-gray-200">
                     {project.assignedPIC}
                   </div>
                 </td>
 
-                <td className="border-b border-gray-200 p-3 text-center">
+                <td className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 p-3 text-center">
                   <button
-                    className={`h-6 w-6 text-gray-600 transition-transform ${
+                    className={`h-6 w-6 text-neutral-600 dark:text-neutral-200 dark:text-gray-200 transition-transform ${
                       isExpanded ? "rotate-180" : ""
                     }`}
                     onClick={(e) => {
@@ -204,7 +204,7 @@ export const ProjectTableSection = ({
 
               {/* Expanded Row */}
               <tr
-                className={`bg-gray-50 transition-[opacity,transform] duration-300 ease-in-out ${
+                className={`bg-gray-50 dark:bg-gray-800 transition-[opacity,transform] duration-300 ease-in-out ${
                   isExpanded ? "scale-y-100 opacity-100" : "scale-y-95 opacity-0"
                 }`}
                 style={{ visibility: isExpanded ? "visible" : "collapse" }}
@@ -212,27 +212,27 @@ export const ProjectTableSection = ({
                 <td colSpan={8} className="p-4">
                   <div className="grid grid-cols-2 gap-6">
                     {/* LEFT: Overview / Activity */}
-                    <div className="relative overflow-hidden rounded-md border border-gray-200 bg-white">
+                    <div className="relative overflow-hidden rounded-md border border-gray-200 dark:border-gray-600 dark:border-gray-600 bg-white dark:bg-gray-900">
                       {/* Controls */}
-                      <div className="absolute right-2 top-2 z-10 flex items-center gap-1 rounded-md bg-white/80 px-1.5 py-1 shadow-sm backdrop-blur">
+                      <div className="absolute right-2 top-2 z-10 flex items-center gap-1 rounded-md bg-white dark:bg-gray-900/80 px-1.5 py-1 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-sm backdrop-blur">
                         <button
                           onClick={() => goSlide(project.id, 0)}
                           className={`h-2 w-2 rounded-full ${
-                            (leftSlide[project.id] ?? 0) === 0 ? "bg-blue-600" : "bg-gray-300"
+                            (leftSlide[project.id] ?? 0) === 0 ? "bg-blue-600" : "bg-gray-300 dark:bg-gray-600 dark:bg-gray-600"
                           }`}
                           aria-label="Overview"
                         />
                         <button
                           onClick={() => goSlide(project.id, 1)}
                           className={`h-2 w-2 rounded-full ${
-                            (leftSlide[project.id] ?? 0) === 1 ? "bg-blue-600" : "bg-gray-300"
+                            (leftSlide[project.id] ?? 0) === 1 ? "bg-blue-600" : "bg-gray-300 dark:bg-gray-600 dark:bg-gray-600"
                           }`}
                           aria-label="Activity"
                         />
-                        <div className="mx-1 h-4 w-px bg-gray-200" />
+                        <div className="mx-1 h-4 w-px bg-gray-200 dark:bg-gray-700 dark:bg-gray-700" />
                         <button
                           onClick={() => goSlide(project.id, (leftSlide[project.id] ?? 0) === 0 ? 1 : 0)}
-                          className="rounded border border-gray-200 px-2 py-0.5 text-xs hover:bg-gray-50"
+                          className="rounded border border-gray-200 dark:border-gray-600 dark:border-gray-600 px-2 py-0.5 text-xs hover:bg-gray-50 dark:bg-gray-800"
                           aria-label="Toggle slide"
                         >
                           ❮❯
@@ -248,14 +248,14 @@ export const ProjectTableSection = ({
                           {/* Slide 1: Overview */}
                           <section className="w-1/2 p-4">
                             <div className="flex items-start gap-3">
-                              <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-gray-100">
+                              <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-gray-100 dark:bg-gray-800">
                                 <div className="grid h-full w-full place-items-center text-sm text-gray-400">
                                   No Cover
                                 </div>
                               </div>
                               <div className="min-w-0">
-                                <div className="font-semibold text-gray-800">{project.projectName}</div>
-                                <div className="text-sm text-gray-500">
+                                <div className="font-semibold text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.projectName}</div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
                                   {project.artistName ?? "-"} • {project.genre ?? "-"}
                                 </div>
                               </div>
@@ -263,7 +263,7 @@ export const ProjectTableSection = ({
 
                             {/* Progress */}
                             <div className="mt-4">
-                              <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
+                              <div className="mb-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">
                                 <span>Overall Progress</span>
                                 <span>{project.progress ?? 0}%</span>
                               </div>
@@ -272,10 +272,10 @@ export const ProjectTableSection = ({
 
                             {/* Small badges */}
                             <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                              <span className="rounded-full bg-gray-100 px-2 py-1 text-gray-700">
+                              <span className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-1 text-gray-700 dark:text-gray-200">
                                 Stage: {project.stage ?? "-"}
                               </span>
-                              <span className="rounded-full bg-gray-100 px-2 py-1 text-gray-700">
+                              <span className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-1 text-gray-700 dark:text-gray-200">
                                 Status: {project.progressStatus}
                               </span>
                             </div>
@@ -283,11 +283,11 @@ export const ProjectTableSection = ({
 
                           {/* Slide 2: Activity / Timeline */}
                           <section className="w-1/2 p-4">
-                            <div className="mb-2 text-sm font-medium text-gray-700">Recent Activity</div>
+                            <div className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Recent Activity</div>
                             <div className="max-h-44 overflow-auto pr-1 scroll-smooth">
                               <ul className="relative pl-4">
-                                <span className="absolute left-1 top-0 bottom-0 w-px bg-gray-200" aria-hidden />
-                                <li className="text-sm text-gray-500">No activity yet.</li>
+                                <span className="absolute left-1 top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-700 dark:bg-gray-700" aria-hidden />
+                                <li className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">No activity yet.</li>
                               </ul>
                             </div>
                           </section>
@@ -296,28 +296,28 @@ export const ProjectTableSection = ({
                     </div>
 
                     {/* RIGHT: details + CTA */}
-                    <div className="flex flex-col rounded-md border border-gray-200 bg-white p-4">
-                      <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-700">
-                        <div className="font-medium text-gray-500">Budget:</div>
-                        <div className="text-gray-800">{project.budget ?? "-"}</div>
+                    <div className="flex flex-col rounded-md border border-gray-200 dark:border-gray-600 dark:border-gray-600 bg-white dark:bg-gray-900 p-4">
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-700 dark:text-gray-200">
+                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">Budget:</div>
+                        <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.budget ?? "-"}</div>
 
-                        <div className="font-medium text-gray-500">Status:</div>
-                        <div className="text-gray-800">{project.progressStatus}</div>
+                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">Status:</div>
+                        <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.progressStatus}</div>
 
-                        <div className="font-medium text-gray-500">Stage:</div>
-                        <div className="text-gray-800">{project.stage ?? "-"}</div>
+                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">Stage:</div>
+                        <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.stage ?? "-"}</div>
 
-                        <div className="font-medium text-gray-500">Assigned PIC:</div>
-                        <div className="text-gray-800">{project.assignedPIC}</div>
+                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">Assigned PIC:</div>
+                        <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.assignedPIC}</div>
 
-                        <div className="font-medium text-gray-500">Assigned Engineer:</div>
-                        <div className="text-gray-800">{project.assignedEngineer ?? "-"}</div>
+                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">Assigned Engineer:</div>
+                        <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.assignedEngineer ?? "-"}</div>
 
-                        <div className="font-medium text-gray-500">Assigned A&R:</div>
-                        <div className="text-gray-800">{project.assignedANR ?? "-"}</div>
+                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">Assigned A&R:</div>
+                        <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.assignedANR ?? "-"}</div>
 
-                        <div className="font-medium text-gray-500">Latest Update:</div>
-                        <div className="text-gray-800">
+                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">Latest Update:</div>
+                        <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">
                           {project.latestUpdate ? new Date(project.latestUpdate).toLocaleString("id-ID") : "-"}
                         </div>
                       </div>

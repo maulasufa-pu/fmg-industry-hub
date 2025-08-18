@@ -24,7 +24,7 @@ export async function POST(req: Request) {
   const { data: owners, error: ownersErr, count } = await supabase
     .from("profiles")
     .select("id", { count: "exact", head: false })
-    .eq("role", "owner");
+    .eq("main_role", "owner");
 
   if (ownersErr) {
     return NextResponse.json({ error: `DB error: ${String(ownersErr.message ?? ownersErr)}` }, { status: 500 });
@@ -48,10 +48,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Auth update failed: ${String(updErr.message ?? updErr)}` }, { status: 500 });
   }
 
-  // (opsional) sinkron ke profiles.role
+  // (opsional) sinkron ke profiles.main_role
   const { error: profErr } = await admin
     .from("profiles")
-    .update({ role: "owner" })
+    .update({ main_role: "owner" })
     .eq("id", userId);
   if (profErr) {
     // tidak fatal untuk JWT, tapi laporkan

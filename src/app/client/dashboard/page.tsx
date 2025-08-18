@@ -46,9 +46,9 @@ const Card: React.FC<React.PropsWithChildren<{ title: string; right?: React.Reac
   right,
   children,
 }) => (
-  <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+  <section className="rounded-xl border border-gray-200 dark:border-gray-600 dark:border-gray-600 bg-white dark:bg-gray-900 p-4 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-sm">
     <div className="mb-3 flex items-center justify-between">
-      <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
+      <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100 dark:text-gray-100">{title}</h3>
       {right}
     </div>
     {children}
@@ -57,9 +57,9 @@ const Card: React.FC<React.PropsWithChildren<{ title: string; right?: React.Reac
 
 const Stat: React.FC<{ label: string; value: React.ReactNode; to?: string }> = ({ label, value, to }) => {
   const content = (
-    <div className="rounded-lg border border-gray-200 p-4 transition hover:bg-gray-50">
-      <div className="text-xs text-gray-500">{label}</div>
-      <div className="mt-1 text-2xl font-semibold text-gray-900">{value}</div>
+    <div className="rounded-lg border border-gray-200 dark:border-gray-600 dark:border-gray-600 p-4 transition hover:bg-gray-50 dark:bg-gray-800">
+      <div className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">{label}</div>
+      <div className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">{value}</div>
     </div>
   );
   return to ? <Link href={to}>{content}</Link> : content;
@@ -294,7 +294,7 @@ export default function ClientDashboard(): React.JSX.Element {
   if (loadingInitial) {
     return (
       <div className="p-6">
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-gray-500 shadow" data-global-loader="true">
+        <div className="rounded-xl border border-gray-200 dark:border-gray-600 dark:border-gray-600 bg-white dark:bg-gray-900 p-8 text-gray-500 dark:text-gray-400 dark:text-gray-400 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25" data-global-loader="true">
           Loading dashboard…
         </div>
       </div>
@@ -305,12 +305,12 @@ export default function ClientDashboard(): React.JSX.Element {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-gray-900">Dashboard</h1>
+        <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Dashboard</h1>
         <div className="flex items-center gap-2">
-          <Link href="/client/projects" className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
+          <Link href="/client/projects" className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50 dark:bg-gray-800">
             Projects
           </Link>
-          <Link href="/client/invoices" className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
+          <Link href="/client/invoices" className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50 dark:bg-gray-800">
             Invoices
           </Link>
         </div>
@@ -331,30 +331,30 @@ export default function ClientDashboard(): React.JSX.Element {
         <Card
           title="Recently Updated Projects"
           right={
-            <Link href="/client/projects" className="text-xs text-blue-600 hover:underline">
+            <Link href="/client/projects" className="text-xs text-sky-600 dark:text-sky-200 hover:underline">
               View All
             </Link>
           }
         >
           {recentProjects.length === 0 ? (
-            <div className="text-sm text-gray-500">No recent updates.</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">No recent updates.</div>
           ) : (
             <ul className="divide-y">
               {recentProjects.map((p) => (
                 <li key={p.id} className="py-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="truncate font-medium text-gray-900">{p.project_name}</div>
-                      <div className="truncate text-xs text-gray-500">{p.artist_name ?? "-"}</div>
+                      <div className="truncate font-medium text-gray-900 dark:text-white">{p.project_name}</div>
+                      <div className="truncate text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">{p.artist_name ?? "-"}</div>
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">
                       {p.latest_update ? new Date(p.latest_update).toLocaleString("id-ID") : "-"}
                     </div>
                   </div>
                   <div className="mt-1">
                     <Link
                       href={`/client/projects/${p.id}?tab=Active`}
-                      className="inline-flex items-center rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
+                      className="inline-flex items-center rounded-md border px-2 py-1 text-xs hover:bg-gray-50 dark:bg-gray-800"
                     >
                       Open
                     </Link>
@@ -369,23 +369,23 @@ export default function ClientDashboard(): React.JSX.Element {
         <Card
           title="Upcoming Meetings"
           right={
-            <Link href="/client/projects" className="text-xs text-blue-600 hover:underline">
+            <Link href="/client/projects" className="text-xs text-sky-600 dark:text-sky-200 hover:underline">
               Schedule
             </Link>
           }
         >
           {upcomingMeetings.length === 0 ? (
-            <div className="text-sm text-gray-500">No upcoming meetings.</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">No upcoming meetings.</div>
           ) : (
             <ul className="space-y-3">
               {upcomingMeetings.map((m) => {
                 const start = new Date(m.start_at);
                 const end = new Date(start.getTime() + (m.duration_min || 0) * 60_000);
                 return (
-                  <li key={m.id} className="rounded-md border border-gray-200 p-3 text-sm">
+                  <li key={m.id} className="rounded-md border border-gray-200 dark:border-gray-600 dark:border-gray-600 p-3 text-sm">
                     <div className="flex items-center justify-between">
-                      <div className="truncate font-medium text-gray-800">{m.title}</div>
-                      <div className="text-xs text-gray-500">
+                      <div className="truncate font-medium text-gray-800 dark:text-gray-100 dark:text-gray-100">{m.title}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">
                         {start.toLocaleString("id-ID")} –{" "}
                         {end.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
                       </div>
@@ -393,7 +393,7 @@ export default function ClientDashboard(): React.JSX.Element {
                     <div className="mt-1">
                       {m.link ? (
                         <a
-                          className="inline-flex items-center rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
+                          className="inline-flex items-center rounded-md border px-2 py-1 text-xs hover:bg-gray-50 dark:bg-gray-800"
                           href={m.link}
                           target="_blank"
                           rel="noreferrer"
@@ -415,35 +415,35 @@ export default function ClientDashboard(): React.JSX.Element {
         <Card
           title="Recent Invoices"
           right={
-            <Link href="/client/invoices" className="text-xs text-blue-600 hover:underline">
+            <Link href="/client/invoices" className="text-xs text-sky-600 dark:text-sky-200 hover:underline">
               View All
             </Link>
           }
         >
           {recentInvoices.length === 0 ? (
-            <div className="text-sm text-gray-500">No invoices.</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">No invoices.</div>
           ) : (
             <ul className="space-y-3">
               {recentInvoices.map((r) => (
-                <li key={r.id} className="rounded-md border border-gray-200 p-3 text-sm">
+                <li key={r.id} className="rounded-md border border-gray-200 dark:border-gray-600 dark:border-gray-600 p-3 text-sm">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="truncate font-medium text-gray-900">{r.invoice_no}</div>
-                      <div className="truncate text-xs text-gray-500">{r.client_name ?? "-"}</div>
+                      <div className="truncate font-medium text-gray-900 dark:text-white">{r.invoice_no}</div>
+                      <div className="truncate text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">{r.client_name ?? "-"}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
                         {r.amount_total != null
                           ? `${(r.currency ?? "IDR").toUpperCase()} ${Number(r.amount_total).toLocaleString("id-ID")}`
                           : "-"}
                       </div>
-                      <div className="text-xs capitalize text-gray-500">{r.status}</div>
+                      <div className="text-xs capitalize text-gray-500 dark:text-gray-400 dark:text-gray-400">{r.status}</div>
                     </div>
                   </div>
                   <div className="mt-2">
                     <Link
                       href={`/client/invoices/${r.id}`}
-                      className="inline-flex items-center rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
+                      className="inline-flex items-center rounded-md border px-2 py-1 text-xs hover:bg-gray-50 dark:bg-gray-800"
                     >
                       Open
                     </Link>

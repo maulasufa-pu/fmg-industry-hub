@@ -63,7 +63,7 @@ export function SignUpSection() {
   };
 
   return (
-    <div className="flex flex-col w-full max-w-md sm:max-w-lg lg:max-w-xl items-center gap-5 px-6 sm:px-7 md:px-8 py-6 sm:py-8 bg-defaultwhite border border-coolgray-20 rounded-xl">
+    <div className="flex flex-col w-full max-w-md sm:max-w-lg lg:max-w-xl items-center gap-5 px-6 sm:px-7 md:px-8 py-6 sm:py-8 bg-defaultwhite dark:bg-gray-900 border border-coolgray-20 rounded-xl">
       <header className="flex flex-col items-center gap-2 self-stretch w-full">
         <h1 className="font-heading-2 text-coolgray-90 text-[length:var(--heading-2-font-size)] leading-[var(--heading-2-line-height)] text-center">
           Sign Up Free
@@ -75,7 +75,7 @@ export function SignUpSection() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-2">
             <label className="font-body-s text-coolgray-90">First Name</label>
-            <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-b border-coolgray-30">
+            <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-[var(--border)] border-coolgray-30">
               <input
                 className="flex-1 font-body-m text-coolgray-60 bg-transparent border-0 p-0 focus:outline-none"
                 value={firstName}
@@ -86,7 +86,7 @@ export function SignUpSection() {
           </div>
           <div className="flex flex-col gap-2">
             <label className="font-body-s text-coolgray-90">Last Name</label>
-            <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-b border-coolgray-30">
+            <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-[var(--border)] border-coolgray-30">
               <input
                 className="flex-1 font-body-m text-coolgray-60 bg-transparent border-0 p-0 focus:outline-none"
                 value={lastName}
@@ -99,7 +99,7 @@ export function SignUpSection() {
 
         <div className="flex flex-col gap-2">
           <label className="font-body-s text-coolgray-90">Email</label>
-          <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-b border-coolgray-30">
+          <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-[var(--border)] border-coolgray-30">
             <input
               type="email"
               className="flex-1 font-body-m text-coolgray-60 bg-transparent border-0 p-0 focus:outline-none"
@@ -112,7 +112,7 @@ export function SignUpSection() {
 
         <div className="flex flex-col gap-2">
           <label className="font-body-s text-coolgray-90">Password</label>
-          <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-b border-coolgray-30">
+          <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-[var(--border)] border-coolgray-30">
             <input
               type="password"
               className="flex-1 font-body-m text-coolgray-60 bg-transparent border-0 p-0 focus:outline-none"
@@ -131,7 +131,7 @@ export function SignUpSection() {
             onChange={(e)=>setAgree(e.target.checked)}
             className="sr-only"
           />
-          <span className="inline-block w-4 h-4 border border-coolgray-30 bg-white" aria-hidden />
+          <span className="inline-block w-4 h-4 border border-coolgray-30 bg-white dark:bg-gray-900" aria-hidden />
           <span className="font-body-s text-coolgray-90">I accept terms &amp; conditions</span>
         </label>
 
@@ -143,7 +143,7 @@ export function SignUpSection() {
           <span className="font-button-m">{loading ? "Creating account..." : "Sign Up"}</span>
         </button>
 
-        {err && <p className="text-[13px] text-red-600 text-center">{err}</p>}
+        {err && <p className="text-[13px] text-red-600 dark:text-red-200 text-center">{err}</p>}
         {msg && <p className="text-[13px] text-primary-90 text-center">{msg}</p>}
 
         <hr className="w-full h-px bg-coolgray-20 border-0 mt-2" />

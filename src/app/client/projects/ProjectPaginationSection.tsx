@@ -74,7 +74,7 @@ export const ProjectPaginationSection = ({
 
   return (
     <nav className="flex w-full items-center justify-center py-4" role="navigation" aria-label="Pagination">
-      <div className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white/80 px-1.5 py-1 shadow-sm backdrop-blur-sm">
+      <div className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:border-gray-600 bg-white dark:bg-gray-900/80 px-1.5 py-1 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-sm ">
         {items.map((item, idx) => {
           if (item.type === "previous") {
             return (
@@ -89,7 +89,7 @@ export const ProjectPaginationSection = ({
                 className={`inline-flex items-center gap-1.5 rounded-lg border border-transparent px-2.5 py-1.5 text-sm
                   ${isPrevDisabled
                     ? "cursor-not-allowed text-gray-400"
-                    : "text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-60"}`}
+                    : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-60"}`}
               >
                 <ChevronLeft />
                 <span className="hidden font-medium sm:inline">Previous</span>
@@ -110,7 +110,7 @@ export const ProjectPaginationSection = ({
                 className={`inline-flex items-center gap-1.5 rounded-lg border border-transparent px-2.5 py-1.5 text-sm
                   ${isNextDisabled
                     ? "cursor-not-allowed text-gray-400"
-                    : "text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-60"}`}
+                    : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-60"}`}
               >
                 <span className="hidden font-medium sm:inline">Next</span>
                 <ChevronRight />
@@ -122,7 +122,7 @@ export const ProjectPaginationSection = ({
             return (
               <span
                 key={`dots-${idx}`}
-                className="inline-flex select-none items-center justify-center px-2 py-1.5 text-sm text-gray-500"
+                className="inline-flex select-none items-center justify-center px-2 py-1.5 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400"
               >
                 {item.label}
               </span>
@@ -142,8 +142,8 @@ export const ProjectPaginationSection = ({
                 "inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-sm transition",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-60",
                 isActive
-                  ? "bg-primary-60 text-white shadow-[0_1px_0_rgba(0,0,0,0.04)]"
-                  : "text-gray-700 hover:bg-gray-50",
+                  ? "bg-primary-60 text-white shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-[0_1px_0_rgba(0,0,0,0.04)]"
+                  : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:bg-gray-800",
               ].join(" ")}
             >
               <span className="font-medium tabular-nums">{item.label}</span>

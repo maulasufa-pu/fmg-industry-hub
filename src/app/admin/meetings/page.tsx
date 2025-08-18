@@ -102,7 +102,7 @@ export default function AdminMeetingsPage(): React.JSX.Element {
         </select>
       </div>
 
-      <div className="rounded-lg border bg-white p-4 shadow">
+      <div className="rounded-lg border bg-white dark:bg-gray-900 p-4 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25">
         <div className="mb-2 text-sm font-medium">Quick Schedule</div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
           <input className="rounded border px-2 py-1 text-sm" placeholder="Title" value={title} onChange={(e) => setTitle(e.currentTarget.value)} />
@@ -117,12 +117,12 @@ export default function AdminMeetingsPage(): React.JSX.Element {
       </div>
 
       {loading ? (
-        <div className="rounded-lg border bg-white p-8 text-gray-500 shadow">Loading…</div>
+        <div className="rounded-lg border bg-white dark:bg-gray-900 p-8 text-gray-500 dark:text-gray-400 dark:text-gray-400 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25">Loading…</div>
       ) : rows.length === 0 ? (
-        <div className="rounded-lg border bg-white p-8 text-gray-500 shadow">No meetings found.</div>
+        <div className="rounded-lg border bg-white dark:bg-gray-900 p-8 text-gray-500 dark:text-gray-400 dark:text-gray-400 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25">No meetings found.</div>
       ) : (
-        <table className="w-full rounded-lg border bg-white shadow">
-          <thead className="bg-gray-50 text-left text-sm">
+        <table className="w-full rounded-lg border bg-white dark:bg-gray-900 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25">
+          <thead className="bg-gray-50 dark:bg-gray-800 text-left text-sm">
             <tr>
               <th className="p-3">Title</th>
               <th className="p-3">Start</th>
@@ -141,7 +141,7 @@ export default function AdminMeetingsPage(): React.JSX.Element {
                   <td className="p-3 font-medium">{m.title}</td>
                   <td className="p-3">{startAt.toLocaleString("id-ID")}</td>
                   <td className="p-3">{endAt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</td>
-                  <td className="p-3">{m.link ? <a className="text-blue-600 underline" href={m.link} target="_blank">Open</a> : "-"}</td>
+                  <td className="p-3">{m.link ? <a className="text-sky-600 dark:text-sky-200 underline" href={m.link} target="_blank">Open</a> : "-"}</td>
                   <td className="p-3">{m.notes ?? "-"}</td>
                   <td className="p-3">
                     <div className="flex justify-end">

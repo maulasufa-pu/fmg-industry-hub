@@ -20,7 +20,7 @@ export default function SubscriptionsPanel() {
   return (
     <div className="flex flex-col w-[700px] items-start gap-4">
       {/* Current plan */}
-      <section className="flex flex-col items-start gap-6 p-4 w-full bg-defaultwhite border border-coolgray-20">
+      <section className="flex flex-col items-start gap-6 p-4 w-full bg-defaultwhite dark:bg-gray-900 border border-coolgray-20">
         <h2 className="font-heading-6 text-coolgray-90">Current Plan</h2>
         <div className="w-full flex items-center justify-between rounded-lg bg-coolgray-10 p-4">
           <div>
@@ -58,7 +58,7 @@ export default function SubscriptionsPanel() {
       </section>
 
       {/* Usage / limits */}
-      <section className="flex flex-col items-start gap-6 p-4 w-full bg-defaultwhite border border-coolgray-20">
+      <section className="flex flex-col items-start gap-6 p-4 w-full bg-defaultwhite dark:bg-gray-900 border border-coolgray-20">
         <h2 className="font-heading-6 text-coolgray-90">Usage</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
           {[
@@ -68,7 +68,7 @@ export default function SubscriptionsPanel() {
           ].map((m) => {
             const pct = Math.min(100, Math.round((m.v / m.max) * 100));
             return (
-              <div key={m.k} className="p-3 border border-coolgray-20 bg-defaultwhite">
+              <div key={m.k} className="p-3 border border-coolgray-20 bg-defaultwhite dark:bg-gray-900">
                 <div className="font-body-m text-coolgray-90">{m.k}</div>
                 <div className="text-[12px] text-coolgray-60">{m.v} / {m.max}</div>
                 <div className="mt-2 h-2 w-full bg-coolgray-10 rounded">
@@ -81,7 +81,7 @@ export default function SubscriptionsPanel() {
       </section>
 
       {/* Billing cycle actions */}
-      <section className="flex flex-col items-start gap-6 p-4 w-full bg-defaultwhite border border-coolgray-20">
+      <section className="flex flex-col items-start gap-6 p-4 w-full bg-defaultwhite dark:bg-gray-900 border border-coolgray-20">
         <h2 className="font-heading-6 text-coolgray-90">Billing Actions</h2>
         <div className="flex flex-wrap gap-2">
           <button className="h-10 px-3 border-2 border-primary-60 text-primary-60 hover:bg-primary-10">
@@ -90,7 +90,7 @@ export default function SubscriptionsPanel() {
           <button className="h-10 px-3 border-2 border-primary-60 text-primary-60 hover:bg-primary-10">
             View Invoices
           </button>
-          <button className="h-10 px-3 border-2 border-red-500 text-red-600 hover:bg-red-50">
+          <button className="h-10 px-3 border-2 border-red-500 text-red-600 dark:text-red-200 hover:bg-red-50 dark:bg-red-900/20 dark:bg-red-900/20">
             Cancel Subscription
           </button>
         </div>

@@ -91,12 +91,12 @@ export default function AdminPublishingPage(): React.JSX.Element {
       </div>
 
       {loading ? (
-        <div className="rounded-lg border bg-white p-8 text-gray-500 shadow">Loading…</div>
+        <div className="rounded-lg border bg-white dark:bg-gray-900 p-8 text-gray-500 dark:text-gray-400 dark:text-gray-400 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25">Loading…</div>
       ) : rows.length === 0 ? (
-        <div className="rounded-lg border bg-white p-8 text-gray-500 shadow">No publishing items.</div>
+        <div className="rounded-lg border bg-white dark:bg-gray-900 p-8 text-gray-500 dark:text-gray-400 dark:text-gray-400 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25">No publishing items.</div>
       ) : (
-        <table className="w-full rounded-lg border bg-white shadow">
-          <thead className="bg-gray-50 text-left text-sm">
+        <table className="w-full rounded-lg border bg-white dark:bg-gray-900 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25">
+          <thead className="bg-gray-50 dark:bg-gray-800 text-left text-sm">
             <tr>
               <th className="p-3">Title</th>
               <th className="p-3">Artist</th>

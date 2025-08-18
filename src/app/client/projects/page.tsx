@@ -15,24 +15,22 @@ type TabKey = "All Project" | "Active" | "Finished" | "Pending" | "Requested";
 
 type ProjectRow = {
   id: string;
-  project_name: string;
+  title: string;
   artist_name: string | null;
   genre: string | null;
   stage: string | null;
   status: string;
-  latest_update: string | null;
-  assigned_pic: string | null;
+  updated_at: string;
+  composer_id: string | null;
+  producer_id: string | null;
+  anr_id: string | null;
+  engineer_id: string | null;
+  publisher_id: string | null;
   progress_percent: number | null;
-  budget_amount: number | null;
-  budget_currency: string | null;
-  engineer_name: string | null;
-  anr_name: string | null;
-  is_active?: boolean | null;
-  is_finished?: boolean | null;
 };
 
 const QUERY_COLS =
-  "id,project_name,artist_name,genre,stage,status,latest_update,is_active,is_finished,assigned_pic,progress_percent,budget_amount,budget_currency,engineer_name,anr_name";
+  "id,title,artist_name,genre,stage,status,updated_at,composer_id,producer_id,anr_id,engineer_id,publisher_id,progress_percent";
 
 export default function PageContent(): React.JSX.Element {
   useFocusWarmAuth();
@@ -88,26 +86,25 @@ export default function PageContent(): React.JSX.Element {
 
       // ALL
       let allQ = supabase.from("project_summary").select("id", { count: "exact", head: true });
-      if (like) allQ = allQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+      if (like) allQ = allQ.or(`title.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
       const allRes = await withSignal(allQ, signal).returns<CountResp>();
 
       // ACTIVE
-      let actQ = supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("is_active", true);
-      if (like) actQ = actQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+      let actQ = supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("status", "in_progress");
+      if (like) actQ = actQ.or(`title.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
       const actRes = await withSignal(actQ, signal).returns<CountResp>();
 
       // FINISHED
-      let finQ = supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("is_finished", true);
-      if (like) finQ = finQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+      let finQ = supabase.from("project_summary").select("id", { count: "exact", head: true }).eq("status", "completed");
+      if (like) finQ = finQ.or(`title.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
       const finRes = await withSignal(finQ, signal).returns<CountResp>();
 
       // PENDING
       let penQ = supabase
         .from("project_summary")
         .select("id", { count: "exact", head: true })
-        .eq("is_active", false)
-        .eq("is_finished", false);
-      if (like) penQ = penQ.or(`project_name.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
+        .in("status", ["pending", "on_hold"]);
+      if (like) penQ = penQ.or(`title.ilike.${like},artist_name.ilike.${like},genre.ilike.${like}`);
       const penRes = await withSignal(penQ, signal).returns<CountResp>();
 
       if (allRes.error) throw allRes.error;
@@ -140,18 +137,18 @@ export default function PageContent(): React.JSX.Element {
           .from("project_summary")
           .select(QUERY_COLS, { count: "exact", head: false });
 
-        if (tab === "Active") qBuilder = qBuilder.eq("is_active", true);
-        else if (tab === "Finished") qBuilder = qBuilder.eq("is_finished", true);
-        else if (tab === "Pending") qBuilder = qBuilder.eq("is_active", false).eq("is_finished", false);
+        if (tab === "Active") qBuilder = qBuilder.eq("status", "in_progress");
+        else if (tab === "Finished") qBuilder = qBuilder.eq("status", "completed");
+        else if (tab === "Pending") qBuilder = qBuilder.in("status", ["pending", "on_hold"]);
         else if (tab === "Requested") qBuilder = qBuilder.eq("status", "requested");
 
         if (q) {
           qBuilder = qBuilder.or(
-            `project_name.ilike.%${q}%,artist_name.ilike.%${q}%,genre.ilike.%${q}%`
+            `title.ilike.%${q}%,artist_name.ilike.%${q}%,genre.ilike.%${q}%`
           );
         }
 
-        qBuilder = qBuilder.order("latest_update", { ascending: false }).range(from, to);
+        qBuilder = qBuilder.order("updated_at", { ascending: false }).range(from, to);
 
         const { data, count, error } = await withSignal(qBuilder, ac.signal).returns<ProjectRow[]>();
         if (error) throw error;
@@ -216,7 +213,7 @@ export default function PageContent(): React.JSX.Element {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <ProjectTabsSection
         activeTab={activeTab}
         initialTab={initialTabFromUrl}
@@ -230,7 +227,7 @@ export default function PageContent(): React.JSX.Element {
       />
 
       {loadingInitial ? (
-        <div className="w-full rounded-lg border border-gray-200 bg-white p-10 text-center text-gray-500 shadow">
+        <div className="w-full rounded-lg border border-gray-200 dark:border-gray-600 dark:border-gray-600 bg-white dark:bg-gray-900 p-10 text-center text-gray-500 dark:text-gray-400 dark:text-gray-400 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25">
           Loading projects…
         </div>
       ) : (
@@ -238,19 +235,16 @@ export default function PageContent(): React.JSX.Element {
           <ProjectTableSection
             rows={rows.map((r) => ({
               id: r.id,
-              projectName: r.project_name,
+              projectName: r.title,
               artistName: r.artist_name,
               genre: r.genre,
               stage: r.stage,
               progressStatus: r.status,
-              latestUpdate: r.latest_update,
-              assignedPIC: r.assigned_pic ?? "-",
-              budget:
-                r.budget_amount != null
-                  ? `${(r.budget_currency ?? "IDR").toUpperCase()} ${Number(r.budget_amount).toLocaleString("id-ID")}`
-                  : undefined,
-              assignedEngineer: r.engineer_name ?? "-",
-              assignedANR: r.anr_name ?? "-",
+              latestUpdate: r.updated_at,
+              assignedPIC: r.composer_id || r.producer_id || r.anr_id || r.engineer_id || r.publisher_id ? "Assigned" : "Unassigned",
+              budget: undefined, // Budget info not available in new schema
+              assignedEngineer: r.engineer_id ? "Assigned" : "Unassigned",
+              assignedANR: r.anr_id ? "Assigned" : "Unassigned",
               coverUrl: undefined,
               description: undefined,
               progress: r.progress_percent != null ? Number(r.progress_percent) : null,

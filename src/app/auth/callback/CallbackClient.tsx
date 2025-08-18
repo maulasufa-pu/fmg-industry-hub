@@ -46,7 +46,7 @@ export default function CallbackClient() {
         try {
           const { data: profRow, error: selErr } = await supabase
             .from("profiles")
-            .select("id, role, name, avatar_url")
+            .select("id, main_role, staff_role, first_name, last_name, avatarPath")
             .eq("id", user.id)
             .maybeSingle();
 
@@ -54,28 +54,59 @@ export default function CallbackClient() {
             const md = (user.user_metadata ?? {}) as Record<string, unknown>;
             const first = (md.given_name ?? md.first_name ?? "") as string;
             const last  = (md.family_name ?? md.last_name ?? "") as string;
-            const full  =
-              (md.full_name as string) ||
-              [first, last].filter(Boolean).join(" ") ||
-              (user.email?.split("@")[0] ?? "User");
-
-            await supabase
+            
+            // ganti kolom di SELECT (avatarPath -> avatar_path)
+            const { data: profRow, error: selErr } = await supabase
               .from("profiles")
-              .insert({
+              .select("id, main_role, staff_role, first_name, last_name, avatar_path")
+              .eq("id", user.id)
+              .maybeSingle();
+
+            if (!selErr && !profRow) {
+              const md = (user.user_metadata ?? {}) as Record<string, unknown>;
+              const first = (md.given_name ?? md.first_name ?? "") as string;
+              const last  = (md.family_name ?? md.last_name ?? "") as string;
+
+              // ⬇️ hanya tambah variabel untuk avatar_url & avatar_path
+              const av = (user.user_metadata ?? {}) as {
+                avatar_url?: string;
+                picture?: string;
+                avatar_path?: string;
+              };
+
+              const avatar_url =
+                typeof av.avatar_url === "string" ? av.avatar_url :
+                typeof av.picture === "string"    ? av.picture    :
+                null;
+
+              // Isi hanya jika benar2 path Storage (bukan URL http)
+              const avatar_path =
+                typeof av.avatar_path === "string" && !/^https?:\/\//i.test(av.avatar_path)
+                  ? av.avatar_path
+                  : null;
+
+              await supabase.from("profiles").insert({
                 id: user.id,
-                name: full,
-                role: "client" satisfies Role, // default client
-                avatar_url: (md.avatar_url as string) || null,
+                first_name: first || (user.email?.split("@")[0] ?? "User"),
+                last_name: last || "",
+                email: user.email,
+                main_role: "client" satisfies Role,
+                staff_role: [],
+
+                // ⬇️ set avatar sesuai aturan
+                avatar_url,
+                avatar_path,
               });
+            }
           }
         } catch (e) {
           console.warn("[callback] ensure profile soft-fail:", e);
         }
 
-        // Ambil role terbaru dari DB
+        // Ambil role terbaru dari DB menggunakan getEffectiveRole logic
         const { data: profile, error: roleErr } = await supabase
           .from("profiles")
-          .select("role")
+          .select("main_role, staff_role")
           .eq("id", user.id)
           .single();
 
@@ -83,7 +114,20 @@ export default function CallbackClient() {
           console.warn("[callback] read role error:", roleErr);
         }
 
-        const role = (profile?.role ?? "client") as Role;
+        // Determine effective role (same logic as getEffectiveRole but simplified)
+        let effectiveRole: Role = "client";
+        if (profile) {
+          const allRoles: string[] = [];
+          if (profile.main_role) allRoles.push(profile.main_role);
+          if (profile.staff_role && Array.isArray(profile.staff_role)) {
+            allRoles.push(...profile.staff_role);
+          }
+          
+          // Check priority: owner > admin > others
+          if (allRoles.includes("owner")) effectiveRole = "owner";
+          else if (allRoles.includes("admin")) effectiveRole = "admin";
+          else effectiveRole = "client";
+        }
 
         // Tentukan tujuan akhir berdasar role.
         // - admin/owner -> /admin/dashboard
@@ -93,7 +137,7 @@ export default function CallbackClient() {
         const toAdmin = "/admin/dashboard";
         const toClient = "/client/dashboard";
 
-        const isAdminLike = role === "admin" || role === "owner";
+        const isAdminLike = effectiveRole === "admin" || effectiveRole === "owner";
         let dest = isAdminLike ? toAdmin : toClient;
 
         if (nextParam) {

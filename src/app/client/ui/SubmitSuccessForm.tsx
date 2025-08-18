@@ -29,19 +29,19 @@ export default function SubmitSuccessForm({
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" role="dialog" aria-modal="true">
-      <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
-        <div className="flex items-center justify-between border-b px-5 py-3">
-          <h3 className="text-base font-semibold text-gray-900">Request Sent! ✨</h3>
+      <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white dark:bg-gray-900 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-2xl ring-1 ring-black/5">
+        <div className="flex items-center justify-between border-[var(--border)] px-5 py-3">
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white">Request Sent! ✨</h3>
           <button
             onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-60"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-gray-100 dark:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-60"
             aria-label="Close confirmation"
           >
-            <Close className="h-5 w-5 text-gray-600" />
+            <Close className="h-5 w-5 text-neutral-600 dark:text-neutral-200 dark:text-gray-200" />
           </button>
         </div>
 
-        <div className="space-y-3 px-5 py-4 text-sm text-gray-700">
+        <div className="space-y-3 px-5 py-4 text-sm text-gray-700 dark:text-gray-200">
           <p>
             Thank you! We have received your project and it is currently in progress.{" "}
             <span className="rounded bg-amber-50 px-1.5 py-0.5 font-medium text-amber-700 ring-1 ring-amber-200">Requested</span>.
@@ -51,22 +51,22 @@ export default function SubmitSuccessForm({
             <span className="font-medium">is approved</span>, the process will automatically proceed to the{" "}
             <span className="font-medium">payment stage</span> according to the plan you selected:
           </p>
-          <div className="rounded-lg border bg-gray-50 px-3 py-2 text-gray-800">
+          <div className="rounded-lg border bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-gray-100 dark:text-gray-100">
             <div className="text-sm">
               <span className="mr-1 font-medium">Payment Plan:</span>
               {planPretty[paymentPlan]}
             </div>
-            <div className="mt-1 text-xs text-gray-500">
+            <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">
               You will receive a notification/email when the project has been approved and the invoice is ready to be paid.
             </div>
           </div>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">
             *If there are any adjustments to the brief or price, the Admin will contact you before approval.
           </p>
         </div>
 
         <div className="flex items-center justify-end gap-2 border-t px-5 py-3">
-          <button onClick={onClose} className="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+          <button onClick={onClose} className="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:bg-gray-800">
             Tutup
           </button>
           <button

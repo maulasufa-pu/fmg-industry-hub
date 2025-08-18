@@ -112,7 +112,7 @@ export const ProjectTabsSection = ({
 
   return (
     <nav
-      className="flex items-center justify-between w-full border-b border-gray-200"
+      className="flex items-center justify-between w-full border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600"
       role="navigation"
       aria-label="Project tabs"
     >
@@ -150,8 +150,8 @@ export const ProjectTabsSection = ({
                 tab.isDisabled
                   ? "cursor-not-allowed text-gray-400"
                   : isActive
-                  ? "text-blue-600"
-                  : "text-gray-700 hover:bg-blue-50 hover:text-blue-600",
+                  ? "text-sky-600 dark:text-sky-200"
+                  : "text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:bg-blue-900/20 dark:bg-blue-900/20 hover:text-sky-600 dark:text-sky-200",
               ].join(" ")}
             >
               <span>{tab.name}</span>
@@ -189,7 +189,7 @@ export const ProjectTabsSection = ({
         <button
           type="button"
           onClick={onCreateClick}
-          className="ml-2 inline-flex items-center gap-2 rounded-lg bg-primary-60 px-3 py-1.5 text-sm font-medium text-white shadow-sm
+          className="ml-2 inline-flex items-center gap-2 rounded-lg bg-primary-60 px-3 py-1.5 text-sm font-medium text-white shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-sm
                      hover:brightness-95 active:scale-[0.98] focus-visible:outline-none
                      focus-visible:ring-2 focus-visible:ring-primary-60 focus-visible:ring-offset-2"
         >

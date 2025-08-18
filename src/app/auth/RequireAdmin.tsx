@@ -35,10 +35,10 @@ export default function RequireAdmin({ children }: { children: React.ReactNode }
         return;
       }
 
-      // Ambil role dari DB
+      // Ambil role dari DB menggunakan schema baru
       const { data: prof, error } = await supabase
         .from("profiles")
-        .select("role")
+        .select("main_role, staff_role")
         .eq("id", session.user.id)
         .maybeSingle();
 
@@ -48,8 +48,22 @@ export default function RequireAdmin({ children }: { children: React.ReactNode }
         return;
       }
 
-      const role = (prof?.role ?? "client") as Role;
-      const isAdminLike = role === "admin" || role === "owner";
+      // Determine effective role using same logic as getEffectiveRole
+      let effectiveRole: Role = "client";
+      if (prof) {
+        const allRoles: string[] = [];
+        if (prof.main_role) allRoles.push(prof.main_role);
+        if (prof.staff_role && Array.isArray(prof.staff_role)) {
+          allRoles.push(...prof.staff_role);
+        }
+        
+        // Priority: owner > admin > client
+        if (allRoles.includes("owner")) effectiveRole = "owner";
+        else if (allRoles.includes("admin")) effectiveRole = "admin";
+        else effectiveRole = "client";
+      }
+
+      const isAdminLike = effectiveRole === "admin" || effectiveRole === "owner";
 
       if (!isAdminLike) {
         router.replace("/client/dashboard");

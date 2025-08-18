@@ -56,8 +56,79 @@
 }
 
 /* ===================== Global HTML ===================== */
-html { scroll-behavior: smooth; }
-html, body { overflow-x: clip; }
+html { 
+  scroll-behavior: smooth;
+  scroll-padding-top: 2rem; /* Add padding for better anchor positioning */
+}
+
+html, body { 
+  overflow-x: clip; 
+  margin: 0;
+  padding: 0;
+}
+
+body { 
+  background-color: var(--background);
+  color: var(--foreground);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  margin: 0;
+  padding: 0;
+}
+
+/* Reset hanya untuk container utama, bukan semua elemen */
+#__next, [data-nextjs-scroll-focus-boundary] {
+  margin: 0;
+  padding: 0;
+}
+
+/* ===================== Enhanced Smooth Scrolling ===================== */
+* {
+  scroll-behavior: smooth;
+}
+
+/* For better scroll performance */
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar styling for smoother appearance */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.3);
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.5);
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(75, 85, 99, 0.4);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(75, 85, 99, 0.6);
+}
+
+/* Firefox scrollbar */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+}
+
+.dark html {
+  scrollbar-color: rgba(75, 85, 99, 0.4) transparent;
+}
 
 /* ===================== Root Tokens ===================== */
 :root {
@@ -114,7 +185,52 @@ html, body { overflow-x: clip; }
   --primary-60: rgba(15, 98, 254, 1);
   --primary-90: rgba(0, 29, 108, 1);
   --primary-10: rgba(237, 245, 255, 1); /* for hover:bg-primary-10 */
+}
 
+/* Dark theme */
+.dark {
+  --background: oklch(0.05 0 0);
+  --foreground: oklch(0.95 0 0);
+  --card: oklch(0.08 0 0);
+  --card-foreground: oklch(0.95 0 0);
+  --popover: oklch(0.08 0 0);
+  --popover-foreground: oklch(0.95 0 0);
+  --primary: oklch(0.85 0 0);
+  --primary-foreground: oklch(0.08 0 0);
+  --secondary: oklch(0.15 0 0);
+  --secondary-foreground: oklch(0.85 0 0);
+  --muted: oklch(0.15 0 0);
+  --muted-foreground: oklch(0.6 0 0);
+  --accent: oklch(0.15 0 0);
+  --accent-foreground: oklch(0.85 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.2 0 0);
+  --input: oklch(0.2 0 0);
+  --ring: oklch(0.4 0 0);
+
+  /* Dark theme brand tokens */
+  --coolgray-10: rgba(33, 39, 42, 1);
+  --coolgray-20: rgba(55, 65, 81, 1);
+  --coolgray-30: rgba(75, 85, 99, 1);
+  --coolgray-60: rgba(156, 163, 175, 1);
+  --coolgray-90: rgba(242, 244, 248, 1);
+
+    --defaultwhite: rgba(17, 24, 39, 1);
+  --primary-10: rgba(30, 58, 138, 1); /* dark version of primary-10 */
+
+  /* Sidebar dark */
+  --sidebar: oklch(0.05 0 0);
+  --sidebar-foreground: oklch(0.95 0 0);
+  --sidebar-primary: oklch(0.85 0 0);
+  --sidebar-primary-foreground: oklch(0.08 0 0);
+  --sidebar-accent: oklch(0.15 0 0);
+  --sidebar-accent-foreground: oklch(0.85 0 0);
+  --sidebar-border: oklch(0.2 0 0);
+  --sidebar-ring: oklch(0.4 0 0);
+}
+
+/* Typography tokens - moved back to :root */
+:root {
   /* Typography tokens */
   --body-l-font-family: "Roboto", Helvetica;
   --body-l-font-size: 18px;
@@ -189,40 +305,53 @@ html, body { overflow-x: clip; }
 
 /* ===================== Dark Theme Overrides ===================== */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
+  /* Core dark theme colors */
+  --background: oklch(0.08 0 0);
+  --foreground: oklch(0.95 0 0);
+  --card: oklch(0.1 0 0);
+  --card-foreground: oklch(0.95 0 0);
+  --popover: oklch(0.1 0 0);
+  --popover-foreground: oklch(0.95 0 0);
 
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --primary: oklch(0.85 0 0);
+  --primary-foreground: oklch(0.08 0 0);
+  --secondary: oklch(0.15 0 0);
+  --secondary-foreground: oklch(0.85 0 0);
+  --muted: oklch(0.15 0 0);
+  --muted-foreground: oklch(0.6 0 0);
+  --accent: oklch(0.15 0 0);
+  --accent-foreground: oklch(0.85 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.2 0 0);
+  --input: oklch(0.2 0 0);
+  --ring: oklch(0.4 0 0);
 
+  /* Chart colors for dark theme */
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
 
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Brand colors for dark theme */
+  --coolgray-10: rgba(17, 24, 39, 1);
+  --coolgray-20: rgba(31, 41, 55, 1);
+  --coolgray-30: rgba(55, 65, 81, 1);
+  --coolgray-60: rgba(156, 163, 175, 1);
+  --coolgray-90: rgba(229, 231, 235, 1);
+
+  --defaultwhite: rgba(17, 24, 39, 1);
+  --primary-10: rgba(30, 58, 138, 1);
+
+  /* Sidebar colors for dark theme */
+  --sidebar: oklch(0.08 0 0);
+  --sidebar-foreground: oklch(0.95 0 0);
+  --sidebar-primary: oklch(0.85 0 0);
+  --sidebar-primary-foreground: oklch(0.08 0 0);
+  --sidebar-accent: oklch(0.15 0 0);
+  --sidebar-accent-foreground: oklch(0.85 0 0);
+  --sidebar-border: oklch(0.2 0 0);
+  --sidebar-ring: oklch(0.4 0 0);
 }
 
 /* ===================== Base Layer ===================== */
@@ -237,6 +366,28 @@ html, body { overflow-x: clip; }
 
   /* Heading weight */
   h1,h2,h3,h4,h5,h6 { font-weight: 700; }
+
+  /* Ensure main backgrounds use CSS variables */
+  body, html {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+  
+  /* Page containers default to proper backgrounds */
+  main, section, article {
+    background-color: inherit;
+    color: inherit;
+  }
+
+  /* Card and panel backgrounds */
+  [class*="bg-white"] {
+    @apply bg-white dark:bg-gray-900;
+  }
+
+  /* Form backgrounds */
+  [class*="bg-gray-50"] {
+    @apply bg-gray-50 dark:bg-gray-800;
+  }
 }
 
 /* ===================== Components Layer ===================== */
@@ -261,6 +412,40 @@ html, body { overflow-x: clip; }
 
   .hover\:bg-primary-10:hover { background-color: var(--primary-10); }
   .hover\:underline:hover { text-decoration: underline; }
+
+  /* Enhanced dark mode utilities */
+  .bg-page { 
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+  
+  /* Scrollbar utilities */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .bg-card-surface { 
+    background-color: var(--card);
+    color: var(--card-foreground);
+    border-color: var(--border);
+  }
+
+  .bg-input-surface { 
+    background-color: var(--input);
+    color: var(--foreground);
+    border-color: var(--border);
+  }
+
+  .bg-popover-surface { 
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+    border-color: var(--border);
+  }
 
   /* Ring helper agar focus:ring-primary-60 jalan */
   .ring-primary-60 { --tw-ring-color: var(--primary-60); }
@@ -337,6 +522,50 @@ html, body { overflow-x: clip; }
 
   /* Transition utility for smooth hover effects */
   .transition { transition: all 0.3s ease; }
+
+  /* Custom animations for dashboard */
+  .animate-shimmer {
+    transform: translateX(-100%);
+    animation: shimmer 2s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    50% {
+      transform: translateX(100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .animate-pulse-soft {
+    animation: pulse-soft 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes pulse-soft {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: .85;
+    }
+  }
 }
 
 html { scroll-behavior: smooth; }

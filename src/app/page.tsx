@@ -8,9 +8,9 @@ export const metadata = {
 
 export default function HomePage() {
   return (
-    <main className="bg-gray-50 text-gray-900">
+    <main className="bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white">
       {/* HERO */}
-      <section className="relative bg-gradient-to-br from-black via-gray-900 to-gray-800 text-white">
+      <section className="relative bg-gradient-to-br  from-black via-gray-900 to-gray-800 text-white">
         <div className="max-w-7xl mx-auto px-6 py-24 lg:py-32 text-center">
           <h1 className="text-4xl md:text-6xl font-extrabold leading-tight">
             Flemmo Music Industry Hub
@@ -28,7 +28,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="#services"
-              className="px-6 py-3 bg-white text-gray-900 rounded-lg font-semibold shadow-lg hover:bg-gray-100 transition"
+              className="px-6 py-3 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg font-semibold shadow-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
             >
               Lihat Layanan
             </Link>
@@ -37,7 +37,7 @@ export default function HomePage() {
       </section>
 
       {/* SERVICES */}
-      <section id="services" className="py-20 bg-white">
+      <section id="services" className="py-20 bg-white dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-6">
           <h2 className="text-3xl font-bold text-center mb-12">Layanan Kami</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
@@ -60,11 +60,11 @@ export default function HomePage() {
             ].map((service, idx) => (
               <div
                 key={idx}
-                className="p-6 border rounded-xl shadow-sm hover:shadow-lg transition"
+                className="p-6 border rounded-xl shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-sm hover:shadow-lg dark:shadow-slate-900/25 transition"
               >
                 <div className="text-5xl mb-4">{service.icon}</div>
                 <h3 className="text-xl font-semibold">{service.title}</h3>
-                <p className="mt-2 text-gray-600">{service.desc}</p>
+                <p className="mt-2 text-gray-600 dark:text-gray-300 dark:text-gray-300">{service.desc}</p>
               </div>
             ))}
           </div>
@@ -72,14 +72,14 @@ export default function HomePage() {
       </section>
 
       {/* PORTFOLIO */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-gray-50 dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-6">
           <h2 className="text-3xl font-bold text-center mb-12">Portofolio</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[1, 2, 3].map((item) => (
               <div
                 key={item}
-                className="rounded-xl overflow-hidden shadow-lg hover:scale-105 transition transform"
+                className="rounded-xl overflow-hidden shadow-lg dark:shadow-slate-900/25 hover:scale-105 transition transform"
               >
                 <Image
                   src={``}
@@ -90,7 +90,7 @@ export default function HomePage() {
                 />
                 <div className="p-4">
                   <h3 className="font-semibold text-lg">Proyek Musik {item}</h3>
-                  <p className="text-gray-600 text-sm mt-1">
+                  <p className="text-gray-600 dark:text-gray-300 dark:text-gray-300 text-sm mt-1">
                     Contoh karya terbaru kami di industri musik.
                   </p>
                 </div>
@@ -101,7 +101,7 @@ export default function HomePage() {
       </section>
 
       {/* PRICING */}
-      <section id="pricing" className="py-20 bg-white">
+      <section id="pricing" className="py-20 bg-white dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-6">
           <h2 className="text-3xl font-bold text-center mb-12">Paket Harga</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -135,7 +135,7 @@ export default function HomePage() {
             ].map((pkg, idx) => (
               <div
                 key={idx}
-                className={`p-6 rounded-xl border shadow-sm hover:shadow-lg transition ${
+                className={`p-6 rounded-xl border shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-sm hover:shadow-lg dark:shadow-slate-900/25 transition ${
                   pkg.popular ? "bg-indigo-600 text-white" : ""
                 }`}
               >
@@ -150,7 +150,7 @@ export default function HomePage() {
                   aria-label={`Pilih paket ${pkg.name}`}
                   className={`mt-6 w-full py-2 font-semibold rounded-lg transition ${
                     pkg.popular
-                      ? "bg-white text-indigo-600 hover:bg-gray-200"
+                      ? "bg-white dark:bg-gray-900 text-indigo-600 hover:bg-gray-200 dark:bg-gray-700 dark:bg-gray-700"
                       : "bg-indigo-600 text-white hover:bg-indigo-500"
                   }`}
                 >
@@ -163,10 +163,10 @@ export default function HomePage() {
       </section>
 
       {/* ABOUT US */}
-      <section id="about" className="py-20 bg-gray-50">
+      <section id="about" className="py-20 bg-gray-50 dark:bg-gray-800">
         <div className="max-w-5xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold mb-6">Tentang Kami</h2>
-          <p className="text-gray-600 leading-relaxed">
+          <p className="text-gray-600 dark:text-gray-300 dark:text-gray-300 leading-relaxed">
             Flemmo Music Global adalah perusahaan kreatif yang menyediakan layanan produksi, publishing, dan distribusi musik digital. Menggabungkan teknologi AI dengan kreativitas manusia untuk hasil terbaik bagi para musisi di seluruh dunia.
           </p>
         </div>

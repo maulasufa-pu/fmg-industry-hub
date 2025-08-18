@@ -34,19 +34,19 @@ export default function BillingPanel() {
   return (
     <div className="flex flex-col w-[700px] items-start gap-4">
       {/* Payment method */}
-      <section className="flex flex-col items-start gap-6 p-4 w-full bg-defaultwhite border border-coolgray-20">
+      <section className="flex flex-col items-start gap-6 p-4 w-full bg-defaultwhite dark:bg-gray-900 border border-coolgray-20">
         <div className="flex-col items-start justify-center gap-4 flex w-full">
           <h2 className="font-heading-6 text-coolgray-90">Payment Method</h2>
         </div>
 
-        {err && <p className="text-[13px] text-red-600 -mt-2">{err}</p>}
+        {err && <p className="text-[13px] text-red-600 dark:text-red-200 -mt-2">{err}</p>}
         {ok && <p className="text-[13px] text-green-700 -mt-2">Saved.</p>}
 
         <form onSubmit={onSave} className="flex flex-col w-[616px] items-start gap-4">
           <div className="flex items-start gap-4 w-full">
             <div className="flex flex-col gap-1 flex-1">
               <label className="font-body-s text-coolgray-90">Name on Card</label>
-              <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-b border-coolgray-30">
+              <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-[var(--border)] border-coolgray-30">
                 <input
                   value={cardName}
                   onChange={(e)=>setCardName(e.target.value)}
@@ -58,7 +58,7 @@ export default function BillingPanel() {
             </div>
             <div className="flex flex-col gap-1 flex-1">
               <label className="font-body-s text-coolgray-90">Card Number</label>
-              <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-b border-coolgray-30">
+              <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-[var(--border)] border-coolgray-30">
                 <input
                   value={cardNumber}
                   onChange={(e)=>setCardNumber(e.target.value)}
@@ -73,7 +73,7 @@ export default function BillingPanel() {
           <div className="flex items-start gap-4 w-full">
             <div className="flex flex-col gap-1 w-1/2">
               <label className="font-body-s text-coolgray-90">Expiry</label>
-              <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-b border-coolgray-30">
+              <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-[var(--border)] border-coolgray-30">
                 <input
                   value={exp}
                   onChange={(e)=>setExp(e.target.value)}
@@ -85,7 +85,7 @@ export default function BillingPanel() {
             </div>
             <div className="flex flex-col gap-1 w-1/2">
               <label className="font-body-s text-coolgray-90">CVC</label>
-              <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-b border-coolgray-30">
+              <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-[var(--border)] border-coolgray-30">
                 <input
                   value={cvc}
                   onChange={(e)=>setCvc(e.target.value)}
@@ -99,7 +99,7 @@ export default function BillingPanel() {
 
           <div className="flex flex-col gap-1 w-full">
             <label className="font-body-s text-coolgray-90">Billing Address</label>
-            <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-b border-coolgray-30">
+            <div className="flex h-12 items-center gap-2 px-4 py-3 bg-coolgray-10 border-[var(--border)] border-coolgray-30">
               <input
                 value={address}
                 onChange={(e)=>setAddress(e.target.value)}
@@ -123,7 +123,7 @@ export default function BillingPanel() {
       </section>
 
       {/* Invoices table (dummy) */}
-      <section className="flex flex-col items-start gap-6 p-4 w-full bg-defaultwhite border border-coolgray-20">
+      <section className="flex flex-col items-start gap-6 p-4 w-full bg-defaultwhite dark:bg-gray-900 border border-coolgray-20">
         <h2 className="font-heading-6 text-coolgray-90">Invoices</h2>
         <div className="overflow-x-auto w-full">
           <table className="w-full text-left">

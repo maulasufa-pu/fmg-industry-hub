@@ -1,0 +1,2159 @@
+// src/app/admin/projects/[id]/page.tsx
+"use client";
+
+export const dynamic = "force-dynamic";
+
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import Link from "next/link";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence, useAnimation, useInView } from "framer-motion";
+import { gsap } from "gsap";
+import { getSupabaseClient } from "@/lib/supabase/client";
+import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
+
+type ProjectStatus =
+  | "pending"
+  | "in_progress"
+  | "revision"
+  | "approved"
+  | "published"
+  | "archived"
+  | "cancelled";
+
+type ProjectStage =
+  | "request_review"
+  | "awaiting_payment"
+  | "assign_team"
+  | "draft1_work"
+  | "draft1_review"
+  | "finalization"
+  | "metadata"
+  | "agreement"
+  | "publishing"
+  | "post_release";
+
+type ProjectSummary = {
+  project_id: string;
+  title: string;
+  description: string | null;
+  status: ProjectStatus;
+  stage: ProjectStage | string | null;
+  updated_at: string;
+  client_id: string | null;
+  artist_name: string | null;
+  genre: string | null;
+  progress_percent: number | null;
+  composer_id: string | null;
+  producer_id: string | null;
+  anr_id: string | null;
+  engineer_id: string | null;
+  publisher_id: string | null;
+};
+
+type DraftRow = {
+  draft_id: string;
+  project_id: string;
+  file_path: string;
+  uploaded_by: string | null;
+  version: number;
+  created_at: string | null;
+};
+
+type RevisionRow = {
+  revision_id: string;
+  draft_id: string;
+  requested_by: string | null;
+  reason: string | null;
+  created_at: string | null;
+};
+
+type DiscussionMessage = {
+  id: string;
+  project_id: string;
+  author_id: string | null;
+  content: string;
+  created_at: string;
+};
+
+type MeetingRow = {
+  id: string;
+  project_id: string;
+  title: string;
+  start_at: string; // ISO
+  duration_min: number;
+  link: string | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+};
+
+type ReferenceLinkRow = {
+  id: string;
+  project_id: string;
+  url: string;
+  created_at: string | null;
+};
+
+/** Team member dengan full info untuk dropdown - sesuai schema database */
+type StaffRole = 'composer' | 'producer' | 'anr' | 'engineer' | 'publisher';
+
+type TeamMember = { 
+  id: string; 
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  staff_role: StaffRole[];
+  main_role: string | null;
+};
+
+type TeamRoleOptions = {
+  anr: TeamMember[];
+  composer: TeamMember[];
+  producer: TeamMember[];
+  engineer: TeamMember[];
+  publisher: TeamMember[];
+};
+
+type AssignmentRow = {
+  assignment_id: string;
+  project_id: string;
+  user_id: string;
+  role: StaffRole;
+  active: boolean;
+  assigned_at: string;
+  assigned_by: string | null;
+  note: string | null;
+};
+
+// Toast notification types
+type ToastType = 'success' | 'error' | 'warning' | 'info';
+
+type Toast = {
+  id: string;
+  type: ToastType;
+  title: string;
+  message: string;
+  duration?: number;
+};
+
+// Simple animation variants
+const pageVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      duration: 0.4,
+      staggerChildren: 0.05,
+    },
+  },
+} as const;
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.3,
+    },
+  },
+} as const;
+
+const tabVariants = {
+  inactive: {
+    opacity: 0.7,
+    scale: 0.95,
+    y: 2,
+  },
+  active: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 400,
+      damping: 25,
+    },
+  },
+};
+
+const AnimatedCard: React.FC<React.PropsWithChildren<{ 
+  title: string; 
+  right?: React.ReactNode;
+  className?: string;
+  gradient?: boolean;
+}>> = ({ title, right, children, className = "", gradient = false }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const controls = useAnimation();
+
+  useEffect(() => {
+    if (isInView) {
+      controls.start("visible");
+    }
+  }, [isInView, controls]);
+
+  return (
+    <motion.section
+      ref={ref}
+      className={`animated-card rounded-xl border border-gray-200 dark:border-gray-700 dark:border-gray-700 bg-white dark:bg-gray-900 shadow dark:shadow-gray-800/25 dark:shadow-lg overflow-hidden ${
+        gradient ? 'bg-gradient-to-br from-white to-blue-50' : 'bg-white dark:bg-gray-900'
+      } ${className}`}
+      variants={cardVariants}
+      initial="hidden"
+      animate={controls}
+    >
+      <div className="p-6">
+        <motion.div 
+          className="mb-4 flex items-center justify-between"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 dark:text-gray-100 bg-gradient-to-r from-gray-800 to-blue-600 bg-clip-text text-transparent">
+            {title}
+          </h3>
+          {right && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              {right}
+            </motion.div>
+          )}
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          {children}
+        </motion.div>
+      </div>
+    </motion.section>
+  );
+};
+
+type ProjectAssignmentUpdate = {
+  anr_name: string | null;
+  engineer_name: string | null;
+  composer_name?: string | null;
+  producer_name?: string | null;
+};
+
+export default function AdminProjectDetailPage(): React.JSX.Element {
+  useFocusWarmAuth();
+
+  // GSAP Timeline References
+  const timelineRef = useRef<gsap.core.Timeline | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const supabase = useMemo(() => getSupabaseClient(), []);
+
+  // Toast notifications state
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const [loading, setLoading] = useState(true);
+  const [project, setProject] = useState<ProjectSummary | null>(null);
+  const [drafts, setDrafts] = useState<DraftRow[] | null>(null);
+  const [revisions, setRevisions] = useState<RevisionRow[] | null>(null);
+  const [links, setLinks] = useState<ReferenceLinkRow[] | null>(null);
+  const [messages, setMessages] = useState<DiscussionMessage[] | null>(null);
+  const [meetings, setMeetings] = useState<MeetingRow[] | null>(null);
+
+  // Assignment state (editable)
+  const [anrName, setAnrName] = useState<string>("");
+  const [composerName, setComposerName] = useState<string>("");
+  const [producerName, setProducerName] = useState<string>("");
+  const [engineerName, setEngineerName] = useState<string>("");
+  const [publisherName, setPublisherName] = useState<string>("");
+
+  // Current assignments from database (for display only)
+  const [currentAssignments, setCurrentAssignments] = useState<{
+    anr: string;
+    composer: string;
+    producer: string;
+    engineer: string;
+    publisher: string;
+  }>({
+    anr: "",
+    composer: "",
+    producer: "",
+    engineer: "",
+    publisher: "",
+  });
+
+  // Read-only mirror for Overview
+  const [view, setView] = useState({
+    title: "",
+    description: "",
+    artist_name: "",
+    genre: "",
+    status: "",
+    stage: "",
+    updated_at: "",
+    progress_percent: 0,
+    client_id: "",
+    composer_id: "",
+    producer_id: "",
+    anr_id: "",
+    engineer_id: "",
+    publisher_id: "",
+  });
+
+  type TabKey = "overview" | "drafts" | "references" | "discussion" | "meetings";
+
+  const TABS: TabKey[] = ["overview", "drafts", "references", "discussion", "meetings"];
+
+  const initialTab: TabKey = (() => {
+    const q = searchParams.get("tab");
+    return (TABS as readonly string[]).includes(q ?? "") ? (q as TabKey) : "overview";
+  })();
+
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
+
+  // Team assignment options by role
+  const [teamRoleOptions, setTeamRoleOptions] = useState<TeamRoleOptions>({
+    anr: [],
+    composer: [],
+    producer: [],
+    engineer: [],
+    publisher: [],
+  });
+  const realtimeBoundRef = useRef(false);
+
+  // Toast helper functions
+  const showToast = useCallback((type: ToastType, title: string, message: string, duration = 4000) => {
+    const id = crypto.randomUUID?.() ?? `toast-${Date.now()}`;
+    const newToast: Toast = { id, type, title, message, duration };
+    
+    setToasts(prev => [...prev, newToast]);
+    
+    // Auto remove after duration
+    setTimeout(() => {
+      setToasts(prev => prev.filter(toast => toast.id !== id));
+    }, duration);
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  }, []);
+
+  // Load current assignments dari database (shared function)  
+  const loadCurrentAssignments = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/assignments?project_id=${params.id}`, {
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setCurrentAssignments(result.assignments);
+      } else {
+        throw new Error(result.error || 'Failed to load assignments');
+      }
+    } catch (e) {
+      console.warn('Load current assignments failed:', e);
+      // Set empty state on error
+      setCurrentAssignments({
+        anr: "",
+        composer: "",
+        producer: "",
+        engineer: "",
+        publisher: "",
+      });
+    }
+  }, [params.id]);
+
+  // ===== ASSIGNMENT HELPERS =====
+
+  // cari profile.id berdasarkan teks input (nama/email) + role option
+  const findProfileIdByDisplay = (display: string, roleKey: keyof TeamRoleOptions): string | null => {
+    if (!display?.trim()) return null;
+    const list = getTeamOptionsForRole(roleKey); // Use all options, not filtered ones
+    const lower = display.trim().toLowerCase();
+
+    // cocokkan exact berdasarkan full name dulu
+    const exact = list.find(m => getFullName(m).toLowerCase() === lower);
+    if (exact) return exact.id;
+
+    // cocokkan exact berdasarkan email
+    const byEmail = list.find(m => (m.email ?? "").toLowerCase() === lower);
+    if (byEmail) return byEmail.id;
+
+    // fallback: contains (kalau unik)
+    const contains = list.filter(m =>
+      getFullName(m).toLowerCase().includes(lower) ||
+      (m.email ?? "").toLowerCase().includes(lower)
+    );
+    if (contains.length === 1) return contains[0].id;
+
+    return null; // ambiguous / tidak ketemu
+  };
+
+  // non-upsert: matikan yang aktif lalu insert baris baru (aman dengan partial unique index)
+  const assignOne = async (
+    projectId: string,
+    role: 'anr' | 'composer' | 'producer' | 'engineer',
+    userId: string,
+  ) => {
+    // deactivate lama
+    const { error: e1 } = await supabase
+      .from('assignments')
+      .update({ active: false, unassigned_at: new Date().toISOString() })
+      .eq('project_id', projectId)
+      .eq('role', role)
+      .eq('active', true);
+    if (e1) throw e1;
+
+    // insert baru
+    const { error: e2 } = await supabase
+      .from('assignments')
+      .insert({
+        assignment_id: crypto.randomUUID?.() ?? undefined, // biarkan server gen kalau tidak tersedia
+        project_id: projectId,
+        role,
+        user_id: userId,
+        assigned_by: (await supabase.auth.getUser()).data.user?.id ?? null,
+        assigned_at: new Date().toISOString(),
+        active: true,
+      });
+    if (e2) throw e2;
+  };
+
+  // ambil nama tampilan dari profiles.id
+  const getDisplayNameById = (profiles: Array<{id: string; first_name: string|null; last_name: string|null; email: string|null}>, id: string | null) => {
+    if (!id) return '';
+    const p = profiles.find(x => x.id === id);
+    if (!p) return '';
+    const full = [p.first_name ?? '', p.last_name ?? ''].filter(Boolean).join(' ');
+    return full || p.email || '';
+  };
+
+  // Improved timeout handler with better error messages
+  const raceWithTimeout = <T,>(
+    promise: PromiseLike<T>, 
+    ms = 8000,
+    errorMessage = "Request timed out"
+  ): Promise<T> =>
+    Promise.race([
+      Promise.resolve(promise),
+      new Promise<T>((_, reject) => 
+        setTimeout(() => reject(new Error(`${errorMessage} (${ms}ms)`)), ms)
+      )
+    ]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      try {
+        await supabase.auth.getSession();
+
+        // Critical data load - simplified with shorter timeout
+        const { data: proj, error: perr } = await supabase
+          .from("project_summary")
+          .select(
+            "project_id,title,description,status,stage,updated_at,client_id,artist_name,genre,progress_percent,composer_id,producer_id,anr_id,engineer_id,publisher_id"
+          )
+          .eq("project_id", params.id)
+          .maybeSingle<ProjectSummary>();
+        
+        if (perr || !proj) {
+          console.error("Project fetch error:", perr);
+          if (!mounted) return;
+          router.replace("/admin/projects");
+          return;
+        }
+        
+        if (!mounted) return;
+
+        setProject(proj);
+
+        // Overview read-only mirror
+        setView({
+          title: proj.title,
+          description: proj.description ?? "",
+          artist_name: proj.artist_name ?? "",
+          genre: proj.genre ?? "",
+          status: proj.status,
+          stage: proj.stage ?? "",
+          updated_at: proj.updated_at,
+          progress_percent: proj.progress_percent ?? 0,
+          client_id: proj.client_id ?? "",
+          composer_id: proj.composer_id ?? "",
+          producer_id: proj.producer_id ?? "",
+          anr_id: proj.anr_id ?? "",
+          engineer_id: proj.engineer_id ?? "",
+          publisher_id: proj.publisher_id ?? "",
+        });
+
+        // Load team options first (needed for assignments)
+        try {
+          const response = await fetch('/api/profiles', {
+            signal: AbortSignal.timeout(5000) // 5 second timeout
+          });
+          if (response.ok) {
+            const roleOptions = await response.json();
+            if (mounted) setTeamRoleOptions(roleOptions);
+          }
+        } catch (error) {
+          console.debug("Team options load failed:", error);
+        }
+
+        // Load current assignments after team options
+        await loadCurrentAssignments();
+
+      } catch (e) {
+        console.error("Critical data load failed:", e);
+        if (mounted) {
+          router.replace("/admin/projects");
+        }
+        return;
+      } finally {
+        if (mounted) setLoading(false);
+      }
+
+      // Background loads - load only when needed per tab
+      // This will be handled in tab-specific effects
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [params.id, router, supabase, loadCurrentAssignments]);
+
+  // Lazy load tab-specific data
+  useEffect(() => {
+    if (!project) return;
+    let mounted = true;
+
+    const loadTabData = async () => {
+      switch (activeTab) {
+        case "drafts":
+          if (drafts === null) {
+            try {
+              const { data, error } = await supabase
+                .from("drafts")
+                .select("draft_id,project_id,file_path,uploaded_by,version,created_at")
+                .eq("project_id", params.id)
+                .order("version", { ascending: false })
+                .returns<DraftRow[]>();
+              if (error) throw error;
+              if (mounted) setDrafts(data ?? []);
+            } catch (error) {
+              console.warn("Failed to load drafts:", error);
+              if (mounted) setDrafts([]);
+            }
+          }
+          break;
+
+        case "references":
+          if (links === null) {
+            try {
+              const { data, error } = await supabase
+                .from("project_reference_links")
+                .select("id,project_id,url,created_at")
+                .eq("project_id", params.id)
+                .order("created_at", { ascending: false })
+                .returns<ReferenceLinkRow[]>();
+              if (error) throw error;
+              if (mounted) setLinks(data ?? []);
+            } catch (error) {
+              console.warn("Failed to load reference links:", error);
+              if (mounted) setLinks([]);
+            }
+          }
+          break;
+
+        case "discussion":
+          if (messages === null) {
+            try {
+              const { data, error } = await supabase
+                .from("discussion_messages")
+                .select("id,project_id,author_id,content,created_at")
+                .eq("project_id", params.id)
+                .order("created_at", { ascending: false })
+                .returns<DiscussionMessage[]>();
+              if (error) throw error;
+              if (mounted) setMessages(data ?? []);
+            } catch (error) {
+              console.warn("Failed to load discussion messages:", error);
+              if (mounted) setMessages([]);
+            }
+          }
+          break;
+
+        case "meetings":
+          if (meetings === null) {
+            try {
+              const { data, error } = await supabase
+                .from("meetings")
+                .select("id,project_id,title,start_at,duration_min,link,notes,created_by,created_at")
+                .eq("project_id", params.id)
+                .order("start_at", { ascending: false })
+                .returns<MeetingRow[]>();
+              if (error) throw error;
+              if (mounted) setMeetings(data ?? []);
+            } catch (error) {
+              console.warn("Failed to load meetings:", error);
+              if (mounted) setMeetings([]);
+            }
+          }
+          break;
+      }
+    };
+
+    loadTabData();
+
+    return () => {
+      mounted = false;
+    };
+  }, [activeTab, project, drafts, links, messages, meetings, supabase, params.id]);
+
+  // realtime (diskusi + meetings)
+  useEffect(() => {
+    if (!project) return;
+    if (realtimeBoundRef.current) return;
+    realtimeBoundRef.current = true;
+
+    const ch = supabase.channel(`realtime:admin-project:${project.project_id}`);
+
+    ch.on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "discussion_messages", filter: `project_id=eq.${project.project_id}` },
+      (payload) => {
+        const row = payload.new as DiscussionMessage;
+        setMessages((prev) => {
+          const list = prev ?? [];
+          if (list.some((x) => x.id === row.id)) return list;
+          return [...list, row];
+        });
+      }
+    );
+
+    ch.on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "meetings", filter: `project_id=eq.${project.project_id}` },
+      (payload) => {
+        const row = payload.new as MeetingRow;
+        setMeetings((prev) => {
+          const list = prev ?? [];
+          if (list.some((x) => x.id === row.id)) return list;
+          return [row, ...list].sort((a, b) => b.start_at.localeCompare(a.start_at));
+        });
+      }
+    );
+
+    void ch.subscribe();
+
+    return () => {
+      void supabase.removeChannel(ch);
+      realtimeBoundRef.current = false;
+    };
+  }, [project, supabase]);
+
+  // helpers
+  const setStatus = async (status: ProjectStatus): Promise<void> => {
+    try {
+      const { error } = await supabase.from("projects").update({ status }).eq("project_id", params.id);
+      if (error) throw error;
+      setProject((p) => (p ? { ...p, status } : p));
+      showToast('success', 'Status Updated', `Project status changed to ${status}`);
+    } catch (e) {
+      console.error(e);
+      showToast('error', 'Update Failed', 'Failed to update status. Please check permissions.');
+    }
+  };
+
+  const setStage = async (stage: ProjectStage): Promise<void> => {
+    try {
+      const { error } = await supabase.from("projects").update({ stage }).eq("project_id", params.id);
+      if (error) throw error;
+      setProject((p) => (p ? { ...p, stage } : p));
+      showToast('success', 'Stage Updated', `Project stage changed to ${stage}`);
+    } catch (e) {
+      console.error(e);
+      showToast('error', 'Update Failed', 'Failed to update stage. Please check permissions.');
+    }
+  };
+
+  const removeAssignment = async (role: StaffRole): Promise<void> => {
+    try {
+      // Call API endpoint instead of direct Supabase call
+      const response = await fetch(`/api/assignments?project_id=${params.id}&role=${role}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Remove assignment failed');
+      }
+
+      // Clear input UI
+      if (role === 'anr') setAnrName('');
+      if (role === 'composer') setComposerName('');
+      if (role === 'producer') setProducerName('');
+      if (role === 'engineer') setEngineerName('');
+      if (role === 'publisher') setPublisherName('');
+      
+      // Refresh current assignments from database
+      await loadCurrentAssignments();
+
+      // Refresh project summary for UI badges
+      const { data: ps } = await supabase
+        .from('project_summary')
+        .select('composer_id,producer_id,anr_id,engineer_id,publisher_id')
+        .eq('project_id', params.id)
+        .maybeSingle();
+
+      if (ps) {
+        setView(v => ({
+          ...v,
+          composer_id: ps.composer_id ?? '',
+          producer_id: ps.producer_id ?? '',
+          anr_id: ps.anr_id ?? '',
+          engineer_id: ps.engineer_id ?? '',
+          publisher_id: ps.publisher_id ?? '',
+        }));
+      }
+
+      showToast('success', 'Assignment Removed', `${role.toUpperCase()} assignment removed successfully!`);
+    } catch (e: any) {
+      console.error('removeAssignment error:', e);
+      showToast('error', 'Remove Failed', `Failed to remove ${role} assignment: ${e?.message || 'Unknown error'}`);
+    }
+  };
+
+  const saveAssignments = async (): Promise<void> => {
+    try {
+      const projectId = params.id as string;
+
+      // Map display names to user IDs - hanya yang ada valuenya
+      const assignments: Record<string, string | null> = {};
+
+      const roles = [
+        { role: 'anr', display: anrName.trim() },
+        { role: 'composer', display: composerName.trim() },
+        { role: 'producer', display: producerName.trim() },
+        { role: 'engineer', display: engineerName.trim() },
+        { role: 'publisher', display: publisherName.trim() },
+      ];
+
+      // Hanya proses field yang ada valuenya
+      const rolesToProcess = roles.filter(({ display }) => display.length > 0);
+      
+      if (rolesToProcess.length === 0) {
+        showToast('warning', 'No Assignments', 'Please select team members first before saving.');
+        return;
+      }
+
+      for (const { role, display } of rolesToProcess) {
+        // Find user ID from display name
+        const userId = findProfileIdByDisplay(display, role as keyof TeamRoleOptions);
+        if (!userId) {
+          throw new Error(`"${display}" not found for role ${role}. Please select from dropdown.`);
+        }
+        assignments[role] = userId;
+      }
+
+      // Call API endpoint
+      const response = await fetch('/api/assignments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          project_id: projectId,
+          assignments,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Assignment update failed');
+      }
+
+      // Clear input fields
+      setAnrName('');
+      setComposerName('');
+      setProducerName('');
+      setEngineerName('');
+      setPublisherName('');
+
+      // Refresh current assignments
+      await loadCurrentAssignments();
+
+      // Refresh project summary for UI badges
+      const { data: ps } = await supabase
+        .from('project_summary')
+        .select('composer_id,producer_id,anr_id,engineer_id,publisher_id')
+        .eq('project_id', projectId)
+        .maybeSingle();
+
+      if (ps) {
+        setView(v => ({
+          ...v,
+          composer_id: ps.composer_id ?? '',
+          producer_id: ps.producer_id ?? '',
+          anr_id: ps.anr_id ?? '',
+          engineer_id: ps.engineer_id ?? '',
+          publisher_id: ps.publisher_id ?? '',
+        }));
+      }
+
+      showToast('success', 'Assignments Saved', 'Team assignments updated successfully!');
+    } catch (e: any) {
+      console.error('saveAssignments error:', e);
+      showToast('error', 'Save Failed', `Failed to save assignments: ${e?.message || 'Unknown error'}`);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
+        <motion.div 
+          className="rounded-xl border border-gray-200 dark:border-gray-700 dark:border-gray-700 bg-white dark:bg-gray-900 p-8 text-center shadow dark:shadow-gray-800/25 dark:shadow-lg"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <motion.div
+            className="mx-auto h-12 w-12 rounded-full border-4 border-blue-200 border-t-blue-600"
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+          />
+          <motion.p 
+            className="mt-4 text-lg font-medium text-gray-600 dark:text-gray-300 dark:text-gray-300"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            🎵 Loading project details...
+          </motion.p>
+          <motion.p 
+            className="mt-2 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            This may take a few seconds
+          </motion.p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (!project) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
+        <motion.div 
+          className="rounded-xl border border-gray-200 dark:border-gray-700 dark:border-gray-700 bg-white dark:bg-gray-900 p-8 text-center shadow dark:shadow-gray-800/25 dark:shadow-lg"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <motion.div 
+            className="mx-auto h-16 w-16 rounded-full bg-red-100 flex items-center justify-center text-2xl"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring" }}
+          >
+            ❌
+          </motion.div>
+          <motion.h1 
+            className="mt-4 text-xl font-bold text-gray-800 dark:text-gray-100 dark:text-gray-100"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            Project Not Found
+          </motion.h1>
+          <motion.p 
+            className="mt-2 text-gray-600 dark:text-gray-300 dark:text-gray-300"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            The project you&apos;re looking for doesn&apos;t exist or you don&apos;t have access to it.
+          </motion.p>
+          <motion.div
+            className="mt-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <Link 
+              href="/admin/projects"
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-white font-medium hover:bg-blue-700 transition-colors"
+            >
+              ← Back to Projects
+            </Link>
+          </motion.div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Helper untuk mendapatkan nama lengkap
+  const getFullName = (member: TeamMember): string => {
+    const firstName = member.first_name || '';
+    const lastName = member.last_name || '';
+    return [firstName, lastName].filter(Boolean).join(' ') || member.email || 'Unknown';
+  };
+
+  // Helper untuk opsi dropdown per role
+  const getTeamOptionsForRole = (role: keyof TeamRoleOptions): TeamMember[] => {
+    return teamRoleOptions[role] || [];
+  };
+
+  // Helper untuk filter user yang belum ter-assign
+  const getAvailableTeamOptions = (role: keyof TeamRoleOptions): TeamMember[] => {
+    const allOptions = getTeamOptionsForRole(role);
+    
+    // Get list of currently assigned user IDs across all roles
+    const assignedUserIds = new Set<string>();
+    
+    // Add currently assigned users from database
+    Object.values(currentAssignments).forEach(assignedName => {
+      if (assignedName) {
+        // Find user ID by name from any role options
+        for (const roleKey of Object.keys(teamRoleOptions) as (keyof TeamRoleOptions)[]) {
+          const options = teamRoleOptions[roleKey];
+          const user = options.find(option => getFullName(option) === assignedName);
+          if (user) {
+            assignedUserIds.add(user.id);
+            break;
+          }
+        }
+      }
+    });
+
+    // Filter out assigned users, but keep the current selection if any
+    const currentValue = getCurrentValueByRole(role);
+    return allOptions.filter(option => {
+      // Always include if this user is the current value for this field
+      if (currentValue && getFullName(option) === currentValue) {
+        return true;
+      }
+      // Otherwise, exclude if already assigned
+      return !assignedUserIds.has(option.id);
+    });
+  };
+
+  // Helper untuk mendapatkan current value berdasarkan role
+  const getCurrentValueByRole = (role: keyof TeamRoleOptions): string => {
+    switch (role) {
+      case 'anr': return anrName;
+      case 'composer': return composerName;
+      case 'producer': return producerName;
+      case 'engineer': return engineerName;
+      case 'publisher': return publisherName;
+      default: return '';
+    }
+  };
+
+  return (
+    <motion.div 
+      ref={containerRef}
+      className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6 space-y-8"
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {/* Animated Breadcrumb */}
+      <motion.nav 
+        className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <ol className="flex items-center gap-2">
+          <li>
+            <Link href="/admin/projects" className="hover:underline hover:text-blue-600 transition-colors">
+              Projects (Admin)
+            </Link>
+          </li>
+          <motion.li
+            initial={{ rotate: 0 }}
+            animate={{ rotate: 360 }}
+            transition={{ delay: 0.5, duration: 0.3 }}
+          >
+            ›
+          </motion.li>
+          <motion.li 
+            className="max-w-[50vw] truncate font-medium text-gray-800 dark:text-gray-100 dark:text-gray-100"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+          >
+            {project.title}
+          </motion.li>
+        </ol>
+      </motion.nav>
+
+      {/* Hero Section with Project Status */}
+      <motion.div
+        className="rounded-2xl bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 p-8 text-white shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-2xl hover:shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-3xl transition-shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25 duration-300"
+        initial={{ opacity: 0, scale: 0.9, y: 50 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.8, type: "spring" }}
+        whileHover={{ scale: 1.02 }}
+      >
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+          {/* Left Content */}
+          <div className="flex-1">
+            <motion.h1 
+              className="text-3xl font-bold mb-2"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              {project.title}
+            </motion.h1>
+            <motion.p 
+              className="text-blue-100 mb-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              by {project.artist_name || 'Unknown Artist'} • {project.genre || 'No genre'}
+            </motion.p>
+            <motion.div 
+              className="flex flex-wrap gap-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+            >
+              <motion.span 
+                className="hero-badge px-4 py-2 rounded-full bg-white dark:bg-gray-900/20 backdrop-blur-sm text-sm font-medium"
+                whileHover={{ scale: 1.05 }}
+                style={{ backgroundColor: "rgba(255,255,255,0.2)" }}
+                animate={{ backgroundColor: "rgba(255,255,255,0.2)" }}
+              >
+                Status: {project.status}
+              </motion.span>
+              <motion.span 
+                className="hero-badge px-4 py-2 rounded-full bg-white dark:bg-gray-900/20 backdrop-blur-sm text-sm font-medium"
+                whileHover={{ scale: 1.05 }}
+                style={{ backgroundColor: "rgba(255,255,255,0.2)" }}
+                animate={{ backgroundColor: "rgba(255,255,255,0.2)" }}
+              >
+                Stage: {project.stage}
+              </motion.span>
+              {project.progress_percent !== null && (
+                <motion.span 
+                  className="hero-badge px-4 py-2 rounded-full bg-white dark:bg-gray-900/20 backdrop-blur-sm text-sm font-medium"
+                  whileHover={{ scale: 1.05 }}
+                  style={{ backgroundColor: "rgba(255,255,255,0.2)" }}
+                  animate={{ backgroundColor: "rgba(255,255,255,0.2)" }}
+                >
+                  Progress: {project.progress_percent}%
+                </motion.span>
+              )}
+            </motion.div>
+          </div>
+
+          {/* Right Actions - Desktop Only */}
+          <motion.div 
+            className="hidden lg:flex flex-col gap-3 min-w-0"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.9 }}
+          >
+            <motion.button
+              onClick={async () => {
+                await setStatus("in_progress");
+                await setStage("awaiting_payment");
+              }}
+              className="rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-3 text-white font-medium shadow dark:shadow-gray-800/25 dark:shadow-lg whitespace-nowrap"
+              whileHover={{ scale: 1.05, boxShadow: "0 20px 25px -5px rgba(34, 197, 94, 0.4)" }}
+              whileTap={{ scale: 0.95 }}
+            >
+              ✅ Accept Project
+            </motion.button>
+            <motion.button
+              className="rounded-xl bg-gradient-to-r from-orange-500 to-red-600 px-6 py-3 text-white font-medium shadow dark:shadow-gray-800/25 dark:shadow-lg whitespace-nowrap"
+              whileHover={{ scale: 1.05, boxShadow: "0 20px 25px -5px rgba(251, 146, 60, 0.4)" }}
+              whileTap={{ scale: 0.95 }}
+            >
+              ⏸️ Put on Hold
+            </motion.button>
+          </motion.div>
+        </div>
+      </motion.div>
+
+      {/* Mobile Quick Actions */}
+      <motion.div 
+        className="lg:hidden grid grid-cols-2 gap-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <motion.button
+          onClick={async () => {
+            await setStatus("in_progress");
+            await setStage("awaiting_payment");
+          }}
+          className="rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 px-4 py-3 text-white font-medium shadow dark:shadow-gray-800/25 dark:shadow-lg"
+          whileHover={{ scale: 1.05, boxShadow: "0 20px 25px -5px rgba(34, 197, 94, 0.4)" }}
+          whileTap={{ scale: 0.95 }}
+        >
+          ✅ Accept Project
+        </motion.button>
+        <motion.button
+          className="rounded-xl bg-gradient-to-r from-orange-500 to-red-600 px-4 py-3 text-white font-medium shadow dark:shadow-gray-800/25 dark:shadow-lg"
+          whileHover={{ scale: 1.05, boxShadow: "0 20px 25px -5px rgba(251, 146, 60, 0.4)" }}
+          whileTap={{ scale: 0.95 }}
+        >
+          ⏸️ Put on Hold
+        </motion.button>
+      </motion.div>
+
+      {/* Assignment Cards */}
+      <motion.div 
+        className="grid grid-cols-1 gap-6"
+        variants={pageVariants}
+      >
+        <AnimatedCard title="� Team Assignment" className="w-full">
+          {/* Current Assignments List */}
+          <motion.div 
+            className="mb-6 p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border border-blue-200"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
+              📋 Currently Assigned Team Members
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {[
+                { role: 'anr', label: '🎭 A&R', value: currentAssignments.anr },
+                { role: 'composer', label: '🎵 Composer', value: currentAssignments.composer },
+                { role: 'producer', label: '🎧 Producer', value: currentAssignments.producer },
+                { role: 'engineer', label: '🔊 Audio Engineer', value: currentAssignments.engineer },
+                { role: 'publisher', label: '📚 Publisher', value: currentAssignments.publisher },
+              ].map((assignment, index) => (
+                <motion.div
+                  key={assignment.role}
+                  className={`p-3 rounded-lg border shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-sm ${
+                    assignment.value 
+                      ? 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 dark:border-gray-700 flex items-center justify-between' 
+                      : 'bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-600'
+                  }`}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + index * 0.1 }}
+                  whileHover={assignment.value ? { scale: 1.02 } : {}}
+                >
+                  <div className="flex-1">
+                    <div className="text-xs font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400 mb-1">
+                      {assignment.label}
+                    </div>
+                    <div className="text-sm font-medium text-gray-800 dark:text-gray-100 dark:text-gray-100">
+                      {assignment.value ? assignment.value : (
+                        <span className="text-gray-400 italic">Not assigned</span>
+                      )}
+                    </div>
+                  </div>
+                  {assignment.value && (
+                    <motion.button
+                      onClick={() => removeAssignment(assignment.role as StaffRole)}
+                      className="ml-3 px-3 py-1 bg-red-100 text-red-600 rounded-lg text-xs font-medium hover:bg-red-200 transition-colors"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Remove
+                    </motion.button>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Assignment Form */}
+          <motion.div 
+            className="grid grid-cols-2 gap-4 text-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            <div className="col-span-2 mb-2">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                ✏️ Assign New Team Members
+              </h4>
+              <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400 mt-1">
+                Search and assign team members to this project
+              </p>
+            </div>
+            <TeamAssignmentField
+              label="🎭 A&R"
+              value={anrName}
+              setValue={setAnrName}
+              options={getAvailableTeamOptions('anr')}
+              getFullName={getFullName}
+              index={0}
+              role="anr"
+              onRemove={removeAssignment}
+            />
+            <TeamAssignmentField
+              label="🎵 Composer"
+              value={composerName}
+              setValue={setComposerName}
+              options={getAvailableTeamOptions('composer')}
+              getFullName={getFullName}
+              index={1}
+              role="composer"
+              onRemove={removeAssignment}
+            />
+            <TeamAssignmentField
+              label="🎧 Producer"
+              value={producerName}
+              setValue={setProducerName}
+              options={getAvailableTeamOptions('producer')}
+              getFullName={getFullName}
+              index={2}
+              role="producer"
+              onRemove={removeAssignment}
+            />
+            <TeamAssignmentField
+              label="🔊 Audio Engineer"
+              value={engineerName}
+              setValue={setEngineerName}
+              options={getAvailableTeamOptions('engineer')}
+              getFullName={getFullName}
+              index={3}
+              role="engineer"
+              onRemove={removeAssignment}
+            />
+            <TeamAssignmentField
+              label="📘 Publisher"
+              value={publisherName}
+              setValue={setPublisherName}
+              options={getAvailableTeamOptions('publisher')}
+              getFullName={getFullName}
+              index={4}
+              role="publisher"
+              onRemove={removeAssignment}
+            />
+          </motion.div>
+
+          <motion.div 
+            className="mt-6 flex justify-end"
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+          >
+            <motion.button
+              onClick={saveAssignments}
+              className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-sm font-medium text-white shadow dark:shadow-gray-800/25 dark:shadow-lg"
+              whileHover={{ scale: 1.05, boxShadow: "0 20px 25px -5px rgba(59, 130, 246, 0.4)" }}
+              whileTap={{ scale: 0.95 }}
+            >
+              💾 Save Assignments
+            </motion.button>
+          </motion.div>
+        </AnimatedCard>
+      </motion.div>
+
+      {/* Animated Tabs */}
+      <motion.div 
+        className="flex items-center gap-2 border-[var(--border)] border-gray-200 dark:border-gray-700 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-t-2xl px-6 py-4 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-sm"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+      >
+        {[
+          { key: "overview", label: "📊 Overview & Details", icon: "📊" },
+          { key: "drafts", label: "🎵 Drafts", icon: "🎵" },
+          { key: "references", label: "🔗 References", icon: "🔗" },
+          { key: "discussion", label: "💬 Discussion", icon: "💬" },
+          { key: "meetings", label: "📅 Meetings", icon: "📅" },
+        ].map((t, index) => {
+          const k = t.key as typeof activeTab;
+          const act = activeTab === k;
+          return (
+            <motion.button
+              key={t.key}
+              onClick={() => setActiveTab(k)}
+              className={`animated-tab relative px-4 py-3 text-sm font-medium rounded-xl transition-all ${
+                act 
+                  ? "text-white bg-gradient-to-r from-blue-500 to-indigo-600 shadow dark:shadow-gray-800/25 dark:shadow-lg" 
+                  : "text-gray-600 dark:text-gray-300 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:bg-blue-900/20 dark:bg-blue-900/20"
+              }`}
+              variants={tabVariants}
+              initial="inactive"
+              animate={act ? "active" : "inactive"}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <motion.span
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 + index * 0.1 }}
+              >
+                {t.label}
+              </motion.span>
+              {act && (
+                <motion.div
+                  className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-yellow-400 rounded-full"
+                  layoutId="activeTab"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                />
+              )}
+            </motion.button>
+          );
+        })}
+      </motion.div>
+
+      {/* OVERVIEW (read-only) */}
+      {activeTab === "overview" && (
+        <motion.div 
+          className="grid grid-cols-1 gap-6 lg:grid-cols-2"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <AnimatedCard title="📝 Main Info (Read-only)" gradient>
+            <motion.div 
+              className="grid grid-cols-2 gap-4 text-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              {[
+                { label: "🎵 Project Title", value: view.title, span: 2 },
+                { label: "🎤 Artist Name", value: view.artist_name },
+                { label: "� Genre", value: view.genre },
+                { label: "📊 Status", value: view.status },
+                { label: "🎬 Stage", value: view.stage },
+                { label: "� Client ID", value: view.client_id || "N/A" },
+                { label: "📅 Last Updated", value: new Date(view.updated_at).toLocaleString("id-ID") },
+                { label: "📈 Progress", value: `${view.progress_percent}%` },
+              ].map((field, index) => (
+                <motion.div
+                  key={field.label}
+                  className={field.span === 2 ? "col-span-2" : ""}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + index * 0.1 }}
+                >
+                  <label className="mb-2 block text-xs font-medium text-gray-600 dark:text-gray-300 dark:text-gray-300">{field.label}</label>
+                  <motion.input 
+                    value={field.value} 
+                    disabled 
+                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 transition-all"
+                    whileHover={{ scale: 1.01 }}
+                  />
+                </motion.div>
+              ))}
+              <motion.div
+                className="col-span-2"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1 }}
+              >
+              </motion.div>
+            </motion.div>
+          </AnimatedCard>
+
+          <AnimatedCard title="📝 Project Description" gradient className="h-full flex flex-col">
+            <motion.div 
+              className="flex-1 flex flex-col"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              <motion.textarea
+                value={view.description || "No description provided"} 
+                disabled 
+                className="w-full flex-1 rounded-xl border border-gray-200 dark:border-gray-700 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 transition-all resize-none"
+                whileHover={{ scale: 1.01 }}
+                placeholder="Project description will appear here..."
+                style={{ height: '100%', minHeight: '400px' }}
+              />
+            </motion.div>
+          </AnimatedCard>
+        </motion.div>
+      )}
+
+      {/* DRAFTS */}
+      {activeTab === "drafts" && (
+        <motion.div 
+          className="grid grid-cols-1 gap-6 lg:grid-cols-2"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <AnimatedCard title="🔄 Drafts (Admin)" gradient>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              {drafts === null ? (
+                <motion.div 
+                  className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400"
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                >
+                  Loading drafts…
+                </motion.div>
+              ) : drafts.length ? (
+                <motion.ul className="space-y-3 text-sm">
+                  {drafts.map((d, index) => {
+                    const list = (revisions ?? []).filter((r) => r.draft_id === d.draft_id);
+                    return (
+                      <motion.li 
+                        key={d.draft_id} 
+                        className="rounded-xl border border-gray-200 dark:border-gray-700 dark:border-gray-700 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 p-4 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-sm"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 * index }}
+                        whileHover={{ 
+                          scale: 1.02,
+                          boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)"
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <motion.span 
+                            className="font-medium text-gray-800 dark:text-gray-100 dark:text-gray-100 bg-purple-100 px-2 py-1 rounded-lg"
+                            whileHover={{ scale: 1.1 }}
+                          >
+                            v{d.version}
+                          </motion.span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">
+                            {d.created_at ? new Date(d.created_at).toLocaleString("id-ID") : "-"}
+                          </span>
+                        </div>
+                        <div className="mt-2 break-all text-gray-600 dark:text-gray-300 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">{d.file_path}</div>
+                        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">Uploaded by: {d.uploaded_by ?? "-"}</div>
+
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <motion.a
+                            href={d.file_path}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-lg border px-3 py-2 text-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium"
+                            whileHover={{ scale: 1.05, y: -2 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            🔗 Open
+                          </motion.a>
+                        </div>
+
+                        {list.length > 0 && (
+                          <motion.div 
+                            className="mt-3 rounded-lg bg-gradient-to-br from-yellow-50 to-orange-50 p-3 border border-yellow-200"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            transition={{ delay: 0.3 + 0.1 * index }}
+                          >
+                            <div className="mb-2 text-xs font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
+                              📝 Revision History
+                            </div>
+                            <motion.ul className="space-y-1">
+                              {list.map((rv, rvIndex) => (
+                                <motion.li 
+                                  key={rv.revision_id} 
+                                  className="text-xs text-gray-600 dark:text-gray-300 dark:text-gray-300 bg-white dark:bg-gray-900 p-2 rounded-md"
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: 0.5 + 0.1 * rvIndex }}
+                                >
+                                  <span className="font-medium">{rv.requested_by ?? "Unknown"}</span> — {rv.reason ?? "-"}
+                                  <span className="ml-2 text-[11px] text-gray-400">
+                                    {rv.created_at ? new Date(rv.created_at).toLocaleString("id-ID") : ""}
+                                  </span>
+                                </motion.li>
+                              ))}
+                            </motion.ul>
+                          </motion.div>
+                        )}
+                      </motion.li>
+                    );
+                  })}
+                </motion.ul>
+              ) : (
+                <motion.div 
+                  className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400 text-center py-8"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  📋 Belum ada draft.
+                </motion.div>
+              )}
+            </motion.div>
+          </AnimatedCard>
+
+          <AnimatedCard title="📝 Notes / QA Checklist" gradient>
+            <motion.div 
+              className="text-sm text-gray-600 dark:text-gray-300 dark:text-gray-300 bg-gradient-to-br from-blue-50 to-cyan-50 p-4 rounded-xl border border-blue-200"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              📋 Tempat admin/A&R menyimpan catatan QC internal (draft 1 → final).
+            </motion.div>
+          </AnimatedCard>
+        </motion.div>
+      )}
+
+      {/* REFERENCES */}
+      {activeTab === "references" && (
+        <motion.div 
+          className="grid grid-cols-1 gap-6 lg:grid-cols-2"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <AnimatedCard title="🔗 References Feed" gradient>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              {links === null ? (
+                <motion.div 
+                  className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400"
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                >
+                  Loading…
+                </motion.div>
+              ) : links.length === 0 ? (
+                <motion.div 
+                  className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400 text-center py-8"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  🔗 Belum ada link.
+                </motion.div>
+              ) : (
+                <motion.ul className="space-y-3 text-sm">
+                  {links.map((l, index) => (
+                    <motion.li 
+                      key={l.id} 
+                      className="rounded-xl border border-gray-200 dark:border-gray-700 dark:border-gray-700 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 p-4 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-sm"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 * index }}
+                      whileHover={{ 
+                        scale: 1.02,
+                        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)"
+                      }}
+                    >
+                      <div className="mb-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400">
+                        <span className="bg-blue-100 px-2 py-1 rounded-lg">
+                          {l.created_at ? new Date(l.created_at).toLocaleString("id-ID") : ""}
+                        </span>
+                        <DeleteReferenceButton
+                          id={l.id}
+                          onDeleted={() => setLinks((prev) => (prev ? prev.filter((x) => x.id !== l.id) : prev))}
+                        />
+                      </div>
+                      <motion.a 
+                        href={l.url} 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        className="break-all text-blue-600 hover:text-purple-600 font-medium bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg block transition-all"
+                        whileHover={{ scale: 1.01, y: -2 }}
+                      >
+                        🌐 {l.url}
+                      </motion.a>
+                    </motion.li>
+                  ))}
+                </motion.ul>
+              )}
+            </motion.div>
+          </AnimatedCard>
+
+          <AnimatedCard title="➕ Add Reference (Admin)" gradient>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              <ReferenceAdder
+                projectId={params.id}
+                onAdded={(row) => setLinks((prev) => (prev ? [row, ...prev] : [row]))}
+              />
+            </motion.div>
+          </AnimatedCard>
+        </motion.div>
+      )}
+
+      {/* DISCUSSION */}
+      {activeTab === "discussion" && (
+        <AnimatedCard title="💬 Discussion (Admin moderation)" gradient>
+          <motion.div 
+            className="flex flex-col gap-3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            {messages === null ? (
+              <motion.div 
+                className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400"
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ repeat: Infinity, duration: 1.5 }}
+              >
+                Loading…
+              </motion.div>
+            ) : messages.length === 0 ? (
+              <motion.div 
+                className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400 text-center py-8"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                💬 Belum ada pesan.
+              </motion.div>
+            ) : (
+              <motion.ul className="space-y-3">
+                {messages.map((m, index) => (
+                  <motion.li 
+                    key={m.id} 
+                    className="rounded-xl border border-gray-200 dark:border-gray-700 dark:border-gray-700 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 p-4 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-sm"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 * index }}
+                    whileHover={{ 
+                      scale: 1.02,
+                      boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)"
+                    }}
+                  >
+                    <div className="mb-2 flex items-center justify-between text-xs">
+                      <motion.span 
+                        className="bg-green-100 px-2 py-1 rounded-lg font-medium text-green-700"
+                        whileHover={{ scale: 1.1 }}
+                      >
+                        👤 {m.author_id ?? "Anon"}
+                      </motion.span>
+                      <span className="text-gray-500 dark:text-gray-400 dark:text-gray-400">
+                        {new Date(m.created_at).toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                    <div className="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-100 dark:text-gray-100 bg-gradient-to-br from-blue-50 to-purple-50 p-3 rounded-lg border border-blue-200">
+                      {m.content}
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <DeleteMessageButton
+                        id={m.id}
+                        onDeleted={() => setMessages((prev) => (prev ? prev.filter((x) => x.id !== m.id) : prev))}
+                      />
+                    </div>
+                  </motion.li>
+                ))}
+              </motion.ul>
+            )}
+          </motion.div>
+        </AnimatedCard>
+      )}
+
+      {/* MEETINGS */}
+      {activeTab === "meetings" && (
+        <AnimatedCard title="🗓️ Meetings (Admin)" gradient>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            {meetings === null ? (
+              <motion.div 
+                className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400"
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ repeat: Infinity, duration: 1.5 }}
+              >
+                Loading…
+              </motion.div>
+            ) : meetings.length === 0 ? (
+              <motion.div 
+                className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400 text-center py-8"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                🗓️ Belum ada meeting.
+              </motion.div>
+            ) : (
+              <motion.ul className="space-y-3">
+                {meetings.map((m, index) => {
+                  const start = new Date(m.start_at);
+                  const end = new Date(start.getTime() + m.duration_min * 60_000);
+                  return (
+                    <motion.li 
+                      key={m.id} 
+                      className="rounded-xl border border-gray-200 dark:border-gray-700 dark:border-gray-700 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 p-4 text-sm shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-sm"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 * index }}
+                      whileHover={{ 
+                        scale: 1.02,
+                        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)"
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <motion.div 
+                          className="font-medium text-gray-800 dark:text-gray-100 dark:text-gray-100 bg-purple-100 px-3 py-1 rounded-lg"
+                          whileHover={{ scale: 1.05 }}
+                        >
+                          📅 {m.title}
+                        </motion.div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-lg">
+                          ⏰ {start.toLocaleString("id-ID")} –{" "}
+                          {end.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                        </div>
+                      </div>
+                      {m.notes && (
+                        <motion.div 
+                          className="mt-3 text-gray-700 dark:text-gray-200 bg-gradient-to-br from-yellow-50 to-orange-50 p-3 rounded-lg border border-yellow-200"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.3 + 0.1 * index }}
+                        >
+                          📝 {m.notes}
+                        </motion.div>
+                      )}
+                      <div className="mt-3 flex items-center gap-2">
+                        {m.link ? (
+                          <motion.a
+                            className="inline-flex items-center rounded-lg border px-3 py-2 text-xs bg-gradient-to-r from-green-500 to-blue-500 text-white font-medium"
+                            href={m.link}
+                            target="_blank"
+                            rel="noreferrer"
+                            whileHover={{ scale: 1.05, y: -2 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            🚀 Join
+                          </motion.a>
+                        ) : (
+                          <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-lg">
+                            🔗 No link
+                          </span>
+                        )}
+                        <CancelMeetingButton
+                          id={m.id}
+                          onCancelled={() => setMeetings((prev) => (prev ? prev.filter((x) => x.id !== m.id) : prev))}
+                        />
+                      </div>
+                    </motion.li>
+                  );
+                })}
+              </motion.ul>
+            )}
+          </motion.div>
+        </AnimatedCard>
+      )}
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+    </motion.div>
+  );
+}
+
+/** ---------- small button components ---------- */
+
+function DeleteReferenceButton({ id, onDeleted }: { id: string; onDeleted: () => void }) {
+  const supabase = useMemo(() => getSupabaseClient(), []);
+  return (
+    <button
+      onClick={async () => {
+        if (!confirm("Hapus link referensi ini?")) return;
+        try {
+          const { error } = await supabase.from("project_reference_links").delete().eq("id", id);
+          if (error) throw error;
+          onDeleted();
+        } catch (e) {
+          console.error(e);
+          alert("Gagal hapus link (cek RLS).");
+        }
+      }}
+      className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50 dark:bg-gray-800"
+    >
+      Delete
+    </button>
+  );
+}
+
+function DeleteMessageButton({ id, onDeleted }: { id: string; onDeleted: () => void }) {
+  const supabase = useMemo(() => getSupabaseClient(), []);
+  return (
+    <button
+      onClick={async () => {
+        if (!confirm("Hapus pesan diskusi ini?")) return;
+        try {
+          const { error } = await supabase.from("discussion_messages").delete().eq("id", id);
+          if (error) throw error;
+          onDeleted();
+        } catch (e) {
+          console.error(e);
+          alert("Gagal hapus pesan (cek RLS).");
+        }
+      }}
+      className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50 dark:bg-gray-800"
+    >
+      Delete
+    </button>
+  );
+}
+
+function CancelMeetingButton({ id, onCancelled }: { id: string; onCancelled: () => void }) {
+  const supabase = useMemo(() => getSupabaseClient(), []);
+  return (
+    <button
+      onClick={async () => {
+        if (!confirm("Batalkan meeting ini?")) return;
+        try {
+          const { error } = await supabase.from("meetings").delete().eq("id", id);
+          if (error) throw error;
+          onCancelled();
+        } catch (e) {
+          console.error(e);
+          alert("Gagal membatalkan meeting (cek RLS).");
+        }
+      }}
+      className="rounded-md border px-2 py-1 text-xs hover:bg-gray-50 dark:bg-gray-800"
+    >
+      Cancel
+    </button>
+  );
+}
+
+/** ---------- Team Assignment Field with Autocomplete ---------- */
+function TeamAssignmentField({
+  label,
+  value,
+  setValue,
+  options,
+  getFullName,
+  index,
+  role,
+  onRemove,
+}: {
+  label: string;
+  value: string;
+  setValue: (value: string) => void;
+  options: TeamMember[];
+  getFullName: (member: TeamMember) => string;
+  index: number;
+  role: StaffRole;
+  onRemove: (role: StaffRole) => void;
+}) {
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [filteredOptions, setFilteredOptions] = useState<TeamMember[]>([]);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Filter options based on input value
+  useEffect(() => {
+    if (!value.trim()) {
+      setFilteredOptions(options);
+    } else {
+      const filtered = options.filter(option => {
+        const fullName = getFullName(option).toLowerCase();
+        const searchValue = value.toLowerCase();
+        return fullName.includes(searchValue) || 
+               option.email?.toLowerCase().includes(searchValue);
+      });
+      setFilteredOptions(filtered);
+    }
+  }, [value, options, getFullName]);
+
+  // Handle click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue(e.target.value);
+    setShowDropdown(true);
+  };
+
+  const handleOptionClick = (option: TeamMember) => {
+    const fullName = getFullName(option);
+    setValue(fullName);
+    setShowDropdown(false);
+  };
+
+  const handleInputFocus = () => {
+    setShowDropdown(true);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setShowDropdown(false);
+      inputRef.current?.blur();
+    }
+  };
+
+  const handleRemove = () => {
+    onRemove(role);
+  };
+
+  return (
+    <motion.div
+      className="relative"
+      initial={{ opacity: 1, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: 0.6 + index * 0.1 }}
+      // whileHover={{ scale: 1.02 }}
+      ref={dropdownRef}
+    >
+      <label className="mb-2 block text-xs font-medium text-gray-600 dark:text-gray-300 dark:text-gray-300">{label}</label>
+      <motion.input
+        ref={inputRef}
+        value={value}
+        onChange={handleInputChange}
+        onFocus={handleInputFocus}
+        onKeyDown={handleKeyDown}
+        placeholder="Type name or email..."
+        className="w-full rounded-xl border border-gray-300 dark:border-gray-600 dark:border-gray-600 px-4 py-3 transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+        whileFocus={{ scale: 1.02 }}
+      />
+      
+      <AnimatePresence>
+        {showDropdown && filteredOptions.length > 0 && (
+          <motion.div
+            className="absolute z-[60] w-full mt-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 dark:border-gray-700 rounded-xl shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-xl max-h-60 overflow-auto"
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+          >
+            {filteredOptions.map((option, optionIndex) => {
+              const fullName = getFullName(option);
+              const isSelected = value === fullName;
+              
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => handleOptionClick(option)}
+                  className={`w-full text-left px-4 py-3 text-sm transition-colors first:rounded-t-xl last:rounded-b-xl ${
+                    isSelected 
+                      ? 'bg-blue-50 dark:bg-blue-900/20 dark:bg-blue-900/20 text-blue-600 border-l-4 border-blue-500' 
+                      : 'hover:bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200'
+                  }`}
+                >
+                  <div className="font-medium">{fullName}</div>
+                  {option.email && (
+                    <div className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400 mt-1">
+                      📧 {option.email}
+                    </div>
+                  )}
+                  <div className="text-xs text-blue-500 mt-1 capitalize">
+                    {option.staff_role.join(', ')}
+                  </div>
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {showDropdown && filteredOptions.length === 0 && value.trim() && (
+        <motion.div
+          className="absolute z-[60] w-full mt-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 dark:border-gray-700 rounded-xl shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-xl p-4 text-center text-gray-500 dark:text-gray-400 dark:text-gray-400 text-sm"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          🔍 No team members found matching &quot;{value}&quot;
+        </motion.div>
+      )}
+    </motion.div>
+  );
+}
+
+/** ---------- child component: add reference (admin) ---------- */
+function ReferenceAdder({
+  projectId,
+  onAdded,
+}: {
+  projectId: string;
+  onAdded: (row: ReferenceLinkRow) => void;
+}): React.JSX.Element {
+  const supabase = useMemo(() => getSupabaseClient(), []);
+  const [url, setUrl] = useState("");
+  const [posting, setPosting] = useState(false);
+
+  const add = useCallback(async () => {
+    const raw = url.trim();
+    if (!raw) return;
+    try {
+      new URL(raw);
+    } catch {
+      return false; // Invalid URL
+    }
+    setPosting(true);
+    try {
+      const { data, error } = await supabase
+        .from("project_reference_links")
+        .insert({ project_id: projectId, url: raw })
+        .select("id,project_id,url,created_at")
+        .single<ReferenceLinkRow>();
+      if (error) throw error;
+      onAdded(data);
+      setUrl("");
+    } catch (e) {
+      console.error(e);
+      return false; // Error occurred
+    } finally {
+      setPosting(false);
+    }
+    return true; // Success
+  }, [projectId, supabase, url, onAdded]);
+
+  return (
+    <div className="space-y-3">
+      <input
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        placeholder="Paste URL…"
+        className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:border-gray-600 p-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+      />
+      <div className="flex justify-end">
+        <button
+          disabled={posting || !url.trim()}
+          onClick={async () => {
+            const success = await add();
+            // Toast notifications will be handled by parent component
+          }}
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
+        >
+          {posting ? "Posting…" : "Add Link"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** ---------- Toast Notification Component ---------- */
+function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: string) => void }) {
+  return (
+    <motion.div className="fixed bottom-4 right-4 z-[100] space-y-2">
+      <AnimatePresence>
+        {toasts.map((toast) => (
+          <ToastItem key={toast.id} toast={toast} onRemove={onRemove} />
+        ))}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) => void }) {
+  const getToastStyles = (type: ToastType) => {
+    switch (type) {
+      case 'success':
+        return 'bg-gradient-to-r from-green-500 to-emerald-600 text-gray-900 dark:text-white border-green-400 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-green-500/20';
+      case 'error':
+        return 'bg-gradient-to-r from-red-500 to-rose-600 text-gray-900 dark:text-white border-red-400 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-red-500/20';
+      case 'warning':
+        return 'bg-gradient-to-r from-yellow-500 to-orange-600 text-gray-900 dark:text-white border-yellow-400 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-yellow-500/20';
+      case 'info':
+        return 'bg-gradient-to-r from-blue-500 to-indigo-600 text-gray-900 dark:text-white border-blue-400 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-blue-500/20';
+      default:
+        return 'bg-gradient-to-r from-gray-600 to-gray-700 text-gray-900 dark:text-white border-gray-500 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-gray-500/20';
+    }
+  };
+
+  const getIcon = (type: ToastType) => {
+    switch (type) {
+      case 'success': return '✅';
+      case 'error': return '❌';
+      case 'warning': return '⚠️';
+      case 'info': return 'ℹ️';
+      default: return '📌';
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 300, scale: 0.8 }}
+      animate={{ opacity: 1, x: 0, scale: 1 }}
+      exit={{ opacity: 0, x: 300, scale: 0.8 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className={`relative max-w-sm rounded-xl border-2 p-4 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-2xl backdrop-blur-sm ${getToastStyles(toast.type)}`}
+      whileHover={{ scale: 1.02 }}
+    >
+      <div className="flex items-start gap-3">
+        <motion.div
+          className="text-xl"
+          animate={{ rotate: [0, 10, -10, 0] }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          {getIcon(toast.type)}
+        </motion.div>
+        <div className="flex-1 min-w-0">
+          <motion.h4 
+            className="font-bold text-sm mb-1"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+          >
+            {toast.title}
+          </motion.h4>
+          <motion.p 
+            className="text-sm opacity-90"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            {toast.message}
+          </motion.p>
+        </div>
+        <motion.button
+          onClick={() => onRemove(toast.id)}
+          className="text-gray-900 dark:text-white/80 hover:text-gray-900 dark:text-white text-lg font-bold leading-none p-1 rounded-full hover:bg-black/10 transition-colors"
+          whileHover={{ scale: 1.1, rotate: 90 }}
+          whileTap={{ scale: 0.9 }}
+        >
+          ×
+        </motion.button>
+      </div>
+      
+      {/* Progress bar for auto-dismiss */}
+      {toast.duration && (
+        <motion.div
+          className="absolute bottom-0 left-0 h-1 bg-black/20 rounded-b-xl"
+          initial={{ width: "100%" }}
+          animate={{ width: "0%" }}
+          transition={{ duration: toast.duration / 1000, ease: "linear" }}
+        />
+      )}
+    </motion.div>
+  );
+}

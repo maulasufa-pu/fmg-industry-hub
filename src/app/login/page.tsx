@@ -13,7 +13,7 @@ export default function Login(): React.JSX.Element {
       {
         <section className="relative left-1/2 right-1/2 -mx-[50dvw] w-[100dvw] bg-coolgray-10">
         <div className="flex items-start justify-center px-4 sm:px-6 py-8 sm:py-10">
-          <Suspense fallback={<div className="p-6 text-gray-500">Loading…</div>}>
+          <Suspense fallback={<div className="p-6 text-gray-500 dark:text-gray-400 dark:text-gray-400">Loading…</div>}>
             <LoginSection />
           </Suspense>
         </div>

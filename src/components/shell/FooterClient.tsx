@@ -10,7 +10,7 @@ export default function FooterClient() {
   return (
     <section
       aria-label="Trusted by"
-      className="border-b border-[var(--border)] bg-[var(--card)]"
+      className="border-[var(--border)] bg-[var(--card)]"
     >
       <div className="mx-auto w-full max-w-screen-xl px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
         <LogoSection />

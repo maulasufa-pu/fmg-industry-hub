@@ -29,7 +29,7 @@ export default function Error({ error, reset }: Props): React.JSX.Element {
 
   return (
     <div className="p-6">
-      <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+      <div className="rounded-lg border border-red-200 dark:border-red-600 bg-red-50 dark:bg-red-900/20 dark:bg-red-900/20 p-4">
         <h2 className="text-red-700 font-semibold">Something went wrong</h2>
         <p className="mt-1 text-sm text-red-700/80">
           Terjadi kesalahan saat memuat halaman Projects.
@@ -46,7 +46,7 @@ export default function Error({ error, reset }: Props): React.JSX.Element {
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="inline-flex items-center rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100"
+            className="inline-flex items-center rounded-md border border-red-300 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100"
           >
             Reload page
           </button>
@@ -56,7 +56,7 @@ export default function Error({ error, reset }: Props): React.JSX.Element {
           <summary className="cursor-pointer text-sm text-red-700/80 hover:text-red-700">
             Show technical details
           </summary>
-          <pre className="mt-2 max-h-64 overflow-auto rounded bg-white/60 p-3 text-xs text-red-900">
+          <pre className="mt-2 max-h-64 overflow-auto rounded bg-white dark:bg-gray-900/60 p-3 text-xs text-red-900">
             {String(error.stack || error.message)}
             {error.digest ? `\n\ndigest: ${error.digest}` : ""}
           </pre>

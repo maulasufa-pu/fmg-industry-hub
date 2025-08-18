@@ -11,7 +11,7 @@ import Image from "next/image";
 type ProfileLite = {
   fullName: string;
   email: string;
-  role: string;
+  effectiveRole: string;
   avatar_path?: string | null;
 };
 
@@ -68,26 +68,45 @@ export function SidebarSection() {
           user.email?.split("@")[0] ||
           "User";
 
-        // ambil avatar_path dari metadata, kalau kosong cek tabel profiles
-        let p = (md.avatar_path as string | undefined) || null;
-        if (!p) {
-          const { data: row } = await supabase
-            .from("profiles")
-            .select("avatar_path")
-            .eq("id", user.id)
-            .maybeSingle();
-          p = row?.avatar_path || null;
+        // ambil avatar_path dan role dari profiles table
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("avatar_path, avatar_url, main_role, staff_role") // ⬅️ tambah avatar_url
+          .eq("id", user.id)
+          .maybeSingle();
+
+        // Determine effective role
+        let effectiveRole = "Client";
+        if (profileData) {
+          const allRoles: string[] = [];
+          if (profileData.main_role) allRoles.push(profileData.main_role);
+          if (profileData.staff_role && Array.isArray(profileData.staff_role)) {
+            allRoles.push(...profileData.staff_role);
+          }
+          
+          // Priority: owner > admin > others, capitalize for display
+          if (allRoles.includes("owner")) effectiveRole = "Owner";
+          else if (allRoles.includes("admin")) effectiveRole = "Admin";
+          else effectiveRole = "Client";
         }
 
-        if (!mounted) return;
+        const avatarPath = profileData?.avatar_path || null;
 
         setProfile({
           fullName: full,
           email: user.email || "",
-          role: md.role || "Client",
-          avatar_path: p,
+          effectiveRole: effectiveRole,
+          avatar_path: avatarPath,
         });
-        await refreshAvatarUrl(p);
+
+        // ⬇️ prioritas: Storage path → else avatar_url eksternal → else null
+        if (avatarPath) {
+          await refreshAvatarUrl(avatarPath);
+        } else if (typeof profileData?.avatar_url === "string" && profileData.avatar_url.length > 0) {
+          setAvatarUrl(profileData.avatar_url);
+        } else {
+          setAvatarUrl(null);
+        }
       }
 
       // subscribe perubahan auth
@@ -105,23 +124,45 @@ export function SidebarSection() {
             u.email?.split("@")[0] ||
             "User";
 
-          let p2 = (m.avatar_path as string | undefined) || null;
-          if (!p2) {
-            const { data: row2 } = await supabase
-              .from("profiles")
-              .select("avatar_path")
-              .eq("id", u.id)
-              .maybeSingle();
-            p2 = row2?.avatar_path || null;
+          // ambil avatar_path dan role dari profiles table
+          const { data: profileData2 } = await supabase
+            .from("profiles")
+            .select("avatar_path, avatar_url, main_role, staff_role") // ⬅️ tambah avatar_url
+            .eq("id", u.id)
+            .maybeSingle();
+
+          // Determine effective role
+          let effectiveRole2 = "Client";
+          if (profileData2) {
+            const allRoles2: string[] = [];
+            if (profileData2.main_role) allRoles2.push(profileData2.main_role);
+            if (profileData2.staff_role && Array.isArray(profileData2.staff_role)) {
+              allRoles2.push(...profileData2.staff_role);
+            }
+            
+            // Priority: owner > admin > others, capitalize for display
+            if (allRoles2.includes("owner")) effectiveRole2 = "Owner";
+            else if (allRoles2.includes("admin")) effectiveRole2 = "Admin";
+            else effectiveRole2 = "Client";
           }
+
+          // 2) Tentukan URL avatar
+          const avatarPath2 = profileData2?.avatar_path || null;
 
           setProfile({
             fullName: full2,
             email: u.email || "",
-            role: m.role || "Client",
-            avatar_path: p2,
+            effectiveRole: effectiveRole2,
+            avatar_path: avatarPath2,
           });
-          await refreshAvatarUrl(p2);
+
+          if (avatarPath2) {
+            await refreshAvatarUrl(avatarPath2);
+          } else if (typeof profileData2?.avatar_url === "string" && profileData2.avatar_url.length > 0) {
+            setAvatarUrl(profileData2.avatar_url);
+          } else {
+            setAvatarUrl(null);
+          }
         }
       });
 
@@ -173,13 +214,13 @@ export function SidebarSection() {
 
   const qaBtnBase =
     "relative group grid h-10 w-10 place-items-center rounded-lg " +
-    "transition-[transform,background-color,box-shadow] duration-150 " +
+    "transition-[transform,background-color,box-shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25] duration-150 " +
     "hover:bg-hover active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coolgray-30 " +
     "motion-reduce:transition-none";
 
   return (
     <aside
-      className="flex flex-col w-64 min-h-screen items-start gap-4 px-4 py-6 bg-defaultwhite border-r border-coolgray-20"
+      className="flex flex-col w-64 min-h-screen items-start gap-4 px-4 py-6 bg-defaultwhite dark:bg-gray-900 border-[var(--border)] border-coolgray-20"
       role="navigation"
       aria-label="Main navigation"
     >
@@ -197,7 +238,7 @@ export function SidebarSection() {
 
       {/* Quick actions */}
       <div
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--card)]/70 p-2 shadow-sm ring-1 ring-[var(--border)]"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--card)]/70 p-2 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-sm ring-1 ring-[var(--border)]"
         role="toolbar"
         aria-label="User actions"
       >
@@ -219,7 +260,7 @@ export function SidebarSection() {
             <div
               ref={popRef}
               role="menu"
-              className="absolute left-2 mt-2 w-72 rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-lg p-3 z-50"
+              className="absolute left-2 mt-2 w-72 rounded-xl border border-[var(--border)] bg-[var(--card)] shadow dark:shadow-gray-800/25 dark:shadow-lg p-3 z-50"
             >
               {/* Header info user */}
               <div className="flex items-start gap-3 p-2">
@@ -246,7 +287,7 @@ export function SidebarSection() {
                   </div>
                   {profile && (
                     <div className="text-xs mt-0.5 px-2 py-0.5 rounded-full bg-coolgray-10 text-coolgray-90 w-fit">
-                      {profile.role}
+                      {profile.effectiveRole}
                     </div>
                   )}
                 </div>
@@ -258,13 +299,13 @@ export function SidebarSection() {
                 <>
                   <nav className="flex flex-col gap-1">
                     <Link
-                      href="/client/settings"
+                      href="/profile/settings"
                       className="px-3 py-2 rounded-lg hover:bg-coolgray-10 text-coolgray-90"
                     >
                       View Profile
                     </Link>
                     <Link
-                      href="/client/settings"
+                      href="/profile/settings"
                       className="px-3 py-2 rounded-lg hover:bg-coolgray-10 text-coolgray-90"
                     >
                       Settings
@@ -294,7 +335,7 @@ export function SidebarSection() {
         <button
           aria-label="Settings"
           className={qaBtnBase}
-          onClick={() => router.push("/client/settings")}
+          onClick={() => router.push("/profile/settings")}
         >
           <span className="pointer-events-none absolute inset-0 rounded-lg bg-black/5 opacity-0 group-active:opacity-100 transition-opacity duration-150" />
           <Cog className="text-coolgray-90 group-hover:text-primary-90 transition-colors" />
@@ -307,7 +348,7 @@ export function SidebarSection() {
           <span
             aria-label="9 notifications"
             className="absolute -top-0.5 -right-1.5 flex items-center justify-center min-w-[18px] h-[18px]
-                       rounded-full bg-red-500 text-[10px] font-medium text-white shadow-md shadow-red-500/30"
+                       rounded-full bg-red-50 dark:bg-red-900/600 text-[10px] font-medium text-white shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-md shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-red-500/30"
           >
             9
           </span>
@@ -362,7 +403,7 @@ export function SidebarSection() {
                   />
                   <span className="flex-1 text-left font-other-menu-m">{item.label}</span>
                   {item.badge && (
-                    <span className="inline-flex items-center px-[6px] py-[2px] rounded-xl bg-red-500 text-[10px] font-medium text-white shadow-md shadow-red-500/30">
+                    <span className="inline-flex items-center px-[6px] py-[2px] rounded-xl bg-red-50 dark:bg-red-900/600 text-[10px] font-medium text-white shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-md shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-red-500/30">
                       {item.badge}
                     </span>
                   )}

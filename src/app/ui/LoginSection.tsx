@@ -27,15 +27,35 @@ export const LoginSection = () => {
     try {
       const supabase = getSupabaseClient();
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) await supabase.auth.signOut();
+      // Clear existing session with timeout
+      try {
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Session check timeout')), 2000)
+        );
+        
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
+        if (session) await supabase.auth.signOut();
+      } catch (err) {
+        console.warn("Could not check/clear existing session:", err);
+        // Continue with login attempt
+      }
 
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      // Attempt login with timeout
+      const loginPromise = supabase.auth.signInWithPassword({ email, password });
+      const loginTimeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Login timeout - please check your connection')), 10000)
+      );
+      
+      const { error } = await Promise.race([loginPromise, loginTimeoutPromise]);
       if (error) throw error;
 
+      console.log("Login successful, redirecting to:", redirectedFrom);
       router.push(redirectedFrom);
-    } catch (e: unknown) {                  // ⬅️ was: any
-      setErr(e instanceof Error ? e.message : "Login failed");
+    } catch (e: unknown) {
+      const errorMsg = e instanceof Error ? e.message : "Login failed";
+      console.error("Login error:", errorMsg);
+      setErr(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -58,7 +78,7 @@ export const LoginSection = () => {
   
 
   return (
-    <div className="flex flex-col w-full max-w-md sm:max-w-lg lg:max-w-xl items-center gap-5 px-6 sm:px-7 md:px-8 py-6 sm:py-8 bg-defaultwhite border border-coolgray-20 rounded-xl">
+    <div className="flex flex-col w-full max-w-md sm:max-w-lg lg:max-w-xl items-center gap-5 px-6 sm:px-7 md:px-8 py-6 sm:py-8 bg-defaultwhite dark:bg-gray-900 border border-coolgray-20 rounded-xl">
       {msg && (
         <p className="text-[13px] text-primary-60 self-stretch text-center">
           {msg}
@@ -95,7 +115,7 @@ export const LoginSection = () => {
               Email Address
             </label>
 
-            <div className="flex h-12 items-center gap-2 px-4 py-3 relative self-stretch w-full bg-coolgray-10 border-b [border-bottom-style:solid] border-coolgray-30">
+            <div className="flex h-12 items-center gap-2 px-4 py-3 relative self-stretch w-full bg-coolgray-10 border-[var(--border)] [border-bottom-style:solid] border-coolgray-30">
               <input
                 className="relative flex-1 font-body-m font-[number:var(--body-m-font-weight)] text-coolgray-60 text-[length:var(--body-m-font-size)] tracking-[var(--body-m-letter-spacing)] leading-[var(--body-m-line-height)] [font-style:var(--body-m-font-style)] [background:transparent] border-[none] p-0 focus:outline-none"
                 id="email-input"
@@ -119,7 +139,7 @@ export const LoginSection = () => {
               Password
             </label>
 
-            <div className="flex h-12 items-center gap-2 px-4 py-3 relative self-stretch w-full bg-coolgray-10 border-b [border-bottom-style:solid] border-coolgray-30">
+            <div className="flex h-12 items-center gap-2 px-4 py-3 relative self-stretch w-full bg-coolgray-10 border-[var(--border)] [border-bottom-style:solid] border-coolgray-30">
               <input
                 className="relative flex-1 font-body-m font-[number:var(--body-m-font-weight)] text-coolgray-60 text-[length:var(--body-m-font-size)] tracking-[var(--body-m-letter-spacing)] leading-[var(--body-m-line-height)] [font-style:var(--body-m-font-style)] [background:transparent] border-[none] p-0 focus:outline-none"
                 id="password-input"
@@ -151,7 +171,7 @@ export const LoginSection = () => {
           />
           
           {/* Icon berubah sesuai state */}
-          <div className="w-5 h-5 flex items-center justify-center border border-coolgray-40 rounded-sm bg-white">
+          <div className="w-5 h-5 flex items-center justify-center border border-coolgray-40 rounded-sm bg-white dark:bg-gray-900">
             {rememberMe && (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -189,7 +209,7 @@ export const LoginSection = () => {
         </button>
 
         {err && (
-          <p className="text-[13px] text-red-600 self-stretch text-center">
+          <p className="text-[13px] text-red-600 dark:text-red-200 self-stretch text-center">
             {err}
           </p>
         )}

@@ -2,13 +2,13 @@
 export const ROLE_IDS = [
   "admin",
   "anr",
-  "audio_engineer",
+  "engineer",
   "client",
   "composer",
   "guest",
   "owner",
   "producer",
-  "publishing",
+  "publisher",
 ] as const;
 
 export type UserRole = typeof ROLE_IDS[number];
@@ -16,13 +16,13 @@ export type UserRole = typeof ROLE_IDS[number];
 export const ROLE_LABEL: Record<UserRole, string> = {
   "admin": "Admin",
   "anr": "A&R",
-  "audio_engineer": "Audio Engineer",
+  "engineer": "Audio Engineer",
   "client": "Client",
   "composer": "Composer",
   "guest": "Guest",
   "owner": "Owner",
   "producer": "Producer",
-  "publishing": "Publishing",
+  "publisher": "Publisher",
 };
 
 // Adjust jika kamu punya kolom/aturan admin-like sendiri.

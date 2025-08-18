@@ -1,5 +1,7 @@
 "use client";
 
+import { Link } from "lucide-react";
+
 export default function DebugPage() {
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
@@ -11,7 +13,7 @@ export default function DebugPage() {
         
         <h2>Debug Links:</h2>
         <div style={{ marginTop: '20px' }}>
-          <a 
+          <Link
             href="/admin/projects?debug_key=copilot-debug-2025-fmg-industry-hub"
             style={{ 
               display: 'inline-block', 
@@ -24,7 +26,7 @@ export default function DebugPage() {
             }}
           >
             🎯 Test Admin Projects Page
-          </a>
+          </Link>
         </div>
         
         <div style={{ marginTop: '20px', padding: '10px', backgroundColor: '#e8f5e8', borderRadius: '5px' }}>

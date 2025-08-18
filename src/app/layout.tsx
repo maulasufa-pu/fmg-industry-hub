@@ -2,8 +2,8 @@
 
 "use client";
 import "./globals.css";
-import { HeaderSection } from "@/app/ui/HeaderSection";
-import { LogoSection } from "@/app/ui/LogoSection";
+import { HeaderSection } from "@/app/ui/page_section/HeaderSection";
+import { LogoSection } from "@/app/ui/page_section/FooterSection";
 import HeaderVisibility from "@/components/ui/HeaderVisibility";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";

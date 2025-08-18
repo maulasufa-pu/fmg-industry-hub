@@ -7,7 +7,7 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
 import AdminPanel, {
   AdminTabKey, AdminProjectRow, PicOption, StageOption, StatusOption,
-} from "@/app/admin/ui/AdminPanel";
+} from "@/app/ui/panel/projects/project_list";
 
 const VIEW = "project_summary";
 

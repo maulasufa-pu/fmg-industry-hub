@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { gsap } from "gsap";
 import { Bell, ChevronDown, Cog } from "@/icons";
 import type { JSX } from "react";
-import UserMenu from "@/app/ui/UserMenu";
+import UserMenu from "@/app/ui/pop_over/user_menu";
 
 export const HeaderSection = (): JSX.Element => {
   const [notificationCount] = useState(9);

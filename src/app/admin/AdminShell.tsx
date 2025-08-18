@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useMemo, useState } from "react";
-import AdminSidebarSection from "@/app/admin/ui/AdminSidebarSection";
+import AdminSidebarSection from "@/app/ui/page_section/AdminSidebarSection";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { UserRole } from "@/lib/roles";

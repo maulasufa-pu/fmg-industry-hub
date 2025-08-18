@@ -2,9 +2,9 @@
 export const ROLE_IDS = [
   "admin",
   "anr",
-  "engineer",
   "client",
   "composer",
+  "engineer",
   "guest",
   "owner",
   "producer",
@@ -16,9 +16,9 @@ export type UserRole = typeof ROLE_IDS[number];
 export const ROLE_LABEL: Record<UserRole, string> = {
   "admin": "Admin",
   "anr": "A&R",
-  "engineer": "Audio Engineer",
   "client": "Client",
   "composer": "Composer",
+  "engineer": "Audio Engineer",
   "guest": "Guest",
   "owner": "Owner",
   "producer": "Producer",

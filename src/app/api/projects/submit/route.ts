@@ -38,8 +38,8 @@ const PayloadSchema = z.object({
   deliveryFormat: z.array(z.string()).optional(),
   referenceLinks: z.string().optional(),
   paymentPlan: z.enum(["upfront", "half", "milestone"]),
-  ndaRequired: z.boolean().optional(),
-  preferredEngineerId: z.string().uuid().nullable().optional(),
+  // ndaRequired: z.boolean().optional(),
+  // preferredEngineerId: z.string().uuid().nullable().optional(),
   total: z.number().finite().nonnegative(),
   status: z.enum(["requested","pending","in_progress","revision","approved","published","archived","cancelled"]).optional(),
 });
@@ -161,8 +161,8 @@ export async function POST(req: Request) {
         start_date: startDate,
         deadline: deadline,
         delivery_format: body.deliveryFormat ?? null,
-        nda_required: body.ndaRequired ?? null,
-        preferred_engineer_id: body.preferredEngineerId ?? null,
+        // nda_required: body.ndaRequired ?? null,
+        // preferred_engineer_id: body.preferredEngineerId ?? null,
       })
       .select("project_id")
       .single<ProjectInsertResult>();
@@ -211,14 +211,14 @@ export async function POST(req: Request) {
     }
 
     /** 4) preferred engineer → assignments (optional) */
-    if (body.preferredEngineerId) {
-      const { error: asgErr } = await srv.from("assignments").insert({
-        project_id: projectId,
-        engineer_id: body.preferredEngineerId,
-        assigned_by: uid,
-      });
-      if (asgErr) throw asgErr;
-    }
+    // if (body.preferredEngineerId) {
+    //   const { error: asgErr } = await srv.from("assignments").insert({
+    //     project_id: projectId,
+    //     engineer_id: body.preferredEngineerId,
+    //     assigned_by: uid,
+    //   });
+    //   if (asgErr) throw asgErr;
+    // }
 
     /** 5) payment schedules (berdasarkan plan) */
     const addSched = (

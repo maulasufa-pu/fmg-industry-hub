@@ -7,7 +7,7 @@ import { ArrowDown, ChevronDown, User } from "@/icons";
 type Activity = { id: string; time: string; actor: string; action: string; tag?: string };
 
 export type Project = {
-  id: string;
+  project_id: string;
   projectName: string;
   artistName: string | null;
   genre: string | null;
@@ -36,7 +36,7 @@ const tableHeaders: Array<{ key: keyof Project | "author"; label: string; hasSor
 type Props = {
   rows: Project[];
   emptyText?: string;
-  onOpenProject?: (id: string) => void;
+  onOpenProject?: (project_id: string) => void;
 };
 
 export const ProjectTableSection = ({
@@ -50,10 +50,10 @@ export const ProjectTableSection = ({
   const [leftSlide, setLeftSlide] = useState<Record<string, 0 | 1>>({}); // 0=overview, 1=activity
 
   // ---------- selection ----------
-  const handleRowSelection = (id: string) => {
+  const handleRowSelection = (project_id: string) => {
     const next = new Set(selectedRows);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
+    if (next.has(project_id)) next.delete(project_id);
+    else next.add(project_id);
     setSelectedRows(next);
     setSelectAll(next.size === rows.length && rows.length > 0);
   };
@@ -62,20 +62,21 @@ export const ProjectTableSection = ({
     if (selectAll) {
       setSelectedRows(new Set());
     } else {
-      setSelectedRows(new Set(rows.map((p) => p.id)));
+      setSelectedRows(new Set(rows.map((p) => p.project_id)));
     }
     setSelectAll(!selectAll);
   };
 
   // ---------- expand ----------
-  const toggleRowExpand = (id: string) => {
+  const toggleRowExpand = (project_id: string) => {
     const next = new Set(expandedRows);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
+    if (next.has(project_id)) next.delete(project_id);
+    else next.add(project_id);
     setExpandedRows(next);
   };
 
-  const goSlide = (id: string, idx: 0 | 1) => setLeftSlide((s) => ({ ...s, [id]: idx }));
+  const goSlide = (project_id: string, idx: 0 | 1) =>
+    setLeftSlide((s) => ({ ...s, [project_id]: idx }));
 
   const ProgressBar = ({ value = 0 }: { value?: number | null }) => {
     const pct = Math.max(0, Math.min(100, Number(value ?? 0)));
@@ -93,13 +94,18 @@ export const ProjectTableSection = ({
   if (rows.length === 0) {
     return (
       <div className="flex w-full items-center justify-center rounded-lg border border-gray-200 dark:border-gray-600 dark:border-gray-600 bg-white dark:bg-gray-900 p-10 shadow-lg dark:shadow-slate-900/25">
-        <span className="text-base font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">{emptyText}</span>
+        <span className="text-base font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">
+          {emptyText}
+        </span>
       </div>
     );
   }
 
   return (
-    <table className="w-full border-collapse overflow-hidden rounded-lg bg-white dark:bg-gray-900 shadow-lg dark:shadow-slate-900/25" role="table">
+    <table
+      className="w-full border-collapse overflow-hidden rounded-lg bg-white dark:bg-gray-900 shadow-lg dark:shadow-slate-900/25"
+      role="table"
+    >
       <thead>
         <tr className="h-12 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200">
           <th className="w-12 border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 p-3 text-center">
@@ -113,10 +119,15 @@ export const ProjectTableSection = ({
           </th>
 
           {tableHeaders.map((header) => (
-            <th key={header.key as string} className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 px-4 py-3 text-left">
+            <th
+              key={header.key as string}
+              className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 px-4 py-3 text-left"
+            >
               <div className="flex items-center gap-2">
                 <span className="font-semibold">{header.label}</span>
-                {header.hasSort && <ArrowDown className="text-neutral-600 dark:text-neutral-200 dark:text-gray-200" />}
+                {header.hasSort && (
+                  <ArrowDown className="text-neutral-600 dark:text-neutral-200 dark:text-gray-200" />
+                )}
               </div>
             </th>
           ))}
@@ -127,23 +138,23 @@ export const ProjectTableSection = ({
 
       <tbody>
         {rows.map((project) => {
-          const isExpanded = expandedRows.has(project.id);
+          const isExpanded = expandedRows.has(project.project_id);
           return (
-            <React.Fragment key={project.id}>
+            <React.Fragment key={project.project_id}>
               <tr
                 className="group cursor-pointer hover:bg-gray-50 dark:bg-gray-800"
-                onClick={() => toggleRowExpand(project.id)}
+                onClick={() => toggleRowExpand(project.project_id)}
                 onDoubleClick={(e: React.MouseEvent<HTMLTableRowElement>) => {
                   e.stopPropagation();
-                  onOpenProject?.(project.id);
+                  onOpenProject?.(project.project_id);
                 }}
                 aria-expanded={isExpanded}
               >
                 <td className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 p-3 text-center">
                   <input
                     type="checkbox"
-                    checked={selectedRows.has(project.id)}
-                    onChange={() => handleRowSelection(project.id)}
+                    checked={selectedRows.has(project.project_id)}
+                    onChange={() => handleRowSelection(project.project_id)}
                     onClick={(e) => e.stopPropagation()}
                     className="h-5 w-5 cursor-pointer appearance-none rounded-sm border border-gray-300 dark:border-gray-600 dark:border-gray-600 checked:bg-blue-600 focus:ring-2 focus:ring-blue-500"
                     aria-label={`Select row ${project.projectName}`}
@@ -157,15 +168,25 @@ export const ProjectTableSection = ({
                       <User className="h-6 w-6 text-neutral-600 dark:text-neutral-200 dark:text-gray-200" />
                     </div>
                     <div className="min-w-0">
-                      <div className="truncate font-semibold text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.projectName}</div>
-                      <div className="truncate text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">{project.artistName ?? "-"}</div>
+                      <div className="truncate font-semibold text-gray-800 dark:text-gray-100 dark:text-gray-100">
+                        {project.projectName}
+                      </div>
+                      <div className="truncate text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
+                        {project.artistName ?? "-"}
+                      </div>
                     </div>
                   </div>
                 </td>
 
-                <td className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 px-4 py-3 text-gray-700 dark:text-gray-200">{project.genre ?? "-"}</td>
-                <td className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 px-4 py-3 text-gray-700 dark:text-gray-200">{project.stage ?? "-"}</td>
-                <td className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 px-4 py-3 text-gray-700 dark:text-gray-200">{project.progressStatus}</td>
+                <td className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 px-4 py-3 text-gray-700 dark:text-gray-200">
+                  {project.genre ?? "-"}
+                </td>
+                <td className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 px-4 py-3 text-gray-700 dark:text-gray-200">
+                  {project.stage ?? "-"}
+                </td>
+                <td className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 px-4 py-3 text-gray-700 dark:text-gray-200">
+                  {project.progressStatus}
+                </td>
                 <td className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 px-4 py-3 text-gray-700 dark:text-gray-200">
                   {project.latestUpdate
                     ? new Date(project.latestUpdate).toLocaleDateString("id-ID", {
@@ -192,7 +213,7 @@ export const ProjectTableSection = ({
                     }`}
                     onClick={(e) => {
                       e.stopPropagation();
-                      toggleRowExpand(project.id);
+                      toggleRowExpand(project.project_id);
                     }}
                     aria-label="Toggle details"
                     aria-expanded={isExpanded}
@@ -216,22 +237,31 @@ export const ProjectTableSection = ({
                       {/* Controls */}
                       <div className="absolute right-2 top-2 z-10 flex items-center gap-1 rounded-md bg-white dark:bg-gray-900/80 px-1.5 py-1 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25-sm backdrop-blur">
                         <button
-                          onClick={() => goSlide(project.id, 0)}
+                          onClick={() => goSlide(project.project_id, 0)}
                           className={`h-2 w-2 rounded-full ${
-                            (leftSlide[project.id] ?? 0) === 0 ? "bg-blue-600" : "bg-gray-300 dark:bg-gray-600 dark:bg-gray-600"
+                            (leftSlide[project.project_id] ?? 0) === 0
+                              ? "bg-blue-600"
+                              : "bg-gray-300 dark:bg-gray-600 dark:bg-gray-600"
                           }`}
                           aria-label="Overview"
                         />
                         <button
-                          onClick={() => goSlide(project.id, 1)}
+                          onClick={() => goSlide(project.project_id, 1)}
                           className={`h-2 w-2 rounded-full ${
-                            (leftSlide[project.id] ?? 0) === 1 ? "bg-blue-600" : "bg-gray-300 dark:bg-gray-600 dark:bg-gray-600"
+                            (leftSlide[project.project_id] ?? 0) === 1
+                              ? "bg-blue-600"
+                              : "bg-gray-300 dark:bg-gray-600 dark:bg-gray-600"
                           }`}
                           aria-label="Activity"
                         />
                         <div className="mx-1 h-4 w-px bg-gray-200 dark:bg-gray-700 dark:bg-gray-700" />
                         <button
-                          onClick={() => goSlide(project.id, (leftSlide[project.id] ?? 0) === 0 ? 1 : 0)}
+                          onClick={() =>
+                            goSlide(
+                              project.project_id,
+                              (leftSlide[project.project_id] ?? 0) === 0 ? 1 : 0
+                            )
+                          }
                           className="rounded border border-gray-200 dark:border-gray-600 dark:border-gray-600 px-2 py-0.5 text-xs hover:bg-gray-50 dark:bg-gray-800"
                           aria-label="Toggle slide"
                         >
@@ -243,7 +273,11 @@ export const ProjectTableSection = ({
                       <div className="w-full overflow-hidden">
                         <div
                           className="flex w-[200%] transition-transform duration-300"
-                          style={{ transform: `translateX(-${(leftSlide[project.id] ?? 0) * 50}%)` }}
+                          style={{
+                            transform: `translateX(-${
+                              (leftSlide[project.project_id] ?? 0) * 50
+                            }%)`,
+                          }}
                         >
                           {/* Slide 1: Overview */}
                           <section className="w-1/2 p-4">
@@ -254,7 +288,9 @@ export const ProjectTableSection = ({
                                 </div>
                               </div>
                               <div className="min-w-0">
-                                <div className="font-semibold text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.projectName}</div>
+                                <div className="font-semibold text-gray-800 dark:text-gray-100 dark:text-gray-100">
+                                  {project.projectName}
+                                </div>
                                 <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
                                   {project.artistName ?? "-"} • {project.genre ?? "-"}
                                 </div>
@@ -283,11 +319,18 @@ export const ProjectTableSection = ({
 
                           {/* Slide 2: Activity / Timeline */}
                           <section className="w-1/2 p-4">
-                            <div className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Recent Activity</div>
+                            <div className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+                              Recent Activity
+                            </div>
                             <div className="max-h-44 overflow-auto pr-1 scroll-smooth">
                               <ul className="relative pl-4">
-                                <span className="absolute left-1 top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-700 dark:bg-gray-700" aria-hidden />
-                                <li className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">No activity yet.</li>
+                                <span
+                                  className="absolute left-1 top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-700 dark:bg-gray-700"
+                                  aria-hidden
+                                />
+                                <li className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
+                                  No activity yet.
+                                </li>
                               </ul>
                             </div>
                           </section>
@@ -298,27 +341,55 @@ export const ProjectTableSection = ({
                     {/* RIGHT: details + CTA */}
                     <div className="flex flex-col rounded-md border border-gray-200 dark:border-gray-600 dark:border-gray-600 bg-white dark:bg-gray-900 p-4">
                       <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-700 dark:text-gray-200">
-                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">Budget:</div>
-                        <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.budget ?? "-"}</div>
-
-                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">Status:</div>
-                        <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.progressStatus}</div>
-
-                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">Stage:</div>
-                        <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.stage ?? "-"}</div>
-
-                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">Assigned PIC:</div>
-                        <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.assignedPIC}</div>
-
-                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">Assigned Engineer:</div>
-                        <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.assignedEngineer ?? "-"}</div>
-
-                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">Assigned A&R:</div>
-                        <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">{project.assignedANR ?? "-"}</div>
-
-                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">Latest Update:</div>
+                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">
+                          Budget:
+                        </div>
                         <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">
-                          {project.latestUpdate ? new Date(project.latestUpdate).toLocaleString("id-ID") : "-"}
+                          {project.budget ?? "-"}
+                        </div>
+
+                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">
+                          Status:
+                        </div>
+                        <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">
+                          {project.progressStatus}
+                        </div>
+
+                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">
+                          Stage:
+                        </div>
+                        <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">
+                          {project.stage ?? "-"}
+                        </div>
+
+                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">
+                          Assigned PIC:
+                        </div>
+                        <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">
+                          {project.assignedPIC}
+                        </div>
+
+                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">
+                          Assigned Engineer:
+                        </div>
+                        <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">
+                          {project.assignedEngineer ?? "-"}
+                        </div>
+
+                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">
+                          Assigned A&R:
+                        </div>
+                        <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">
+                          {project.assignedANR ?? "-"}
+                        </div>
+
+                        <div className="font-medium text-gray-500 dark:text-gray-400 dark:text-gray-400">
+                          Latest Update:
+                        </div>
+                        <div className="text-gray-800 dark:text-gray-100 dark:text-gray-100">
+                          {project.latestUpdate
+                            ? new Date(project.latestUpdate).toLocaleString("id-ID")
+                            : "-"}
                         </div>
                       </div>
 
@@ -327,7 +398,7 @@ export const ProjectTableSection = ({
                           className="rounded-md bg-blue-600 px-6 py-2 text-white transition hover:bg-blue-700"
                           onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                             e.stopPropagation();
-                            onOpenProject?.(project.id);
+                            onOpenProject?.(project.project_id);
                           }}
                         >
                           Open Project

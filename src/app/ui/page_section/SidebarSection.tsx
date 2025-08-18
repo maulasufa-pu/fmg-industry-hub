@@ -19,7 +19,7 @@ import {
   User
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import UserDropdown from "./UserDropdown";
+import UserDropdown from "../pop_over/user_dropdown";
 import { useProfile } from "@/hooks/useProfile";
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
 import Portal from "@/components/ui/Portal";
@@ -177,72 +177,6 @@ export default function AdminSidebarSection({ role, isOpen = true, onClose }: Pr
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const profileButtonRef = useRef<HTMLButtonElement>(null);
   const mobileProfileButtonRef = useRef<HTMLButtonElement>(null);
-  
-  // Load profile data
-  const { profile, loading: profileLoading } = useProfile();
-  
-  // Calculate dropdown position
-  const calculateDropdownPosition = useCallback(() => {
-    const buttonRef = profileButtonRef.current || mobileProfileButtonRef.current;
-    if (buttonRef) {
-      const rect = buttonRef.getBoundingClientRect();
-      const dropdownHeight = 320;
-      const gap = 8;
-      const viewportHeight = window.innerHeight;
-      
-      // Check if this is mobile by checking which ref is being used
-      const isMobile = buttonRef === mobileProfileButtonRef.current;
-      
-      if (isMobile) {
-        // For mobile, position dropdown below the button to avoid going off-screen
-        setDropdownPosition({
-          top: rect.bottom + gap,
-          left: Math.max(16, rect.left), // Ensure minimum 16px from left edge
-        });
-      } else {
-        // Desktop positioning - above the button
-        const topPosition = rect.top - dropdownHeight - gap;
-        
-        setDropdownPosition({
-          top: topPosition < 0 ? rect.bottom + gap : topPosition, // Fallback if too high
-          left: rect.left,
-        });
-      }
-    }
-  }, []);
-
-  // Handle profile button click
-  const handleProfileClick = useCallback(() => {
-    if (!showUserMenu) {
-      calculateDropdownPosition();
-    }
-    setShowUserMenu(!showUserMenu);
-  }, [showUserMenu, calculateDropdownPosition]);
-
-  // Recalculate position on window resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (showUserMenu) {
-        calculateDropdownPosition();
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [showUserMenu, calculateDropdownPosition]);
-  
-  // Debug logging
-  useEffect(() => {
-    console.log('[AdminSidebarSection] role =', role, 'normalizedRole =', normalizedRole);
-    console.log('[AdminSidebarSection] items.length =', items.length);
-    console.log('[AdminSidebarSection] isOpen =', isOpen);
-    console.log('[AdminSidebarSection] profile =', profile);
-  }, [role, normalizedRole, items.length, isOpen, profile]);
-  
-  if (normalizedRole === "guest") {
-    console.log('[AdminSidebarSection] Returning empty for guest role');
-    return <></>; // atau return null
-  }
   // Focusable keyboard nav (ArrowUp/Down, Home/End)
   const containerRef = useRef<HTMLDivElement | null>(null);
   const linkRefs = useRef<Array<HTMLAnchorElement | null>>([]);
@@ -281,10 +215,77 @@ export default function AdminSidebarSection({ role, isOpen = true, onClose }: Pr
         break;
     }
   }, []);
-
+  
+  // Load profile data
+  const { profile, loading: profileLoading } = useProfile();
+  
   // Subtle entrance animation once per mount
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // Calculate dropdown position
+  const calculateDropdownPosition = useCallback(() => {
+    
+    const buttonRef = profileButtonRef.current || mobileProfileButtonRef.current;
+    if (buttonRef) {
+      const rect = buttonRef.getBoundingClientRect();
+      const dropdownHeight = 320;
+      const gap = 8;
+      const viewportHeight = window.innerHeight;
+      
+      // Check if this is mobile by checking which ref is being used
+      const isMobile = buttonRef === mobileProfileButtonRef.current;
+      
+      if (isMobile) {
+        // For mobile, position dropdown below the button to avoid going off-screen
+        setDropdownPosition({
+          top: rect.bottom + gap,
+          left: Math.max(16, rect.left), // Ensure minimum 16px from left edge
+        });
+      } else {
+        // Desktop positioning - above the button
+        const topPosition = rect.top - dropdownHeight - gap;
+        
+        setDropdownPosition({
+          top: topPosition < 0 ? rect.bottom + gap : topPosition, // Fallback if too high
+          left: rect.left,
+        });
+      }
+    }
+  }, []);
+  
+  // Handle profile button click
+  const handleProfileClick = useCallback(() => {
+    if (!showUserMenu) {
+      calculateDropdownPosition();
+    }
+    setShowUserMenu(!showUserMenu);
+  }, [showUserMenu, calculateDropdownPosition]);
+
+  // Recalculate position on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (showUserMenu) {
+        calculateDropdownPosition();
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [showUserMenu, calculateDropdownPosition]);
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('[AdminSidebarSection] role =', role, 'normalizedRole =', normalizedRole);
+    console.log('[AdminSidebarSection] items.length =', items.length);
+    console.log('[AdminSidebarSection] isOpen =', isOpen);
+    console.log('[AdminSidebarSection] profile =', profile);
+  }, [role, normalizedRole, items.length, isOpen, profile]);
+  
+  if (normalizedRole === "guest") {
+    console.log('[AdminSidebarSection] Returning empty for guest role');
+    return <></>; // atau return null
+  }
 
   /** Render */
   return (

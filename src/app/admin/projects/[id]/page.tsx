@@ -45,7 +45,7 @@ const ROLES = ["anr", "composer", "producer", "engineer", "publisher"] as const;
 const orFilter = ROLES.map((r) => `staff_role.cs.{${r}}`).join(",");
 
 type RoleKey = "anr" | "composer" | "producer" | "engineer" | "publisher";
-const ASSIGNABLE_ROLES: ReadonlyArray<Exclude<RoleKey, "publisher">> = ["anr", "composer", "producer", "engineer"] as const;
+const ASSIGNABLE_ROLES = ["anr", "composer", "producer", "engineer", "publisher"] as const;
 
 export default function AdminProjectDetailPage() {
   const params = useParams<{ id: string }>();
@@ -221,7 +221,7 @@ export default function AdminProjectDetailPage() {
           last_name: string | null;
           email: string | null;
           main_role: string | null;
-          staff_role: string[];         // enum[] di-serialize sebagai string[]
+          staff_role: string[]; // enum[] -> serialized string[]
           full_name: string | null;
           is_anr: boolean;
           is_composer: boolean;
@@ -230,38 +230,40 @@ export default function AdminProjectDetailPage() {
           is_publisher: boolean;
         };
 
-        const { data: staff, error: staffErr } = await raceWithTimeout(
-          supabase
-            .from("staff_list")
-            .select("id, first_name, last_name, email, main_role, staff_role, full_name, is_anr, is_composer, is_producer, is_engineer, is_publisher"),
-          8000,
-          "Fetch staff_list"
-        );
+        try {
+          const res = await fetch("/api/staff-list", {
+            signal: AbortSignal.timeout(8000),
+            cache: "no-store",
+          });
+          if (!res.ok) throw new Error(`staff-list HTTP ${res.status}`);
+          const json = (await res.json()) as { success: boolean; data?: StaffListRow[]; error?: string };
+          if (!json.success || !json.data) throw new Error(json.error || "staff_list failed");
 
-        if (staffErr) {
-          console.error("Error fetching staff_list:", staffErr.message ?? staffErr);
+          const staff = json.data;
+
+          if (mounted) {
+            const toMember = (s: StaffListRow) =>
+              ({
+                id: s.id,
+                first_name: s.first_name,
+                last_name: s.last_name,
+                email: s.email,
+                staff_role: s.staff_role,
+                main_role: s.main_role,
+              } as TeamMember);
+
+            const options: TeamRoleOptions = {
+              anr:       staff.filter(s => s.is_anr).map(toMember),
+              composer:  staff.filter(s => s.is_composer).map(toMember),
+              producer:  staff.filter(s => s.is_producer).map(toMember),
+              engineer:  staff.filter(s => s.is_engineer).map(toMember),
+              publisher: staff.filter(s => s.is_publisher).map(toMember),
+            };
+            setTeamRoleOptions(options);
+          }
+        } catch (e) {
+          console.error("Error fetching staff_list:", e);
         }
-
-        if (staff && mounted) {
-          const toMember = (s: StaffListRow) => ({
-            id: s.id,
-            first_name: s.first_name,
-            last_name: s.last_name,
-            email: s.email,
-            staff_role: s.staff_role,
-            main_role: s.main_role,
-          }) as TeamMember;
-
-          const options: TeamRoleOptions = {
-            anr:       staff.filter(s => s.is_anr).map(toMember),
-            composer:  staff.filter(s => s.is_composer).map(toMember),
-            producer:  staff.filter(s => s.is_producer).map(toMember),
-            engineer:  staff.filter(s => s.is_engineer).map(toMember),
-            publisher: staff.filter(s => s.is_publisher).map(toMember),
-          };
-          setTeamRoleOptions(options);
-        }
-
         // ⬇️ setelah options siap, load assignments dari API
         } catch (error) {
         console.error("Error loading project data:", error);
@@ -332,39 +334,65 @@ export default function AdminProjectDetailPage() {
 
   // ====== ACTIONS ======
 
-  // Simpan assignment sesuai algoritma (non-upsert -> deactivate + insert)
+  // Simpan assignment via API server-side yang sudah ada.
+  // Catatan: hanya kirim role yang inputnya valid (punya user_id).
   const handleSaveAssignmentsAlgo = async (draft: CurrentAssignments) => {
     if (!project) return;
 
-    const projectId = project.project_id;
-    const ops: Array<Promise<unknown>> = [];
+    // build payload: { anr?: "uuid", composer?: "uuid", ... }
+    const assignmentsPayload: Partial<Record<(typeof ASSIGNABLE_ROLES)[number], string>> = {};
 
     ASSIGNABLE_ROLES.forEach((role) => {
-      const display = draft[role];
-      const userId = findProfileIdByDisplay(display, role);
+      const display = draft[role];               // teks dari textbox
+      const userId = findProfileIdByDisplay(display, role); // resolve ke profile.id dari options
       if (userId) {
-        ops.push(raceWithTimeout(assignOne(projectId, role, userId), 8000, `Assign ${role} timeout`));
+        assignmentsPayload[role] = userId;
       }
+      // NOTE: kalau display kosong/ga ketemu userId -> tidak dikirim
+      // supaya role itu TIDAK dideactivate oleh API (API-mu hanya memproses role yang dikirim)
     });
 
-    // NOTE: publisher sengaja tidak diproses sesuai definisi assignOne yang kamu berikan
+    // kalau tidak ada perubahan, cukup refresh panel assignments
+    if (Object.keys(assignmentsPayload).length === 0) {
+      await loadCurrentAssignments();
+      return;
+    }
 
-    await Promise.all(ops);
-    await loadCurrentAssignments();
+    // call API server-side (service role) — sesuai kontrak POST yang kamu kirim
+    const res = await fetch("/api/assignments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(8000),
+      body: JSON.stringify({
+        project_id: project.project_id,
+        assignments: assignmentsPayload,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      console.error("Save assignments failed:", err?.error || `HTTP ${res.status}`);
+      return;
+    }
+
+    await loadCurrentAssignments(); // refresh panel "Currently Assigned"
   };
 
+  // Hapus assignment via API server-side DELETE yang sudah ada
   const handleRemoveAssignment = async (role: StaffRole) => {
     if (!project) return;
     try {
-      // hanya proses role yang ada di table assignments
+      // hanya role yang kamu kelola via assignments table
       if ((ASSIGNABLE_ROLES as readonly string[]).includes(role)) {
-        const { error } = await supabase
-          .from("assignments")
-          .update({ active: false, unassigned_at: new Date().toISOString() })
-          .eq("project_id", project.project_id)
-          .eq("role", role)
-          .eq("active", true);
-        if (error) throw error;
+        const qs = new URLSearchParams({ project_id: project.project_id, role });
+        const res = await fetch(`/api/assignments?${qs.toString()}`, {
+          method: "DELETE",
+          signal: AbortSignal.timeout(8000),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          console.error(`Failed to remove ${role}:`, err?.error || `HTTP ${res.status}`);
+        }
       }
       await loadCurrentAssignments();
     } catch (err) {
@@ -377,10 +405,10 @@ export default function AdminProjectDetailPage() {
     try {
       const { error } = await supabase
         .from("projects")
-        .update({ status: "in_progress", stage: "awaiting_payment" })
+        .update({ status: "approved", stage: "drafting" })
         .eq("project_id", project.project_id);
       if (error) throw error;
-      setProject(prev => prev ? { ...prev, status: "in_progress", stage: "awaiting_payment" } : prev);
+      setProject(prev => prev ? { ...prev, status: "approved", stage: "drafting" } : prev);
     } catch (err) {
       console.error("Failed to accept project:", err);
     }
@@ -399,6 +427,23 @@ export default function AdminProjectDetailPage() {
       console.error("Failed to put project on hold:", err);
     }
   };
+
+  // jumlah role yang sudah terisi (anr/composer/producer/engineer/publisher)
+  const teamMemberCount = useMemo(() => {
+    return Object.values(currentAssignments).filter(Boolean).length;
+  }, [currentAssignments]);
+
+  // hari aktif dihitung dari created_at (fallback: updated_at)
+  const daysActive = useMemo(() => {
+    const ts =
+      (project as any)?.created_at ??
+      (project as any)?.updated_at ??
+      null;
+    if (!ts) return undefined;
+    const ms = Date.now() - new Date(ts).getTime();
+    const days = Math.max(1, Math.ceil(ms / 86_400_000)); // 86.4e6 ms = 1 hari
+    return days;
+  }, [project]);
 
   // ====== RENDER ======
   if (loading) {
@@ -465,9 +510,10 @@ export default function AdminProjectDetailPage() {
           showRightActions={hasAccess(userAccess, ACCESS_RULES.RIGHT_ACTIONS)}
           onAcceptProject={handleAcceptProject}
           onPutOnHold={handlePutOnHold}
+          teamMemberCount={teamMemberCount}   // ⬅️ kirim
+          daysActive={daysActive}             // ⬅️ kirim
         />
       )}
-
       {hasAccess(userAccess, ACCESS_RULES.TEAM_ASSIGNMENTS) && (
         <TeamAssignmentSection
           project={project}

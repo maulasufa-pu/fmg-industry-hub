@@ -16,48 +16,49 @@ import type {
   CurrentAssignments
 } from "./types";
 
-import HeroSection from "./components/HeroSection";
-import TeamAssignmentSection from "./components/TeamAssignmentSection";
-import ProjectControlsSection from "./components/ProjectControlsSection";
-import { hasAccess, UserAccess, ACCESS_RULES } from "./components/access-control";
-
-import OverviewTab from "./components/tabs/OverviewTab";
-import DraftsTab from "./components/tabs/DraftsTab";
-import ReferencesTab from "./components/tabs/ReferencesTab";
-import DiscussionTab from "./components/tabs/DiscussionTab";
-import MeetingsTab from "./components/tabs/MeetingsTab";
-import PublishingTab from "./components/tabs/PublishingTab";
+import {
+  HeroSection,
+  ProjectControlsSection,
+  TeamAssignmentSection,
+  DiscussionTab,
+  OverviewTab,
+  DraftsTab,
+  MeetingsTab,
+  PublishingTab,
+  ReferencesTab,
+  hasAccess,
+  ACCESS_RULES,
+  type UserAccess
+} from "@/app/ui/panel/projects/components";
 
 const pageVariants: Variants = {
   hidden: { opacity: 0, scale: 0.95 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     scale: 1,
-    transition: { 
-      duration: 0.5, 
+    transition: {
+      duration: 0.5,
       ease: "easeOut" as const,
-      staggerChildren: 0.1 
-    }
-  }
+      staggerChildren: 0.1,
+    },
+  },
 };
 
-const ROLES = ["anr", "composer", "producer", "engineer", "publisher"] as const;
-const orFilter = ROLES.map((r) => `staff_role.cs.{${r}}`).join(",");
-
-type RoleKey = "anr" | "composer" | "producer" | "engineer" | "publisher";
 const ASSIGNABLE_ROLES = ["anr", "composer", "producer", "engineer", "publisher"] as const;
 
-export default function AdminProjectDetailPage() {
+export default function ClientProjectDetailPage() {
   const params = useParams<{ id: string }>();
   const supabase = useMemo(() => getSupabaseClient(), []);
+
+  // ownership
+  const [isOwner, setIsOwner] = useState(false);
 
   // Core state
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState<ProjectSummary | null>(null);
   const [userAccess, setUserAccess] = useState<UserAccess | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
-  const [assignmentsLoading, setAssignmentsLoading] = useState<boolean>(true); // ← optional
-
+  const [assignmentsLoading, setAssignmentsLoading] = useState<boolean>(true);
 
   // Team assignment state
   const [currentAssignments, setCurrentAssignments] = useState<CurrentAssignments>({
@@ -82,11 +83,9 @@ export default function AdminProjectDetailPage() {
   const [messages, setMessages] = useState<any[] | null>(null);
   const [meetings, setMeetings] = useState<any[] | null>(null);
 
-  // ====== ALGORTIMA (helpers) ======
-
-  // Load current assignments dari database (shared function)
+  // ====== HELPERS ======
   const loadCurrentAssignments = useCallback(async () => {
-    setAssignmentsLoading(true); // ← optional
+    setAssignmentsLoading(true);
     try {
       const response = await fetch(`/api/assignments?project_id=${params.id}`, {
         signal: AbortSignal.timeout(5000),
@@ -102,7 +101,7 @@ export default function AdminProjectDetailPage() {
       console.warn("Load current assignments failed:", e);
       setCurrentAssignments({ anr: "", composer: "", producer: "", engineer: "", publisher: "" });
     } finally {
-      setAssignmentsLoading(false); // ← optional
+      setAssignmentsLoading(false);
     }
   }, [params.id]);
 
@@ -110,20 +109,16 @@ export default function AdminProjectDetailPage() {
     void loadCurrentAssignments();
   }, [loadCurrentAssignments]);
 
-
-  // Helper untuk mendapatkan nama lengkap
   const getFullName = (member: TeamMember): string => {
     const firstName = member.first_name || "";
     const lastName = member.last_name || "";
     return [firstName, lastName].filter(Boolean).join(" ") || member.email || "Unknown";
   };
 
-  // Helper untuk opsi dropdown per role
   const getTeamOptionsForRole = (role: keyof TeamRoleOptions): TeamMember[] => {
     return teamRoleOptions[role] || [];
   };
 
-  // cari profile.id berdasarkan teks input (nama/email) + role option
   const findProfileIdByDisplay = (display: string, roleKey: keyof TeamRoleOptions): string | null => {
     if (!display?.trim()) return null;
     const list = getTeamOptionsForRole(roleKey);
@@ -143,48 +138,7 @@ export default function AdminProjectDetailPage() {
     return null;
   };
 
-  // non-upsert: matikan yang aktif lalu insert baris baru (aman dengan partial unique index)
-  const assignOne = async (projectId: string, role: "anr" | "composer" | "producer" | "engineer", userId: string) => {
-    const { error: e1 } = await supabase
-      .from("assignments")
-      .update({ active: false, unassigned_at: new Date().toISOString() })
-      .eq("project_id", projectId)
-      .eq("role", role)
-      .eq("active", true);
-    if (e1) throw e1;
-
-    const { error: e2 } = await supabase.from("assignments").insert({
-      assignment_id: (globalThis.crypto as Crypto | undefined)?.randomUUID?.() ?? undefined,
-      project_id: projectId,
-      role,
-      user_id: userId,
-      assigned_by: (await supabase.auth.getUser()).data.user?.id ?? null,
-      assigned_at: new Date().toISOString(),
-      active: true,
-    });
-    if (e2) throw e2;
-  };
-
-  // ambil nama tampilan dari profiles.id (tidak dipakai kalau API sudah balikin display)
-  const getDisplayNameById = (
-    profiles: Array<{ id: string; first_name: string | null; last_name: string | null; email: string | null }>,
-    id: string | null
-  ) => {
-    if (!id) return "";
-    const p = profiles.find((x) => x.id === id);
-    if (!p) return "";
-    const full = [p.first_name ?? "", p.last_name ?? ""].filter(Boolean).join(" ");
-    return full || p.email || "";
-  };
-
-  // Improved timeout handler
-  const raceWithTimeout = <T,>(promise: PromiseLike<T>, ms = 8000, errorMessage = "Request timed out"): Promise<T> =>
-    Promise.race([
-      Promise.resolve(promise),
-      new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`${errorMessage} (${ms}ms)`)), ms)),
-    ]);
-
-  // ====== LOAD ALL DATA ======
+  // ====== LOAD ALL DATA (Client/Admin scope) ======
   useEffect(() => {
     let mounted = true;
 
@@ -193,9 +147,10 @@ export default function AdminProjectDetailPage() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { setLoading(false); return; }
 
+        // role user
         const { data: profile } = await supabase
           .from("profiles")
-          .select("main_role, staff_role")
+          .select("main_role, staff_role, email")
           .eq("id", user.id)
           .single();
 
@@ -207,65 +162,75 @@ export default function AdminProjectDetailPage() {
         };
         setUserAccess(access);
 
-        const { data: projectData } = await supabase
+        // Ambil proyek by id
+        const { data: projectData, error: projErr } = await supabase
           .from("project_summary")
           .select("*")
           .eq("project_id", params.id)
           .single();
 
-        if (projectData && mounted) setProject(projectData);
+        if (projErr || !projectData) { setProject(null); setLoading(false); return; }
 
-        type StaffListRow = {
-          id: string;
-          first_name: string | null;
-          last_name: string | null;
-          email: string | null;
-          main_role: string | null;
-          staff_role: string[]; // enum[] -> serialized string[]
-          full_name: string | null;
-          is_anr: boolean;
-          is_composer: boolean;
-          is_producer: boolean;
-          is_engineer: boolean;
-          is_publisher: boolean;
-        };
+        setProject(projectData);
 
-        try {
-          const res = await fetch("/api/staff-list", {
-            signal: AbortSignal.timeout(8000),
-            cache: "no-store",
-          });
-          if (!res.ok) throw new Error(`staff-list HTTP ${res.status}`);
-          const json = (await res.json()) as { success: boolean; data?: StaffListRow[]; error?: string };
-          if (!json.success || !json.data) throw new Error(json.error || "staff_list failed");
+        const owner =
+          !!projectData &&
+          (projectData.client_id === user.id ||
+           ("created_by" in projectData && (projectData as any).created_by === user.id));
+        setIsOwner(owner);
 
-          const staff = json.data;
+        // Hanya admin/staff yg punya akses TEAM_ASSIGNMENTS perlu staff-list
+        if (hasAccess(access, ACCESS_RULES.TEAM_ASSIGNMENTS)) {
+          type StaffListRow = {
+            id: string;
+            first_name: string | null;
+            last_name: string | null;
+            email: string | null;
+            main_role: string | null;
+            staff_role: string[];
+            full_name: string | null;
+            is_anr: boolean;
+            is_composer: boolean;
+            is_producer: boolean;
+            is_engineer: boolean;
+            is_publisher: boolean;
+          };
 
-          if (mounted) {
-            const toMember = (s: StaffListRow) =>
-              ({
-                id: s.id,
-                first_name: s.first_name,
-                last_name: s.last_name,
-                email: s.email,
-                staff_role: s.staff_role,
-                main_role: s.main_role,
-              } as TeamMember);
+          try {
+            const res = await fetch("/api/staff-list", {
+              signal: AbortSignal.timeout(8000),
+              cache: "no-store",
+            });
+            if (!res.ok) throw new Error(`staff-list HTTP ${res.status}`);
+            const json = (await res.json()) as { success: boolean; data?: StaffListRow[]; error?: string };
+            if (!json.success || !json.data) throw new Error(json.error || "staff_list failed");
 
-            const options: TeamRoleOptions = {
-              anr:       staff.filter(s => s.is_anr).map(toMember),
-              composer:  staff.filter(s => s.is_composer).map(toMember),
-              producer:  staff.filter(s => s.is_producer).map(toMember),
-              engineer:  staff.filter(s => s.is_engineer).map(toMember),
-              publisher: staff.filter(s => s.is_publisher).map(toMember),
-            };
-            setTeamRoleOptions(options);
+            const staff = json.data;
+            if (mounted) {
+              const toMember = (s: StaffListRow) =>
+                ({
+                  id: s.id,
+                  first_name: s.first_name,
+                  last_name: s.last_name,
+                  email: s.email,
+                  staff_role: s.staff_role,
+                  main_role: s.main_role,
+                } as TeamMember);
+
+              const options: TeamRoleOptions = {
+                anr:       staff.filter(s => s.is_anr).map(toMember),
+                composer:  staff.filter(s => s.is_composer).map(toMember),
+                producer:  staff.filter(s => s.is_producer).map(toMember),
+                engineer:  staff.filter(s => s.is_engineer).map(toMember),
+                publisher: staff.filter(s => s.is_publisher).map(toMember),
+              };
+              setTeamRoleOptions(options);
+            }
+          } catch (e) {
+            console.error("Error fetching staff_list:", e);
           }
-        } catch (e) {
-          console.error("Error fetching staff_list:", e);
         }
-        // ⬇️ setelah options siap, load assignments dari API
-        } catch (error) {
+      } catch (error) {
         console.error("Error loading project data:", error);
       } finally {
         if (mounted) setLoading(false);
@@ -274,12 +239,13 @@ export default function AdminProjectDetailPage() {
 
     loadData();
     return () => { mounted = false; };
-  }, [params.id, supabase, loadCurrentAssignments]);
+  }, [params.id, supabase]);
 
-  // ====== LAZY TAB LOAD (biarkan sesuai punyamu) ======
+  // ====== LAZY TAB LOAD ======
   useEffect(() => {
     if (!project || !userAccess) return;
     let mounted = true;
+
     const loadTabData = async () => {
       try {
         switch (activeTab) {
@@ -328,37 +294,27 @@ export default function AdminProjectDetailPage() {
         console.error("Error loading tab data:", error);
       }
     };
+
     loadTabData();
     return () => { mounted = false; };
   }, [activeTab, project, userAccess, params.id, supabase, drafts, links, messages, meetings]);
 
   // ====== ACTIONS ======
-
-  // Simpan assignment via API server-side yang sudah ada.
-  // Catatan: hanya kirim role yang inputnya valid (punya user_id).
   const handleSaveAssignmentsAlgo = async (draft: CurrentAssignments) => {
     if (!project) return;
 
-    // build payload: { anr?: "uuid", composer?: "uuid", ... }
     const assignmentsPayload: Partial<Record<(typeof ASSIGNABLE_ROLES)[number], string>> = {};
-
     ASSIGNABLE_ROLES.forEach((role) => {
-      const display = draft[role];               // teks dari textbox
-      const userId = findProfileIdByDisplay(display, role); // resolve ke profile.id dari options
-      if (userId) {
-        assignmentsPayload[role] = userId;
-      }
-      // NOTE: kalau display kosong/ga ketemu userId -> tidak dikirim
-      // supaya role itu TIDAK dideactivate oleh API (API-mu hanya memproses role yang dikirim)
+      const display = draft[role];
+      const userId = findProfileIdByDisplay(display, role);
+      if (userId) assignmentsPayload[role] = userId;
     });
 
-    // kalau tidak ada perubahan, cukup refresh panel assignments
     if (Object.keys(assignmentsPayload).length === 0) {
       await loadCurrentAssignments();
       return;
     }
 
-    // call API server-side (service role) — sesuai kontrak POST yang kamu kirim
     const res = await fetch("/api/assignments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -375,14 +331,12 @@ export default function AdminProjectDetailPage() {
       return;
     }
 
-    await loadCurrentAssignments(); // refresh panel "Currently Assigned"
+    await loadCurrentAssignments();
   };
 
-  // Hapus assignment via API server-side DELETE yang sudah ada
   const handleRemoveAssignment = async (role: StaffRole) => {
     if (!project) return;
     try {
-      // hanya role yang kamu kelola via assignments table
       if ((ASSIGNABLE_ROLES as readonly string[]).includes(role)) {
         const qs = new URLSearchParams({ project_id: project.project_id, role });
         const res = await fetch(`/api/assignments?${qs.toString()}`, {
@@ -428,22 +382,18 @@ export default function AdminProjectDetailPage() {
     }
   };
 
-  // jumlah role yang sudah terisi (anr/composer/producer/engineer/publisher)
-  const teamMemberCount = useMemo(() => {
-    return Object.values(currentAssignments).filter(Boolean).length;
-  }, [currentAssignments]);
+  const teamMemberCount = Object.values(currentAssignments).filter(Boolean).length;
 
-  // hari aktif dihitung dari created_at (fallback: updated_at)
-  const daysActive = useMemo(() => {
+  const daysActive = (() => {
     const ts =
       (project as any)?.created_at ??
       (project as any)?.updated_at ??
       null;
     if (!ts) return undefined;
     const ms = Date.now() - new Date(ts).getTime();
-    const days = Math.max(1, Math.ceil(ms / 86_400_000)); // 86.4e6 ms = 1 hari
+    const days = Math.max(1, Math.ceil(ms / 86_400_000));
     return days;
-  }, [project]);
+  })();
 
   // ====== RENDER ======
   if (loading) {
@@ -504,26 +454,29 @@ export default function AdminProjectDetailPage() {
       initial="hidden"
       animate="visible"
     >
-      {hasAccess(userAccess, ACCESS_RULES.HERO_SECTION) && (
+      {(isOwner || hasAccess(userAccess, ACCESS_RULES.HERO_SECTION)) && (
         <HeroSection
           project={project}
-          showRightActions={hasAccess(userAccess, ACCESS_RULES.RIGHT_ACTIONS)}
+          showRightActions={false} // client tidak butuh tombol admin
           onAcceptProject={handleAcceptProject}
           onPutOnHold={handlePutOnHold}
-          teamMemberCount={teamMemberCount}   // ⬅️ kirim
-          daysActive={daysActive}             // ⬅️ kirim
+          teamMemberCount={teamMemberCount}
+          daysActive={daysActive}
         />
       )}
+
+      {/* Team assignment: hanya muncul utk admin/staff sesuai akses */}
       {hasAccess(userAccess, ACCESS_RULES.TEAM_ASSIGNMENTS) && (
         <TeamAssignmentSection
           project={project}
           currentAssignments={currentAssignments}
           teamRoleOptions={teamRoleOptions}
-          onSaveAssignments={handleSaveAssignmentsAlgo} 
+          onSaveAssignments={handleSaveAssignmentsAlgo}
           onRemoveAssignment={handleRemoveAssignment}
         />
       )}
 
+      {/* Tabs & konten selalu dikelola ProjectControlsSection (baik admin maupun client) */}
       <ProjectControlsSection
         project={project}
         userAccess={userAccess}

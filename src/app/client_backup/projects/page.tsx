@@ -5,10 +5,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
-import { getEffectiveRole } from "@/lib/roles/effective";
-import type { UserRole } from "@/lib/roles";
-import ProjectList, {
-  TabKey, ProjectRow, PicOption, StageOption, StatusOption,
+import AdminPanel, {
+  AdminTabKey, AdminProjectRow, PicOption, StageOption, StatusOption,
 } from "@/app/ui/panel/projects/project_list";
 
 const VIEW = "project_summary";
@@ -19,36 +17,50 @@ const QUERY_COLS =
 // Function to fetch assignment names for projects
 const fetchAssignmentNames = async (supabase: any, projectIds: string[]) => {
   if (projectIds.length === 0) return {};
-
+  
   try {
+    // Get assignments data directly from assignments_view with staff_first_name
     const { data: assignments, error: assignmentsError } = await supabase
-      .from("assignment_view")
-      .select("project_id, user_id, role, staff_first_name")
-      .in("project_id", projectIds)
-      .eq("active", true);
+      .from('assignment_view')
+      .select('project_id, user_id, role, staff_first_name')
+      .in('project_id', projectIds)
+      .eq('active', true);
 
     if (assignmentsError) {
-      console.warn("Assignments view fetch error:", assignmentsError);
+      console.warn('Assignments view fetch error:', assignmentsError);
       return {};
     }
 
     if (!assignments || assignments.length === 0) return {};
 
+    // Group assignments by project_id and role using staff_first_name from view
     const assignmentMap: Record<string, Record<string, string>> = {};
+    
     assignments.forEach((assignment: any) => {
       const projectId = assignment.project_id;
       const userId = assignment.user_id;
       const role = assignment.role;
       const staffName = assignment.staff_first_name?.trim() || "";
-      if (!assignmentMap[projectId]) assignmentMap[projectId] = {};
+      
+      if (!assignmentMap[projectId]) {
+        assignmentMap[projectId] = {};
+      }
+      
+      // Use staff_first_name from assignments_view
       assignmentMap[projectId][role] = staffName || `User ${userId}`;
     });
-
+    
     return assignmentMap;
+
   } catch (error) {
-    console.warn("Assignment names fetch error:", error);
+    console.warn('Assignment names fetch error:', error);
     return {};
   }
+};
+
+type ProfileName = {
+  first_name: string | null;
+  last_name: string | null;
 };
 
 type DbProjectSummary = {
@@ -70,12 +82,18 @@ type DbProjectSummary = {
   client_last_name: string | null;
 };
 
-export default function ClientProjectsPage(): React.ReactElement {
+export default function AdminProjectsPage(): React.JSX.Element {
   useFocusWarmAuth();
 
   const router = useRouter();
   const params = useSearchParams();
   const supabase = useMemo(() => getSupabaseClient(), []);
+
+  type ProfileRow = {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+  };
 
   const getClientName = (row: DbProjectSummary): string => {
     const first = row.client_first_name?.trim() ?? "";
@@ -85,33 +103,12 @@ export default function ClientProjectsPage(): React.ReactElement {
     return full;
   };
 
-  // ===== role & user =====
-  const [role, setRole] = useState<UserRole>("guest");
-  const [myId, setMyId] = useState<string | null>(null);
-  const [roleReady, setRoleReady] = useState(false);
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const r = await getEffectiveRole();
-        if (alive) setRole(r);
-        const { data: { user } } = await supabase.auth.getUser();
-        if (alive) setMyId(user?.id ?? null);
-      } finally {
-        if (alive) setRoleReady(true);
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [supabase]);
-
-  // ---------- tabs (client-only) ----------
-  const validTabs: TabKey[] = ["All", "Active", "Finished", "Pending"]; // client tidak punya Unassigned/Requested
-  const initialTabRaw = (params.get("tab") as TabKey) || "All";
-  const initialTab: TabKey = validTabs.includes(initialTabRaw) ? initialTabRaw : "All";
-  const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
+  // ---------- tabs ----------
+  const validTabs: AdminTabKey[] = ["All", "Active", "Finished", "Pending", "Unassigned", "Requested"];
+  const initialTabRaw = (params.get("tab") as AdminTabKey) || "All";
+  const initialTab: AdminTabKey = validTabs.includes(initialTabRaw) ? initialTabRaw : "All";
+  const [activeTab, setActiveTab] = useState<AdminTabKey>(initialTab);
 
   // ---------- filters ----------
   const [search, setSearch] = useState("");
@@ -132,12 +129,9 @@ export default function ClientProjectsPage(): React.ReactElement {
   const [totalCount, setTotalCount] = useState(0);
 
   // ---------- data ----------
-  const [rows, setRows] = useState<ProjectRow[]>([]);
-  const [tabCounts, setTabCounts] = useState<Record<TabKey, number | null>>({
-    All: null, Active: null, Finished: null, Pending: null,
-    // keys yg tidak dipakai tetap disediakan untuk tipe:
-    Unassigned: 0, // disembunyikan di ProjectList untuk client
-    Requested: 0,
+  const [rows, setRows] = useState<AdminProjectRow[]>([]);
+  const [tabCounts, setTabCounts] = useState<Record<AdminTabKey, number | null>>({
+    All: null, Active: null, Finished: null, Pending: null, Unassigned: null, Requested: null
   });
 
   // filter options
@@ -148,17 +142,22 @@ export default function ClientProjectsPage(): React.ReactElement {
   // ui state
   const [loadingInitial, setLoadingInitial] = useState(true);
 
-  // SIMPLE COUNTS - client scope
+  // SIMPLE COUNTS - NO BS
   const fetchCounts = useCallback(async () => {
-    if (!myId) {
-      return { All: 0, Active: 0, Finished: 0, Pending: 0, Unassigned: 0, Requested: 0 };
-    }
     try {
-      const [all, active, finished, pending] = await Promise.all([
-        supabase.from(VIEW).select("project_id", { count: "estimated", head: true }).eq("client_id", myId),
-        supabase.from(VIEW).select("project_id", { count: "estimated", head: true }).eq("status", "in_progress").eq("client_id", myId),
-        supabase.from(VIEW).select("project_id", { count: "estimated", head: true }).in("status", ["completed", "finished"]).eq("client_id", myId),
-        supabase.from(VIEW).select("project_id", { count: "estimated", head: true }).in("status", ["pending", "on_hold"]).eq("client_id", myId),
+      // Create separate queries for each count to avoid conflicts
+      const [all, active, finished, pending, unassigned, requested] = await Promise.all([
+        supabase.from(VIEW).select("project_id", { count: "estimated", head: true }),
+        supabase.from(VIEW).select("project_id", { count: "estimated", head: true }).eq("status", "in_progress"),
+        supabase.from(VIEW).select("project_id", { count: "estimated", head: true }).eq("status", "finished"),
+        supabase.from(VIEW).select("project_id", { count: "estimated", head: true }).in("status", ["pending"]),
+        supabase.from(VIEW).select("project_id", { count: "estimated", head: true })
+          .is("composer_id", null)
+          .is("producer_id", null)
+          .is("anr_id", null)
+          .is("engineer_id", null)
+          .is("publisher_id", null),
+        supabase.from(VIEW).select("project_id", { count: "estimated", head: true }).eq("status", "requested"),
       ]);
 
       return {
@@ -166,33 +165,35 @@ export default function ClientProjectsPage(): React.ReactElement {
         Active: active.count || 0,
         Finished: finished.count || 0,
         Pending: pending.count || 0,
-        Unassigned: 0,
-        Requested: 0,
+        Unassigned: unassigned.count || 0,
+        Requested: requested.count || 0,
       };
     } catch (err) {
       console.warn("Count error:", err);
       return { All: 0, Active: 0, Finished: 0, Pending: 0, Unassigned: 0, Requested: 0 };
     }
-  }, [supabase, myId]);
+  }, [supabase]);
 
-  // SIMPLE DATA FETCH - client scope
-  const fetchPage = useCallback(async (tab: TabKey, pageNum: number) => {
+  // SIMPLE DATA FETCH - NO BS
+  const fetchPage = useCallback(async (tab: AdminTabKey, pageNum: number) => {
     try {
-      if (!myId) {
-        setRows([]);
-        setTotalCount(0);
-        return;
-      }
-
       const from = (pageNum - 1) * pageSize;
       const to = from + pageSize - 1;
 
-      let query = supabase.from(VIEW).select(QUERY_COLS, { count: "estimated" }).eq("client_id", myId);
+      let query = supabase.from(VIEW).select(QUERY_COLS, { count: "estimated" });
 
-      // Apply tab filter (client doesn't use Unassigned/Requested)
+      // Apply tab filter
       if (tab === "Active") query = query.eq("status", "in_progress");
-      else if (tab === "Finished") query = query.in("status", ["completed", "finished"]);
+      else if (tab === "Finished") query = query.eq("status", "completed");
       else if (tab === "Pending") query = query.in("status", ["pending", "on_hold"]);
+      else if (tab === "Unassigned") {
+        query = query
+          .is("composer_id", null)
+          .is("producer_id", null)
+          .is("anr_id", null)
+          .is("engineer_id", null)
+          .is("publisher_id", null);
+      }
 
       // Apply search
       if (debouncedSearch) {
@@ -200,23 +201,27 @@ export default function ClientProjectsPage(): React.ReactElement {
         query = query.or(`title.ilike.${like},artist_name.ilike.${like}`);
       }
 
-      // Apply filters
+      // Apply filters - Note: PIC filtering now requires a different approach with assignments
+      // For now, skip PIC filtering until we can implement assignment-based filtering
       if (filterStage !== "any") query = query.eq("stage", filterStage);
       if (filterStatus !== "any") query = query.eq("status", filterStatus);
 
+      // Execute
       const { data, count, error } = await query
         .order("updated_at", { ascending: false })
         .range(from, to);
 
       if (error) throw error;
 
+      const clientIds = (data ?? []).map(r => r.client_id).filter((v): v is string => Boolean(v));
       const projectIds = (data ?? []).map(r => r.project_id);
 
       // Fetch assignment names for these projects
       const assignmentNames = await fetchAssignmentNames(supabase, projectIds);
 
-      const mapped: ProjectRow[] = (data ?? []).map((r: DbProjectSummary) => {
+      const mapped: AdminProjectRow[] = (data ?? []).map((r: DbProjectSummary) => {
         const assignments = assignmentNames[r.project_id] || {};
+        
         return {
           project_id: r.project_id,
           title: r.title,
@@ -229,20 +234,21 @@ export default function ClientProjectsPage(): React.ReactElement {
           genre: r.genre,
           progress_percent: r.progress_percent,
           composer_id: r.composer_id,
-          composer_name: assignments["composer"] || null,
+          composer_name: assignments['composer'] || null,
           producer_id: r.producer_id,
-          producer_name: assignments["producer"] || null,
+          producer_name: assignments['producer'] || null,
           anr_id: r.anr_id,
-          anr_name: assignments["anr"] || null,
+          anr_name: assignments['anr'] || null,
           engineer_id: r.engineer_id,
-          engineer_name: assignments["engineer"] || null,
+          engineer_name: assignments['engineer'] || null,
           publisher_id: r.publisher_id,
-          publisher_name: assignments["publisher"] || null,
+          publisher_name: assignments['publisher'] || null,
         };
       });
 
       setRows(mapped);
       setTotalCount(count || 0);
+
     } catch (error) {
       console.warn("Fetch error:", error);
       setRows([]);
@@ -250,33 +256,28 @@ export default function ClientProjectsPage(): React.ReactElement {
     } finally {
       setLoadingInitial(false);
     }
-  }, [supabase, pageSize, debouncedSearch, filterStage, filterStatus, myId]);
+  }, [supabase, pageSize, debouncedSearch, filterPIC, filterStage, filterStatus]);
 
-  // Load counts when ready
+  // Load counts on mount
   useEffect(() => {
-    if (!roleReady) return;
     fetchCounts().then(setTabCounts);
-  }, [fetchCounts, roleReady]);
+  }, [fetchCounts]);
 
-  // Load data when ready / filters change
+  // Load data when filters change
   useEffect(() => {
-    if (!roleReady) return;
     fetchPage(activeTab, page);
-  }, [fetchPage, activeTab, page, roleReady]);
+  }, [fetchPage, activeTab, page]);
 
-  // Load filter options (client scope)
+  // Load filter options
   useEffect(() => {
     const loadOptions = async () => {
       try {
-        if (!myId) {
-          setStageOptions(["any"]);
-          setStatusOptions(["any"]);
-          return;
-        }
-        const { data } = await supabase.from(VIEW).select("stage,status").eq("client_id", myId);
+        const { data } = await supabase.from(VIEW).select("stage,status");
+        
         const stages = [...new Set((data || []).map(r => r.stage).filter(Boolean))];
         const statuses = [...new Set((data || []).map(r => r.status).filter(Boolean))];
-        setPicOptions(["any"]); // PIC filtering still off
+
+        setPicOptions(["any"]); // PIC filtering disabled for now with new schema
         setStageOptions(["any", ...stages]);
         setStatusOptions(["any", ...statuses]);
       } catch (err) {
@@ -284,13 +285,12 @@ export default function ClientProjectsPage(): React.ReactElement {
       }
     };
     loadOptions();
-  }, [supabase, myId]);
+  }, [supabase]);
 
-  // Tab change -> client route
-  const handleTabChange = (tab: TabKey) => {
+  const handleTabChange = (tab: AdminTabKey) => {
     setActiveTab(tab);
     setPage(1);
-    router.push(`/client/projects?tab=${tab}`);
+    router.push(`/admin/projects?tab=${tab}`);
   };
 
   const handlePageChange = (newPage: number) => {
@@ -298,55 +298,47 @@ export default function ClientProjectsPage(): React.ReactElement {
   };
 
   const handleOpen = (project_id: string) => {
-    router.push(`/client/projects/${project_id}`);
+    router.push(`/admin/projects/${project_id}`);
   };
 
   const handleBulkAssignPIC = async (ids: string[], pic: string | null) => {
-    // Client biasanya tidak assign PIC — biarkan no-op/log
-    console.log("Client bulk assign PIC (ignored):", ids, pic);
+    // TODO: Implement bulk assign
+    console.log("Bulk assign PIC:", ids, pic);
   };
 
   const handleBulkMarkFinished = async (ids: string[]) => {
-    // Client biasanya tidak mark finished — biarkan no-op/log
-    console.log("Client bulk mark finished (ignored):", ids);
+    // TODO: Implement bulk mark finished
+    console.log("Bulk mark finished:", ids);
   };
-
-  // (Opsional) Jika mau hard-guard: non-client diarahkan ke admin
-  // useEffect(() => {
-  //   if (roleReady && role !== "client") {
-  //     router.replace("/admin/projects");
-  //   }
-  // }, [role, roleReady, router]);
 
   return (
     <div className="flex flex-col gap-6">
-      <ProjectList
-        rows={rows}
-        counts={tabCounts}
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-        search={search}
-        onSearchChange={setSearch}
-        filterPIC={filterPIC}
-        filterStage={filterStage}
-        filterStatus={filterStatus}
-        onFilterPIC={setFilterPIC}
-        onFilterStage={setFilterStage}
-        onFilterStatus={setFilterStatus}
-        filterOptions={{
-          picOptions,
-          stageOptions,
-          statusOptions,
-        }}
-        loading={loadingInitial}
-        totalCount={totalCount}
-        currentPage={page}
-        pageSize={pageSize}
-        onPageChange={handlePageChange}
-        onOpen={handleOpen}
-        onBulkAssignPIC={handleBulkAssignPIC}
-        onBulkMarkFinished={handleBulkMarkFinished}
-      />
-    </div>
+    <AdminPanel
+      rows={rows}
+      counts={tabCounts}
+      activeTab={activeTab}
+      onTabChange={handleTabChange}
+      search={search}
+      onSearchChange={setSearch}
+      filterPIC={filterPIC}
+      filterStage={filterStage}
+      filterStatus={filterStatus}
+      onFilterPIC={setFilterPIC}
+      onFilterStage={setFilterStage}
+      onFilterStatus={setFilterStatus}
+      filterOptions={{
+        picOptions,
+        stageOptions,
+        statusOptions,
+      }}
+      loading={loadingInitial}
+      totalCount={totalCount}
+      currentPage={page}
+      pageSize={pageSize}
+      onPageChange={handlePageChange}
+      onOpen={handleOpen}
+      onBulkAssignPIC={handleBulkAssignPIC}
+      onBulkMarkFinished={handleBulkMarkFinished}
+    /></div>
   );
 }

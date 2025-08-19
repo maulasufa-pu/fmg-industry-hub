@@ -2,7 +2,7 @@
 import "@/app/globals.css";
 import React from "react";
 import RequireAuth from "@/app/auth/RequireAuth";
-import AdminShell from "./AdminShell";
+import AdminShell from "./admin_shell";
 import { getEffectiveRole } from "@/lib/roles/effective";
 
 export const dynamic = "force-dynamic";

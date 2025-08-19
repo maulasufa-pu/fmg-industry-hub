@@ -46,7 +46,33 @@ export async function getEffectiveRole(): Promise<UserRole> {
     
     return "client";
   } catch (err) {
-    console.warn('Failed to get effective role:', err);
+    // console.warn('Failed to get effective role:', err);
     return "client";
   }
 }
+
+// // src/lib/roles/effective.ts
+// import type { SupabaseClient } from "@supabase/supabase-js";
+// import type { UserRole } from "@/lib/roles";
+
+// const PRIORITY: UserRole[] = ["owner","admin","anr","producer","composer","engineer","publisher","client","guest"];
+
+// export async function getEffectiveRole(supabase: SupabaseClient): Promise<UserRole> {
+//   const { data: { user } } = await supabase.auth.getUser();
+//   if (!user) return "guest";
+
+//   const { data: profile } = await supabase
+//     .from("profiles")
+//     .select("main_role, staff_role")
+//     .eq("id", user.id)
+//     .maybeSingle();
+
+//   if (!profile) return "client";
+
+//   const allRoles: string[] = [];
+//   if (profile.main_role) allRoles.push(profile.main_role);
+//   if (Array.isArray(profile.staff_role)) allRoles.push(...profile.staff_role);
+
+//   for (const r of PRIORITY) if ((allRoles as UserRole[]).includes(r)) return r;
+//   return "client";
+// }

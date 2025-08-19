@@ -3,21 +3,30 @@
 
 import { motion } from "framer-motion";
 import type { ProjectSummary } from "../../types";
+import type { UserRole } from "@/lib/roles";
 
 interface PublishingTabProps {
   project: ProjectSummary;
+  /** dikirim otomatis dari ProjectControlsSection via cloneElement */
+  roleStatus?: UserRole;
+  /** legacy fallback (optional) */
+  isClient?: boolean;
 }
 
-const AnimatedCard = ({ 
-  title, 
-  children, 
-  className = "", 
-  gradient = false 
-}: { 
-  title: string; 
-  children: React.ReactNode; 
-  className?: string; 
-  gradient?: boolean; 
+const STAFF_ROLES: UserRole[] = [
+  "owner","admin","anr","producer","composer","engineer","publisher"
+];
+
+const AnimatedCard = ({
+  title,
+  children,
+  className = "",
+  gradient = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+  gradient?: boolean;
 }) => {
   return (
     <motion.section
@@ -29,9 +38,9 @@ const AnimatedCard = ({
       initial={{ opacity: 0, y: 30, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      whileHover={{ 
+      whileHover={{
         scale: 1.01,
-        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)"
+        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
       }}
     >
       <div className="relative z-10 p-8">
@@ -57,19 +66,29 @@ const AnimatedCard = ({
   );
 };
 
-export default function PublishingTab({ project }: PublishingTabProps) {
+export default function PublishingTab({
+  project,
+  roleStatus,
+  isClient = false, // fallback
+}: PublishingTabProps) {
+  // Client view = bukan staff (owner/admin/anr/producer/composer/engineer/publisher)
+  const isClientView =
+    roleStatus ? !STAFF_ROLES.includes(roleStatus) : !!isClient;
+
   return (
-    <motion.div 
-      className="grid grid-cols-1 gap-6 lg:grid-cols-2" 
-      initial={{ opacity: 0, y: 20 }} 
-      animate={{ opacity: 1, y: 0 }} 
+    <motion.div
+      data-role={roleStatus || (isClientView ? "client" : "staff")}
+      className={`grid grid-cols-1 gap-6 ${isClientView ? "" : "lg:grid-cols-2"}`}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
+      {/* === Status (selalu tampil) === */}
       <AnimatedCard title="📚 Publishing Status" gradient>
-        <motion.div 
-          className="space-y-4" 
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
+        <motion.div
+          className="space-y-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
           <div className="p-4 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl border border-green-200 dark:border-green-700/50">
@@ -77,10 +96,10 @@ export default function PublishingTab({ project }: PublishingTabProps) {
               📊 Current Status
             </h4>
             <div className="text-lg font-bold text-green-600 dark:text-green-400">
-              {project.status === 'published' ? 'Published ✅' : 'Not Published Yet ⏳'}
+              {project.status === "published" ? "Published ✅" : "Not Published Yet ⏳"}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Stage: {project.stage || 'Unknown'}
+              Stage: {project.stage || "Unknown"}
             </p>
           </div>
 
@@ -111,46 +130,54 @@ export default function PublishingTab({ project }: PublishingTabProps) {
         </motion.div>
       </AnimatedCard>
 
-      <AnimatedCard title="🔄 Distribution Actions" gradient>
-        <motion.div 
-          className="space-y-4" 
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
-          transition={{ delay: 0.4 }}
-        >
-          <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200 dark:border-purple-700/50">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">
-              🚀 Quick Actions
-            </h4>
-            <div className="space-y-2">
-              {[
-                { action: "Submit to Distributors", icon: "📤", color: "from-blue-500 to-indigo-600" },
-                { action: "Generate ISRC Codes", icon: "🔢", color: "from-green-500 to-emerald-600" },
-                { action: "Upload Artwork", icon: "🎨", color: "from-purple-500 to-pink-600" },
-                { action: "Set Release Date", icon: "📅", color: "from-orange-500 to-red-600" },
-              ].map((item, index) => (
-                <motion.button
-                  key={item.action}
-                  className={`w-full p-3 rounded-xl bg-gradient-to-r ${item.color} text-white font-medium shadow hover:shadow-lg transition-all`}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 + index * 0.1 }}
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <span className="flex items-center justify-center gap-2">
-                    <span>{item.icon}</span>
-                    {item.action}
-                  </span>
-                </motion.button>
-              ))}
+      {/* === Distribution Actions (HANYA staff/admin) === */}
+      {!isClientView && (
+        <AnimatedCard title="🔄 Distribution Actions" gradient>
+          <motion.div
+            className="space-y-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200 dark:border-purple-700/50">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">
+                🚀 Quick Actions
+              </h4>
+              <div className="space-y-2">
+                {[
+                  { action: "Submit to Distributors", icon: "📤", color: "from-blue-500 to-indigo-600" },
+                  { action: "Generate ISRC Codes", icon: "🔢", color: "from-green-500 to-emerald-600" },
+                  { action: "Upload Artwork", icon: "🎨", color: "from-purple-500 to-pink-600" },
+                  { action: "Set Release Date", icon: "📅", color: "from-orange-500 to-red-600" },
+                ].map((item, index) => (
+                  <motion.button
+                    key={item.action}
+                    className={`w-full p-3 rounded-xl bg-gradient-to-r ${item.color} text-white font-medium shadow hover:shadow-lg transition-all`}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 + index * 0.1 }}
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <span className="flex items-center justify-center gap-2">
+                      <span>{item.icon}</span>
+                      {item.action}
+                    </span>
+                  </motion.button>
+                ))}
+              </div>
             </div>
-          </div>
-        </motion.div>
-      </AnimatedCard>
+          </motion.div>
+        </AnimatedCard>
+      )}
 
-      <AnimatedCard title="📈 Analytics & Performance" gradient className="lg:col-span-2">
-        <motion.div 
+      {/* === Analytics (selalu tampil) === */}
+      <AnimatedCard
+        title="📈 Analytics & Performance"
+        gradient
+        className={isClientView ? "" : "lg:col-span-2"}
+      >
+        <motion.div
           className="text-center py-8 text-gray-500 dark:text-gray-400"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -158,7 +185,9 @@ export default function PublishingTab({ project }: PublishingTabProps) {
         >
           <div className="text-4xl mb-4">📊</div>
           <p>Performance analytics will appear here once the track is published.</p>
-          <p className="text-xs mt-2">Includes streaming numbers, revenue tracking, and platform performance.</p>
+          <p className="text-xs mt-2">
+            Includes streaming numbers, revenue tracking, and platform performance.
+          </p>
         </motion.div>
       </AnimatedCard>
     </motion.div>

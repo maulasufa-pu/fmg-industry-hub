@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useMemo, useState } from "react";
-import AdminSidebarSection from "@/app/ui/page_section/AdminSidebarSection";
+import SidebarSection from "@/app/ui/page_section/SidebarSection";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { UserRole } from "@/lib/roles";
@@ -209,8 +209,16 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
             </motion.button>
             
             <div className="flex items-center gap-2">
-              <div className="text-lg font-bold bg-gradient-to-r from-purple-300 to-violet-300 bg-clip-text text-transparent">
-                Admin Panel
+              <div className="inline-flex flex-col items-end justify-center relative flex-[0_0_auto]">
+                <div 
+                  className="relative w-fit mt-[-1.00px] font-heading-4 font-[number:var(--heading-4-font-weight)] text-gray-800 dark:text-gray-100 dark:text-gray-100 text-[length:var(--heading-4-font-size)] tracking-[var(--heading-4-letter-spacing)] leading-[var(--heading-4-line-height)] whitespace-nowrap [font-style:var(--heading-4-font-style)]">
+                  Flemmo Music
+                </div>
+
+                <div 
+                  className="relative w-fit -mt-1 font-body-XS font-[number:var(--body-XS-font-weight)] text-neutral-600 dark:text-neutral-200 dark:text-gray-200 text-[length:var(--body-XS-font-size)] tracking-[var(--body-XS-letter-spacing)] leading-[var(--body-XS-line-height)] whitespace-nowrap [font-style:var(--body-XS-font-style)]">
+                Global Industry Hub
+                </div>
               </div>
               <div className="hidden sm:block text-xs text-slate-300 px-2 py-1 bg-slate-800/50 rounded-full border border-slate-600">
                 {arolePretty}
@@ -235,7 +243,7 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
       </AnimatePresence>
 
       {/* Sidebar */}
-      <AdminSidebarSection 
+      <SidebarSection
         role={currentRole} 
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}

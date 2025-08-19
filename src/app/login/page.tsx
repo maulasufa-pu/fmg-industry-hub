@@ -1,6 +1,6 @@
 import React from "react";
 import { Suspense } from "react";
-import { LoginSection } from "@/app/ui/main_container/LoginSection";
+import { LoginSection } from "@/app/ui/main_container/login";
 import RedirectIfAuthenticated from "@/app/auth/RedirectIfAuthenticated";
 
 export const dynamic = "force-dynamic";

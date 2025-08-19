@@ -87,6 +87,11 @@ const MENU: Partial<Record<UserRole, readonly NavItem[]>> = {
     { href: "/admin/engineer/sessions", label: "Sessions", Icon: Mic2 },
     { href: "/admin/engineer/renders", label: "Renders", Icon: FileText },
   ],
+  client: [
+    { href: "/client/dashboard/", label: "Dashboard", Icon: Layout },
+    { href: "/client/projects/", label: "Projects", Icon: Clipboard },
+    { href: "/client/invoices/", label: "Invoices", Icon: FileText },
+  ]
 } as const;
 
 /** ------------------------------------------------------------------
@@ -164,7 +169,7 @@ const getPageColorScheme = (pathname: string) => {
  * Component
  * ------------------------------------------------------------------ */
 
-export default function AdminSidebarSection({ role, isOpen = true, onClose }: Props): React.JSX.Element {
+export default function SidebarSection({ role, isOpen = true, onClose }: Props): React.JSX.Element {
   const pathname = usePathname();
   const normalizedRole = normalizeRole(role);
   const items = normalizedRole === "guest" 
@@ -276,14 +281,14 @@ export default function AdminSidebarSection({ role, isOpen = true, onClose }: Pr
   
   // Debug logging
   useEffect(() => {
-    console.log('[AdminSidebarSection] role =', role, 'normalizedRole =', normalizedRole);
-    console.log('[AdminSidebarSection] items.length =', items.length);
-    console.log('[AdminSidebarSection] isOpen =', isOpen);
-    console.log('[AdminSidebarSection] profile =', profile);
+    console.log('[SidebarSection] role =', role, 'normalizedRole =', normalizedRole);
+    console.log('[SidebarSection] items.length =', items.length);
+    console.log('[SidebarSection] isOpen =', isOpen);
+    console.log('[SidebarSection] profile =', profile);
   }, [role, normalizedRole, items.length, isOpen, profile]);
   
   if (normalizedRole === "guest") {
-    console.log('[AdminSidebarSection] Returning empty for guest role');
+    console.log('[SidebarSection] Returning empty for guest role');
     return <></>; // atau return null
   }
 
@@ -293,12 +298,12 @@ export default function AdminSidebarSection({ role, isOpen = true, onClose }: Pr
       {/* Desktop Sidebar - Always visible on lg+ screens */}
       <aside
         data-sidebar
-        className="hidden lg:block fixed top-0 left-0 z-10 h-screen w-72 shrink-0 border-r border-slate-600 dark:border-slate-500 bg-gradient-to-b from-slate-700 via-slate-600 to-slate-800 dark:from-slate-800 dark:via-slate-700 dark:to-slate-900 shadow-xl dark:shadow-slate-800/25"
-        aria-label="Admin sidebar"
+        className="hidden lg:block fixed top-0 left-0 z-10 h-dvh w-72 flex flex-col shrink-0 border-r border-slate-600 dark:border-slate-500 bg-gradient-to-b from-slate-700 via-slate-600 to-slate-800 dark:from-slate-800 dark:via-slate-700 dark:to-slate-900 shadow-xl dark:shadow-slate-800/25"
+        aria-label="Sidebar"
       >
       {/* Animated background pattern */}
       <motion.div 
-        className="absolute inset-0 opacity-5"
+        className="absolute inset-0 opacity-5 pointer-events-none"
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.05 }}
         transition={{ duration: 2 }}
@@ -351,21 +356,31 @@ export default function AdminSidebarSection({ role, isOpen = true, onClose }: Pr
           </motion.div>
           <div className="min-w-0 space-y-1.5">
             <motion.div
-              className="text-xl font-bold bg-gradient-to-r from-purple-600 to-violet-600 dark:from-purple-300 dark:to-violet-300 bg-clip-text text-transparent leading-tight"
+              className="capitalize text-xl font-bold bg-gradient-to-r from-purple-600 to-violet-600 dark:from-purple-300 dark:to-violet-300 bg-clip-text text-transparent leading-tight"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2, duration: 0.5 }}
             >
-              Admin Panel
+              <div className="inline-flex flex-col items-end justify-center relative flex-[0_0_auto]">
+                <div 
+                  className="relative w-fit mt-[-1.00px] font-heading-4 font-[number:var(--heading-4-font-weight)] text-gray-800 dark:text-gray-100 dark:text-gray-100 text-[length:var(--heading-4-font-size)] tracking-[var(--heading-4-letter-spacing)] leading-[var(--heading-4-line-height)] whitespace-nowrap [font-style:var(--heading-4-font-style)]">
+                  Flemmo Music
+                </div>
+
+                <div 
+                  className="relative w-fit -mt-1 font-body-XS font-[number:var(--body-XS-font-weight)] text-neutral-600 dark:text-neutral-200 dark:text-gray-200 text-[length:var(--body-XS-font-size)] tracking-[var(--body-XS-letter-spacing)] leading-[var(--body-XS-line-height)] whitespace-nowrap [font-style:var(--body-XS-font-style)]">
+                Global Industry Hub
+                </div>
+              </div>
             </motion.div>
-            <motion.div 
+            {/* <motion.div 
               className="text-xs text-slate-300 dark:text-slate-300 font-medium leading-relaxed"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
             >
               Role: <span className="capitalize text-white dark:text-white font-semibold ml-1">{String(normalizedRole).replace(/_/g, " ")}</span>
-            </motion.div>
+            </motion.div> */}
           </div>
         </div>
         {/* Accent underline */}
@@ -381,7 +396,7 @@ export default function AdminSidebarSection({ role, isOpen = true, onClose }: Pr
       <nav
         ref={containerRef}
         onKeyDown={onKeyDown}
-        className="relative flex h-[calc(100svh-170px)] flex-col gap-2 overflow-y-auto px-6 py-6"
+        className="relative flex flex-col flex-1 min-h-0 gap-2 overflow-y-auto px-6 py-6 pb-28"
       >
         {/* Navigation background overlay */}
         {/* <motion.div 
@@ -606,7 +621,7 @@ export default function AdminSidebarSection({ role, isOpen = true, onClose }: Pr
           {/* Mobile Sidebar Content - Same as Desktop */}
           {/* Animated background pattern */}
           <motion.div 
-            className="absolute inset-0 opacity-5"
+            className="absolute inset-0 opacity-5 pointer-events-none"
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.05 }}
             transition={{ duration: 2 }}
@@ -639,49 +654,60 @@ export default function AdminSidebarSection({ role, isOpen = true, onClose }: Pr
           </motion.div>
 
           {/* Mobile Header */}
-          <motion.div 
+          {/* <motion.div 
             className="relative px-7 pt-6 pb-5"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
           >
-            <div className="flex items-center gap-4">
-              <motion.div 
+            <div className="flex items-center gap-4"> */}
+              {/* <motion.div 
                 className="relative grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-lg dark:shadow-slate-800/25 overflow-hidden"
                 whileHover={{ scale: 1.05, rotate: 5 }}
                 transition={{ duration: 0.2 }}
-              >
-                <motion.div 
+              > */}
+                {/* <motion.div 
                   className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"
                 />
                 <Layout className="relative block overflow-visible text-white z-10" size={20} aria-hidden="true" />
-              </motion.div>
-              <div className="min-w-0 space-y-1.5">
-                <motion.div 
+              </motion.div> */}
+              {/* <div className="min-w-0 space-y-1.5"> */}
+                {/* <motion.div 
                   className="text-xl font-bold bg-gradient-to-r from-purple-600 to-violet-600 dark:from-purple-300 dark:to-violet-300 bg-clip-text text-transparent leading-tight"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2, duration: 0.5 }}
                 >
-                  Admin Panel
-                </motion.div>
-                <motion.div 
+                  {/* Admin Panel */}
+                  {/* <div className="inline-flex flex-col items-end justify-center relative flex-[0_0_auto]">
+                    <div 
+                      className="relative w-fit mt-[-1.00px] font-heading-4 font-[number:var(--heading-4-font-weight)] text-gray-800 dark:text-gray-100 dark:text-gray-100 text-[length:var(--heading-4-font-size)] tracking-[var(--heading-4-letter-spacing)] leading-[var(--heading-4-line-height)] whitespace-nowrap [font-style:var(--heading-4-font-style)]">
+                      Flemmo Music
+                    </div>
+
+                    <div 
+                      className="relative w-fit -mt-1 font-body-XS font-[number:var(--body-XS-font-weight)] text-neutral-600 dark:text-neutral-200 dark:text-gray-200 text-[length:var(--body-XS-font-size)] tracking-[var(--body-XS-letter-spacing)] leading-[var(--body-XS-line-height)] whitespace-nowrap [font-style:var(--body-XS-font-style)]">
+                    Global Industry Hub
+                    </div>
+                  </div> */}
+                {/* </motion.div> */}
+                {/* <motion.div 
                   className="text-xs text-slate-300 dark:text-slate-300 font-medium leading-relaxed"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3, duration: 0.5 }}
                 >
                   Role: <span className="capitalize text-white dark:text-white font-semibold ml-1">{String(normalizedRole).replace(/_/g, " ")}</span>
-                </motion.div>
-              </div>
-            </div>
-            <motion.div 
+                </motion.div> */}
+              {/* </div>
+            </div> */}
+            {/* <motion.div 
               className="pointer-events-none absolute inset-x-7 bottom-0 h-px bg-gradient-to-r from-transparent via-purple-400 to-transparent"
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
               transition={{ delay: 0.5, duration: 0.8 }}
-            />
-          </motion.div>
+            /> */}
+          {/* </motion.div> */}
 
           {/* Mobile Nav */}
           <nav

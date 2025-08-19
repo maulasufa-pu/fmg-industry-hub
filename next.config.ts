@@ -14,21 +14,21 @@ const nextConfig: NextConfig = {
   },
 };
 
-module.exports = {
-  async rewrites() {
-    return [
-      // ADMIN - SIDE
-      { source: "/admin/projects", destination: "/admin/projects" },
-      { source: "/admin/dashboard", destination: "/ui/dashboard" },
-      { source: "/admin/users", destination: "/ui/admin/users" },
-      { source: "/admin/invoices", destination: "/ui/invoices" },
-      // CLIENT - SIDE
-      { source: "/client/projects", destination: "/client/projects" },
-      { source: "/client/dashboard", destination: "/ui/dashboard" },
-      { source: "/client/invoices", destination: "/ui/invoices" },
-    ];
-  },
-};
+// module.exports = {
+//   async rewrites() {
+//     return [
+//       // ADMIN - SIDE
+//       { source: "/admin/projects", destination: "/admin/projects" },
+//       { source: "/admin/dashboard", destination: "/ui/panel/dashboard" },
+//       { source: "/admin/users", destination: "/ui/panel/users" },
+//       { source: "/admin/invoices", destination: "/ui/panel/invoices" },
+//       // CLIENT - SIDE
+//       { source: "/client/projects", destination: "/client/projects" },
+//       { source: "/client/dashboard", destination: "/ui/dashboard" },
+//       { source: "/client/invoices", destination: "/ui/inv" },
+//     ];
+//   },
+// };
 
 
 export default nextConfig;

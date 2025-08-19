@@ -1,16 +1,18 @@
 // src/app/admin/projects/[id]/components/ProjectControlsSection.tsx
 "use client";
 
+import React, { useMemo, useEffect, useRef, useState } from "react";
 import { motion, Variants } from "framer-motion";
-import { useMemo, useEffect, useRef } from "react";
 import type { ProjectSummary, TabKey } from "../types";
 import { hasAccess, UserAccess, ACCESS_RULES } from "./access-control";
+import type { UserRole } from "@/lib/roles";
+import { getEffectiveRole } from "@/lib/roles/effective";
 
 interface Tab {
   key: TabKey;
   label: string;
   icon: string;
-  color: string;
+  color: string;              // tailwind gradient stops, e.g. "from-blue-500 to-indigo-600"
   accessRule: readonly string[];
 }
 
@@ -23,19 +25,18 @@ interface ProjectControlsSectionProps {
 }
 
 const TABS: Tab[] = [
-  { key: "overview", label: "Overview & Details", icon: "📊", color: "from-blue-500 to-indigo-600", accessRule: ACCESS_RULES.OVERVIEW_DETAILS },
-  { key: "references", label: "References", icon: "🔗", color: "from-green-500 to-emerald-600", accessRule: ACCESS_RULES.REFERENCES },
-  { key: "discussion", label: "Discussion", icon: "💬", color: "from-orange-500 to-red-600", accessRule: ACCESS_RULES.DISCUSSION },
-  { key: "meetings", label: "Meetings", icon: "📅", color: "from-teal-500 to-cyan-600", accessRule: ACCESS_RULES.MEETINGS },
-  { key: "drafts", label: "Drafts", icon: "🎵", color: "from-purple-500 to-pink-600", accessRule: ACCESS_RULES.DRAFTS },
+  { key: "overview",   label: "Overview & Details",        icon: "📊", color: "from-blue-500 to-indigo-600",  accessRule: ACCESS_RULES.OVERVIEW_DETAILS },
+  { key: "references", label: "References",                icon: "🔗", color: "from-green-500 to-emerald-600", accessRule: ACCESS_RULES.REFERENCES },
+  { key: "discussion", label: "Discussion",                icon: "💬", color: "from-orange-500 to-red-600",    accessRule: ACCESS_RULES.DISCUSSION },
+  { key: "meetings",   label: "Meetings",                  icon: "📅", color: "from-teal-500 to-cyan-600",     accessRule: ACCESS_RULES.MEETINGS },
+  { key: "drafts",     label: "Drafts",                    icon: "🎵", color: "from-purple-500 to-pink-600",   accessRule: ACCESS_RULES.DRAFTS },
   { key: "publishing", label: "Publishing & Distribution", icon: "📚", color: "from-indigo-500 to-purple-600", accessRule: ACCESS_RULES.PUBLISHING_DISTRIBUTION },
 ];
 
 const tabVariants: Variants = {
   inactive: { scale: 1, backgroundColor: "transparent" },
-  active: { scale: 1.05, backgroundColor: "rgba(59, 130, 246, 0.1)" },
+  active:   { scale: 1.05, backgroundColor: "rgba(59,130,246,0.1)" },
 };
-
 
 export default function ProjectControlsSection({
   project,
@@ -44,33 +45,25 @@ export default function ProjectControlsSection({
   setActiveTab,
   children,
 }: ProjectControlsSectionProps) {
-  // Scroll hanya saat flag diset oleh user click
+  // role efektif dari user (client/admin/anr/..)
+  const [roleStatus, setRoleStatus] = useState<UserRole>("guest");
+
   useEffect(() => {
-    if (!shouldScrollRef.current) return;
-    shouldScrollRef.current = false;
-
-    const el = contentRef.current;
-    if (!el) return;
-
-    const HEADER_OFFSET = 16; // sesuaikan kalau ada header/sticky bar
-    const rect = el.getBoundingClientRect();
-    const targetTop = window.scrollY + rect.top - HEADER_OFFSET;
-
-    window.scrollTo({ top: targetTop, behavior: "smooth" });
-
-    // opsional: jaga tombol tab aktif tetap terlihat di nav horizontal
-    const btn = tabBtnRefs.current[activeTab];
-    btn?.scrollIntoView?.({ behavior: "smooth", inline: "center", block: "nearest" });
-  }, [activeTab]);
-
-  // Filter tabs sesuai akses
-  const availableTabs = useMemo(() => {
-    return TABS.filter((tab) => hasAccess(userAccess, tab.accessRule));
-  }, [userAccess]);
+    let mounted = true;
+    (async () => {
+      try {
+        const role = await getEffectiveRole();
+        if (mounted) setRoleStatus(role);
+      } catch {
+        if (mounted) setRoleStatus("guest");
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   // Refs untuk kontrol scroll
   const contentRef = useRef<HTMLDivElement | null>(null);
-  const shouldScrollRef = useRef(false); // ⬅️ hanya true saat user klik tab
+  const shouldScrollRef = useRef(false);
   const tabBtnRefs = useRef<Record<TabKey, HTMLButtonElement | null>>({
     overview: null,
     references: null,
@@ -80,21 +73,64 @@ export default function ProjectControlsSection({
     publishing: null,
   });
 
+  // Scroll hanya saat flag diset oleh user click
+  useEffect(() => {
+    if (!shouldScrollRef.current) return;
+    shouldScrollRef.current = false;
+
+    const el = contentRef.current;
+    if (!el) return;
+
+    const HEADER_OFFSET = 16;
+    const rect = el.getBoundingClientRect();
+    const targetTop = window.scrollY + rect.top - HEADER_OFFSET;
+
+    window.scrollTo({ top: targetTop, behavior: "smooth" });
+
+    const btn = tabBtnRefs.current[activeTab];
+    btn?.scrollIntoView?.({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [activeTab]);
+
+  // Client: tampilkan SEMUA tab. Admin/Staff: filter pakai ACCESS_RULES.
+  const availableTabs = useMemo(() => {
+    if (!userAccess) return [];
+    const isClient = userAccess.main_role === "client";
+    return isClient ? TABS : TABS.filter((tab) => hasAccess(userAccess, tab.accessRule));
+  }, [userAccess]);
+
   if (availableTabs.length === 0) return null;
 
   // Validasi activeTab terhadap akses
-  const validActiveTab = availableTabs.find((t) => t.key === activeTab)?.key ?? availableTabs[0].key;
+  const validActiveTab =
+    availableTabs.find((t) => t.key === activeTab)?.key ?? availableTabs[0].key;
+
   if (validActiveTab !== activeTab) {
-    // perubahan ini BUKAN dari user click, jadi jangan set flag scroll
+    // perubahan ini bukan dari user click, jangan autoscroll
     setActiveTab(validActiveTab);
   }
 
-  // Handler klik tab (set flag sebelum ganti tab)
   const onTabClick = (key: TabKey) => {
     if (key === activeTab) return;
     shouldScrollRef.current = true;
+
+    // broadcast event dengan role efektif
+    try {
+      window.dispatchEvent(new CustomEvent("project:tab_click", {
+        detail: { tab: key, role: roleStatus },
+      }));
+    } catch { /* no-op */ }
+
     setActiveTab(key);
   };
+
+  // inject roleStatus ke konten tab aktif
+  const content =
+    React.isValidElement(children)
+      ? React.cloneElement(children as React.ReactElement<any>, {
+          roleStatus,
+          "data-role": roleStatus,
+        })
+      : children;
 
   return (
     <motion.div
@@ -120,6 +156,8 @@ export default function ProjectControlsSection({
                   key={tab.key}
                   ref={(el) => { tabBtnRefs.current[tab.key] = el; }}
                   onClick={() => onTabClick(tab.key)}
+                  data-role={roleStatus}
+                  title={`role: ${roleStatus}`}
                   className={`relative px-6 py-4 text-sm font-semibold rounded-2xl transition-all duration-300 min-w-fit whitespace-nowrap ${
                     isActive
                       ? `text-white bg-gradient-to-r ${tab.color} shadow-2xl scale-105 floating-element`
@@ -131,13 +169,14 @@ export default function ProjectControlsSection({
                   whileHover={{
                     scale: isActive ? 1.08 : 1.05,
                     y: -2,
-                    boxShadow: isActive ? "0 20px 25px -5px rgba(59,130,246,0.4)" : "0 10px 15px -3px rgba(0,0,0,0.1)",
+                    boxShadow: isActive
+                      ? "0 20px 25px -5px rgba(59,130,246,0.4)"
+                      : "0 10px 15px -3px rgba(0,0,0,0.1)",
                   }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ delay: index * 0.1 }}
                   style={{ zIndex: 30 }}
                 >
-                  {/* ... isi tombol tetap sama ... */}
                   <motion.span
                     className="relative z-10 flex items-center gap-2"
                     initial={{ opacity: 0, y: 10 }}
@@ -154,46 +193,37 @@ export default function ProjectControlsSection({
                   </motion.span>
 
                   {isActive && (
-                    <motion.div
-                      className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-white/80 rounded-full"
-                      layoutId="activeTabIndicator"
-                      initial={{ opacity: 0, scaleX: 0 }}
-                      animate={{ opacity: 1, scaleX: 1 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    />
+                    <>
+                      <motion.div
+                        className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-white/80 rounded-full"
+                        layoutId="activeTabIndicator"
+                        initial={{ opacity: 0, scaleX: 0 }}
+                        animate={{ opacity: 1, scaleX: 1 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      />
+                      {/* subtle glow */}
+                      <motion.div
+                        className="absolute inset-0 rounded-2xl opacity-30"
+                        style={{
+                          background: `linear-gradient(45deg, ${
+                            tab.color.includes("blue")
+                              ? "#3B82F6"
+                              : tab.color.includes("purple")
+                              ? "#A855F7"
+                              : tab.color.includes("green")
+                              ? "#10B981"
+                              : tab.color.includes("orange")
+                              ? "#F97316"
+                              : tab.color.includes("teal")
+                              ? "#14B8A6"
+                              : "#6366F1"
+                          }, transparent)`,
+                        }}
+                        animate={{ scale: 1, opacity: 0.3 }}
+                        transition={{ duration: 0.5 }}
+                      />
+                    </>
                   )}
-
-                  {/* Glow & hover background (tetap) */}
-                  {isActive && (
-                    <motion.div
-                      className="absolute inset-0 rounded-2xl opacity-30"
-                      style={{
-                        background: `linear-gradient(45deg, ${
-                          tab.color.includes("blue")
-                            ? "#3B82F6"
-                            : tab.color.includes("purple")
-                            ? "#A855F7"
-                            : tab.color.includes("green")
-                            ? "#10B981"
-                            : tab.color.includes("orange")
-                            ? "#F97316"
-                            : tab.color.includes("teal")
-                            ? "#14B8A6"
-                            : "#6366F1"
-                        }, transparent)`,
-                      }}
-                      animate={{ scale: 1, opacity: 0.3 }}
-                      transition={{ duration: 0.5 }}
-                    />
-                  )}
-                  <motion.div
-                    className="absolute inset-0 rounded-2xl opacity-0"
-                    style={{
-                      background: `linear-gradient(135deg, ${tab.color.split(" ")[1]}, ${tab.color.split(" ")[3]})`,
-                    }}
-                    whileHover={{ opacity: isActive ? 0 : 0.1 }}
-                    transition={{ duration: 0.2 }}
-                  />
                 </motion.button>
               );
             })}
@@ -204,14 +234,14 @@ export default function ProjectControlsSection({
         <motion.div
           ref={contentRef}
           className="mt-6 min-h-[400px]"
-          // ⛔️ hapus: key={activeTab}
+          data-role={roleStatus}
           initial={{ opacity: 0, y: 20, filter: "blur(4px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           exit={{ opacity: 0, y: -20, filter: "blur(4px)" }}
           transition={{ duration: 0.4, ease: "easeInOut" }}
         >
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6">
-            {children}
+            {content}
           </div>
         </motion.div>
       </div>

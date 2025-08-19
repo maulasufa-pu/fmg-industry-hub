@@ -5,8 +5,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
-import AdminPanel, {
-  AdminTabKey, AdminProjectRow, PicOption, StageOption, StatusOption,
+import ProjectList, {
+  TabKey, ProjectRow, PicOption, StageOption, StatusOption,
 } from "@/app/ui/panel/projects/project_list";
 
 const VIEW = "project_summary";
@@ -105,10 +105,10 @@ export default function AdminProjectsPage(): React.JSX.Element {
 
 
   // ---------- tabs ----------
-  const validTabs: AdminTabKey[] = ["All", "Active", "Finished", "Pending", "Unassigned", "Requested"];
-  const initialTabRaw = (params.get("tab") as AdminTabKey) || "All";
-  const initialTab: AdminTabKey = validTabs.includes(initialTabRaw) ? initialTabRaw : "All";
-  const [activeTab, setActiveTab] = useState<AdminTabKey>(initialTab);
+  const validTabs: TabKey[] = ["All", "Active", "Finished", "Pending", "Unassigned", "Requested"];
+  const initialTabRaw = (params.get("tab") as TabKey) || "All";
+  const initialTab: TabKey = validTabs.includes(initialTabRaw) ? initialTabRaw : "All";
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
 
   // ---------- filters ----------
   const [search, setSearch] = useState("");
@@ -129,8 +129,8 @@ export default function AdminProjectsPage(): React.JSX.Element {
   const [totalCount, setTotalCount] = useState(0);
 
   // ---------- data ----------
-  const [rows, setRows] = useState<AdminProjectRow[]>([]);
-  const [tabCounts, setTabCounts] = useState<Record<AdminTabKey, number | null>>({
+  const [rows, setRows] = useState<ProjectRow[]>([]);
+  const [tabCounts, setTabCounts] = useState<Record<TabKey, number | null>>({
     All: null, Active: null, Finished: null, Pending: null, Unassigned: null, Requested: null
   });
 
@@ -175,7 +175,7 @@ export default function AdminProjectsPage(): React.JSX.Element {
   }, [supabase]);
 
   // SIMPLE DATA FETCH - NO BS
-  const fetchPage = useCallback(async (tab: AdminTabKey, pageNum: number) => {
+  const fetchPage = useCallback(async (tab: TabKey, pageNum: number) => {
     try {
       const from = (pageNum - 1) * pageSize;
       const to = from + pageSize - 1;
@@ -219,7 +219,7 @@ export default function AdminProjectsPage(): React.JSX.Element {
       // Fetch assignment names for these projects
       const assignmentNames = await fetchAssignmentNames(supabase, projectIds);
 
-      const mapped: AdminProjectRow[] = (data ?? []).map((r: DbProjectSummary) => {
+      const mapped: ProjectRow[] = (data ?? []).map((r: DbProjectSummary) => {
         const assignments = assignmentNames[r.project_id] || {};
         
         return {
@@ -287,7 +287,7 @@ export default function AdminProjectsPage(): React.JSX.Element {
     loadOptions();
   }, [supabase]);
 
-  const handleTabChange = (tab: AdminTabKey) => {
+  const handleTabChange = (tab: TabKey) => {
     setActiveTab(tab);
     setPage(1);
     router.push(`/admin/projects?tab=${tab}`);
@@ -313,7 +313,7 @@ export default function AdminProjectsPage(): React.JSX.Element {
 
   return (
     <div className="flex flex-col gap-6">
-    <AdminPanel
+    <ProjectList
       rows={rows}
       counts={tabCounts}
       activeTab={activeTab}

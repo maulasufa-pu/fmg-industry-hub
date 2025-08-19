@@ -14,19 +14,19 @@ import type {
   StaffRole,
   TeamRoleOptions,
   CurrentAssignments
-} from "../../../ui/panel/projects/types";
+} from "./types";
 
-import HeroSection from "@/app/ui/panel/projects/components/HeroSection";
-import TeamAssignmentSection from "@/app/ui/panel/projects/components/TeamAssignmentSection";
-import ProjectControlsSection from "@/app/ui/panel/projects/components/ProjectControlsSection";
-import { hasAccess, UserAccess, ACCESS_RULES } from "@/app/ui/panel/projects/components/access-control";
+import HeroSection from "./components/HeroSection";
+import TeamAssignmentSection from "./components/TeamAssignmentSection";
+import ProjectControlsSection from "./components/ProjectControlsSection";
+import { hasAccess, UserAccess, ACCESS_RULES } from "./components/access-control";
 
-import OverviewTab from "@/app/ui/panel/projects/components/tabs/OverviewTab";
-import DraftsTab from "@/app/ui/panel/projects/components/tabs/DraftsTab";
-import ReferencesTab from "@/app/ui/panel/projects/components/tabs/ReferencesTab";
-import DiscussionTab from "@/app/ui/panel/projects/components/tabs/DiscussionTab";
-import MeetingsTab from "@/app/ui/panel/projects/components/tabs/MeetingsTab";
-import PublishingTab from "@/app/ui/panel/projects/components/tabs/PublishingTab";
+import OverviewTab from "./components/tabs/OverviewTab";
+import DraftsTab from "./components/tabs/DraftsTab";
+import ReferencesTab from "./components/tabs/ReferencesTab";
+import DiscussionTab from "./components/tabs/DiscussionTab";
+import MeetingsTab from "./components/tabs/MeetingsTab";
+import PublishingTab from "./components/tabs/PublishingTab";
 
 const pageVariants: Variants = {
   hidden: { opacity: 0, scale: 0.95 },
@@ -58,19 +58,6 @@ export default function AdminProjectDetailPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [assignmentsLoading, setAssignmentsLoading] = useState<boolean>(true); // ← optional
 
-  const refetchProject = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("project_summary")
-      .select("*")
-      .eq("project_id", params.id)
-      .single();
-
-    if (error) {
-      console.warn("[Refetch project] error:", error);
-      return;
-    }
-    if (data) setProject(data as ProjectSummary);
-  }, [params.id, supabase]);
 
   // Team assignment state
   const [currentAssignments, setCurrentAssignments] = useState<CurrentAssignments>({
@@ -413,66 +400,32 @@ export default function AdminProjectDetailPage() {
     }
   };
 
-  const handleAcceptProject = async (): Promise<void> => {
+  const handleAcceptProject = async () => {
     if (!project) return;
-    const prev = { status: project.status, stage: project.stage };
-
-    // gunakan enum valid; misal: in_progress + awaiting_payment
-    setProject(p => (p ? { ...p, status: "in_progress", stage: "awaiting_payment" } : p));
-
-    const { data, error } = await supabase.rpc("accept_project", {
-      p_project_id: project.project_id,
-    });
-
-    if (error) {
-      setProject(p => (p ? { ...p, ...prev } : p));
-      console.error("[Accept] RPC error:", error);
-      alert(`Accept gagal: ${error.message}`);
-      return;
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .update({ status: "approved", stage: "drafting" })
+        .eq("project_id", project.project_id);
+      if (error) throw error;
+      setProject(prev => prev ? { ...prev, status: "approved", stage: "drafting" } : prev);
+    } catch (err) {
+      console.error("Failed to accept project:", err);
     }
-
-    // pastikan UI mengikuti yang ada di DB
-    await refetchProject();
   };
 
-  const handlePutOnHold = async (): Promise<void> => {
+  const handlePutOnHold = async () => {
     if (!project) return;
-    const prev = { status: project.status, stage: project.stage };
-
-    setProject(p => (p ? { ...p, status: "on_hold" } : p));
-
-    const { data, error } = await supabase.rpc("put_project_on_hold", {
-      p_project_id: project.project_id,
-    });
-
-    if (error) {
-      setProject(p => (p ? { ...p, ...prev } : p));
-      console.error("[Hold] RPC error:", error);
-      alert(`Put on Hold gagal: ${error.message}`);
-      return;
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .update({ status: "pending" })
+        .eq("project_id", project.project_id);
+      if (error) throw error;
+      setProject(prev => prev ? { ...prev, status: "pending" } : prev);
+    } catch (err) {
+      console.error("Failed to put project on hold:", err);
     }
-
-    await refetchProject();
-  };
-
-  const handleContinueProject = async (): Promise<void> => {
-    if (!project) return;
-    const prev = { status: project.status, stage: project.stage };
-
-    setProject(p => (p ? { ...p, status: "in_progress" } : p));
-
-    const { data, error } = await supabase.rpc("resume_project", {
-      p_project_id: project.project_id,
-    });
-
-    if (error) {
-      setProject(p => (p ? { ...p, ...prev } : p));
-      console.error("[Continue] RPC error:", error);
-      alert(`Continue gagal: ${error.message}`);
-      return;
-    }
-
-    await refetchProject();
   };
 
   // jumlah role yang sudah terisi (anr/composer/producer/engineer/publisher)
@@ -557,9 +510,8 @@ export default function AdminProjectDetailPage() {
           showRightActions={hasAccess(userAccess, ACCESS_RULES.RIGHT_ACTIONS)}
           onAcceptProject={handleAcceptProject}
           onPutOnHold={handlePutOnHold}
-          onContinueProject={handleContinueProject}   // ✅ tambah ini
-          teamMemberCount={teamMemberCount}
-          daysActive={daysActive}
+          teamMemberCount={teamMemberCount}   // ⬅️ kirim
+          daysActive={daysActive}             // ⬅️ kirim
         />
       )}
       {hasAccess(userAccess, ACCESS_RULES.TEAM_ASSIGNMENTS) && (

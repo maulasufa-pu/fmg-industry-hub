@@ -60,6 +60,10 @@ export default function ClientProjectDetailPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [assignmentsLoading, setAssignmentsLoading] = useState<boolean>(true);
 
+  // ✅ flags supaya gak flicker Not Found
+  const [accessChecked, setAccessChecked] = useState(false);
+  const [projectChecked, setProjectChecked] = useState(false);
+
   // Team assignment state
   const [currentAssignments, setCurrentAssignments] = useState<CurrentAssignments>({
     anr: "",
@@ -145,8 +149,12 @@ export default function ClientProjectDetailPage() {
     const loadData = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { setLoading(false); return; }
-
+        if (!user) { 
+          setAccessChecked(true);
+          setProjectChecked(true);
+          setLoading(false);
+          return;
+        }
         // role user
         const { data: profile } = await supabase
           .from("profiles")
@@ -154,13 +162,19 @@ export default function ClientProjectDetailPage() {
           .eq("id", user.id)
           .single();
 
-        if (!profile || !mounted) { setLoading(false); return; }
+        if (!profile) {
+          setAccessChecked(true);
+          setProjectChecked(true);
+          setLoading(false);
+          return;
+        }
 
         const access: UserAccess = {
           main_role: profile.main_role,
           staff_role: profile.staff_role || [],
         };
         setUserAccess(access);
+        setAccessChecked(true); // ✅ akses sudah dipastikan
 
         // Ambil proyek by id
         const { data: projectData, error: projErr } = await supabase
@@ -172,6 +186,7 @@ export default function ClientProjectDetailPage() {
         if (projErr || !projectData) { setProject(null); setLoading(false); return; }
 
         setProject(projectData);
+        setProjectChecked(true); // ✅ project sudah dipastikan
 
         const owner =
           !!projectData &&
@@ -232,8 +247,11 @@ export default function ClientProjectDetailPage() {
         }
       } catch (error) {
         console.error("Error loading project data:", error);
+        // pada error pun tandai sudah dicek agar tidak flicker
+        setAccessChecked(true);
+        setProjectChecked(true);
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
     };
 
@@ -396,7 +414,7 @@ export default function ClientProjectDetailPage() {
   })();
 
   // ====== RENDER ======
-  if (loading) {
+  if (loading || !accessChecked || !projectChecked) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-6 flex items-center justify-center">
         <motion.div className="text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>

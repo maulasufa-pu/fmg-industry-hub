@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { usePathname } from "next/navigation";
-import { LogoSection } from "@/app/ui/Section/FooterSection";
+import { LogoSection } from "@/app/ui/page_section/FooterSection";
 
 export default function FooterClient() {
   const pathname = usePathname();

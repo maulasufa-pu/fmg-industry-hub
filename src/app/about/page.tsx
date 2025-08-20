@@ -1,7 +1,368 @@
-export default function PageName() {
+"use client";
+
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { motion, useAnimation, useInView, useMotionValue, useScroll, useSpring, useTransform, Variants } from "framer-motion";
+import type { MotionValue } from "framer-motion";
+import { ArrowRight, Sparkles, Globe2, Music, Mic2, Zap, ShieldCheck, Building2, LineChart, Trophy, Users, Rocket, BookOpen, Star, Handshake, Newspaper, Briefcase } from "lucide-react";
+
+/*************************
+ * Utilities & shared styles
+ *************************/
+const cn = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(" ");
+
+const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 24 },
+  visible: (i: number = 0) => ({ opacity: 1, y: 0, transition: { delay: 0.06 * i, duration: 0.6, ease: "easeOut" } }),
+};
+
+/*************************
+ * Magnetic Button (same vibe)
+ *************************/
+function MagneticButton({ children, href, className = "" }: { children: React.ReactNode; href?: string; className?: string }) {
+  const ref = useRef<HTMLButtonElement | null>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const xSpring = useSpring(x, { stiffness: 200, damping: 15 });
+  const ySpring = useSpring(y, { stiffness: 200, damping: 15 });
+
+  const onMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const el = ref.current; if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const relX = e.clientX - (rect.left + rect.width / 2);
+    const relY = e.clientY - (rect.top + rect.height / 2);
+    x.set(relX * 0.25); y.set(relY * 0.25);
+  };
+  const onLeave = () => { x.set(0); y.set(0); };
+
+  const Btn = (
+    <motion.button
+      ref={ref}
+      style={{ x: xSpring, y: ySpring }}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      className={cn(
+        "group relative inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold",
+        "bg-black text-white dark:bg-white dark:text-black",
+        "shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-colors",
+        "hover:bg-gradient-to-r hover:from-indigo-600 hover:to-violet-600 hover:text-white",
+        className
+      )}
+    >
+      {children}
+      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+      <span className="pointer-events-none absolute inset-0 rounded-2xl bg-white/10 opacity-0 blur-xl transition-opacity group-hover:opacity-100 dark:bg-black/10" />
+    </motion.button>
+  );
+  if (href) return <Link href={href} className="inline-block">{Btn}</Link>;
+  return Btn;
+}
+
+/*************************
+ * Gentle Parallax wrapper (clamped, instant + ease-out)
+ *************************/
+function Parallax({ children, amount = 12, axis = "y", className = "" }: { children: React.ReactNode; amount?: number; axis?: "x" | "y"; className?: string }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const mvRaw = useTransform(scrollYProgress, [0, 0.5, 1], [amount, 0, -amount]);
+  const mv = useSpring(mvRaw, { stiffness: 260, damping: 32, mass: 0.3 });
+  const style: { y?: MotionValue<number>; x?: MotionValue<number> } = axis === "y" ? { y: mv } : { x: mv };
   return (
-    <div>
-      {/* isi halaman */}
-    </div>
+    <motion.div ref={ref} style={style} className={cn("transform-gpu will-change-transform", className)}>
+      {children}
+    </motion.div>
+  );
+}
+
+/*************************
+ * Split headline
+ *************************/
+function SplitHeadline({ text }: { text: string }) {
+  return (
+    <h1 className="mx-auto max-w-5xl text-balance text-center text-5xl font-bold leading-tight tracking-tight sm:text-6xl">
+      {text.split(" ").map((word, i) => (
+        <motion.span key={`w-${i}`} className="inline-block" variants={fadeUp} custom={i}>
+          <span className="mr-2 inline-block bg-gradient-to-br from-black via-indigo-700 to-indigo-400 bg-clip-text text-transparent dark:from-white dark:via-indigo-300 dark:to-indigo-500">{word}</span>
+        </motion.span>
+      ))}
+    </h1>
+  );
+}
+
+/*************************
+ * Sticky quick facts (international pattern)
+ *************************/
+function QuickFacts() {
+  const FACTS: { label: string; value: string }[] = [
+    { label: "Founded", value: "2020" },
+    { label: "HQ", value: "Jakarta, ID" },
+    { label: "Services", value: "Publishing, Distribution, Studio" },
+    { label: "Focus", value: "Artist‑first, global rollout" },
+  ];
+  return (
+    <aside className="top-24 hidden h-max space-y-3 rounded-3xl border border-black/10 bg-white p-5 text-sm shadow-sm dark:border-white/10 dark:bg-black lg:sticky lg:block">
+      <div className="mb-2 text-xs font-semibold tracking-wide text-black/60 dark:text-white/60">Quick facts</div>
+      {FACTS.map((f, i) => (
+        <div key={i} className="flex items-center justify-between gap-4">
+          <span className="text-black/60 dark:text-white/60">{f.label}</span>
+          <span className="font-medium">{f.value}</span>
+        </div>
+      ))}
+      <div className="mt-4 h-px w-full bg-gradient-to-r from-transparent via-black/10 to-transparent dark:via-white/10" />
+      <div className="flex items-center gap-2 text-xs text-black/60 dark:text-white/60"><ShieldCheck className="h-4 w-4" /> NDA available</div>
+      <div className="flex items-center gap-2 text-xs text-black/60 dark:text-white/60"><Rocket className="h-4 w-4" /> Global delivery</div>
+    </aside>
+  );
+}
+
+/*************************
+ * Service Pillar card
+ *************************/
+function Pillar({ icon: Icon, title, points }: { icon: React.ComponentType<any>; title: string; points: string[] }) {
+  return (
+    <Parallax amount={10}>
+      <div className="group rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:shadow-xl dark:border-white/10 dark:bg-black">
+        <div className="mb-3 flex items-center gap-3">
+          <div className="rounded-2xl bg-indigo-600/10 p-3 ring-1 ring-indigo-600/20 dark:bg-indigo-400/10 dark:ring-indigo-400/20"><Icon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" /></div>
+          <h3 className="text-lg font-semibold">{title}</h3>
+        </div>
+        <ul className="space-y-2 text-sm text-black/80 dark:text-white/80">
+          {points.map((p, i) => (
+            <li key={i} className="flex items-start gap-2"><span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-indigo-500" />{p}</li>
+          ))}
+        </ul>
+      </div>
+    </Parallax>
+  );
+}
+
+/*************************
+ * Founder (Alfath Flemmo)
+ *************************/
+function FounderCard() {
+  return (
+    <Parallax amount={12}>
+      <div className="grid grid-cols-1 gap-6 overflow-hidden rounded-3xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black sm:grid-cols-[220px_1fr]">
+        <div className="aspect-square w-full overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600" />
+        <div>
+          <h3 className="text-2xl font-bold">Alfath Flemmo</h3>
+          <p className="mt-1 text-sm text-black/60 dark:text-white/60">Founder & CEO — Flemmo Music Global Industry Hub (FMGIHub) / Flemmo Studio</p>
+          <ul className="mt-4 space-y-2 text-sm text-black/80 dark:text-white/80">
+            <li className="flex items-start gap-2"><Star className="mt-0.5 h-4 w-4 text-indigo-600" /> Composer, songwriter, arranger, audio engineer, and digital music producer.</li>
+            <li className="flex items-start gap-2"><Globe2 className="mt-0.5 h-4 w-4 text-indigo-600" /> Leads FMGIHub across publishing, distribution, licensing, and studio operations.</li>
+            <li className="flex items-start gap-2"><Users className="mt-0.5 h-4 w-4 text-indigo-600" /> Collaborates with indie artists, labels, and brands across markets.</li>
+          </ul>
+          <div className="mt-5 flex flex-wrap gap-3 text-xs">
+            <span className="rounded-full bg-black/5 px-3 py-1 dark:bg-white/10">Jakarta‑based</span>
+            <span className="rounded-full bg-black/5 px-3 py-1 dark:bg-white/10">Pop • K‑Pop • Lo‑Fi • Piano</span>
+            <span className="rounded-full bg-black/5 px-3 py-1 dark:bg-white/10">Publishing • Distribution • Licensing</span>
+          </div>
+        </div>
+      </div>
+    </Parallax>
+  );
+}
+
+/*************************
+ * Timeline
+ *************************/
+function TimelineItem({ year, title, desc }: { year: string; title: string; desc: string }) {
+  return (
+    <li className="relative pl-8">
+      <span className="absolute left-0 top-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-white">{year.slice(-2)}</span>
+      <h4 className="text-sm font-semibold">{title}</h4>
+      <p className="mt-1 text-sm text-black/70 dark:text-white/70">{desc}</p>
+    </li>
+  );
+}
+
+/*************************
+ * FAQ
+ *************************/
+function FAQItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <motion.div layout onClick={() => setOpen((v) => !v)} className="cursor-pointer rounded-2xl border border-black/10 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-black">
+      <div className="flex items-center justify-between gap-4">
+        <h4 className="text-sm font-semibold">{q}</h4>
+        <ArrowRight className={cn("h-4 w-4 transition-transform", open && "rotate-90")}/>
+      </div>
+      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: open ? "auto" : 0, opacity: open ? 1 : 0 }} className="overflow-hidden">
+        <p className="mt-3 text-sm text-black/70 dark:text-white/70">{a}</p>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/*************************
+ * Page
+ *************************/
+export default function AboutIntlPage() {
+  const controls = useAnimation();
+  useEffect(() => { controls.start("visible"); }, [controls]);
+
+  return (
+    <main className="relative min-h-screen bg-white text-black antialiased dark:bg-black dark:text-white">
+      {/* subtle noise overlay */}
+      <div className="pointer-events-none fixed inset-0 z-[-1] opacity-[0.06] mix-blend-soft-light" aria-hidden>
+        <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
+          <filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.80" numOctaves="4" stitchTiles="stitch" /><feColorMatrix type="saturate" values="0" /></filter>
+          <rect width="100%" height="100%" filter="url(#noiseFilter)" />
+        </svg>
+      </div>
+
+      {/* Top bar */}
+      <nav className="sticky top-0 z-40 border-b border-black/10 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:border-white/10 dark:bg-black/40">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+          <Link href="/" className="flex items-center gap-2 font-semibold">
+            <div className="h-6 w-6 rounded-md bg-gradient-to-br from-indigo-600 to-fuchsia-600" />
+            <span>FMGIHub · Flemmo Studio</span>
+          </Link>
+          <div className="hidden items-center gap-6 text-sm sm:flex">
+            <Link href="/services" className="opacity-80 hover:opacity-100">Services</Link>
+            <Link href="/about" className="opacity-100">About</Link>
+            <Link href="/#pricing" className="opacity-80 hover:opacity-100">Pricing</Link>
+            <MagneticButton href="#contact" className="px-4 py-2">Get a quote</MagneticButton>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <section className="relative overflow-hidden pt-20 sm:pt-24">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(1200px_500px_at_50%_-100px,rgba(79,70,229,0.15),transparent)]" />
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="flex flex-col items-center text-center">
+            <Parallax amount={10}>
+              <motion.div initial="hidden" animate={controls} variants={fadeUp} className="mb-3 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3 py-1 text-xs shadow-sm backdrop-blur dark:border-white/10 dark:bg-black/40">
+                <Sparkles className="h-4 w-4 text-indigo-600" />
+                <span>Publisher • Label & Distributor • Recording Studio</span>
+              </motion.div>
+            </Parallax>
+            <Parallax amount={14}>
+              <SplitHeadline text="About FMGIHub / Flemmo Studio" />
+            </Parallax>
+            <Parallax amount={16}>
+              <motion.p variants={fadeUp} className="mt-4 max-w-3xl text-balance text-base leading-relaxed text-black/70 dark:text-white/70">
+                We help artists and teams create, publish, and scale music globally — combining publishing administration, label/distribution, licensing support, and a full‑stack production studio.
+              </motion.p>
+            </Parallax>
+          </div>
+        </div>
+      </section>
+
+      {/* Content layout: sticky quick facts + long‑form content */}
+      <section className="mx-auto max-w-6xl grid grid-cols-1 gap-8 px-4 pb-10 pt-16 lg:grid-cols-[270px_1fr]">
+        <QuickFacts />
+        <article className="prose prose-zinc max-w-none dark:prose-invert">
+          <h2>What is FMGIHub?</h2>
+          <p>
+            Flemmo Music Global Industry Hub (FMGIHub) is a modern music company built around an artist‑first workflow. We bring distribution and publishing services together with rights management and studio production so creators can move from idea to release without friction.
+          </p>
+          <div className="not-prose mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <Pillar icon={Rocket} title="Distribution & Publishing" points={["DSP delivery & QC","Registrations & splits","Metadata & compliance"]} />
+            <Pillar icon={Music} title="Studio & Creation" points={["Songwriting & arrangement","Recording, mixing, mastering","Remote & in‑studio workflow"]} />
+            <Pillar icon={ShieldCheck} title="Licensing & Rights" points={["Clearances & agreements","Watermarking & audit logs","Usage tracking"]} />
+            <Pillar icon={LineChart} title="Portal & Insights" points={["Approvals & versioning","Status & tasks","Royalty snapshots"]} />
+          </div>
+
+          <h2 className="mt-12">Leadership</h2>
+          <FounderCard />
+
+          <h2 className="mt-12">Milestones</h2>
+          <ol className="relative mx-auto max-w-3xl space-y-8 border-l border-black/10 pl-6 dark:border-white/10">
+            <TimelineItem year="2020" title="Studio roots" desc="Songwriting and production for independent artists." />
+            <TimelineItem year="2022" title="Publishing arm" desc="Launched FMG Publishing for registrations & splits." />
+            <TimelineItem year="2023" title="Distribution" desc="Rolled out DSP delivery and quality control checks." />
+            <TimelineItem year="2024" title="Licensing & portal" desc="Introduced licensing support and secure client portal." />
+          </ol>
+
+          <h2 className="mt-12">Global footprint</h2>
+          <p>We collaborate with clients across Asia, North America, and Europe. Remote‑first, with studio partners as needed.</p>
+          <div className="not-prose mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              "Jakarta",
+              "Singapore",
+              "Seoul",
+              "Tokyo",
+              "Sydney",
+              "Dubai",
+              "London",
+              "Los Angeles",
+            ].map((c) => (
+              <div key={c} className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm shadow-sm dark:border-white/10 dark:bg-black">{c}</div>
+            ))}
+          </div>
+
+          <h2 className="mt-12">Our principles</h2>
+          <div className="not-prose grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <Value icon={Users} title="Artist‑first" desc="We align on vision, protect your rights, and put the song first." />
+            <Value icon={ShieldCheck} title="Trust & safety" desc="Granular permissions, watermarking, and audit trails by default." />
+            <Value icon={BookOpen} title="Clarity" desc="Clear scopes, version history, and structured feedback to move fast." />
+            <Value icon={Rocket} title="Delivery" desc="Radio‑ready mixes and DSP‑compliant masters, on schedule." />
+            <Value icon={Handshake} title="Partnership" desc="Long‑term support across releases, not just single projects." />
+            <Value icon={LineChart} title="Results" desc="From traction snapshots to payout projections, we measure what matters." />
+          </div>
+
+          <h2 className="mt-12">Press & partners</h2>
+          <div className="not-prose grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {["Billboard", "Spotify", "Apple Music", "YouTube Music", "TikTok", "Instagram", "X", "SoundCloud"].map((b) => (
+              <div key={b} className="flex h-20 items-center justify-center rounded-2xl border border-black/10 bg-white text-sm font-medium dark:border-white/10 dark:bg-black">{b}</div>
+            ))}
+          </div>
+
+          <h2 className="mt-12">FAQ</h2>
+          <div className="not-prose grid grid-cols-1 gap-4 md:grid-cols-2">
+            <FAQItem q="Berapa lama pengerjaan 1 lagu?" a="Tergantung kompleksitas. Umumnya 7–21 hari dari brief ke master final. Rush order bisa — hubungi kami untuk slot." />
+            <FAQItem q="Bisa bantu distribusi ke Spotify/Apple Music?" a="Bisa. Kami siapkan metadata, ISRC/UPC, QC, dan kirim ke DSPs. Pitching opsional sesuai rencana rilis." />
+            <FAQItem q="Apakah menerima revisi?" a="Ya, kami sertakan beberapa putaran revisi wajar per fase. Detail tercantum di proposal." />
+            <FAQItem q="Bisa kerja remote?" a="Ya. Seluruh proses bisa dikelola via portal: upload brief, komentar timecoded, persetujuan versi, hingga final delivery." />
+          </div>
+
+          <div className="not-prose mt-16 rounded-3xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+            <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
+              <div>
+                <h3 className="text-pretty text-2xl font-bold sm:text-3xl">Work with FMGIHub</h3>
+                <p className="mt-2 text-sm text-black/70 dark:text-white/70">Share your references, timeline, and deliverables — we’ll craft a tailored proposal.</p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <MagneticButton href="#">Upload brief</MagneticButton>
+                <Link href="#" className="inline-flex items-center gap-2 rounded-2xl border border-black/10 px-5 py-3 text-sm font-semibold hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5">Book a call <ArrowRight className="h-4 w-4" /></Link>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      {/* Footer (light) */}
+      <footer className="border-t border-black/10 py-10 text-sm dark:border-white/10">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 sm:flex-row">
+          <div className="text-black/60 dark:text-white/60">© {new Date().getFullYear()} FMGIHub / Flemmo Studio</div>
+          <div className="flex gap-6 text-black/60 dark:text-white/60">
+            <Link href="/">Home</Link>
+            <Link href="/services">Services</Link>
+            <Link href="/about">About</Link>
+          </div>
+        </div>
+      </footer>
+    </main>
+  );
+}
+
+/*************************
+ * Small components
+ *************************/
+function Value({ icon: Icon, title, desc }: { icon: React.ComponentType<any>; title: string; desc: string }) {
+  return (
+    <Parallax amount={10}>
+      <div className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+        <div className="mb-3 flex items-center gap-3">
+          <div className="rounded-2xl bg-indigo-600/10 p-3 ring-1 ring-indigo-600/20 dark:bg-indigo-400/10 dark:ring-indigo-400/20">
+            <Icon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+          </div>
+          <h3 className="text-lg font-semibold">{title}</h3>
+        </div>
+        <p className="text-sm text-black/70 dark:text-white/70">{desc}</p>
+      </div>
+    </Parallax>
   );
 }

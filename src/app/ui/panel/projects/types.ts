@@ -95,12 +95,14 @@ export interface RevisionRow {
   created_at: string | null;
 }
 
-export interface ReferenceLinkRow {
+export type ReferenceLinkRow = {
   id: string;
   project_id: string;
   url: string;
   created_at: string | null;
-}
+  created_by: string | null;
+  note: string | null; // ✅ tambahkan ini
+};
 
 export interface DiscussionMessage {
   id: string;

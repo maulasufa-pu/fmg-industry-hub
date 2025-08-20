@@ -57,6 +57,10 @@ export default function AdminProjectDetailPage() {
   const [userAccess, setUserAccess] = useState<UserAccess | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [assignmentsLoading, setAssignmentsLoading] = useState<boolean>(true); // ← optional
+  
+  // ✅ flags supaya gak flicker Not Found
+  const [accessChecked, setAccessChecked] = useState(false);
+  const [projectChecked, setProjectChecked] = useState(false);
 
   const refetchProject = useCallback(async () => {
     const { data, error } = await supabase
@@ -204,7 +208,12 @@ export default function AdminProjectDetailPage() {
     const loadData = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { setLoading(false); return; }
+        if (!user) {
+          setAccessChecked(true);
+          setProjectChecked(true);
+          setLoading(false);
+          return;
+        }
 
         const { data: profile } = await supabase
           .from("profiles")
@@ -212,19 +221,28 @@ export default function AdminProjectDetailPage() {
           .eq("id", user.id)
           .single();
 
-        if (!profile || !mounted) { setLoading(false); return; }
+        if (!profile) {
+          setAccessChecked(true);
+          setProjectChecked(true);
+          setLoading(false);
+          return;
+        }
 
         const access: UserAccess = {
           main_role: profile.main_role,
           staff_role: profile.staff_role || [],
         };
         setUserAccess(access);
+        setAccessChecked(true); // ✅ akses sudah dipastikan
 
         const { data: projectData } = await supabase
           .from("project_summary")
           .select("*")
           .eq("project_id", params.id)
           .single();
+
+        setProject(projectData ?? null);
+        setProjectChecked(true); // ✅ project sudah dipastikan
 
         if (projectData && mounted) setProject(projectData);
 
@@ -279,11 +297,14 @@ export default function AdminProjectDetailPage() {
         }
         // ⬇️ setelah options siap, load assignments dari API
         } catch (error) {
-        console.error("Error loading project data:", error);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
+          console.error("Error loading project data:", error);
+          // pada error pun tandai sudah dicek agar tidak flicker
+          setAccessChecked(true);
+          setProjectChecked(true);
+        } finally {
+          setLoading(false);
+        }
+      };
 
     loadData();
     return () => { mounted = false; };
@@ -493,7 +514,7 @@ export default function AdminProjectDetailPage() {
   }, [project]);
 
   // ====== RENDER ======
-  if (loading) {
+    if (loading || !accessChecked || !projectChecked) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-6 flex items-center justify-center">
         <motion.div className="text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -507,23 +528,24 @@ export default function AdminProjectDetailPage() {
   }
 
   if (!project || !userAccess) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
-        <motion.div
-          className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-8 text-center shadow dark:shadow-gray-800/25"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-        >
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-            Project Not Found
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            The requested project could not be found or you don&apos;t have access to it.
-          </p>
-        </motion.div>
-      </div>
-    );
-  }
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
+      <motion.div
+        className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-8 text-center shadow dark:shadow-gray-800/25"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+      >
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+          Project Not Found
+        </h1>
+        <p className="text-gray-600 dark:text-gray-300">
+          The requested project could not be found or you don&apos;t have access to it.
+        </p>
+      </motion.div>
+    </div>
+  );
+}
+
 
   const renderTabContent = () => {
     switch (activeTab) {

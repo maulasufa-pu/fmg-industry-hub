@@ -74,7 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           disableTransitionOnChange
         >
           <ThemeToggleWrapper />
-          <Header />
+          {/* <Header /> */}
           <MainContainer>{children}</MainContainer>
           <Footer />
         </ThemeProvider>

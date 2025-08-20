@@ -1,8 +1,9 @@
 // src/app/admin/projects/[id]/components/tabs/ReferencesTab.tsx
 "use client";
 
-import { motion } from "framer-motion";
+import React, { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import type { ReferenceLinkRow, ProjectSummary } from "../../types";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
 interface ReferencesTabProps {
   project: ProjectSummary;
@@ -10,155 +11,509 @@ interface ReferencesTabProps {
   setLinks: React.Dispatch<React.SetStateAction<ReferenceLinkRow[] | null>>;
 }
 
-const AnimatedCard = ({ 
-  title, 
-  children, 
-  className = "", 
-  gradient = false 
-}: { 
-  title: string; 
-  children: React.ReactNode; 
-  className?: string; 
-  gradient?: boolean; 
-}) => {
-  return (
-    <motion.section
-      className={`relative overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl dark:shadow-gray-800/25 ${
-        gradient
-          ? "bg-gradient-to-br from-white via-blue-50 to-purple-50 dark:from-gray-900 dark:via-blue-900/20 dark:to-purple-900/20"
-          : "bg-white dark:bg-gray-900"
-      } ${className}`}
-      initial={{ opacity: 0, y: 30, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-      whileHover={{ 
-        scale: 1.01,
-        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)"
-      }}
-    >
-      <div className="relative z-10 p-8">
-        <motion.div
-          className="mb-6 flex items-center justify-between"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 bg-gradient-to-r from-gray-800 to-blue-600 bg-clip-text text-transparent">
-            {title}
-          </h3>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          {children}
-        </motion.div>
-      </div>
-    </motion.section>
-  );
+/* ---------------- Utilities ---------------- */
+const normalizeUrl = (raw: string): string => {
+  const trimmed = raw.trim();
+  if (!trimmed) return trimmed;
+  try { new URL(trimmed); return trimmed; } catch { return `https://${trimmed}`; }
+};
+const isValidHttpUrl = (value: string): boolean => {
+  try { const u = new URL(value); return u.protocol === "http:" || u.protocol === "https:"; }
+  catch { return false; }
 };
 
-function DeleteReferenceButton({ id, onDeleted }: { id: string; onDeleted: () => void }) {
-  return (
-    <motion.button
-      onClick={onDeleted}
-      className="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.9 }}
-    >
-      🗑️ Delete
-    </motion.button>
-  );
-}
+type SpotifyType = "track" | "album" | "playlist" | "episode" | "show";
+const parseTimeToSeconds = (t: string): number => {
+  if (/^\d+$/.test(t)) return Number(t);
+  const m = t.match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/i);
+  if (!m) return 0;
+  return (Number(m[1] ?? 0) * 3600) + (Number(m[2] ?? 0) * 60) + Number(m[3] ?? 0);
+};
+const parseYouTube = (u: URL): { id: string; start?: number } | null => {
+  const host = u.hostname.replace(/^www\./, "");
+  let id = "";
+  if (host === "youtu.be") id = u.pathname.slice(1).split("/")[0] ?? "";
+  else if (host.endsWith("youtube.com")) {
+    if (u.pathname.startsWith("/watch")) id = u.searchParams.get("v") ?? "";
+    else if (u.pathname.startsWith("/shorts/")) id = u.pathname.split("/")[2] ?? "";
+    else if (u.pathname.startsWith("/live/")) id = u.pathname.split("/")[2] ?? "";
+    else if (u.pathname.startsWith("/embed/")) id = u.pathname.split("/")[2] ?? "";
+  }
+  if (!id) return null;
+  const t = u.searchParams.get("t") ?? u.searchParams.get("start");
+  const start = t ? parseTimeToSeconds(t) : undefined;
+  return { id, start };
+};
+const renderEmbed = (rawUrl: string): React.JSX.Element | null => {
+  const normalized = normalizeUrl(rawUrl);
+  let u: URL; try { u = new URL(normalized); } catch { return null; }
+  const host = u.hostname.replace(/^www\./, "");
 
-export default function ReferencesTab({ 
-  project,
-  links, 
-  setLinks 
-}: ReferencesTabProps) {
-  const handleDeleteReference = (id: string) => {
-    setLinks(prev => prev ? prev.filter(link => link.id !== id) : prev);
+  // YouTube
+  const yt = parseYouTube(u);
+  if (yt) {
+    const src = `https://www.youtube.com/embed/${yt.id}${yt.start ? `?start=${yt.start}` : ""}`;
+    return (
+      <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "16 / 9" }}>
+        <iframe
+          src={src}
+          className="absolute inset-0 h-full w-full"
+          loading="lazy"
+          title="YouTube embed"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+        />
+      </div>
+    );
+  }
+  // Spotify
+  if (host.endsWith("spotify.com") || host.endsWith("open.spotify.com")) {
+    const parts = u.pathname.split("/").filter(Boolean);
+    const candidate = (parts[0] ?? "") as SpotifyType;
+    const valid: readonly SpotifyType[] = ["track", "album", "playlist", "episode", "show"] as const;
+    const isValid = (t: string): t is SpotifyType => (valid as readonly string[]).includes(t);
+    if (isValid(candidate) && parts[1]) {
+      const type = candidate; const id = parts[1];
+      const src = `https://open.spotify.com/embed/${type}/${id}`;
+      const height = type === "episode" || type === "show" ? 232 : 152;
+      return <iframe src={src} className="w-full rounded-xl border border-gray-200 dark:border-gray-700" height={height} loading="lazy" title="Spotify embed" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" />;
+    }
+  }
+  // SoundCloud
+  if (host.endsWith("soundcloud.com")) {
+    const src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(u.toString())}&auto_play=false`;
+    return <iframe src={src} className="w-full rounded-xl" height={166} loading="lazy" title="SoundCloud embed" allow="autoplay" />;
+  }
+  // Vimeo
+  if (host === "vimeo.com" || host === "player.vimeo.com") {
+    const seg = u.pathname.split("/").filter(Boolean);
+    const id = seg.find((s) => /^\d+$/.test(s));
+    if (id) {
+      const src = `https://player.vimeo.com/video/${id}`;
+      return (
+        <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "16 / 9" }}>
+          <iframe src={src} className="absolute inset-0 h-full w-full" loading="lazy" title="Vimeo embed" allow="autoplay; fullscreen; picture-in-picture; clipboard-write" allowFullScreen />
+        </div>
+      );
+    }
+  }
+  // Apple Music
+  if (host.endsWith("music.apple.com")) {
+    const src = `https://embed.music.apple.com${u.pathname}${u.search}`;
+    return (
+      <iframe
+        allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write"
+        frameBorder={0}
+        height={175}
+        style={{ width: "100%", overflow: "hidden", borderRadius: "0.75rem" }}
+        sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation-by-user-activation"
+        src={src}
+        title="Apple Music embed"
+      />
+    );
+  }
+  return null;
+};
+
+/* ---------------- Child: ReferenceItem (simple, no motion) ---------------- */
+const ReferenceItem = memo(function ReferenceItem({
+  row,
+  onDelete,
+  onSaveNote,
+  deleting,
+}: {
+  row: ReferenceLinkRow;
+  onDelete: (id: string) => void;
+  onSaveNote: (id: string, value: string) => Promise<void>;
+  deleting: boolean;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [localNote, setLocalNote] = useState<string>(row.note ?? "");
+  const [saving, setSaving] = useState(false);
+  const textRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Sinkronkan dari server hanya saat tidak mengedit
+  useEffect(() => {
+    if (!isEditing) setLocalNote(row.note ?? "");
+  }, [row.note, isEditing]);
+
+  // Fokus ketika masuk mode edit (sekali)
+  useEffect(() => {
+    if (isEditing) {
+      const t = setTimeout(() => {
+        const el = textRef.current; el?.focus();
+        if (el) { const len = el.value.length; try { el.setSelectionRange(len, len); } catch {} }
+      }, 0);
+      return () => clearTimeout(t);
+    }
+  }, [isEditing]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try { await onSaveNote(row.id, localNote); setIsEditing(false); }
+    finally { setSaving(false); }
   };
-  return (
-    <motion.div 
-      className="grid grid-cols-1 gap-6 lg:grid-cols-2" 
-      initial={{ opacity: 0, y: 20 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      transition={{ duration: 0.5 }}
-    >
-      <AnimatedCard title="🔗 References Feed" gradient>
-        <motion.div 
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
-          transition={{ delay: 0.3 }}
-        >
-          {links === null ? (
-            <motion.div 
-              className="text-sm text-gray-500 dark:text-gray-400" 
-              animate={{ opacity: [0.5, 1, 0.5] }} 
-              transition={{ repeat: Infinity, duration: 1.5 }}
-            >
-              Loading…
-            </motion.div>
-          ) : links.length === 0 ? (
-            <motion.div 
-              className="text-sm text-gray-500 dark:text-gray-400 text-center py-8" 
-              initial={{ opacity: 0, scale: 0.9 }} 
-              animate={{ opacity: 1, scale: 1 }} 
-              transition={{ delay: 0.3 }}
-            >
-              🔗 Belum ada link.
-            </motion.div>
-          ) : (
-            <motion.ul className="space-y-3 text-sm">
-              {links.map((l, index) => (
-                <motion.li
-                  key={l.id}
-                  className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 p-4 shadow"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 * index }}
-                  whileHover={{
-                    scale: 1.02,
-                    boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-                  }}
-                >
-                  <div className="mb-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                    <span className="bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-lg">
-                      {l.created_at ? new Date(l.created_at).toLocaleString("id-ID") : ""}
-                    </span>
-                    <DeleteReferenceButton 
-                      id={l.id} 
-                      onDeleted={() => handleDeleteReference(l.id)} 
-                    />
-                  </div>
-                  <motion.a
-                    href={l.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="break-all text-blue-600 hover:text-purple-600 dark:text-blue-400 dark:hover:text-purple-400 font-medium bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-3 rounded-lg block transition-all"
-                    whileHover={{ scale: 1.01, y: -2 }}
-                  >
-                    🌐 {l.url}
-                  </motion.a>
-                </motion.li>
-              ))}
-            </motion.ul>
-          )}
-        </motion.div>
-      </AnimatedCard>
 
-      <AnimatedCard title="➕ Add Reference (Admin)" gradient>
-        <motion.div
-          className="text-sm text-gray-600 dark:text-gray-300 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 p-4 rounded-xl border border-green-200 dark:border-green-700/50"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.4 }}
-        >
-          📎 Reference adder component would go here. Users can add reference links for inspiration or project requirements.
-        </motion.div>
-      </AnimatedCard>
-    </motion.div>
+  return (
+    <li className="rounded-xl">
+      {/* Tanggal */}
+      <div className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+        <span className="bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-lg">
+          {row.created_at ? new Date(row.created_at).toLocaleString("id-ID") : ""}
+        </span>
+      </div>
+
+      {/* Embed + overlay aksi */}
+      <div className="group relative">
+        <div className="absolute top-2 right-2 z-10 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition">
+          {deleting ? (
+            <span className="text-[11px] px-2 py-1 rounded-full bg-white/80 dark:bg-gray-900/70 shadow">Menghapus…</span>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="text-[11px] px-2 py-1 rounded-full bg-white/80 dark:bg-gray-900/70 text-gray-800 dark:text-gray-100 shadow border border-gray-200/60"
+                onClick={() => setIsEditing(true)}
+              >
+                {row.note ? "Edit note" : "Add note"}
+              </button>
+              <button
+                type="button"
+                className="text-[11px] px-2 py-1 rounded-full bg-white/80 dark:bg-gray-900/70 text-red-600 shadow border border-red-200/60"
+                onClick={() => onDelete(row.id)}
+              >
+                Delete
+              </button>
+            </>
+          )}
+        </div>
+
+        <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-blue-400/0 group-hover:ring-blue-400/40 transition" />
+
+        <div className="w-full">
+          {renderEmbed(row.url) ?? (
+            <a
+              href={normalizeUrl(row.url)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full aspect-[16/9] rounded-xl border border-gray-200 dark:border-gray-700
+                         bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20
+                         grid place-content-center font-medium text-blue-600 hover:text-purple-600
+                         dark:text-blue-400 dark:hover:text-purple-400 transition"
+            >
+              🌐 {row.url}
+            </a>
+          )}
+        </div>
+      </div>
+
+      {/* Note viewer / editor */}
+      <div className="mt-3">
+        {isEditing ? (
+          <div className="space-y-2">
+            <textarea
+              ref={textRef}
+              rows={3}
+              value={localNote}
+              onChange={(e) => setLocalNote(e.target.value)}
+              className="w-full resize-y rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Tulis keterangan di sini…"
+            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={saving}
+                className="rounded-lg bg-blue-600 text-white px-3 py-1.5 disabled:opacity-60"
+              >
+                {saving ? "Menyimpan…" : "Simpan"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-3 py-1.5"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        ) : row.note ? (
+          <p className="text-[13px] leading-relaxed text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3 whitespace-pre-wrap">
+            📝 {row.note}
+          </p>
+        ) : null}
+      </div>
+    </li>
+  );
+});
+
+/* ---------------- Parent ---------------- */
+export default function ReferencesTab(
+  { project, links, setLinks }: ReferencesTabProps
+): React.JSX.Element {
+  const supabase = getSupabaseClient();
+
+  const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState<Record<string, boolean>>({});
+
+  // Fetch + realtime
+  useEffect(() => {
+    let cancelled = false;
+    const fetchLinks = async () => {
+      if (links !== null) return;
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("reference_links")
+        .select("*")
+        .eq("project_id", project.project_id)
+        .order("created_at", { ascending: false });
+
+      if (!cancelled) {
+        if (error) {
+          setLinks([]);
+          console.error("[ReferencesTab] load error:", error);
+        } else {
+          setLinks(data as ReferenceLinkRow[]);
+        }
+        setLoading(false);
+      }
+    };
+    void fetchLinks();
+
+    const channel = supabase
+      .channel(`reference_links:project:${project.project_id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "reference_links", filter: `project_id=eq.${project.project_id}` },
+        (payload) => {
+          setLinks((prev) => {
+            const prevArr = prev ?? [];
+            if (payload.eventType === "INSERT") {
+              const row = payload.new as ReferenceLinkRow;
+              if (prevArr.some((r) => r.id === row.id)) return prevArr;
+              return [row, ...prevArr];
+            }
+            if (payload.eventType === "DELETE") {
+              const row = payload.old as ReferenceLinkRow;
+              return prevArr.filter((r) => r.id !== row.id);
+            }
+            if (payload.eventType === "UPDATE") {
+              const row = payload.new as ReferenceLinkRow;
+              return prevArr.map((r) => (r.id === row.id ? row : r));
+            }
+            return prevArr;
+          });
+        }
+      )
+      .subscribe();
+
+    return () => { cancelled = true; void supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project.project_id, supabase]);
+
+  // Sorted
+  const renderLinks = useMemo<ReferenceLinkRow[]>(() => {
+    if (links === null) return [];
+    const arr = links.slice();
+    arr.sort((a, b) => {
+      const ta = a.created_at ? Date.parse(a.created_at) : 0;
+      const tb = b.created_at ? Date.parse(b.created_at) : 0;
+      return tb - ta;
+    });
+    return arr;
+  }, [links]);
+
+  // Add
+  const addReference = useCallback(async (url: string, note: string) => {
+    const normalized = normalizeUrl(url);
+    if (!isValidHttpUrl(normalized)) { alert("URL tidak valid."); return; }
+    try {
+      const { data: userData, error: userErr } = await supabase.auth.getUser();
+      if (userErr) throw userErr;
+      const userId = userData.user?.id;
+      if (!userId) throw new Error("Belum login.");
+
+      const { data, error } = await supabase
+        .from("reference_links")
+        .insert({
+          project_id: project.project_id,
+          url: normalized,
+          note: note.trim() ? note.trim() : null,
+          created_by: userId,
+        })
+        .select("*")
+        .single();
+
+      if (error) throw error;
+      setLinks((prev) => [data as ReferenceLinkRow, ...(prev ?? [])]);
+    } catch (err) {
+      console.error("[ReferencesTab] add error:", err);
+      alert("Gagal menambahkan link (cek RLS/policy).");
+    }
+  }, [project.project_id, setLinks, supabase]);
+
+  // Delete
+  const handleDeleteReference = useCallback(async (id: string) => {
+    setDeleting((d) => ({ ...d, [id]: true }));
+    let backup: ReferenceLinkRow[] | null = null;
+    setLinks((prev) => { backup = prev ? [...prev] : []; return prev ? prev.filter((l) => l.id !== id) : prev; });
+    try {
+      const { error } = await supabase.from("reference_links").delete().eq("id", id).eq("project_id", project.project_id);
+      if (error) throw error;
+    } catch (err) {
+      setLinks(backup);
+      console.error("[ReferencesTab] delete error:", err);
+      alert("Gagal menghapus link (cek RLS/policy).");
+    } finally {
+      setDeleting((d) => { const { [id]: _removed, ...rest } = d; return rest; });
+    }
+  }, [project.project_id, setLinks, supabase]);
+
+  // Save note
+  const handleSaveNote = useCallback(async (id: string, value: string) => {
+    const { data, error } = await supabase
+      .from("reference_links")
+      .update({ note: value })
+      .eq("id", id)
+      .eq("project_id", project.project_id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    setLinks((prev) => (prev ? prev.map((r) => (r.id === id ? (data as ReferenceLinkRow) : r)) : prev));
+  }, [project.project_id, setLinks, supabase]);
+
+  // Add tile (state lokal → fokus aman)
+  const AddReferenceTile = React.memo(function AddReferenceTile({
+    onAdd,
+  }: { onAdd: (url: string, note: string) => Promise<void> | void; }) {
+    const [open, setOpen] = useState(false);
+    const [url, setUrl] = useState("");
+    const [note, setNote] = useState("");
+    const [adding, setAdding] = useState(false);
+    const inputRef = useRef<HTMLInputElement | null>(null);
+
+    useEffect(() => {
+      if (open) {
+        const t = setTimeout(() => inputRef.current?.focus(), 0);
+        return () => clearTimeout(t);
+      }
+    }, [open]);
+
+    const handleSubmit = async () => {
+      setAdding(true);
+      try {
+        await onAdd(url, note);
+        setUrl(""); setNote(""); setOpen(false);
+      } finally { setAdding(false); }
+    };
+
+    return (
+      <div className="w-full">
+        <div className="h-7 mb-2" />
+        {!open ? (
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label="Add Reference"
+            className="group relative block w-full overflow-hidden rounded-3xl border-2 border-blue-400/60 aspect-[16/9]
+                       bg-gradient-to-b from-transparent to-blue-500/5 hover:from-blue-500/10 hover:to-blue-500/20"
+          >
+            <div className="absolute inset-0 rounded-3xl ring-2 ring-blue-400/0 group-hover:ring-blue-400/60 transition pointer-events-none" />
+            <div className="grid h-full place-content-center">
+              <div className="text-6xl leading-none text-blue-500">+</div>
+            </div>
+          </button>
+        ) : (
+          <div className="rounded-3xl border-2 border-blue-400/60 p-4 bg-gradient-to-b from-transparent to-blue-500/5 min-h-[260px]">
+            <div className="text-sm text-gray-600 dark:text-gray-300 space-y-3">
+              <div className="font-semibold text-gray-800 dark:text-gray-100">➕ Add Reference</div>
+
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">URL</label>
+              <input
+                ref={inputRef}
+                type="url"
+                inputMode="url"
+                placeholder="https://example.com/reference..."
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Keterangan (opsional)</label>
+              <textarea
+                rows={3}
+                placeholder="Tuliskan catatan singkat…"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                className="w-full resize-y rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="rounded-xl px-3 py-2 bg-blue-600 text-white disabled:opacity-60"
+                  disabled={adding || url.trim().length === 0}
+                >
+                  {adding ? "Menambahkan…" : "Add Link"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="rounded-xl px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+                >
+                  Batal
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  });
+
+  // >>>>>>>>>>>>>>>>>>>> RETURN JSX (INI YANG KURANG) <<<<<<<<<<<<<<<<<<<<
+  return (
+    <div className="relative grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <section className="relative overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl dark:shadow-gray-800/25 bg-white dark:bg-gray-900 col-span-1 lg:col-span-2">
+        <div className="relative z-10 p-8">
+          <div className="mb-6 flex items-center justify-between">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 bg-gradient-to-r from-gray-800 to-blue-600 bg-clip-text text-transparent">
+              🔗 References Feed
+            </h3>
+          </div>
+
+          {loading || links === null ? (
+            <div className="text-sm text-gray-500 dark:text-gray-400">Loading…</div>
+          ) : (
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+              {renderLinks.length === 0 ? (
+                <li key="add-empty"><AddReferenceTile onAdd={addReference} /></li>
+              ) : (
+                <>
+                  <ReferenceItem
+                    key={renderLinks[0].id}
+                    row={renderLinks[0]}
+                    onDelete={handleDeleteReference}
+                    onSaveNote={handleSaveNote}
+                    deleting={!!deleting[renderLinks[0].id]}
+                  />
+                  <li key="add-tile"><AddReferenceTile onAdd={addReference} /></li>
+                  {renderLinks.slice(1).map((r) => (
+                    <ReferenceItem
+                      key={r.id}
+                      row={r}
+                      onDelete={handleDeleteReference}
+                      onSaveNote={handleSaveNote}
+                      deleting={!!deleting[r.id]}
+                    />
+                  ))}
+                </>
+              )}
+            </ul>
+          )}
+        </div>
+      </section>
+    </div>
   );
 }

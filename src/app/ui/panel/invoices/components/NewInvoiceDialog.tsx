@@ -1,6 +1,7 @@
+// E:\FMGIH\fmg-industry-hub\src\app\ui\panel\invoices\components\NewInvoiceDialog.tsx
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { calcTotals, clientSideNextInvoiceNo, defaultDueDate } from "@/lib/invoices/utils";
 
@@ -10,9 +11,21 @@ type Props = {
 };
 
 type LineItem = {
+  service_id: string | null;      // null = custom item
   description: string;
   qty: number;
   unit_price: number;
+};
+
+type ServiceRow = {
+  id: string;
+  service_key: string;
+  label: string;
+  group_name: "core" | "additional" | "business";
+  price: number;                  // cast to number on fetch
+  is_subscription: boolean;
+  is_active: boolean;
+  sort_order: number;
 };
 
 export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Element {
@@ -23,54 +36,157 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
   const [status, setStatus] = useState<"draft" | "unpaid">("unpaid");
   const [dueDays, setDueDays] = useState<number>(14);
   const [ppnPercent, setPpnPercent] = useState<number>(11); // contoh PPN 11%
-  const [items, setItems] = useState<LineItem[]>([
-    { description: "Service Fee", qty: 1, unit_price: 0 },
-  ]);
+
+  // Services katalog
+  const [services, setServices] = useState<ServiceRow[]>([]);
+  const [servicesLoading, setServicesLoading] = useState(true);
+  const [quickServiceId, setQuickServiceId] = useState<string>("");
+
+  // Items form
+  const [items, setItems] = useState<LineItem[]>([]);
   const [saving, setSaving] = useState(false);
 
   const totals = calcTotals(items, ppnPercent);
 
-  const addItem = (): void => setItems((prev) => [...prev, { description: "", qty: 1, unit_price: 0 }]);
+  // Load services (aktif)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setServicesLoading(true);
+      const { data, error } = await sb
+        .from("services")
+        .select("id,service_key,label,group_name,price,is_subscription,is_active,sort_order")
+        .eq("is_active", true)
+        .order("group_name", { ascending: true })
+        .order("sort_order", { ascending: true })
+        .returns<Array<Omit<ServiceRow, "price"> & { price: number | string }>>();
+      if (!cancelled) {
+        if (!error) {
+          setServices((data ?? []).map((s) => ({ ...s, price: Number(s.price) })));
+        }
+        setServicesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sb]);
+
+  const addItem = (): void =>
+    setItems((prev) => [
+      ...prev,
+      { service_id: null, description: "", qty: 1, unit_price: 0 },
+    ]);
+
+  const addItemFromService = (svc: ServiceRow): void =>
+    setItems((prev) => [
+      ...prev,
+      {
+        service_id: svc.id,
+        description: svc.label,
+        qty: 1,
+        unit_price: Number(svc.price),
+      },
+    ]);
+
   const updateItem = (idx: number, patch: Partial<LineItem>): void =>
     setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
-  const removeItem = (idx: number): void => setItems((prev) => prev.filter((_, i) => i !== idx));
+
+  const removeItem = (idx: number): void =>
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+
+  const onQuickAdd = (): void => {
+    const svc = services.find((s) => s.id === quickServiceId);
+    if (svc) {
+      addItemFromService(svc);
+      setQuickServiceId("");
+    }
+  };
 
   const submit = async (): Promise<void> => {
+    if (items.length === 0) {
+      // minimal 1 item
+      return;
+    }
     setSaving(true);
 
-    // tetap pakai fallback generator client
     let invoiceNo = clientSideNextInvoiceNo();
-
     try {
-      // kalau ada RPC di DB, pakai (kalau tidak ada, ini akan diabaikan)
+      // pakai generator server kalau ada
       const rpc = await sb.rpc("next_invoice_no");
-      if (!rpc.error && typeof rpc.data === "string") {
-        invoiceNo = rpc.data;
+      if (!rpc.error && typeof rpc.data === "string") invoiceNo = rpc.data;
+
+      // Tanggal
+      const due = defaultDueDate(dueDays);
+      const dueDate = due.toISOString().slice(0, 10);
+      const issueDate = new Date().toISOString().slice(0, 10);
+
+      // 1) Buat invoice dulu
+      const { data: inv, error: e1 } = await sb
+        .from("invoices")
+        .insert({
+          invoice_no: invoiceNo, // hapus baris ini jika DB sudah auto-generate
+          client_name: clientName || null,
+          client_email: clientEmail || null,
+          currency,
+          status,
+          amount_total: Number(totals.grand_total), // akan disinkron ulang oleh trigger
+          issue_date: issueDate,
+          due_date: dueDate,
+        })
+        .select("id")
+        .single<{ id: string }>();
+
+      if (e1 || !inv?.id) {
+        // eslint-disable-next-line no-console
+        console.error("[create invoice] failed:", e1);
+        setSaving(false);
+        return;
       }
 
-      // >>>> PENTING: kirim DATE sebagai 'YYYY-MM-DD'
-      const due = defaultDueDate(dueDays); // Date object
-      const dueDate = due.toISOString().slice(0, 10); // 'YYYY-MM-DD'
-      const issueDate = new Date().toISOString().slice(0, 10); // optional
+      const invoiceId = inv.id;
 
-      const { error } = await sb.from("invoices").insert({
-        invoice_no: invoiceNo,                // atau HAPUS baris ini kalau DB sudah ada default generator
-        client_name: clientName || null,
-        client_email: clientEmail || null,
-        currency,
-        status,                               // pastikan enum kamu punya 'draft' & 'unpaid'
-        amount_total: Number(totals.grand_total),
-        // created_at: biarkan default DB (hapus kalau mau rapi)
-        issue_date: issueDate,                // optional, tipe DATE
-        due_date: dueDate,                    // <<<<<< ganti dari due_at → due_date (DATE, 'YYYY-MM-DD')
-        // project_id: ... (kirim hanya kalau valid untuk hindari FK error)
-        // notes: ...
-      })
-      .select("*")
-      .single();
+      // 2) Insert items (snapshot) via RPC
+      //    - jika ada service_id => invoice_add_item_from_service (override label/price)
+      //    - jika custom item => invoice_add_custom_item
+      const jobs = items.map(async (it) => {
+        if (it.service_id) {
+          const { error } = await sb.rpc("invoice_add_item_from_service", {
+            p_invoice_id: invoiceId,
+            p_service_id: it.service_id,
+            p_qty: it.qty,
+            p_unit_price: it.unit_price,     // override agar snapshot sesuai input
+            p_description: it.description,   // override label kalau diubah
+            p_position: null,
+          });
+          if (error) throw error;
+          return;
+        }
 
-      if (!error) onCreated();
-      else console.error("[create invoice]", error); // biar kelihatan pesan PostgREST aslinya
+        const { error } = await sb.rpc("invoice_add_custom_item", {
+          p_invoice_id: invoiceId,
+          p_description: it.description,
+          p_qty: it.qty,
+          p_unit_price: it.unit_price,
+          p_position: null,
+        });
+        if (error) throw error;
+      });
+
+      // ini sekarang Promise<void>[], aman buat Promise.all
+
+      try {
+        await Promise.all(jobs);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error("[insert items] some failed:", e);
+        // (opsional) kamu bisa hapus invoice jika mau atomic:
+        // await sb.from("invoices").delete().eq("id", invoiceId);
+        setSaving(false);
+        return;
+      }
+
+      onCreated();
     } finally {
       setSaving(false);
     }
@@ -78,12 +194,15 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
-      <div className="w-full max-w-2xl rounded-2xl border bg-card p-6 shadow-xl">
+      <div className="w-full max-w-3xl rounded-2xl border bg-card p-6 shadow-xl">
         <div className="flex items-start justify-between">
           <h2 className="text-lg font-semibold">New Invoice</h2>
-          <button onClick={onClose} className="rounded-md px-2 py-1 text-sm hover:bg-muted">✕</button>
+          <button onClick={onClose} className="rounded-md px-2 py-1 text-sm hover:bg-muted">
+            ✕
+          </button>
         </div>
 
+        {/* Client & meta */}
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <label className="text-sm">Client Name</label>
@@ -145,36 +264,108 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
           </div>
         </div>
 
-        {/* Line items */}
+        {/* Quick add from Services */}
         <div className="mt-6">
           <div className="flex items-center justify-between">
             <h3 className="font-medium">Line Items</h3>
-            <button onClick={addItem} className="rounded-md border px-2 py-1 text-xs hover:bg-muted">+ Add Item</button>
+            <div className="flex items-center gap-2">
+              <select
+                value={quickServiceId}
+                onChange={(e) => setQuickServiceId(e.currentTarget.value)}
+                className="h-8 min-w-[220px] rounded-lg border bg-background px-2 text-sm"
+                disabled={servicesLoading}
+              >
+                <option value="">{servicesLoading ? "Loading services…" : "Choose service…"}</option>
+                {["core", "additional", "business"].map((grp) => (
+                  <optgroup key={grp} label={grp.toUpperCase()}>
+                    {services
+                      .filter((s) => s.group_name === grp)
+                      .map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.label} — {Number(s.price).toLocaleString("id-ID")}
+                        </option>
+                      ))}
+                  </optgroup>
+                ))}
+              </select>
+              <button
+                onClick={onQuickAdd}
+                disabled={!quickServiceId}
+                className="rounded-md border px-2 py-1 text-xs hover:bg-muted disabled:opacity-50"
+              >
+                + Add from Services
+              </button>
+              <button
+                onClick={addItem}
+                className="rounded-md border px-2 py-1 text-xs hover:bg-muted"
+              >
+                + Custom Item
+              </button>
+            </div>
           </div>
+
           <div className="mt-3 space-y-3">
             {items.map((it, idx) => (
               <div key={idx} className="grid grid-cols-12 items-center gap-2">
+                {/* service selector per-baris (opsional override) */}
+                <select
+                  value={it.service_id ?? ""}
+                  onChange={(e) => {
+                    const val = e.currentTarget.value;
+                    if (!val) {
+                      updateItem(idx, { service_id: null });
+                      return;
+                    }
+                    const svc = services.find((s) => s.id === val);
+                    if (svc) {
+                      updateItem(idx, {
+                        service_id: svc.id,
+                        description: svc.label,           // snapshot default label
+                        unit_price: Number(svc.price),    // snapshot default price
+                      });
+                    }
+                  }}
+                  className="col-span-3 rounded-lg border bg-background px-2 py-2 text-sm"
+                >
+                  <option value="">— Custom —</option>
+                  {["core", "additional", "business"].map((grp) => (
+                    <optgroup key={grp} label={grp.toUpperCase()}>
+                      {services
+                        .filter((s) => s.group_name === grp)
+                        .map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.label}
+                          </option>
+                        ))}
+                    </optgroup>
+                  ))}
+                </select>
+
                 <input
                   placeholder="Description"
                   value={it.description}
                   onChange={(e) => updateItem(idx, { description: e.currentTarget.value })}
-                  className="col-span-6 rounded-lg border bg-background px-3 py-2 text-sm"
+                  className="col-span-5 rounded-lg border bg-background px-3 py-2 text-sm"
                 />
                 <input
                   type="number"
                   min={1}
                   placeholder="Qty"
                   value={it.qty}
-                  onChange={(e) => updateItem(idx, { qty: parseInt(e.currentTarget.value || "1", 10) })}
-                  className="col-span-2 rounded-lg border bg-background px-3 py-2 text-sm"
+                  onChange={(e) =>
+                    updateItem(idx, { qty: parseInt(e.currentTarget.value || "1", 10) })
+                  }
+                  className="col-span-1 rounded-lg border bg-background px-3 py-2 text-sm"
                 />
                 <input
                   type="number"
                   min={0}
                   placeholder="Unit Price"
                   value={it.unit_price}
-                  onChange={(e) => updateItem(idx, { unit_price: parseFloat(e.currentTarget.value || "0") })}
-                  className="col-span-3 rounded-lg border bg-background px-3 py-2 text-sm"
+                  onChange={(e) =>
+                    updateItem(idx, { unit_price: parseFloat(e.currentTarget.value || "0") })
+                  }
+                  className="col-span-2 rounded-lg border bg-background px-3 py-2 text-sm"
                 />
                 <button
                   onClick={() => removeItem(idx)}
@@ -197,16 +388,18 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
             <div className="text-xs text-muted-foreground">Tax ({ppnPercent}%)</div>
             <div className="text-sm font-medium">{totals.tax.toLocaleString("id-ID")}</div>
           </div>
-          <div className="rounded-lg border p-3">
+            <div className="rounded-lg border p-3">
             <div className="text-xs text-muted-foreground">Grand Total</div>
             <div className="text-sm font-semibold">{totals.grand_total.toLocaleString("id-ID")}</div>
           </div>
         </div>
 
         <div className="mt-6 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-lg border px-4 py-2 text-sm hover:bg-muted">Cancel</button>
+          <button onClick={onClose} className="rounded-lg border px-4 py-2 text-sm hover:bg-muted">
+            Cancel
+          </button>
           <button
-            disabled={saving}
+            disabled={saving || items.length === 0}
             onClick={() => void submit()}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
           >

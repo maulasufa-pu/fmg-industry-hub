@@ -16,24 +16,35 @@ type InvoiceRow = {
   currency: string | null;
   status: InvoiceStatus;
   created_at: string | null;
-  due_at: string | null;
+  due_date: string | null;
   payment_url: string | null;
 };
 
-type InvoiceItemRow = {
+export type ServiceRow = {
+  id: string;
+  service_key: string;
+  label: string;
+  group_name: "core" | "additional" | "business";
+  price: number; // numeric => cast to number saat read
+  is_subscription: boolean;
+  is_active: boolean;
+  sort_order: number;
+};
+
+export type InvoiceItemRow = {
   id: string;
   invoice_id: string;
+  service_id: string | null;
   description: string;
   qty: number;
   unit_price: number;
-  // optional columns (abaikan jika tidak ada di DB)
-  position?: number | null;
+  position: number;
 };
 
 const INVOICE_COLS =
-  "id,invoice_no,client_name,client_email,amount_total,currency,status,created_at,due_at,payment_url";
+  "id,invoice_no,client_name,client_email,amount_total,currency,status,created_at,issue_date,due_date,notes,payment_url";
 const ITEM_COLS =
-  "id,invoice_id,description,qty,unit_price,position";
+  "id,invoice_id,service_id,description,qty,unit_price,position";
 
 declare global {
   interface Window {
@@ -42,6 +53,104 @@ declare global {
     };
   }
 }
+
+/* ============================
+ * Products (Services) helpers
+ * ============================ */
+
+async function fetchServices(
+  sb: ReturnType<typeof getSupabaseClient>
+): Promise<ServiceRow[]> {
+  const { data, error } = await sb
+    .from("services")
+    .select(
+      "id,service_key,label,group_name,price,is_subscription,is_active,sort_order"
+    )
+    .eq("is_active", true)
+    .order("group_name", { ascending: true })
+    .order("sort_order", { ascending: true })
+    .returns<
+      Array<
+        Omit<ServiceRow, "price"> & {
+          price: number | string;
+        }
+      >
+    >();
+
+  if (error) throw error;
+  return (data ?? []).map((s) => ({ ...s, price: Number(s.price) }));
+}
+
+// Tambah dari service (via RPC)
+async function addItemFromService(
+  sb: ReturnType<typeof getSupabaseClient>,
+  invoiceId: string,
+  serviceId: string,
+  qty = 1,
+  overridePrice?: number,
+  overrideLabel?: string
+): Promise<InvoiceItemRow> {
+  const { data, error } = await sb.rpc("invoice_add_item_from_service", {
+    p_invoice_id: invoiceId,
+    p_service_id: serviceId,
+    p_qty: qty,
+    p_unit_price: overridePrice ?? null,
+    p_description: overrideLabel ?? null,
+    p_position: null,
+  });
+
+  if (error) throw error;
+
+  // Ketatkan tipe hasil RPC
+  const d = data as Record<string, unknown>;
+  return {
+    id: String(d.id),
+    invoice_id: String(d.invoice_id),
+    service_id: (d.service_id as string | null) ?? null,
+    description: String(d.description),
+    qty: Number(d.qty),
+    unit_price: Number(d.unit_price),
+    position: Number(d.position ?? 0),
+  };
+}
+
+// Edit inline (qty / price / description / position)
+async function updateItem(
+  sb: ReturnType<typeof getSupabaseClient>,
+  itemId: string,
+  patch: Partial<
+    Pick<InvoiceItemRow, "qty" | "unit_price" | "description" | "position">
+  >
+): Promise<void> {
+  const { error } = await sb.from("invoice_items").update(patch).eq("id", itemId);
+  if (error) throw error;
+}
+
+// Custom item (tanpa service)
+async function addCustomItem(
+  sb: ReturnType<typeof getSupabaseClient>,
+  invoiceId: string,
+  description: string,
+  qty: number,
+  unitPrice: number
+): Promise<void> {
+  const payload: Omit<
+    InvoiceItemRow,
+    "id" | "service_id" | "position"
+  > & { service_id?: null; position?: number } = {
+    invoice_id: invoiceId,
+    description,
+    qty,
+    unit_price: unitPrice,
+  };
+
+  const { error } = await sb.from("invoice_items").insert(payload);
+  if (error) throw error;
+}
+
+/* ============================
+ * Midtrans loader
+ * ============================ */
 
 function useSnapLoader(clientKey: string | undefined, isProduction: boolean) {
   useEffect(() => {
@@ -58,6 +167,10 @@ function useSnapLoader(clientKey: string | undefined, isProduction: boolean) {
     };
   }, [clientKey, isProduction]);
 }
+
+/* ============================
+ * Component
+ * ============================ */
 
 export default function InvoiceDetailClient({
   invoiceId,
@@ -76,10 +189,22 @@ export default function InvoiceDetailClient({
 
   const load = useCallback(async (): Promise<void> => {
     setLoading(true);
-    const [{ data: invData }, { data: itemsData }] = await Promise.all([
-      sb.from("invoices").select(INVOICE_COLS).eq("id", invoiceId).maybeSingle<InvoiceRow>(),
-      sb.from("invoice_items").select(ITEM_COLS).eq("invoice_id", invoiceId).order("position", { ascending: true }),
-    ]);
+
+    const invQ = sb
+      .from("invoices")
+      .select(INVOICE_COLS)
+      .eq("id", invoiceId)
+      .maybeSingle<InvoiceRow>();
+
+    const itemsQ = sb
+      .from("invoice_items")
+      .select(ITEM_COLS)
+      .eq("invoice_id", invoiceId)
+      .order("position", { ascending: true })
+      .returns<InvoiceItemRow[]>();
+
+    const [{ data: invData }, { data: itemsData }] = await Promise.all([invQ, itemsQ]);
+
     setInv(invData ?? null);
     setItems(itemsData ?? null);
     setLoading(false);
@@ -88,6 +213,36 @@ export default function InvoiceDetailClient({
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Realtime: invoice_items & invoices
+  useEffect(() => {
+    const ch = sb
+      .channel(`inv-${invoiceId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "invoice_items",
+          filter: `invoice_id=eq.${invoiceId}`,
+        },
+        () => {
+          void load();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "invoices", filter: `id=eq.${invoiceId}` },
+        () => {
+          void load();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void sb.removeChannel(ch);
+    };
+  }, [sb, invoiceId, load]);
 
   const markPaid = async (): Promise<void> => {
     if (!inv) return;
@@ -153,7 +308,7 @@ export default function InvoiceDetailClient({
     );
   }
 
-  const overdue = isOverdue(inv.status, inv.due_at);
+  const overdue = isOverdue(inv.status, inv.due_date);
   const badgeClass = nextStatusColor(inv.status, overdue);
 
   return (
@@ -167,19 +322,19 @@ export default function InvoiceDetailClient({
           <div className="mt-2 flex flex-wrap gap-2 text-sm text-muted-foreground">
             <span>
               Created:{" "}
-              {inv.created_at
-                ? new Date(inv.created_at).toLocaleDateString("id-ID")
-                : "-"}
+              {inv.created_at ? new Date(inv.created_at).toLocaleDateString("id-ID") : "-"}
             </span>
             <span>•</span>
             <span>
               Due:{" "}
-              {inv.due_at
-                ? new Date(inv.due_at).toLocaleDateString("id-ID")
-                : "-"}
+              {inv.due_date ? new Date(inv.due_date).toLocaleDateString("id-ID") : "-"}
             </span>
             <span>•</span>
-            <span className={badgeClass + " inline-flex items-center rounded-full px-2 py-0.5 capitalize"}>
+            <span
+              className={
+                badgeClass + " inline-flex items-center rounded-full px-2 py-0.5 capitalize"
+              }
+            >
               {overdue && inv.status === "unpaid" ? "overdue" : inv.status}
             </span>
           </div>
@@ -213,10 +368,7 @@ export default function InvoiceDetailClient({
               </button>
             </>
           )}
-          <Link
-            href="/admin/invoices"
-            className="h-9 rounded-md border px-3 text-sm hover:bg-muted"
-          >
+          <Link href="/admin/invoices" className="h-9 rounded-md border px-3 text-sm hover:bg-muted">
             Back
           </Link>
         </div>
@@ -226,20 +378,16 @@ export default function InvoiceDetailClient({
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="text-sm text-muted-foreground">Client</div>
-          <div className="mt-1 text-base font-medium">
-            {inv.client_name ?? "-"}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            {inv.client_email ?? ""}
-          </div>
+          <div className="mt-1 text-base font-medium">{inv.client_name ?? "-"}</div>
+          <div className="text-xs text-muted-foreground">{inv.client_email ?? ""}</div>
         </div>
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="text-sm text-muted-foreground">Amount</div>
           <div className="mt-1 text-xl font-semibold">
             {inv.amount_total != null
-              ? `${(inv.currency ?? "IDR").toUpperCase()} ${Number(
-                  inv.amount_total
-                ).toLocaleString("id-ID")}`
+              ? `${(inv.currency ?? "IDR").toUpperCase()} ${Number(inv.amount_total).toLocaleString(
+                  "id-ID"
+                )}`
               : "-"}
           </div>
         </div>
@@ -264,9 +412,7 @@ export default function InvoiceDetailClient({
 
       {/* Line Items */}
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-        <div className="border-b bg-muted/40 px-4 py-3 font-medium">
-          Items
-        </div>
+        <div className="border-b bg-muted/40 px-4 py-3 font-medium">Items</div>
         {items && items.length > 0 ? (
           <table className="w-full text-sm">
             <thead className="bg-muted/60 text-left">
@@ -284,21 +430,15 @@ export default function InvoiceDetailClient({
                   <tr key={it.id}>
                     <td className="p-3">{it.description}</td>
                     <td className="p-3">{it.qty}</td>
-                    <td className="p-3">
-                      {formatIDRCurrency(Number(it.unit_price) || 0)}
-                    </td>
-                    <td className="p-3">
-                      {formatIDRCurrency(total)}
-                    </td>
+                    <td className="p-3">{formatIDRCurrency(Number(it.unit_price) || 0)}</td>
+                    <td className="p-3">{formatIDRCurrency(total)}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         ) : (
-          <div className="px-4 py-6 text-sm text-muted-foreground">
-            No items.
-          </div>
+          <div className="px-4 py-6 text-sm text-muted-foreground">No items.</div>
         )}
       </div>
     </div>

@@ -1,3 +1,4 @@
+// E:\FMGIH\fmg-industry-hub\src\app\ui\panel\invoices\page.tsx
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -15,14 +16,28 @@ type InvoiceRow = {
   client_email?: string | null;
   amount_total: number | null;
   currency: string | null;
-  status: "draft" | "unpaid" | "paid" | "cancelled";
+  status: InvoiceStatus;
   created_at: string | null;
-  due_date: string | null;         // ⬅️ ganti dari due_at → due_date (DATE)
+  due_date: string | null; // DATE
   payment_url?: string | null;
 };
 
-const COLS =
+type InvoiceItemRow = {
+  id: string;
+  invoice_id: string;
+  service_id: string | null;
+  description: string;
+  qty: number;
+  unit_price: number;
+  position: number;
+};
+
+type InvoiceWithItems = InvoiceRow & { invoice_items: InvoiceItemRow[] };
+
+const COLS_INVOICES =
   "id,invoice_no,client_name,client_email,amount_total,currency,status,created_at,due_date,payment_url";
+const COLS_ITEMS = "invoice_items(id,service_id,description,qty,unit_price,position)";
+const SELECT_INVOICES = `${COLS_INVOICES},${COLS_ITEMS}`;
 
 declare global {
   interface Window {
@@ -53,41 +68,64 @@ export default function AdminInvoicesPage(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<InvoiceStatus | "all">("unpaid");
   const [q, setQ] = useState("");
-  const [rows, setRows] = useState<InvoiceRow[]>([]);
+  const [rows, setRows] = useState<InvoiceWithItems[]>([]);
   const [openNew, setOpenNew] = useState(false);
 
   const MIDTRANS_CLIENT_KEY = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY;
   const MIDTRANS_IS_PRODUCTION =
     (process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION ?? "false") === "true";
   useSnapLoader(MIDTRANS_CLIENT_KEY, MIDTRANS_IS_PRODUCTION);
-  
+
   const load = async (): Promise<void> => {
     setLoading(true);
 
-    // MULAI tanpa .returns — biar tetap FilterBuilder (punya eq/or)
-    let qb = sb.from("invoices").select(COLS);
+    let qb = sb.from("invoices").select(SELECT_INVOICES);
 
     if (tab !== "all") {
-      qb = qb.eq("status", tab); // ✅ benar: (kolom, nilai)
+      qb = qb.eq("status", tab);
     }
 
     if (q.trim()) {
       const like = `%${q.trim()}%`;
-      qb = qb.or(`invoice_no.ilike.${like},client_name.ilike.${like}`); // ✅ tetap di FilterBuilder
+      // NOTE: filter item description full-text di list bakal ribet (perlu exists di server/RPC),
+      // jadi disini tetep filter nomor & client; detail item kelihatan di kolom Items.
+      qb = qb.or(`invoice_no.ilike.${like},client_name.ilike.${like}`);
     }
 
-    // .order di PALING AKHIR, lalu kalau mau baru ketik hasilnya
-    const { data, error } = await qb.order("created_at", { ascending: false });
+    const { data, error } = await qb
+      .order("created_at", { ascending: false })
+      .returns<InvoiceWithItems[]>();
 
-    if (!error) setRows((data ?? []) as InvoiceRow[]);
+    if (!error) setRows(data ?? []);
     setLoading(false);
   };
 
-
+  // initial + re-run saat tab/q berubah
   useEffect(() => {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, q]);
+
+  // Realtime: reload saat invoices ATAU invoice_items berubah
+  useEffect(() => {
+    const ch = sb
+      .channel("invoices-list")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "invoices" },
+        () => void load()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "invoice_items" },
+        () => void load()
+      )
+      .subscribe();
+    return () => {
+      void sb.removeChannel(ch);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sb, tab, q]);
 
   const markPaid = async (id: string): Promise<void> => {
     const { error } = await sb.from("invoices").update({ status: "paid" }).eq("id", id);
@@ -107,7 +145,6 @@ export default function AdminInvoicesPage(): React.JSX.Element {
     });
     if (!res.ok) return;
     const json: { token: string; redirect_url: string } = await res.json();
-    // Prefer Snap popup
     if (window.snap) {
       window.snap.pay(json.token, {
         onSuccess: async () => await load(),
@@ -116,14 +153,12 @@ export default function AdminInvoicesPage(): React.JSX.Element {
         onClose: () => void 0,
       });
     } else {
-      // Fallback redirect
       window.location.href = json.redirect_url;
     }
   };
 
   const sendReminder = async (id: string): Promise<void> => {
-    // Implementasikan via Edge Function/API route untuk email/WA jika perlu.
-    // Di sini hanya placeholder:
+    // TODO: Edge Function / API route utk email/WA
     // eslint-disable-next-line no-console
     console.log("send reminder -> invoice:", id);
   };
@@ -139,7 +174,7 @@ export default function AdminInvoicesPage(): React.JSX.Element {
   // Stats
   const totalUnpaid = rows
     .filter((r) => r.status === "unpaid")
-    .reduce((acc, r) => acc + (r.amount_total ?? 0), 0);
+    .reduce((acc, r) => acc + (Number(r.amount_total) || 0), 0);
   const overdueCount = rows.filter((r) => isOverdue(r.status, r.due_date)).length;
   const paidCount = rows.filter((r) => r.status === "paid").length;
 
@@ -175,9 +210,7 @@ export default function AdminInvoicesPage(): React.JSX.Element {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="text-sm text-muted-foreground">Total Unpaid</div>
-          <div className="mt-1 text-xl font-semibold">
-            {formatIDRCurrency(totalUnpaid)}
-          </div>
+          <div className="mt-1 text-xl font-semibold">{formatIDRCurrency(totalUnpaid)}</div>
         </div>
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="text-sm text-muted-foreground">Overdue</div>
@@ -224,6 +257,7 @@ export default function AdminInvoicesPage(): React.JSX.Element {
               <tr>
                 <th className="p-3">Invoice</th>
                 <th className="p-3">Client</th>
+                <th className="p-3">Items</th>
                 <th className="p-3">Amount</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Created</th>
@@ -235,17 +269,50 @@ export default function AdminInvoicesPage(): React.JSX.Element {
               {rows.map((r) => {
                 const overdue = isOverdue(r.status, r.due_date);
                 const statusClass = nextStatusColor(r.status, overdue);
+                const items = r.invoice_items ?? [];
                 return (
                   <tr key={r.id} className="hover:bg-muted/30">
                     <td className="p-3 font-medium">{r.invoice_no}</td>
                     <td className="p-3">{r.client_name ?? "-"}</td>
+
+                    {/* Items preview */}
+                    <td className="p-3">
+                      {items.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {items.slice(0, 2).map((it) => (
+                            <span
+                              key={it.id}
+                              className="rounded-full border px-2 py-0.5 text-xs"
+                              title={`${it.description} × ${it.qty} @ ${formatIDRCurrency(Number(it.unit_price) || 0)}`}
+                            >
+                              {it.description}
+                            </span>
+                          ))}
+                          {items.length > 2 && (
+                            <span className="text-xs text-muted-foreground">
+                              +{items.length - 2} more
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+
                     <td className="p-3">
                       {r.amount_total != null
-                        ? `${(r.currency ?? "IDR").toUpperCase()} ${Number(r.amount_total).toLocaleString("id-ID")}`
+                        ? `${(r.currency ?? "IDR").toUpperCase()} ${Number(r.amount_total).toLocaleString(
+                            "id-ID"
+                          )}`
                         : "-"}
                     </td>
                     <td className="p-3">
-                      <span className={statusClass + " inline-flex items-center rounded-full px-2 py-0.5 text-xs capitalize"}>
+                      <span
+                        className={
+                          statusClass +
+                          " inline-flex items-center rounded-full px-2 py-0.5 text-xs capitalize"
+                        }
+                      >
                         {overdue && r.status === "unpaid" ? "overdue" : r.status}
                       </span>
                     </td>

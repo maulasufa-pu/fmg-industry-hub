@@ -36,7 +36,9 @@ type InvoiceWithItems = InvoiceRow & { invoice_items: InvoiceItemRow[] };
 
 const COLS_INVOICES =
   "id,invoice_no,client_name,client_email,amount_total,currency,status,created_at,due_date,payment_url";
-const COLS_ITEMS = "invoice_items(id,service_id,description,qty,unit_price,position)";
+// 🔧 tambahkan invoice_id supaya cocok dengan tipe
+const COLS_ITEMS =
+  "invoice_items(id,invoice_id,service_id,description,qty,unit_price,position)";
 const SELECT_INVOICES = `${COLS_INVOICES},${COLS_ITEMS}`;
 
 declare global {
@@ -87,8 +89,6 @@ export default function AdminInvoicesPage(): React.JSX.Element {
 
     if (q.trim()) {
       const like = `%${q.trim()}%`;
-      // NOTE: filter item description full-text di list bakal ribet (perlu exists di server/RPC),
-      // jadi disini tetep filter nomor & client; detail item kelihatan di kolom Items.
       qb = qb.or(`invoice_no.ilike.${like},client_name.ilike.${like}`);
     }
 
@@ -96,7 +96,16 @@ export default function AdminInvoicesPage(): React.JSX.Element {
       .order("created_at", { ascending: false })
       .returns<InvoiceWithItems[]>();
 
-    if (!error) setRows(data ?? []);
+    if (!error) {
+      // Urutkan nested items by position (client-side supaya aman di semua versi supabase-js)
+      const normalized = (data ?? []).map((r) => ({
+        ...r,
+        invoice_items: [...(r.invoice_items ?? [])].sort(
+          (a, b) => Number(a.position ?? 0) - Number(b.position ?? 0)
+        ),
+      }));
+      setRows(normalized);
+    }
     setLoading(false);
   };
 
@@ -269,7 +278,10 @@ export default function AdminInvoicesPage(): React.JSX.Element {
               {rows.map((r) => {
                 const overdue = isOverdue(r.status, r.due_date);
                 const statusClass = nextStatusColor(r.status, overdue);
-                const items = r.invoice_items ?? [];
+                // sort nested items by position sebelum render
+                const items = [...(r.invoice_items ?? [])].sort(
+                  (a, b) => Number(a.position ?? 0) - Number(b.position ?? 0)
+                );
                 return (
                   <tr key={r.id} className="hover:bg-muted/30">
                     <td className="p-3 font-medium">{r.invoice_no}</td>

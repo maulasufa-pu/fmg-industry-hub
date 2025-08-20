@@ -2,9 +2,11 @@ export function formatIDRCurrency(amount: number): string {
   return `IDR ${amount.toLocaleString("id-ID")}`;
 }
 
-export function isOverdue(status: "draft" | "unpaid" | "paid" | "cancelled", due_at: string | null): boolean {
-  if (status !== "unpaid" || !due_at) return false;
-  return new Date(due_at).getTime() < Date.now();
+export function isOverdue(status: string, due_date: string | null): boolean {
+  if (status !== "unpaid" || !due_date) return false;
+  // DATE tanpa waktu → anggap akhir hari lokal
+  const d = new Date(due_date + "T23:59:59");
+  return d.getTime() < Date.now();
 }
 
 export function nextStatusColor(

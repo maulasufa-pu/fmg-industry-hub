@@ -15,14 +15,14 @@ type InvoiceRow = {
   client_email?: string | null;
   amount_total: number | null;
   currency: string | null;
-  status: InvoiceStatus;
+  status: "draft" | "unpaid" | "paid" | "cancelled";
   created_at: string | null;
-  due_at: string | null;
+  due_date: string | null;         // ⬅️ ganti dari due_at → due_date (DATE)
   payment_url?: string | null;
 };
 
 const COLS =
-  "id,invoice_no,client_name,client_email,amount_total,currency,status,created_at,due_at,payment_url";
+  "id,invoice_no,client_name,client_email,amount_total,currency,status,created_at,due_date,payment_url";
 
 declare global {
   interface Window {
@@ -60,7 +60,7 @@ export default function AdminInvoicesPage(): React.JSX.Element {
   const MIDTRANS_IS_PRODUCTION =
     (process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION ?? "false") === "true";
   useSnapLoader(MIDTRANS_CLIENT_KEY, MIDTRANS_IS_PRODUCTION);
-
+  
   const load = async (): Promise<void> => {
     setLoading(true);
 
@@ -140,7 +140,7 @@ export default function AdminInvoicesPage(): React.JSX.Element {
   const totalUnpaid = rows
     .filter((r) => r.status === "unpaid")
     .reduce((acc, r) => acc + (r.amount_total ?? 0), 0);
-  const overdueCount = rows.filter((r) => isOverdue(r.status, r.due_at)).length;
+  const overdueCount = rows.filter((r) => isOverdue(r.status, r.due_date)).length;
   const paidCount = rows.filter((r) => r.status === "paid").length;
 
   return (
@@ -233,7 +233,7 @@ export default function AdminInvoicesPage(): React.JSX.Element {
             </thead>
             <tbody className="divide-y">
               {rows.map((r) => {
-                const overdue = isOverdue(r.status, r.due_at);
+                const overdue = isOverdue(r.status, r.due_date);
                 const statusClass = nextStatusColor(r.status, overdue);
                 return (
                   <tr key={r.id} className="hover:bg-muted/30">
@@ -253,7 +253,7 @@ export default function AdminInvoicesPage(): React.JSX.Element {
                       {r.created_at ? new Date(r.created_at).toLocaleDateString("id-ID") : "-"}
                     </td>
                     <td className="p-3">
-                      {r.due_at ? new Date(r.due_at).toLocaleDateString("id-ID") : "-"}
+                      {r.due_date ? new Date(r.due_date).toLocaleDateString("id-ID") : "-"}
                     </td>
                     <td className="p-3">
                       <div className="flex justify-end gap-2">

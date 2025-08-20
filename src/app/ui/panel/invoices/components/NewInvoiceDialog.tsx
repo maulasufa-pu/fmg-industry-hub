@@ -37,28 +37,40 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
 
   const submit = async (): Promise<void> => {
     setSaving(true);
-    // Jika punya RPC di DB (next_invoice_no), pakai itu untuk menghindari race.
-    // Fallback ke clientSideNextInvoiceNo jika RPC tidak tersedia.
+
+    // tetap pakai fallback generator client
     let invoiceNo = clientSideNextInvoiceNo();
 
     try {
+      // kalau ada RPC di DB, pakai (kalau tidak ada, ini akan diabaikan)
       const rpc = await sb.rpc("next_invoice_no");
       if (!rpc.error && typeof rpc.data === "string") {
         invoiceNo = rpc.data;
       }
-      // simpan invoice
-      const due = defaultDueDate(dueDays);
+
+      // >>>> PENTING: kirim DATE sebagai 'YYYY-MM-DD'
+      const due = defaultDueDate(dueDays); // Date object
+      const dueDate = due.toISOString().slice(0, 10); // 'YYYY-MM-DD'
+      const issueDate = new Date().toISOString().slice(0, 10); // optional
+
       const { error } = await sb.from("invoices").insert({
-        invoice_no: invoiceNo,
+        invoice_no: invoiceNo,                // atau HAPUS baris ini kalau DB sudah ada default generator
         client_name: clientName || null,
         client_email: clientEmail || null,
         currency,
-        status,
-        amount_total: totals.grand_total,
-        created_at: new Date().toISOString(),
-        due_at: due.toISOString(),
-      });
+        status,                               // pastikan enum kamu punya 'draft' & 'unpaid'
+        amount_total: Number(totals.grand_total),
+        // created_at: biarkan default DB (hapus kalau mau rapi)
+        issue_date: issueDate,                // optional, tipe DATE
+        due_date: dueDate,                    // <<<<<< ganti dari due_at → due_date (DATE, 'YYYY-MM-DD')
+        // project_id: ... (kirim hanya kalau valid untuk hindari FK error)
+        // notes: ...
+      })
+      .select("*")
+      .single();
+
       if (!error) onCreated();
+      else console.error("[create invoice]", error); // biar kelihatan pesan PostgREST aslinya
     } finally {
       setSaving(false);
     }

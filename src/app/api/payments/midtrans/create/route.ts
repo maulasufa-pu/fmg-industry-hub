@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import midtransClient from "midtrans-client";
 import { createClient } from "@supabase/supabase-js";
 
 type InvoiceStatus = "draft" | "unpaid" | "paid" | "cancelled";
@@ -16,6 +15,8 @@ type InvoiceRow = {
 
 export const runtime = "nodejs";        // pastikan Node runtime (bukan Edge)
 export const dynamic = "force-dynamic"; // no caching
+
+const midtransClient = require("midtrans-client");
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;

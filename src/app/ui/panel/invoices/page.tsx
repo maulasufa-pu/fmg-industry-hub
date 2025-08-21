@@ -13,6 +13,7 @@ type InvoiceStatus = "draft" | "unpaid" | "paid" | "cancelled";
 type InvoiceRow = {
   id: string;
   invoice_no: string;
+  client_id: string | null;          // ⬅️ NEW
   client_name: string | null;
   client_email?: string | null;
   amount_total: number | null;
@@ -35,8 +36,13 @@ type InvoiceItemRow = {
 
 type InvoiceWithItems = InvoiceRow & { invoice_items: InvoiceItemRow[] };
 
-const COLS_INVOICES = "id,invoice_no,client_name,client_email,amount_total,currency,status,created_at,due_date,payment_url";
-const COLS_ITEMS = "invoice_items!invoice_items_invoice_id_fkey(id,invoice_id,service_id,description,qty,unit_price,position)";
+const COLS_INVOICES =
+  // ⬇️ tambahkan client_id
+  "id,invoice_no,client_id,client_name,client_email,amount_total,currency,status,created_at,due_date,payment_url";
+
+const COLS_ITEMS =
+  "invoice_items!invoice_items_invoice_id_fkey(id,invoice_id,service_id,description,qty,unit_price,position)";
+
 const SELECT_INVOICES = `${COLS_INVOICES},${COLS_ITEMS}`;
 
 declare global {
@@ -76,7 +82,6 @@ export default function InvoicesPage(): React.JSX.Element {
       const { data } = await sb.auth.getUser();
       setMe(data.user ?? null);
 
-      // optional admin check (rpc should use auth.uid() internally)
       try {
         const r = await sb.rpc("is_admin");
         setIsAdmin(r.data === true && !r.error);
@@ -98,21 +103,20 @@ export default function InvoicesPage(): React.JSX.Element {
       qb = qb.or(`invoice_no.ilike.${like},client_name.ilike.${like}`);
     }
 
-    // If client (not admin), restrict to invoices addressed to them (manual mode)
-    if (!isAdmin && me?.email) {
-      qb = qb.eq("client_email", me.email);
+    // ⬇️ FILTER BERDASARKAN client_id == auth user id (untuk client)
+    if (!isAdmin && me?.id) {
+      qb = qb.eq("client_id", me.id);
     }
 
     const { data, error } = await qb
       .order("created_at", { ascending: false })
-      .order("position", { ascending: true, foreignTable: "invoice_items" })
-      .returns<InvoiceWithItems[]>();
+      .order("position", { ascending: true, foreignTable: "invoice_items" });
 
-    if (!error) setRows(data ?? []);
+    if (!error) setRows((data ?? []) as InvoiceWithItems[]);
     setLoading(false);
   };
 
-  useEffect(() => { void load(); /* eslint-disable-next-line */ }, [tab, q, isAdmin, me?.email]);
+  useEffect(() => { void load(); /* eslint-disable-next-line */ }, [tab, q, isAdmin, me?.id]);
 
   useEffect(() => {
     const ch = sb
@@ -122,7 +126,7 @@ export default function InvoicesPage(): React.JSX.Element {
       .subscribe();
     return () => { void sb.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sb, tab, q, isAdmin, me?.email]);
+  }, [sb, tab, q, isAdmin, me?.id]);
 
   const markPaid = async (id: string): Promise<void> => {
     if (!isAdmin) return;
@@ -158,9 +162,7 @@ export default function InvoicesPage(): React.JSX.Element {
 
   const sendReminder = async (id: string): Promise<void> => {
     if (!isAdmin) return;
-    const { error } = await sb.functions.invoke("send_invoice_reminder", {
-      body: { invoiceId: id },
-    });
+    const { error } = await sb.functions.invoke("send_invoice_reminder", { body: { invoiceId: id } });
     if (error) {
       console.error("send reminder error", error);
       alert("Gagal mengirim reminder.");

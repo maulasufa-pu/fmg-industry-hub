@@ -1,3 +1,5 @@
+//E:\FMGIH\fmg-industry-hub\src\app\api\payments\midtrans\route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import midtransClient from "midtrans-client";
 import { createClient } from "@supabase/supabase-js";
@@ -12,6 +14,8 @@ type InvoiceRow = {
   currency: string | null;
   status: InvoiceStatus;
 };
+
+export const runtime = "nodejs";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;

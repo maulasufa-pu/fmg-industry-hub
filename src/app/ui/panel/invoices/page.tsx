@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { NewInvoiceDialog } from "./components/NewInvoiceDialog";
 import { formatIDRCurrency, isOverdue, nextStatusColor } from "@/lib/invoices/utils";
+import type { User } from "@supabase/supabase-js";
 
 type InvoiceStatus = "draft" | "unpaid" | "paid" | "cancelled";
 
@@ -34,67 +35,55 @@ type InvoiceItemRow = {
 
 type InvoiceWithItems = InvoiceRow & { invoice_items: InvoiceItemRow[] };
 
-const COLS_INVOICES =
-  "id,invoice_no,client_name,client_email,amount_total,currency,status,created_at,due_date,payment_url";
-
-// gunakan nama FK yang ada di DB kamu (umumnya: invoice_items_invoice_id_fkey)
-const COLS_ITEMS =
-  "invoice_items!invoice_items_invoice_id_fkey(id,invoice_id,service_id,description,qty,unit_price,position)";
-
+const COLS_INVOICES = "id,invoice_no,client_name,client_email,amount_total,currency,status,created_at,due_date,payment_url";
+const COLS_ITEMS = "invoice_items!invoice_items_invoice_id_fkey(id,invoice_id,service_id,description,qty,unit_price,position)";
 const SELECT_INVOICES = `${COLS_INVOICES},${COLS_ITEMS}`;
 
 declare global {
-  interface Window {
-    snap?: {
-      pay: (token: string, options?: Record<string, unknown>) => void;
-    };
-  }
+  interface Window { snap?: { pay: (token: string, options?: Record<string, unknown>) => void }; }
 }
 
 function useSnapLoader(clientKey: string | undefined, isProduction: boolean) {
   useEffect(() => {
     if (!clientKey) return;
     const s = document.createElement("script");
-    s.src = isProduction
-      ? "https://app.midtrans.com/snap/snap.js"
-      : "https://sandbox.midtrans.com/snap/snap.js";
+    s.src = isProduction ? "https://app.midtrans.com/snap/snap.js" : "https://sandbox.midtrans.com/snap/snap.js";
     s.async = true;
     s.setAttribute("data-client-key", clientKey);
     document.body.appendChild(s);
-    return () => {
-      document.body.removeChild(s);
-    };
+    return () => { document.body.removeChild(s); };
   }, [clientKey, isProduction]);
 }
 
-export default function AdminInvoicesPage(): React.JSX.Element {
+export default function InvoicesPage(): React.JSX.Element {
   const sb = useMemo(() => getSupabaseClient(), []);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<InvoiceStatus | "all">("unpaid");
   const [q, setQ] = useState("");
   const [rows, setRows] = useState<InvoiceWithItems[]>([]);
   const [openNew, setOpenNew] = useState(false);
+
+  const [me, setMe] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   const MIDTRANS_CLIENT_KEY = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY;
-  const MIDTRANS_IS_PRODUCTION =
-    (process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION ?? "false") === "true";
+  const MIDTRANS_IS_PRODUCTION = (process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION ?? "false") === "true";
   useSnapLoader(MIDTRANS_CLIENT_KEY, MIDTRANS_IS_PRODUCTION);
 
-  // cek role admin dari RPC (sesuaikan nama function bila berbeda)
+  // who am I
   useEffect(() => {
-    let cancelled = false;
     (async () => {
+      const { data } = await sb.auth.getUser();
+      setMe(data.user ?? null);
+
+      // optional admin check (rpc should use auth.uid() internally)
       try {
-        const { data, error } = await sb.rpc("is_admin"); // versi tanpa argumen
-        if (!cancelled) setIsAdmin(Boolean(!error && data === true));
+        const r = await sb.rpc("is_admin");
+        setIsAdmin(r.data === true && !r.error);
       } catch {
-        if (!cancelled) setIsAdmin(false);
+        setIsAdmin(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
   }, [sb]);
 
   const load = async (): Promise<void> => {
@@ -102,13 +91,16 @@ export default function AdminInvoicesPage(): React.JSX.Element {
 
     let qb = sb.from("invoices").select(SELECT_INVOICES);
 
-    if (tab !== "all") {
-      qb = qb.eq("status", tab);
-    }
+    if (tab !== "all") qb = qb.eq("status", tab);
 
     if (q.trim()) {
       const like = `%${q.trim()}%`;
       qb = qb.or(`invoice_no.ilike.${like},client_name.ilike.${like}`);
+    }
+
+    // If client (not admin), restrict to invoices addressed to them (manual mode)
+    if (!isAdmin && me?.email) {
+      qb = qb.eq("client_email", me.email);
     }
 
     const { data, error } = await qb
@@ -116,36 +108,30 @@ export default function AdminInvoicesPage(): React.JSX.Element {
       .order("position", { ascending: true, foreignTable: "invoice_items" })
       .returns<InvoiceWithItems[]>();
 
-    if (!error) {
-      setRows(data ?? []);
-    }
+    if (!error) setRows(data ?? []);
     setLoading(false);
   };
 
-  useEffect(() => {
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, q]);
+  useEffect(() => { void load(); /* eslint-disable-next-line */ }, [tab, q, isAdmin, me?.email]);
 
-  // realtime
   useEffect(() => {
     const ch = sb
       .channel("invoices-list")
       .on("postgres_changes", { event: "*", schema: "public", table: "invoices" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "invoice_items" }, () => void load())
       .subscribe();
-    return () => {
-      void sb.removeChannel(ch);
-    };
+    return () => { void sb.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sb, tab, q]);
+  }, [sb, tab, q, isAdmin, me?.email]);
 
   const markPaid = async (id: string): Promise<void> => {
+    if (!isAdmin) return;
     const { error } = await sb.from("invoices").update({ status: "paid" }).eq("id", id);
     if (!error) void load();
   };
 
   const cancelInvoice = async (id: string): Promise<void> => {
+    if (!isAdmin) return;
     const { error } = await sb.from("invoices").update({ status: "cancelled" }).eq("id", id);
     if (!error) void load();
   };
@@ -170,20 +156,17 @@ export default function AdminInvoicesPage(): React.JSX.Element {
     }
   };
 
-  // kirim email reminder via Supabase Edge Function (gunakan SMTP yang sudah kamu set di Supabase)
   const sendReminder = async (id: string): Promise<void> => {
-    try {
-      const { error } = await sb.functions.invoke("send_invoice_reminder", {
-        body: { invoiceId: id },
-      });
-      if (error) {
-        // eslint-disable-next-line no-console
-        console.error("[send reminder] failed:", error);
-      }
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error("[send reminder] exception:", e);
+    if (!isAdmin) return;
+    const { error } = await sb.functions.invoke("send_invoice_reminder", {
+      body: { invoiceId: id },
+    });
+    if (error) {
+      console.error("send reminder error", error);
+      alert("Gagal mengirim reminder.");
+      return;
     }
+    alert("Reminder terkirim.");
   };
 
   const Tabs: Array<{ key: InvoiceStatus | "all"; label: string }> = [
@@ -194,11 +177,9 @@ export default function AdminInvoicesPage(): React.JSX.Element {
     { key: "all", label: "All" },
   ];
 
-  const totalUnpaid = rows
-    .filter((r) => r.status === "unpaid")
-    .reduce((acc, r) => acc + (Number(r.amount_total) || 0), 0);
-  const overdueCount = rows.filter((r) => isOverdue(r.status, r.due_date)).length;
-  const paidCount = rows.filter((r) => r.status === "paid").length;
+  const totalUnpaid = rows.filter(r => r.status === "unpaid").reduce((acc, r) => acc + (Number(r.amount_total) || 0), 0);
+  const overdueCount = rows.filter(r => isOverdue(r.status, r.due_date)).length;
+  const paidCount = rows.filter(r => r.status === "paid").length;
 
   return (
     <div className="p-6 space-y-6">
@@ -207,7 +188,7 @@ export default function AdminInvoicesPage(): React.JSX.Element {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Invoices</h1>
           <p className="text-sm text-muted-foreground">
-            Kelola tagihan, pembayaran via Midtrans, dan pantau status.
+            {isAdmin ? "Kelola & kirim invoice" : "Lihat dan bayar invoice kamu"}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -230,7 +211,7 @@ export default function AdminInvoicesPage(): React.JSX.Element {
         </div>
       </div>
 
-      {/* Stats (tetap boleh tampil untuk semua, tapi opsional bisa kamu sembunyikan untuk client) */}
+      {/* Stats */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="text-sm text-muted-foreground">Total Unpaid</div>
@@ -267,13 +248,9 @@ export default function AdminInvoicesPage(): React.JSX.Element {
 
       {/* Table / Empty / Loading */}
       {loading ? (
-        <div className="rounded-xl border bg-card p-8 text-muted-foreground shadow-sm">
-          Loading…
-        </div>
+        <div className="rounded-xl border bg-card p-8 text-muted-foreground shadow-sm">Loading…</div>
       ) : rows.length === 0 ? (
-        <div className="rounded-xl border bg-card p-8 text-muted-foreground shadow-sm">
-          No invoices found.
-        </div>
+        <div className="rounded-xl border bg-card p-8 text-muted-foreground shadow-sm">No invoices found.</div>
       ) : (
         <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
           <table className="w-full text-sm">
@@ -293,113 +270,60 @@ export default function AdminInvoicesPage(): React.JSX.Element {
               {rows.map((r) => {
                 const overdue = isOverdue(r.status, r.due_date);
                 const statusClass = nextStatusColor(r.status, overdue);
-                const items = [...(r.invoice_items ?? [])].sort(
-                  (a, b) => Number(a.position ?? 0) - Number(b.position ?? 0)
-                );
+                const items = [...(r.invoice_items ?? [])].sort((a, b) => Number(a.position ?? 0) - Number(b.position ?? 0));
                 return (
                   <tr key={r.id} className="hover:bg-muted/30">
                     <td className="p-3 font-medium">{r.invoice_no}</td>
                     <td className="p-3">{r.client_name ?? "-"}</td>
-
-                    {/* Items preview */}
                     <td className="p-3">
                       {items.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {items.slice(0, 2).map((it) => (
-                            <span
-                              key={it.id}
-                              className="rounded-full border px-2 py-0.5 text-xs"
-                              title={`${it.description} × ${it.qty} @ ${formatIDRCurrency(Number(it.unit_price) || 0)}`}
-                            >
+                            <span key={it.id} className="rounded-full border px-2 py-0.5 text-xs"
+                                  title={`${it.description} × ${it.qty} @ ${formatIDRCurrency(Number(it.unit_price) || 0)}`}>
                               {it.description}
                             </span>
                           ))}
-                          {items.length > 2 && (
-                            <span className="text-xs text-muted-foreground">
-                              +{items.length - 2} more
-                            </span>
-                          )}
+                          {items.length > 2 && <span className="text-xs text-muted-foreground">+{items.length - 2} more</span>}
                         </div>
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
                     </td>
-
                     <td className="p-3">
                       {r.amount_total != null
-                        ? `${(r.currency ?? "IDR").toUpperCase()} ${Number(r.amount_total).toLocaleString(
-                            "id-ID"
-                          )}`
+                        ? `${(r.currency ?? "IDR").toUpperCase()} ${Number(r.amount_total).toLocaleString("id-ID")}`
                         : "-"}
                     </td>
                     <td className="p-3">
-                      <span
-                        className={
-                          statusClass +
-                          " inline-flex items-center rounded-full px-2 py-0.5 text-xs capitalize"
-                        }
-                      >
+                      <span className={statusClass + " inline-flex items-center rounded-full px-2 py-0.5 text-xs capitalize"}>
                         {overdue && r.status === "unpaid" ? "overdue" : r.status}
                       </span>
                     </td>
-                    <td className="p-3">
-                      {r.created_at ? new Date(r.created_at).toLocaleDateString("id-ID") : "-"}
-                    </td>
-                    <td className="p-3">
-                      {r.due_date ? new Date(r.due_date).toLocaleDateString("id-ID") : "-"}
-                    </td>
+                    <td className="p-3">{r.created_at ? new Date(r.created_at).toLocaleDateString("id-ID") : "-"}</td>
+                    <td className="p-3">{r.due_date ? new Date(r.due_date).toLocaleDateString("id-ID") : "-"}</td>
                     <td className="p-3">
                       <div className="flex justify-end gap-2">
-                        {/* Aksi admin */}
+                        {/* ADMIN-ONLY buttons */}
                         {isAdmin && r.status === "unpaid" && (
                           <>
-                            <button
-                              onClick={() => void sendReminder(r.id)}
-                              className="rounded border px-2 py-1 text-xs hover:bg-muted"
-                            >
-                              Reminder
-                            </button>
-                            <button
-                              onClick={() => void markPaid(r.id)}
-                              className="rounded bg-green-600 px-2 py-1 text-xs text-white hover:bg-green-700"
-                            >
-                              Mark Paid
-                            </button>
-                            <button
-                              onClick={() => void cancelInvoice(r.id)}
-                              className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
-                            >
-                              Cancel
-                            </button>
+                            <button onClick={() => void sendReminder(r.id)} className="rounded border px-2 py-1 text-xs hover:bg-muted">Reminder</button>
+                            <button onClick={() => void markPaid(r.id)} className="rounded bg-green-600 px-2 py-1 text-xs text-white hover:bg-green-700">Mark Paid</button>
+                            <button onClick={() => void cancelInvoice(r.id)} className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700">Cancel</button>
                           </>
                         )}
-
-                        {/* Aksi client & admin: Pay + Payment Link */}
+                        {/* Everyone can Pay if unpaid */}
                         {r.status === "unpaid" && (
-                          <button
-                            onClick={() => void createSnapAndPay(r)}
-                            className="rounded bg-emerald-600 px-2 py-1 text-xs text-white hover:bg-emerald-700"
-                          >
+                          <button onClick={() => void createSnapAndPay(r)} className="rounded bg-emerald-600 px-2 py-1 text-xs text-white hover:bg-emerald-700">
                             Pay
                           </button>
                         )}
                         {r.payment_url ? (
-                          <a
-                            href={r.payment_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="rounded border px-2 py-1 text-xs hover:bg-muted"
-                          >
+                          <a href={r.payment_url} target="_blank" rel="noreferrer" className="rounded border px-2 py-1 text-xs hover:bg-muted">
                             Payment Link
                           </a>
                         ) : null}
-
-                        <Link
-                          href={`/admin/invoices/${r.id}`}
-                          className="rounded border px-2 py-1 text-xs hover:bg-muted"
-                        >
-                          Open
-                        </Link>
+                        <Link href={`/admin/invoices/${r.id}`} className="rounded border px-2 py-1 text-xs hover:bg-muted">Open</Link>
                       </div>
                     </td>
                   </tr>
@@ -410,14 +334,11 @@ export default function AdminInvoicesPage(): React.JSX.Element {
         </div>
       )}
 
-      {/* New Invoice Dialog (hanya admin) */}
+      {/* New Invoice Dialog */}
       {isAdmin && openNew && (
         <NewInvoiceDialog
           onClose={() => setOpenNew(false)}
-          onCreated={() => {
-            setOpenNew(false);
-            void load();
-          }}
+          onCreated={() => { setOpenNew(false); void load(); }}
         />
       )}
     </div>

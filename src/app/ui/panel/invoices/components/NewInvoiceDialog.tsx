@@ -130,6 +130,7 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
         .from("invoices")
         .insert({
           invoice_no: invoiceNo,
+          client_id: selectedClientId,
           client_name: client?.name ?? null,
           client_email: client?.email ?? null,
           currency,

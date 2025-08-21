@@ -263,16 +263,26 @@ export default function InvoiceDetailClient({
     console.log("send reminder -> invoice:", inv.id);
   };
 
+  // before: const createSnapAndPay = async (inv: InvoiceRow): Promise<void> => {
   const createSnapAndPay = async (): Promise<void> => {
     if (!inv) return;
+
     const res = await fetch("/api/payments/midtrans/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ invoiceId: inv.id }),
     });
-    if (!res.ok) return;
-    const json: { token: string; redirect_url: string } = await res.json();
-    if (window.snap) {
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.error("payment create error:", text || res.statusText);
+      alert("Gagal memulai pembayaran.");
+      return;
+    }
+
+    const json: { token: string | null; redirect_url: string } = await res.json();
+
+    if (json.token && window.snap) {
       window.snap.pay(json.token, {
         onSuccess: async () => await load(),
         onPending: async () => await load(),
@@ -283,6 +293,7 @@ export default function InvoiceDetailClient({
       window.location.href = json.redirect_url;
     }
   };
+
 
   if (loading) {
     return (

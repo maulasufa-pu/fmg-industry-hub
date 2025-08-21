@@ -34,11 +34,21 @@ type InvoiceItemRow = {
 
 type InvoiceWithItems = InvoiceRow & { invoice_items: InvoiceItemRow[] };
 
+// --- constants
 const COLS_INVOICES =
   "id,invoice_no,client_name,client_email,amount_total,currency,status,created_at,due_date,payment_url";
-// 🔧 tambahkan invoice_id supaya cocok dengan tipe
+
+/**
+ * Kalau ada lebih dari 1 FK dari invoice_items ke invoices,
+ * pakai sintaks yang eksplisit: invoice_items!<fk_name>(...)
+ * Contoh FK umum: invoice_items_invoice_id_fkey
+ * Kalau embed kamu masih kosong, UNCOMMENT baris yang pakai !invoice_items_invoice_id_fkey
+ */
 const COLS_ITEMS =
   "invoice_items(id,invoice_id,service_id,description,qty,unit_price,position)";
+// const COLS_ITEMS =
+//   "invoice_items!invoice_items_invoice_id_fkey(id,invoice_id,service_id,description,qty,unit_price,position)";
+
 const SELECT_INVOICES = `${COLS_INVOICES},${COLS_ITEMS}`;
 
 declare global {
@@ -94,17 +104,12 @@ export default function AdminInvoicesPage(): React.JSX.Element {
 
     const { data, error } = await qb
       .order("created_at", { ascending: false })
+      // urutkan nested invoice_items by position di server
+      .order("position", { ascending: true, foreignTable: "invoice_items" })
       .returns<InvoiceWithItems[]>();
 
     if (!error) {
-      // Urutkan nested items by position (client-side supaya aman di semua versi supabase-js)
-      const normalized = (data ?? []).map((r) => ({
-        ...r,
-        invoice_items: [...(r.invoice_items ?? [])].sort(
-          (a, b) => Number(a.position ?? 0) - Number(b.position ?? 0)
-        ),
-      }));
-      setRows(normalized);
+      setRows(data ?? []);
     }
     setLoading(false);
   };

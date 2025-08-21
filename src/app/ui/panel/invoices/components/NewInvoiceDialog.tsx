@@ -28,11 +28,7 @@ type ServiceRow = {
   sort_order: number;
 };
 
-type ClientOption = {
-  id: string;           // user/client id
-  name: string;         // display name
-  email: string | null;
-};
+type ClientOption = { id: string; name: string; email: string | null; is_active: boolean };
 
 export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Element {
   const sb = useMemo(() => getSupabaseClient(), []);
@@ -62,53 +58,19 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
   // --- Load clients (fleksibel: coba 'clients' dulu, kalau ga ada jatuh ke 'profiles') ---
   useEffect(() => {
     let cancelled = false;
-
-    const load = async (): Promise<void> => {
+    (async () => {
       setClientsLoading(true);
-
-      // 1) Coba dari tabel `clients` (kalau kamu punya)
-      const tryClients = await sb
-        .from("clients")
+      const { data, error } = await sb
+        .from("clients")                        // <-- VIEW baru
         .select("id,name,email,is_active")
         .eq("is_active", true)
-        .limit(500);
+        .order("name", { ascending: true });
 
-      if (!tryClients.error && Array.isArray(tryClients.data) && tryClients.data.length > 0) {
-        if (!cancelled) {
-          const opts: ClientOption[] = tryClients.data.map((c: any) => ({
-            id: String(c.id),
-            name: String(c.name ?? c.email ?? c.id),
-            email: c.email ?? null,
-          }));
-          opts.sort((a, b) => a.name.localeCompare(b.name, "id-ID"));
-          setClients(opts);
-          setClientsLoading(false);
-        }
-        return;
-      }
-
-      // 2) Fallback ke `profiles` (ambil user berperan client, kalau kolomnya ada)
-      const { data: profs } = await sb
-        .from("profiles")
-        .select("id, full_name, name, username, email, role")
-        .limit(1000);
-
-      const opts2: ClientOption[] = (profs ?? [])
-        .filter((p: any) => !p.role || p.role === "client" || p.role === "CLIENT")
-        .map((p: any) => {
-          const display =
-            p.full_name ?? p.name ?? p.username ?? (typeof p.id === "string" ? p.id.slice(0, 8) : "client");
-          return { id: String(p.id), name: String(display), email: p.email ?? null };
-        });
-
-      opts2.sort((a, b) => a.name.localeCompare(b.name, "id-ID"));
       if (!cancelled) {
-        setClients(opts2);
+        if (!error) setClients((data ?? []) as ClientOption[]);
         setClientsLoading(false);
       }
-    };
-
-    void load();
+    })();
     return () => { cancelled = true; };
   }, [sb]);
 
@@ -184,8 +146,8 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
         .from("invoices")
         .insert({
           invoice_no: invoiceNo,
-          client_name: clientName,
-          client_email: clientEmail,
+          client_name: client?.name ?? null,     // snapshot
+          client_email: client?.email ?? null,   // snapshot
           currency,
           status,
           issue_date: issueDate,
@@ -193,6 +155,7 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
         })
         .select("id")
         .single<{ id: string }>();
+
 
       if (e1 || !inv?.id) {
         console.error("[create invoice] failed:", e1);
@@ -252,13 +215,7 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
                 </option>
               ))}
             </select>
-            {selectedClient ? (
-              <div className="text-xs text-muted-foreground">
-                Email: <span className="font-medium">{selectedClient.email ?? "—"}</span>
-              </div>
-            ) : null}
           </div>
-
           <div className="space-y-2">
             <label className="text-sm">Currency</label>
             <select

@@ -44,10 +44,12 @@ const COLS_INVOICES =
  * Contoh FK umum: invoice_items_invoice_id_fkey
  * Kalau embed kamu masih kosong, UNCOMMENT baris yang pakai !invoice_items_invoice_id_fkey
  */
+// DULU (ambigu kalau ada >1 FK)
+// const COLS_ITEMS = "invoice_items(id,invoice_id,service_id,description,qty,unit_price,position)";
+
+// GANTI JADI (pakai nama FK yang benar di DB kamu)
 const COLS_ITEMS =
-  "invoice_items(id,invoice_id,service_id,description,qty,unit_price,position)";
-// const COLS_ITEMS =
-//   "invoice_items!invoice_items_invoice_id_fkey(id,invoice_id,service_id,description,qty,unit_price,position)";
+  "invoice_items!invoice_items_invoice_id_fkey(id,invoice_id,service_id,description,qty,unit_price,position)";
 
 const SELECT_INVOICES = `${COLS_INVOICES},${COLS_ITEMS}`;
 

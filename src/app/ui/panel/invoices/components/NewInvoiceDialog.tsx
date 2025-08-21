@@ -28,27 +28,91 @@ type ServiceRow = {
   sort_order: number;
 };
 
+type ClientOption = {
+  id: string;           // user/client id
+  name: string;         // display name
+  email: string | null;
+};
+
 export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Element {
   const sb = useMemo(() => getSupabaseClient(), []);
-  const [clientName, setClientName] = useState("");
-  const [clientEmail, setClientEmail] = useState("");
+
+  // ===== Client dropdown (manual, TANPA project) =====
+  const [clients, setClients] = useState<ClientOption[]>([]);
+  const [clientsLoading, setClientsLoading] = useState(true);
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+
+  // ===== Meta invoice =====
   const [currency, setCurrency] = useState<"IDR" | "USD">("IDR");
   const [status, setStatus] = useState<"draft" | "unpaid">("unpaid");
   const [dueDays, setDueDays] = useState<number>(14);
-  const [ppnPercent, setPpnPercent] = useState<number>(11); // contoh PPN 11%
+  const [ppnPercent, setPpnPercent] = useState<number>(11);
 
-  // Services katalog
+  // ===== Services katalog =====
   const [services, setServices] = useState<ServiceRow[]>([]);
   const [servicesLoading, setServicesLoading] = useState(true);
   const [quickServiceId, setQuickServiceId] = useState<string>("");
 
-  // Items form
+  // ===== Items =====
   const [items, setItems] = useState<LineItem[]>([]);
   const [saving, setSaving] = useState(false);
 
   const totals = calcTotals(items, ppnPercent);
 
-  // Load services (aktif)
+  // --- Load clients (fleksibel: coba 'clients' dulu, kalau ga ada jatuh ke 'profiles') ---
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async (): Promise<void> => {
+      setClientsLoading(true);
+
+      // 1) Coba dari tabel `clients` (kalau kamu punya)
+      const tryClients = await sb
+        .from("clients")
+        .select("id,name,email,is_active")
+        .eq("is_active", true)
+        .limit(500);
+
+      if (!tryClients.error && Array.isArray(tryClients.data) && tryClients.data.length > 0) {
+        if (!cancelled) {
+          const opts: ClientOption[] = tryClients.data.map((c: any) => ({
+            id: String(c.id),
+            name: String(c.name ?? c.email ?? c.id),
+            email: c.email ?? null,
+          }));
+          opts.sort((a, b) => a.name.localeCompare(b.name, "id-ID"));
+          setClients(opts);
+          setClientsLoading(false);
+        }
+        return;
+      }
+
+      // 2) Fallback ke `profiles` (ambil user berperan client, kalau kolomnya ada)
+      const { data: profs } = await sb
+        .from("profiles")
+        .select("id, full_name, name, username, email, role")
+        .limit(1000);
+
+      const opts2: ClientOption[] = (profs ?? [])
+        .filter((p: any) => !p.role || p.role === "client" || p.role === "CLIENT")
+        .map((p: any) => {
+          const display =
+            p.full_name ?? p.name ?? p.username ?? (typeof p.id === "string" ? p.id.slice(0, 8) : "client");
+          return { id: String(p.id), name: String(display), email: p.email ?? null };
+        });
+
+      opts2.sort((a, b) => a.name.localeCompare(b.name, "id-ID"));
+      if (!cancelled) {
+        setClients(opts2);
+        setClientsLoading(false);
+      }
+    };
+
+    void load();
+    return () => { cancelled = true; };
+  }, [sb]);
+
+  // --- Load services aktif ---
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -67,26 +131,16 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
         setServicesLoading(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [sb]);
 
   const addItem = (): void =>
-    setItems((prev) => [
-      ...prev,
-      { service_id: null, description: "", qty: 1, unit_price: 0 },
-    ]);
+    setItems((prev) => [...prev, { service_id: null, description: "", qty: 1, unit_price: 0 }]);
 
   const addItemFromService = (svc: ServiceRow): void =>
     setItems((prev) => [
       ...prev,
-      {
-        service_id: svc.id,
-        description: svc.label,           // snapshot label
-        qty: 1,
-        unit_price: Number(svc.price),    // snapshot price
-      },
+      { service_id: svc.id, description: svc.label, qty: 1, unit_price: Number(svc.price) },
     ]);
 
   const updateItem = (idx: number, patch: Partial<LineItem>): void =>
@@ -104,30 +158,34 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
   };
 
   const submit = async (): Promise<void> => {
-    if (items.length === 0) {
-      // minimal 1 item
-      return;
-    }
+    if (!selectedClientId) return; // wajib pilih client
+    if (items.length === 0) return; // minimal 1 item
     setSaving(true);
 
+    // Snapshot nama & email client dari pilihan
+    const client = clients.find((c) => c.id === selectedClientId) || null;
+    const clientName = client?.name ?? null;
+    const clientEmail = client?.email ?? null;
+
     let invoiceNo = clientSideNextInvoiceNo();
+
     try {
-      // pakai generator server kalau ada (optional)
+      // pakai generator server kalau ada
       const rpc = await sb.rpc("next_invoice_no");
       if (!rpc.error && typeof rpc.data === "string") invoiceNo = rpc.data;
 
-      // Tanggal (YYYY-MM-DD)
+      // tanggal (YYYY-MM-DD)
       const due = defaultDueDate(dueDays);
       const dueDate = due.toISOString().slice(0, 10);
       const issueDate = new Date().toISOString().slice(0, 10);
 
-      // 1) Buat invoice dulu
+      // 1) Insert invoices (TANPA project_id)
       const { data: inv, error: e1 } = await sb
         .from("invoices")
         .insert({
           invoice_no: invoiceNo,
-          client_name: clientName || null,
-          client_email: clientEmail || null,
+          client_name: clientName,
+          client_email: clientEmail,
           currency,
           status,
           issue_date: issueDate,
@@ -137,50 +195,37 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
         .single<{ id: string }>();
 
       if (e1 || !inv?.id) {
-        // eslint-disable-next-line no-console
         console.error("[create invoice] failed:", e1);
         setSaving(false);
         return;
       }
 
-      const invoiceId = inv.id;
-
-      // 2) BULK INSERT items (langsung ke invoice_items, TANPA RPC)
+      // 2) Bulk insert invoice_items
       const payloads = items.map((it, idx) => ({
-        invoice_id: invoiceId,
+        invoice_id: inv.id,
         service_id: it.service_id ?? null,
         description: it.description,
         qty: it.qty,
         unit_price: it.unit_price,
-        position: idx, // urutan baris
+        position: idx,
       }));
 
-      const { error: e2 } = await sb
-        .from("invoice_items")
-        .insert(payloads)
-        .select("id"); // optional: ambil id balik
-
+      const { error: e2 } = await sb.from("invoice_items").insert(payloads).select("id");
       if (e2) {
-        // eslint-disable-next-line no-console
         console.error("[insert invoice_items] failed:", e2);
-        // (opsional) rollback invoice kalau mau atomic penuh:
-        // await sb.from("invoices").delete().eq("id", invoiceId);
+        // opsional: rollback invoice
+        // await sb.from("invoices").delete().eq("id", inv.id);
         setSaving(false);
         return;
       }
-
-      // 3) (Opsional) sinkron ulang amount_total di server
-      //    kalau kamu punya trigger/function server-side, boleh skip ini.
-      //    Kalau mau pakai query biasa, bisa update dari kalkulasi client lagi:
-      // await sb.from("invoices")
-      //   .update({ amount_total: Number(calcTotals(items, ppnPercent).grand_total) })
-      //   .eq("id", invoiceId);
 
       onCreated();
     } finally {
       setSaving(false);
     }
   };
+
+  const selectedClient = clients.find((c) => c.id === selectedClientId) || null;
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
@@ -191,22 +236,29 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* Client dropdown */}
           <div className="space-y-2">
-            <label className="text-sm">Client Name</label>
-            <input
-              value={clientName}
-              onChange={(e) => setClientName(e.currentTarget.value)}
+            <label className="text-sm">Client</label>
+            <select
+              disabled={clientsLoading}
+              value={selectedClientId}
+              onChange={(e) => setSelectedClientId(e.currentTarget.value)}
               className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
-            />
+            >
+              <option value="">{clientsLoading ? "Loading…" : "— pilih client —"}</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}{c.email ? ` — ${c.email}` : ""}
+                </option>
+              ))}
+            </select>
+            {selectedClient ? (
+              <div className="text-xs text-muted-foreground">
+                Email: <span className="font-medium">{selectedClient.email ?? "—"}</span>
+              </div>
+            ) : null}
           </div>
-          <div className="space-y-2">
-            <label className="text-sm">Client Email</label>
-            <input
-              value={clientEmail}
-              onChange={(e) => setClientEmail(e.currentTarget.value)}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
-            />
-          </div>
+
           <div className="space-y-2">
             <label className="text-sm">Currency</label>
             <select
@@ -218,6 +270,7 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
               <option value="USD">USD</option>
             </select>
           </div>
+
           <div className="space-y-2">
             <label className="text-sm">Status</label>
             <select
@@ -229,6 +282,7 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
               <option value="draft">Draft</option>
             </select>
           </div>
+
           <div className="space-y-2">
             <label className="text-sm">Due in (days)</label>
             <input
@@ -239,6 +293,7 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
               className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
             />
           </div>
+
           <div className="space-y-2">
             <label className="text-sm">PPN (%)</label>
             <input
@@ -284,7 +339,9 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
         <div className="mt-6">
           <div className="flex items-center justify-between">
             <h3 className="font-medium">Line Items</h3>
-            <button onClick={addItem} className="rounded-md border px-2 py-1 text-xs hover:bg-muted">+ Add Item</button>
+            <button onClick={addItem} className="rounded-md border px-2 py-1 text-xs hover:bg-muted">
+              + Add Item
+            </button>
           </div>
           <div className="mt-3 space-y-3">
             {items.map((it, idx) => (
@@ -300,7 +357,9 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
                   min={1}
                   placeholder="Qty"
                   value={it.qty}
-                  onChange={(e) => updateItem(idx, { qty: parseInt(e.currentTarget.value || "1", 10) })}
+                  onChange={(e) =>
+                    updateItem(idx, { qty: parseInt(e.currentTarget.value || "1", 10) })
+                  }
                   className="col-span-2 rounded-lg border bg-background px-3 py-2 text-sm"
                 />
                 <input
@@ -308,7 +367,9 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
                   min={0}
                   placeholder="Unit Price"
                   value={it.unit_price}
-                  onChange={(e) => updateItem(idx, { unit_price: parseFloat(e.currentTarget.value || "0") })}
+                  onChange={(e) =>
+                    updateItem(idx, { unit_price: parseFloat(e.currentTarget.value || "0") })
+                  }
                   className="col-span-3 rounded-lg border bg-background px-3 py-2 text-sm"
                 />
                 <button
@@ -317,7 +378,6 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
                 >
                   ✕
                 </button>
-                {/* hint kecil supaya tau item ini dari service */}
                 {it.service_id ? (
                   <div className="col-span-12 text-[11px] text-muted-foreground">
                     linked service: {it.service_id}
@@ -345,9 +405,11 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
         </div>
 
         <div className="mt-6 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-lg border px-4 py-2 text-sm hover:bg-muted">Cancel</button>
+          <button onClick={onClose} className="rounded-lg border px-4 py-2 text-sm hover:bg-muted">
+            Cancel
+          </button>
           <button
-            disabled={saving}
+            disabled={saving || !selectedClientId || items.length === 0}
             onClick={() => void submit()}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
           >

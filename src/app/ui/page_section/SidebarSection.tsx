@@ -5,19 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { UserRole } from "@/lib/roles";
 import {
-  Layout,
-  Clipboard,
-  FileText,
-  Calendar,
-  BookOpen,
-  Users,
-  BarChart3,
-  Music,
-  Headphones,
-  Mic2,
-  Settings,
-  User
+  Layout, Clipboard, FileText, Calendar, BookOpen, Users,
+  BarChart3, Music, Headphones, Mic2, Settings, Package2 // ⬅️ tambah ini
 } from "lucide-react";
+
 import { motion, AnimatePresence } from "framer-motion";
 import UserDropdown from "../pop_over/user_dropdown";
 import { useProfile } from "@/hooks/useProfile";
@@ -51,6 +42,7 @@ const MENU: Partial<Record<UserRole, readonly NavItem[]>> = {
     { href: "/admin/invoices", label: "Invoices", Icon: FileText },
     { href: "/admin/meetings", label: "Meetings", Icon: Calendar },
     { href: "/admin/publishing", label: "Publishing", Icon: BookOpen },
+    { href: "/admin/productservices", label: "Products & Services", Icon: Package2 }, // ⬅️ baru
     { href: "/admin/users", label: "Users (Owner)", Icon: Users },
   ],
   owner: [
@@ -59,6 +51,7 @@ const MENU: Partial<Record<UserRole, readonly NavItem[]>> = {
     { href: "/admin/invoices", label: "Invoices", Icon: FileText },
     { href: "/admin/meetings", label: "Meetings", Icon: Calendar },
     { href: "/admin/publishing", label: "Publishing", Icon: BookOpen },
+    { href: "/admin/productservices", label: "Products & Services", Icon: Package2 }, // ⬅️ baru
     { href: "/admin/users", label: "Users", Icon: Users },
   ],
   anr: [

@@ -18,7 +18,7 @@ type InvoiceRow = {
   currency: string | null;
   status: InvoiceStatus;
   created_at: string | null;
-  due_date: string | null; // DATE
+  due_date: string | null;
   payment_url?: string | null;
 };
 
@@ -34,20 +34,10 @@ type InvoiceItemRow = {
 
 type InvoiceWithItems = InvoiceRow & { invoice_items: InvoiceItemRow[] };
 
-// --- constants
 const COLS_INVOICES =
   "id,invoice_no,client_name,client_email,amount_total,currency,status,created_at,due_date,payment_url";
 
-/**
- * Kalau ada lebih dari 1 FK dari invoice_items ke invoices,
- * pakai sintaks yang eksplisit: invoice_items!<fk_name>(...)
- * Contoh FK umum: invoice_items_invoice_id_fkey
- * Kalau embed kamu masih kosong, UNCOMMENT baris yang pakai !invoice_items_invoice_id_fkey
- */
-// DULU (ambigu kalau ada >1 FK)
-// const COLS_ITEMS = "invoice_items(id,invoice_id,service_id,description,qty,unit_price,position)";
-
-// GANTI JADI (pakai nama FK yang benar di DB kamu)
+// gunakan nama FK yang ada di DB kamu (umumnya: invoice_items_invoice_id_fkey)
 const COLS_ITEMS =
   "invoice_items!invoice_items_invoice_id_fkey(id,invoice_id,service_id,description,qty,unit_price,position)";
 
@@ -84,11 +74,28 @@ export default function AdminInvoicesPage(): React.JSX.Element {
   const [q, setQ] = useState("");
   const [rows, setRows] = useState<InvoiceWithItems[]>([]);
   const [openNew, setOpenNew] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   const MIDTRANS_CLIENT_KEY = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY;
   const MIDTRANS_IS_PRODUCTION =
     (process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION ?? "false") === "true";
   useSnapLoader(MIDTRANS_CLIENT_KEY, MIDTRANS_IS_PRODUCTION);
+
+  // cek role admin dari RPC (sesuaikan nama function bila berbeda)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await sb.rpc("is_admin"); // versi tanpa argumen
+        if (!cancelled) setIsAdmin(Boolean(!error && data === true));
+      } catch {
+        if (!cancelled) setIsAdmin(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sb]);
 
   const load = async (): Promise<void> => {
     setLoading(true);
@@ -106,7 +113,6 @@ export default function AdminInvoicesPage(): React.JSX.Element {
 
     const { data, error } = await qb
       .order("created_at", { ascending: false })
-      // urutkan nested invoice_items by position di server
       .order("position", { ascending: true, foreignTable: "invoice_items" })
       .returns<InvoiceWithItems[]>();
 
@@ -116,26 +122,17 @@ export default function AdminInvoicesPage(): React.JSX.Element {
     setLoading(false);
   };
 
-  // initial + re-run saat tab/q berubah
   useEffect(() => {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, q]);
 
-  // Realtime: reload saat invoices ATAU invoice_items berubah
+  // realtime
   useEffect(() => {
     const ch = sb
       .channel("invoices-list")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "invoices" },
-        () => void load()
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "invoice_items" },
-        () => void load()
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "invoices" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "invoice_items" }, () => void load())
       .subscribe();
     return () => {
       void sb.removeChannel(ch);
@@ -173,10 +170,20 @@ export default function AdminInvoicesPage(): React.JSX.Element {
     }
   };
 
+  // kirim email reminder via Supabase Edge Function (gunakan SMTP yang sudah kamu set di Supabase)
   const sendReminder = async (id: string): Promise<void> => {
-    // TODO: Edge Function / API route utk email/WA
-    // eslint-disable-next-line no-console
-    console.log("send reminder -> invoice:", id);
+    try {
+      const { error } = await sb.functions.invoke("send_invoice_reminder", {
+        body: { invoiceId: id },
+      });
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.error("[send reminder] failed:", error);
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("[send reminder] exception:", e);
+    }
   };
 
   const Tabs: Array<{ key: InvoiceStatus | "all"; label: string }> = [
@@ -187,7 +194,6 @@ export default function AdminInvoicesPage(): React.JSX.Element {
     { key: "all", label: "All" },
   ];
 
-  // Stats
   const totalUnpaid = rows
     .filter((r) => r.status === "unpaid")
     .reduce((acc, r) => acc + (Number(r.amount_total) || 0), 0);
@@ -201,7 +207,7 @@ export default function AdminInvoicesPage(): React.JSX.Element {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Invoices</h1>
           <p className="text-sm text-muted-foreground">
-            Kelola tagihan, kirim pembayaran via Midtrans, dan pantau status.
+            Kelola tagihan, pembayaran via Midtrans, dan pantau status.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -213,16 +219,18 @@ export default function AdminInvoicesPage(): React.JSX.Element {
               className="h-9 w-[220px] rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <button
-            onClick={() => setOpenNew(true)}
-            className="h-9 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white shadow hover:bg-blue-700"
-          >
-            + New Invoice
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setOpenNew(true)}
+              className="h-9 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white shadow hover:bg-blue-700"
+            >
+              + New Invoice
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Stats (tetap boleh tampil untuk semua, tapi opsional bisa kamu sembunyikan untuk client) */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="text-sm text-muted-foreground">Total Unpaid</div>
@@ -285,7 +293,6 @@ export default function AdminInvoicesPage(): React.JSX.Element {
               {rows.map((r) => {
                 const overdue = isOverdue(r.status, r.due_date);
                 const statusClass = nextStatusColor(r.status, overdue);
-                // sort nested items by position sebelum render
                 const items = [...(r.invoice_items ?? [])].sort(
                   (a, b) => Number(a.position ?? 0) - Number(b.position ?? 0)
                 );
@@ -343,19 +350,14 @@ export default function AdminInvoicesPage(): React.JSX.Element {
                     </td>
                     <td className="p-3">
                       <div className="flex justify-end gap-2">
-                        {r.status === "unpaid" && (
+                        {/* Aksi admin */}
+                        {isAdmin && r.status === "unpaid" && (
                           <>
                             <button
                               onClick={() => void sendReminder(r.id)}
                               className="rounded border px-2 py-1 text-xs hover:bg-muted"
                             >
                               Reminder
-                            </button>
-                            <button
-                              onClick={() => void createSnapAndPay(r)}
-                              className="rounded bg-emerald-600 px-2 py-1 text-xs text-white hover:bg-emerald-700"
-                            >
-                              Pay
                             </button>
                             <button
                               onClick={() => void markPaid(r.id)}
@@ -371,6 +373,16 @@ export default function AdminInvoicesPage(): React.JSX.Element {
                             </button>
                           </>
                         )}
+
+                        {/* Aksi client & admin: Pay + Payment Link */}
+                        {r.status === "unpaid" && (
+                          <button
+                            onClick={() => void createSnapAndPay(r)}
+                            className="rounded bg-emerald-600 px-2 py-1 text-xs text-white hover:bg-emerald-700"
+                          >
+                            Pay
+                          </button>
+                        )}
                         {r.payment_url ? (
                           <a
                             href={r.payment_url}
@@ -381,6 +393,7 @@ export default function AdminInvoicesPage(): React.JSX.Element {
                             Payment Link
                           </a>
                         ) : null}
+
                         <Link
                           href={`/admin/invoices/${r.id}`}
                           className="rounded border px-2 py-1 text-xs hover:bg-muted"
@@ -397,8 +410,8 @@ export default function AdminInvoicesPage(): React.JSX.Element {
         </div>
       )}
 
-      {/* New Invoice Dialog */}
-      {openNew && (
+      {/* New Invoice Dialog (hanya admin) */}
+      {isAdmin && openNew && (
         <NewInvoiceDialog
           onClose={() => setOpenNew(false)}
           onCreated={() => {

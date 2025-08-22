@@ -85,7 +85,9 @@ export const LoginSection = (): React.JSX.Element => {
     setLoading(true);
     try {
       const supabase = getSupabaseClient();
-
+      const qp = useSearchParams();
+      const rawNext = qp.get("next") || qp.get("redirectedFrom") || "";
+      const safeNext = rawNext.startsWith("/") ? rawNext : "";
       // Clear existing session with timeout (defensive)
       try {
         const sessionPromise = supabase.auth.getSession();
@@ -115,12 +117,28 @@ export const LoginSection = (): React.JSX.Element => {
         loginTimeoutPromise,
       ])) as Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>;
 
+      const { data, error } = loginResult;
+      const { session } = loginResult.data ?? {};
+      if (!session) throw new Error("No session returned");
+
+      await fetch("/auth/set", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+        }),
+      });
+
+      router.replace(safeNext || "/client/dashboard");
+
       if (loginResult.error) throw new Error(loginResult.error.message || "Login failed");
 
       // Remember email if opted-in
       if (rememberMe) localStorage.setItem("remember_email", email);
       else localStorage.removeItem("remember_email");
 
+      router.replace(safeNext || "/client/dashboard");
       router.push(redirectedFrom);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Login failed";
@@ -133,14 +151,16 @@ export const LoginSection = (): React.JSX.Element => {
   const handleSocialLogin = async (provider: "google") => {
     setErr(null);
     const supabase = getSupabaseClient();
-    const redirectTo = `${window.location.origin}/auth/callback?flow=login`;
-    const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } });
+    const [socialLoading, setSocialLoading] = useState(false);
+    const redirectTo = `https://fmg-industry-hub.vercel.app/auth/callback?flow=login`;
+    setSocialLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo }});
     if (error) setErr(error.message);
+    setSocialLoading(false);  
   };
 
   const emailInvalid = touched.email && !!errors.email;
   const passwordInvalid = touched.password && !!errors.password;
-
   return (
     <section className="relative w-full px-4 sm:px-6 lg:px-8 py-10">
       {/* Subtle backdrop */}

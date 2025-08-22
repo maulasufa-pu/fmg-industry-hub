@@ -285,7 +285,7 @@ function Testimonial({ quote, name, role }: { quote: string; name: string; role:
 /*************************
  * Pricing (service packages)
  *************************/
-export function PricingCard({
+function PricingCard({
   name, price, features, cta, period = "single",
   accent = "indigo", badge,
   ctaHref, ctaTarget, ctaRel,

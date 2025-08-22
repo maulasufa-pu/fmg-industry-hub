@@ -5,26 +5,22 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import {
   ArrowDown,
   ArrowUp,
-  BadgeCheck,
   Brain,
-  CalendarClock,
   LineChart,
-  Mic2,
   Network,
   Rocket,
-  Search,
-  Share2,
-  Stars,
-  Users,
+  Settings,
+  SlidersHorizontal,
+  Waves,
 } from "lucide-react";
 
 /*************************************************
- * FMG Universe — /talent
- * Scouting • A&R • Development • Management • Career Acceleration • Collaboration
+ * FMG Universe — /labs (AI / tuneXpert)
+ * TuneXpert DAW-AI • A&R Intelligence • Analytics • Predictions • Creator Tools
  * - Fullpage vertical slides (scroll-snap)
  * - Right-side slim nav rail (desktop), bottom dots (mobile)
  * - Parallax gradient art + floating background objects
- * - No `any`, strict-friendly types
+ * - Strict-friendly types; no `any`
  *************************************************/
 
 /* ---------- Top bar (optional) ---------- */
@@ -35,7 +31,7 @@ function TopBar(): React.JSX.Element {
         <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-[11px] font-bold leading-none">
           FMG
         </span>
-        <span className="text-xs tracking-wide opacity-90">Universe • Talent</span>
+        <span className="text-xs tracking-wide opacity-90">Universe • Labs</span>
       </div>
       <div className="pointer-events-auto hidden sm:inline-flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 text-[12px] text-white backdrop-blur-md dark:bg-white/10">
         <span className="opacity-80">Scroll</span>
@@ -217,7 +213,7 @@ const Slide = forwardRef<HTMLDivElement, SlideProps>(function Slide(
             {HeadIcon && (
               <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/80">
                 <HeadIcon className="h-4 w-4" />
-                <span className="text-xs">Pillar</span>
+                <span className="text-xs">Capability</span>
               </div>
             )}
           </div>
@@ -232,37 +228,14 @@ const Slide = forwardRef<HTMLDivElement, SlideProps>(function Slide(
 });
 
 /* ---------- Right-side vertical nav (rail — desktop only) ---------- */
-function NavRail({
-  total,
-  activeIndex,
-  onGo,
-}: {
-  total: number;
-  activeIndex: number;
-  onGo: (i: number) => void;
-}) {
+function NavRail({ total, activeIndex, onGo }: { total: number; activeIndex: number; onGo: (i: number) => void }) {
   return (
-    <nav
-      aria-label="Slide navigation"
-      className="fixed right-3 sm:right-4 md:right-6 top-1/2 -translate-y-1/2 z-[70] hidden md:flex flex-col items-center gap-2 sm:gap-2.5"
-    >
+    <nav aria-label="Slide navigation" className="fixed right-3 sm:right-4 md:right-6 top-1/2 -translate-y-1/2 z-[70] hidden md:flex flex-col items-center gap-2 sm:gap-2.5">
       {Array.from({ length: total }).map((_, i) => {
         const active = i === activeIndex;
         return (
-          <button
-            key={i}
-            onClick={() => onGo(i)}
-            aria-label={`Go to slide ${i + 1}`}
-            aria-current={active ? "true" : undefined}
-            className="group relative"
-          >
-            <span
-              className={`block w-[3px] rounded-full transition-all duration-300 ease-out ${
-                active
-                  ? "h-9 bg-gradient-to-b from-indigo-400 via-fuchsia-400 to-amber-300 shadow-[0_0_12px_rgba(99,102,241,0.6)]"
-                  : "h-5 bg-white/50 group-hover:h-6 group-hover:bg-white/80"
-              }`}
-            />
+          <button key={i} onClick={() => onGo(i)} aria-label={`Go to slide ${i + 1}`} aria-current={active ? "true" : undefined} className="group relative">
+            <span className={`block w-[3px] rounded-full transition-all duration-300 ease-out ${active ? "h-9 bg-gradient-to-b from-indigo-400 via-fuchsia-400 to-amber-300 shadow-[0_0_12px_rgba(99,102,241,0.6)]" : "h-5 bg-white/50 group-hover:h-6 group-hover:bg-white/80"}`} />
           </button>
         );
       })}
@@ -274,18 +247,10 @@ function NavRail({
 function MobileDots({ total, activeIndex, onGo }: { total: number; activeIndex: number; onGo: (i: number) => void }): React.JSX.Element {
   return (
     <div className="fixed inset-x-0 bottom-0 z-[90] md:hidden">
-      <div
-        className="mx-auto w-full max-w-md"
-        style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
-      >
+      <div className="mx-auto w-full max-w-md" style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}>
         <div className="mx-4 mb-2 flex items-center justify-center gap-2 rounded-2xl bg-black/40 px-3 py-2 backdrop-blur-md ring-1 ring-white/10">
           {Array.from({ length: total }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => onGo(i)}
-              aria-label={`Go to slide ${i + 1}`}
-              className={`h-1.5 rounded-full transition-all ${activeIndex === i ? "w-8 bg-white" : "w-2.5 bg-white/55"}`}
-            />
+            <button key={i} onClick={() => onGo(i)} aria-label={`Go to slide ${i + 1}`} className={`h-1.5 rounded-full transition-all ${activeIndex === i ? "w-8 bg-white" : "w-2.5 bg-white/55"}`} />
           ))}
         </div>
       </div>
@@ -307,28 +272,8 @@ function FloatArrows({ onPrev, onNext }: { onPrev: () => void; onNext: () => voi
   );
 }
 
-/* ---------- A&R mini pipeline (chips) ---------- */
-function PipelineChips(): React.JSX.Element {
-  const steps: ReadonlyArray<{ label: string; Icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }> = [
-    { label: "Discover", Icon: Search },
-    { label: "Qualify", Icon: BadgeCheck },
-    { label: "Develop", Icon: Brain },
-    { label: "Release", Icon: CalendarClock },
-    { label: "Grow", Icon: LineChart },
-  ];
-  return (
-    <div className="mt-6 flex flex-wrap gap-2">
-      {steps.map((s, i) => (
-        <span key={i} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/90">
-          <s.Icon className="h-3.5 w-3.5" /> {s.label}
-        </span>
-      ))}
-    </div>
-  );
-}
-
 /* ---------- Page ---------- */
-export default function TalentPage(): React.JSX.Element {
+export default function LabsPage(): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const sectionRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [active, setActive] = useState(0);
@@ -340,110 +285,94 @@ export default function TalentPage(): React.JSX.Element {
   const slides = useMemo(
     () => [
       {
-        title: "FMG Talent",
-        kicker: "Beyond Sound. Built-in Intelligence.",
+        title: "FMG Labs (AI / tuneXpert)",
+        kicker: "Future of Music Intelligence",
         description:
-          "Scouting, A&R pipelines, development, management and collaboration—one operating system for talent. We discover potential, shape artistry, and compound value across releases.",
-        headIcon: Stars,
+          "Research & tools to supercharge creation and decisions — TuneXpert DAW‑AI, A&R intelligence, analytics, predictive models, and creator tools.",
+        headIcon: Waves,
         tint: "indigo" as const,
         artDepth: 0.8,
         cta: (
           <>
-            <a href="#slide-1" className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-neutral-900 shadow hover:bg-neutral-100">Explore pillars</a>
-            <a href="/talent/apply" className="inline-flex items-center justify-center rounded-xl border border-white/40 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10">Submit demo</a>
+            <a href="#slide-1" className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-neutral-900 shadow hover:bg-neutral-100">Explore features</a>
+            <a href="/labs/beta" className="inline-flex items-center justify-center rounded-xl border border-white/40 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10">Join beta</a>
           </>
         ),
       },
       {
-        title: "Scouting Intelligence",
-        kicker: "Signals • Fit • Momentum",
+        title: "TuneXpert DAW‑AI",
+        kicker: "Assist • Arrange • Enhance",
         description:
-          "We score prospects from socials, DSPs, UGC, and live circuits. Our scorecards blend qualitative A&R notes with quantitative growth signals for an unbiased view.",
+          "Context-aware assistants inside your DAW workflows — from gain staging to reference‑matching, with non‑destructive suggestions you stay in control of.",
         bullets: [
-          "Multi-source discovery: TikTok/IG/YouTube • DSP analytics • live tips",
-          "Similarity search to roster & market niches",
-          "Readiness scoring: consistency, identity, live, brand fit",
-          "Ethical intake: transparent feedback & next steps",
+          "Real‑time mix helper: gain, EQ hints, headroom checks",
+          "Arrangement copilot: section map & variation ideas",
+          "Reference match: tonal balance & loudness targets",
+          "Vocal takes: smart comping & pitch/timing notes",
         ] as const,
-        headIcon: Search,
-        tint: "violet" as const,
-        artDepth: 1.0,
-        cta: <PipelineChips />,
-      },
-      {
-        title: "A&R Pipelines",
-        kicker: "From idea to release",
-        description:
-          "Stage-gated A&R with clear briefs, reference boards, and iterative sessions. Alignment on sound, story, and audience before greenlight.",
-        bullets: [
-          "Brief → Demo → Iterations → Pre-pro → Recording → Post",
-          "Reference boards & moodmaps to lock creative north star",
-          "Weekly check-ins, versioning, and decision logs",
-          "Go/No-Go gates tied to milestones & budget",
-        ] as const,
-        headIcon: Network,
-        tint: "emerald" as const,
-        artDepth: 1.1,
-      },
-      {
-        title: "Development Tracks",
-        kicker: "Vocal • Writing • Performance • Content",
-        description:
-          "Custom development sprints to sharpen craft and output. We coach vocals & writing, run co-write labs, and build content engines around authentic identity.",
-        bullets: [
-          "Vocal coaching & ear training—goal-based",
-          "Songwriting labs & topline camps",
-          "Performance readiness: stagecraft & MD",
-          "Content calendars with creative toolkits",
-        ] as const,
-        headIcon: Mic2,
-        tint: "amber" as const,
-        artDepth: 1.0,
-      },
-      {
-        title: "Management Operations",
-        kicker: "Rights • Releases • Ops",
-        description:
-          "360° management: calendars, budgets, rights, and reporting. Transparent splits, contracts, and post-release analytics to compound learning.",
-        bullets: [
-          "Release roadmap & OKRs per cycle",
-          "Contracts & split sheets with audit trails",
-          "Budgeting & vendor management",
-          "Post-mortems: performance & LTV signals",
-        ] as const,
-        headIcon: Users,
-        tint: "indigo" as const,
-        artDepth: 0.9,
-      },
-      {
-        title: "Career Acceleration",
-        kicker: "Growth • Partnerships • Touring",
-        description:
-          "We plug artists into growth loops—PR, storytelling, partnerships, brand deals, and sustainable touring. Momentum without shortcuts.",
-        bullets: [
-          "Narrative PR & owned media flywheel",
-          "Playlisting strategy that respects platform rules",
-          "Brand & creator partnerships with clear value exchange",
-          "Tour mapping: markets, timing, unit economics",
-        ] as const,
-        headIcon: Rocket,
+        headIcon: SlidersHorizontal,
         tint: "violet" as const,
         artDepth: 1.05,
       },
       {
-        title: "Collaboration Workflows",
-        kicker: "Co-writes • Sessions • Approvals",
+        title: "A&R Intelligence",
+        kicker: "Signals • Fit • Momentum",
         description:
-          "Frictionless collaboration across writers, producers, and brands. Clear IP, version control, stems, and approvals—all logged.",
+          "Unified signals from socials, UGC, DSPs, and live circuits to discover, qualify, and prioritize talent opportunities.",
         bullets: [
-          "Session planning & hold calendars",
-          "Remote/IRL co-writes with secure file flows",
-          "Versioning: stems, alt mixes, vocal comps",
-          "Approvals & usage tracking for sync & campaigns",
+          "Prospect scoring with qualitative + quantitative inputs",
+          "Similarity search to roster & market niches",
+          "Momentum indicators & retention surfaces",
+          "Ethical intake with transparent feedback",
         ] as const,
-        headIcon: Share2,
+        headIcon: Brain,
         tint: "emerald" as const,
-        artDepth: 1.15,
+        artDepth: 1.1,
+      },
+      {
+        title: "Analytics",
+        kicker: "Cohorts • Funnels • Lift",
+        description:
+          "Release dashboards that connect the dots across platforms — from reach to streams to saves — with campaign attribution.",
+        bullets: [
+          "Cohort views per release & audience segment",
+          "Funnel: reach → listens → completes → saves",
+          "Attribution & campaign lift estimates",
+          "Alerting & anomaly detection",
+        ] as const,
+        headIcon: LineChart,
+        tint: "amber" as const,
+        artDepth: 1.0,
+      },
+      {
+        title: "Predictions",
+        kicker: "Forecast • Plan • Optimize",
+        description:
+          "Probabilistic forecasts for streams, playlist adds, and market demand to guide timing, budgets, and go/no‑go gates.",
+        bullets: [
+          "Time‑series forecasts for releases & catalog",
+          "Playlist add probability & decay curves",
+          "Tour / market demand scoring",
+          "Scenario planning & pre‑launch A/B",
+        ] as const,
+        headIcon: Rocket,
+        tint: "indigo" as const,
+        artDepth: 0.95,
+      },
+      {
+        title: "Creator Tools",
+        kicker: "Ideate • Produce • Publish",
+        description:
+          "Utilities that speed up content pipelines — highlight finds, lyric video kits, batch renders, and brand‑safe prompts.",
+        bullets: [
+          "Auto‑cut highlights for shorts & reels",
+          "Lyric video/storyboard templates",
+          "Promptable brand kits & hooks",
+          "Batch renders with versioning",
+        ] as const,
+        headIcon: Settings,
+        tint: "violet" as const,
+        artDepth: 1.1,
       },
     ],
     []
@@ -484,7 +413,7 @@ export default function TalentPage(): React.JSX.Element {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [active]);
 
   const jump = useCallback(
     (i: number) => {
@@ -496,13 +425,13 @@ export default function TalentPage(): React.JSX.Element {
   );
 
   return (
-    <main className="relative min-h-screen bg-neutral-950 text-white">
+    <main className="relative min-h-screen bg-neutral-950 text-white overflow-hidden">
       {/* <TopBar /> */}
 
       {/* Global parallax & floating objects */}
       <ParallaxField container={containerRef} />
 
-      {/* Right-side vertical nav (rail desktop) */}
+      {/* Right-side vertical nav (desktop) */}
       <NavRail total={slides.length + 1} activeIndex={active} onGo={jump} />
 
       {/* Bottom dots (mobile) */}
@@ -511,7 +440,7 @@ export default function TalentPage(): React.JSX.Element {
       {/* Scroll container */}
       <div
         ref={containerRef}
-        className="h-screen snap-y snap-proximity md:snap-mandatory overflow-y-auto overscroll-y-contain scroll-smooth pb-[72px] md:pb-px [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="relative z-10 h-screen snap-y snap-proximity md:snap-mandatory overflow-y-auto overscroll-y-contain scroll-smooth pb-[72px] md:pb-px [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {slides.map((s, i) => (
           <Slide
@@ -538,17 +467,11 @@ export default function TalentPage(): React.JSX.Element {
           </div>
 
           <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={{ duration: 0.5 }} className="mx-auto max-w-3xl text-center">
-            <h2 className="text-3xl font-semibold sm:text-4xl md:text-5xl">Join the roster.</h2>
-            <p className="mx-auto mt-3 max-w-xl text-white/80">
-              Tell us about your artistry, vision, and goals—we&#39;ll review and respond. No shortcuts: ethics-first growth.
-            </p>
+            <h2 className="text-3xl font-semibold sm:text-4xl md:text-5xl">Build with FMG Labs.</h2>
+            <p className="mx-auto mt-3 max-w-xl text-white/80">Get access to betas, research notes, and integration guides for tuneXpert and supporting tools.</p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <a href="/talent/apply" className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-neutral-900 shadow hover:bg-neutral-100">
-                Submit demo
-              </a>
-              <a href="/contact" className="inline-flex items-center justify-center rounded-xl border border-white/40 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10">
-                Talk to A&R
-              </a>
+              <a href="/labs/beta" className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-neutral-900 shadow hover:bg-neutral-100">Request access</a>
+              <a href="/contact" className="inline-flex items-center justify-center rounded-xl border border-white/40 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10">Talk to us</a>
             </div>
           </motion.div>
         </section>

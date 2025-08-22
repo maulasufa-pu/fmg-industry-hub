@@ -94,9 +94,9 @@ function SplitHeadline({ text }: { text: string }) {
  *************************/
 function QuickFacts() {
   const FACTS: { label: string; value: string }[] = [
-    { label: "Founded", value: "2020" },
-    { label: "HQ", value: "Jakarta, ID" },
-    { label: "Services", value: "Publishing, Distribution, Studio" },
+    { label: "Founded", value: "2018" },
+    { label: "HQ", value: "West Jakarta, Indoneia" },
+    { label: "Services", value: "Music Production, Audio Engineering, Publishing, Distribution" },
     { label: "Focus", value: "Artist‑first, global rollout" },
   ];
   return (
@@ -212,23 +212,8 @@ export default function AboutIntlPage() {
       </div>
 
       {/* Top bar */}
-      <nav className="sticky top-0 z-40 border-b border-black/10 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:border-white/10 dark:bg-black/40">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <div className="h-6 w-6 rounded-md bg-gradient-to-br from-indigo-600 to-fuchsia-600" />
-            <span>FMGIHub · Flemmo Studio</span>
-          </Link>
-          <div className="hidden items-center gap-6 text-sm sm:flex">
-            <Link href="/services" className="opacity-80 hover:opacity-100">Services</Link>
-            <Link href="/about" className="opacity-100">About</Link>
-            <Link href="/#pricing" className="opacity-80 hover:opacity-100">Pricing</Link>
-            <MagneticButton href="#contact" className="px-4 py-2">Get a quote</MagneticButton>
-          </div>
-        </div>
-      </nav>
-
       {/* Hero */}
-      <section className="relative overflow-hidden pt-20 sm:pt-24">
+      <section className="relative overflow-hidden pt-20 sm:pt-10">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(1200px_500px_at_50%_-100px,rgba(79,70,229,0.15),transparent)]" />
         <div className="mx-auto max-w-6xl px-4">
           <div className="flex flex-col items-center text-center">
@@ -239,11 +224,12 @@ export default function AboutIntlPage() {
               </motion.div>
             </Parallax>
             <Parallax amount={14}>
-              <SplitHeadline text="About FMGIHub / Flemmo Studio" />
+              <SplitHeadline text="What is FMG Universe?" />
             </Parallax>
             <Parallax amount={16}>
               <motion.p variants={fadeUp} className="mt-4 max-w-3xl text-balance text-base leading-relaxed text-black/70 dark:text-white/70">
-                We help artists and teams create, publish, and scale music globally — combining publishing administration, label/distribution, licensing support, and a full‑stack production studio.
+                FMG Universe is a global music company and platform. <br />Beyond Sound. Built-in Intelligence. <br /><br />We turn creativity into compounding value with one operating system for music—uniting creation, talent, distribution & media, R&D, publishing, live and education. Driven by technological innovation, we help artists, labels and brands scout smarter, produce faster, own rights, grow royalties into lasting equity.
+                <br /><br />In simple terms, FMG Universe is an all-in-one hub for the music business. Instead of using many separate services, artists and brands can create music, manage talent, release songs and videos, handle rights and royalties, and plan live or education programs in one place. With smart tools and clear workflows, we make the process faster, more transparent, and more profitable—so creative work builds long-term value.
               </motion.p>
             </Parallax>
           </div>
@@ -254,10 +240,41 @@ export default function AboutIntlPage() {
       <section className="mx-auto max-w-6xl grid grid-cols-1 gap-8 px-4 pb-10 pt-16 lg:grid-cols-[270px_1fr]">
         <QuickFacts />
         <article className="prose prose-zinc max-w-none dark:prose-invert">
-          <h2>What is FMGIHub?</h2>
-          <p>
-            Flemmo Music Global Industry Hub (FMGIHub) is a modern music company built around an artist‑first workflow. We bring distribution and publishing services together with rights management and studio production so creators can move from idea to release without friction.
+          <article className="prose prose-neutral max-w-none dark:prose-invert
+                            prose-headings:scroll-mt-20 prose-h2:font-semibold
+                            prose-p:leading-relaxed prose-li:marker:text-indigo-500">
+          <h2>What is Flemmo Music Global (FMG)?</h2>
+          <p className="py-3">
+            <strong>Flemmo Music Global (powered by FMG Universe)</strong> is a professional music company
+            that connects the creative and business sides of your career in one place.
+            <em> Beyond Sound. Built-in Intelligence.</em> From first idea to global release and long-term growth,
+            we provide a clear, reliable workflow so you can focus on making great music while we handle the rest.
           </p>
+          <p className="">
+            On the creative side, our team covers <strong>songwriting, composition, arranging, recording, mixing,
+            mastering, and sound design</strong>—including music direction and audio post for film, ads, and games.
+            On the business side, we manage <strong>publishing, copyright registration, licensing, and digital &
+            physical distribution</strong>. We also run <strong>marketing, promotion, PR, artist branding, image and
+            business development, partnerships, sponsorships, and monetization</strong> across streaming, social,
+            sync, and live.
+          </p>
+          <p className="py-3">
+            Because we operate on the FMG Universe platform—an “operating system” for music—we unite creation,
+            talent, distribution &amp; media, R&amp;D, publishing, live, and education into one connected pipeline.
+            That means smarter A&amp;R, faster production, transparent rights management, and stronger royalty growth.
+            Whether you’re an independent artist, a label, or a brand, we help you succeed in local and international
+            markets with world-class quality, predictable timelines, and data-driven decisions.
+          </p>
+
+          <ul>
+            <li><strong>End-to-end workflow:</strong> One partner from demo to release to growth.</li>
+            <li><strong>Rights &amp; royalties first:</strong> Clear ownership, accurate reporting, long-term value.</li>
+            <li><strong>Creative excellence:</strong> Experienced producers and engineers, pro-level delivery.</li>
+            <li><strong>Market reach:</strong> Global distribution, PR, and partnerships tailored to your goals.</li>
+            <li><strong>Scalable support:</strong> Flexible packages for singles, EPs, albums, and catalogs.</li>
+          </ul>
+        </article>
+
           <div className="not-prose mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
             <Pillar icon={Rocket} title="Distribution & Publishing" points={["DSP delivery & QC","Registrations & splits","Metadata & compliance"]} />
             <Pillar icon={Music} title="Studio & Creation" points={["Songwriting & arrangement","Recording, mixing, mastering","Remote & in‑studio workflow"]} />
@@ -268,13 +285,13 @@ export default function AboutIntlPage() {
           <h2 className="mt-12">Leadership</h2>
           <FounderCard />
 
-          <h2 className="mt-12">Milestones</h2>
+          {/* <h2 className="mt-12">Milestones</h2>
           <ol className="relative mx-auto max-w-3xl space-y-8 border-l border-black/10 pl-6 dark:border-white/10">
             <TimelineItem year="2020" title="Studio roots" desc="Songwriting and production for independent artists." />
             <TimelineItem year="2022" title="Publishing arm" desc="Launched FMG Publishing for registrations & splits." />
             <TimelineItem year="2023" title="Distribution" desc="Rolled out DSP delivery and quality control checks." />
             <TimelineItem year="2024" title="Licensing & portal" desc="Introduced licensing support and secure client portal." />
-          </ol>
+          </ol> */}
 
           <h2 className="mt-12">Global footprint</h2>
           <p>We collaborate with clients across Asia, North America, and Europe. Remote‑first, with studio partners as needed.</p>

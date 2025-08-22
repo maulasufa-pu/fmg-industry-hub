@@ -1,246 +1,484 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { gsap } from "gsap";
-import { Bell, ChevronDown, Cog } from "@/icons";
-import type { JSX } from "react";
-import UserMenu from "@/app/ui/pop_over/user_menu";
+import React from "react";
+import Link from "next/link";
+import {
+  ArrowRight,
+  ChevronDown,
+  Wand2,
+  Users2,
+  Cpu,
+  BookOpen,
+  GraduationCap,
+  Film,
+  PartyPopper,
+  Menu as MenuIcon,
+  X,
+} from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 
-export const HeaderSection = (): JSX.Element => {
-  const [notificationCount] = useState(9);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const headerRef = useRef<HTMLDivElement>(null);
-  const logoRef = useRef<HTMLDivElement>(null);
-  const navRef = useRef<HTMLElement>(null);
-  const actionsRef = useRef<HTMLDivElement>(null);
+/*********************************
+ * Types & Menu Data
+ *********************************/
+ type MenuItem = {
+  label: string;
+  href: string;
+  desc: string;
+  Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+};
 
-  const navigationItems = [
-    { label: "Home", href: "#home" },
-    { label: "Dashboard", href: "#dashboard" },
-    { label: "Musics", href: "#musics" },
-    { label: "Pricing", href: "#pricing" },
-    { label: "About Us", href: "#about" },
-  ];
+const MENU: readonly MenuItem[] = [
+  { label: "Creative", href: "/creative", desc: "Production, mixing, mastering, sound design.", Icon: Wand2 },
+  { label: "Talent", href: "/#features", desc: "Scouting, A&R, artist development & management.", Icon: Users2 },
+  { label: "Labs (AI/tuneXpert)", href: "/#features", desc: "R&D, AI tools, workflow acceleration.", Icon: Cpu },
+  { label: "Publishing", href: "/#features", desc: "Rights admin, licensing & royalty tracking.", Icon: BookOpen },
+  { label: "Academy", href: "/#features", desc: "Workshops, mentorships, career pathways.", Icon: GraduationCap },
+  { label: "Media", href: "/#features", desc: "Content, MV, promos & PR distribution.", Icon: Film },
+  { label: "Event & Festival", href: "/#features", desc: "Showcases, tours, venue & brand collabs.", Icon: PartyPopper },
+];
 
-  // GSAP Animations on mount
-  useEffect(() => {
-    const timeline = gsap.timeline();
-    
-    // Header entrance animation
-    timeline
-      .fromTo(headerRef.current, 
-        { y: -100, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.8, ease: "back.out(1.7)" }
-      )
-      .fromTo(logoRef.current,
-        { x: -50, opacity: 0 },
-        { x: 0, opacity: 1, duration: 0.6, ease: "power2.out" },
-        "-=0.5"
-      );
+/*********************************
+ * Animations
+ *********************************/
+const panel: Variants = {
+  hidden: { opacity: 0, y: -8, scale: 0.98, pointerEvents: "none" as const },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    pointerEvents: "auto" as const,
+    transition: { duration: 0.18, ease: "easeOut", when: "beforeChildren", staggerChildren: 0.035 },
+  },
+  exit: { opacity: 0, y: -6, scale: 0.985, transition: { duration: 0.12 } },
+};
+const item: Variants = { hidden: { opacity: 0, y: -6 }, show: { opacity: 1, y: 0 } };
 
-    // Animate action children only
-    if (actionsRef.current?.children) {
-      timeline.fromTo(Array.from(actionsRef.current.children),
-        { x: 50, opacity: 0 },
-        { x: 0, opacity: 1, duration: 0.4, stagger: 0.1, ease: "power2.out" },
-        "-=0.3"
-      );
-    }
+// Mobile sheet animations
+const overlayVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: 0.18 } },
+  exit: { opacity: 0, transition: { duration: 0.12 } },
+};
+const sheetVariants: Variants = {
+  hidden: { y: -24, opacity: 0 },
+  show: { y: 0, opacity: 1, transition: { type: "tween", duration: 0.22 } },
+  exit: { y: -16, opacity: 0, transition: { duration: 0.15 } },
+};
+
+/*********************************
+ * Component
+ *********************************/
+export const HeaderSection = (): React.JSX.Element => {
+  const [open, setOpen] = React.useState(false); // desktop mega menu
+  const [focusIndex, setFocusIndex] = React.useState<number>(-1);
+  const menuRef = React.useRef<HTMLDivElement | null>(null);
+  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
+  const itemRefs = React.useRef<Array<HTMLAnchorElement | null>>([]);
+
+  const [mobileOpen, setMobileOpen] = React.useState<boolean>(false);
+  const mobilePanelRef = React.useRef<HTMLDivElement | null>(null);
+
+  const setItemRef =
+    (idx: number) =>
+    (el: HTMLAnchorElement | null): void => {
+      itemRefs.current[idx] = el;
+    };
+
+  // Close on click-outside & Esc & resize (desktop mega menu)
+  React.useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target as Node) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+        setFocusIndex(-1);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        setFocusIndex(-1);
+        triggerRef.current?.focus();
+      }
+    };
+    const onResize = () => setOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    window.addEventListener("resize", onResize);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", onResize);
+    };
   }, []);
 
-  // Logo hover animation
-  useEffect(() => {
-    if (logoRef.current) {
-      const logo = logoRef.current;
-      
-      logo.addEventListener("mouseenter", () => {
-        gsap.to(logo, {
-          scale: 1.05,
-          rotation: 2,
-          duration: 0.3,
-          ease: "power2.out"
-        });
-      });
-      
-      logo.addEventListener("mouseleave", () => {
-        gsap.to(logo, {
-          scale: 1,
-          rotation: 0,
-          duration: 0.3,
-          ease: "power2.out"
-        });
-      });
+  // Focus the hovered/arrowed item (desktop)
+  React.useEffect(() => {
+    if (!open) return;
+    if (focusIndex >= 0) itemRefs.current[focusIndex]?.focus();
+  }, [focusIndex, open]);
+
+  // Keyboard handling on trigger (desktop)
+  const onTriggerKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setOpen(true);
+      setFocusIndex(0);
     }
-  }, []);
+  };
+
+  // Roving tabindex in menu (desktop)
+  const onMenuKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!open) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setFocusIndex((i) => Math.min(i + 1, MENU.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setFocusIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      setFocusIndex(0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      setFocusIndex(MENU.length - 1);
+    } else if (e.key === "Tab") {
+      // close if focus leaves panel
+      setTimeout(() => {
+        const active = document.activeElement;
+        const inside = menuRef.current?.contains(active) || triggerRef.current === active;
+        if (!inside) setOpen(false);
+      }, 0);
+    }
+  };
+
+  // Mobile: lock scroll & focus the panel on open
+  React.useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+      // focus first focusable element inside panel
+      setTimeout(() => mobilePanelRef.current?.focus(), 0);
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
+
+  // Mobile: close on ESC
+  React.useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [mobileOpen]);
+
+  // Mobile: rudimentary focus trap inside the panel
+  const onMobileKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "Tab") return;
+    const focusables = mobilePanelRef.current?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), [tabindex="0"]'
+    );
+    if (!focusables || focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
 
   return (
-    <motion.div 
-      ref={headerRef}
-      className="flex items-center gap-6 px-4 sm:px-6 lg:px-8 py-4 w-full bg-white dark:bg-gray-900/95 border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600/50"
-      initial={{ y: -100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.8, ease: "easeOut" }}
+    <nav
+      className="
+        sticky top-0 inset-x-0 z-50
+        border-b border-black/5 dark:border-white/10
+        bg-white/30 dark:bg-black/25
+        backdrop-blur-xl
+        supports-[backdrop-filter]:bg-white/20
+        dark:supports-[backdrop-filter]:bg-black/20
+      "
     >
-      {/* Logo Section with Animation */}
-      <motion.div 
-        ref={logoRef}
-        className="inline-flex items-start gap-1 relative flex-[0_0_auto] cursor-pointer"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <div className="inline-flex items-center justify-center relative flex-[0_0_auto]">
-          {/* Logo placeholder - add your logo here */}
-          <div 
-            className="w-8 h-8 bg-gradient-to-br  from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg dark:shadow-slate-900/25"
-          >
-            <span className="text-white font-bold text-sm">FM</span>
+      <div className="relative mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
+        {/* Left: Brand */}
+        <Link href="/" className="flex items-center gap-2 font-semibold">
+          <div className="h-6 w-6 rounded-md bg-gradient-to-br from-indigo-600 to-fuchsia-600" />
+          <div className="inline-flex flex-col items-start justify-center">
+            <div className="font-heading-4 text-gray-800 dark:text-gray-100">Flemmo Music</div>
+            <div className="-mt-1 font-body-XS text-neutral-600 dark:text-neutral-300">Global Universe</div>
+          </div>
+        </Link>
+
+        {/* Center: Nav (desktop only) */}
+        <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 sm:flex items-center gap-6 text-sm z-10">
+          <Link href="/#about" className="opacity-80 hover:opacity-100">
+            About
+          </Link>
+          <Link href="/#features" className="opacity-80 hover:opacity-100">
+            Services
+          </Link>
+          <Link href="/#pricing" className="opacity-80 hover:opacity-100">
+            Packages
+          </Link>
+
+          {/* Desktop Mega Menu */}
+          <div className="relative" ref={menuRef}>
+            <button
+              ref={triggerRef}
+              type="button"
+              onClick={() => {
+                setOpen((v) => !v);
+                setFocusIndex((v) => (v < 0 ? 0 : v));
+              }}
+              onKeyDown={onTriggerKeyDown}
+              aria-haspopup="menu"
+              aria-expanded={open}
+              className="
+                inline-flex items-center gap-1 rounded-xl px-3 py-1.5
+                opacity-90 hover:opacity-100
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/50 dark:focus-visible:ring-indigo-300/40
+                transition
+              "
+            >
+              Menu
+              <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                <ChevronDown className="h-4 w-4" />
+              </motion.span>
+            </button>
+
+            <AnimatePresence>
+              {open && (
+                <motion.div
+                  key="menu"
+                  variants={panel}
+                  initial="hidden"
+                  animate="show"
+                  exit="exit"
+                  onKeyDown={onMenuKeyDown}
+                  role="menu"
+                  aria-label="FMG Sections"
+                  className="
+                    fixed top-16 left-1/2 z-[60]
+                    w-[520px] max-w-[calc(100vw-1rem)] -translate-x-1/2 mx-2 sm:mx-0
+                    rounded-2xl ring-1 ring-white/80 dark:ring-black/90
+                    overflow-hidden shadow-[0_24px_60px_-12px_rgba(0,0,0,0.35)]
+                    bg-white/100 dark:bg-black/100
+                  "
+                >
+                  {/* CONTENT */}
+                  <div className="relative z-10 p-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                      {MENU.map((m, idx) => (
+                        <motion.div key={m.label} variants={item}>
+                          <Link
+                            ref={setItemRef(idx)}
+                            href={m.href}
+                            role="menuitem"
+                            tabIndex={-1}
+                            onClick={() => {
+                              setOpen(false);
+                              setFocusIndex(-1);
+                            }}
+                            className="
+                              group relative flex items-center gap-4 rounded-2xl p-3
+                              ring-1 ring-black/10 dark:ring-white/10
+                              bg-white/65 dark:bg-white/[0.04]
+                              hover:bg-white/75 dark:hover:bg-white/[0.06]
+                              transition
+                              shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]
+                              dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]
+                              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40
+                              after:pointer-events-none after:absolute after:inset-0 after:rounded-2xl
+                              after:bg-gradient-to-br after:from-white/40 after:to-transparent
+                              after:opacity-0 group-hover:after:opacity-100 after:transition-opacity
+                            "
+                          >
+                            {/* Icon */}
+                            <div
+                              className="
+                                flex-shrink-0 grid size-11 place-items-center rounded-xl
+                                bg-gradient-to-br from-indigo-600 to-violet-600
+                                text-white
+                                border border-white/30 dark:border-white/10
+                                shadow-[0_6px_18px_rgba(79,70,229,0.35)]
+                              "
+                            >
+                              <m.Icon className="h-5 w-5" />
+                            </div>
+
+                            {/* Text */}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-black/90 dark:text-white/90">{m.label}</span>
+                                <ArrowRight className="h-3.5 w-3.5 opacity-0 -translate-x-1 transition group-hover:opacity-100 group-hover:translate-x-0" />
+                              </div>
+                              <p className="mt-0.5 text-[12.5px] leading-5 text-neutral-700 dark:text-neutral-300 line-clamp-2">
+                                {m.desc}
+                              </p>
+                            </div>
+                          </Link>
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    <div className="mt-1 flex items-center justify-between rounded-xl border border-black/10 dark:border-white/10 bg-white/40 dark:bg-white/5 px-3 py-2">
+                      <span className="text-[12.5px] text-neutral-700 dark:text-neutral-300">
+                        “Beyond Sound. Built-in Intelligence.”
+                      </span>
+                      <Link
+                        href="/client/dashboard"
+                        className="
+                          inline-flex items-center gap-1.5 rounded-lg border border-black/10 dark:border-white/10
+                          bg-black text-white dark:bg-white dark:text-black px-3 py-1.5 text-xs font-semibold
+                          hover:opacity-90 transition
+                        "
+                      >
+                        Start Project <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
-        <div className="inline-flex flex-col items-end justify-center relative flex-[0_0_auto]">
-          <div 
-            className="relative w-fit mt-[-1.00px] font-heading-4 font-[number:var(--heading-4-font-weight)] text-gray-800 dark:text-gray-100 dark:text-gray-100 text-[length:var(--heading-4-font-size)] tracking-[var(--heading-4-letter-spacing)] leading-[var(--heading-4-line-height)] whitespace-nowrap [font-style:var(--heading-4-font-style)]"
+        {/* Right: CTA + Theme (desktop only) */}
+        <div className="ml-auto hidden items-center gap-4 sm:flex">
+          <Link
+            href="/client/dashboard"
+            className="
+              group relative inline-flex h-11 items-center gap-2 rounded-2xl px-5
+              text-sm font-semibold leading-none
+              bg-black text-white dark:bg-white dark:text-black
+              shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-colors
+              hover:bg-gradient-to-r hover:from-indigo-600 hover:to-violet-600 hover:text-white
+            "
           >
-            Flemmo Music
-          </div>
+            Start My Project
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            <span className="pointer-events-none absolute inset-0 rounded-2xl bg-white/10 opacity-0 blur-xl transition-opacity group-hover:opacity-100 dark:bg-black/10" />
+          </Link>
 
-          <div 
-            className="relative w-fit -mt-1 font-body-XS font-[number:var(--body-XS-font-weight)] text-neutral-600 dark:text-neutral-200 dark:text-gray-200 text-[length:var(--body-XS-font-size)] tracking-[var(--body-XS-letter-spacing)] leading-[var(--body-XS-line-height)] whitespace-nowrap [font-style:var(--body-XS-font-style)]"
-          >
-            Industry Hub
-          </div>
+          <ThemeToggle className="grid h-11 w-11 place-items-center rounded-full border border-black/10 bg-white/60 text-black dark:border-white/10 dark:bg-black/40" />
         </div>
-      </motion.div>
 
-      {/* Navigation with Stagger Animation */}
-      <motion.nav
-        ref={navRef}
-        className="flex items-center gap-4 relative flex-1 grow"
-        role="navigation"
-        aria-label="Main navigation"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.6 }}
-      >
-        {navigationItems.map((item, index) => (
-          <motion.a
-            key={index}
-            href={item.href}
-            className="inline-flex items-center gap-2 px-3 py-2 relative flex-[0_0_auto] hover:bg-blue-50 dark:bg-blue-900/20 dark:bg-blue-900/20 transition-all duration-300 rounded-lg group"
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4 + index * 0.1, duration: 0.4 }}
-            whileHover={{ 
-              scale: 1.05,
-              backgroundColor: "rgba(59, 130, 246, 0.1)"
-            }}
-            whileTap={{ scale: 0.95 }}
+        {/* Right: Mobile controls */}
+        <div className="ml-auto flex items-center gap-2 sm:hidden">
+          <ThemeToggle className="grid h-10 w-10 place-items-center rounded-full border border-black/10 bg-white/60 text-black dark:border-white/10 dark:bg-black/40" />
+          <button
+            type="button"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-menu-panel"
+            onClick={() => setMobileOpen((v) => !v)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.06]"
           >
-            <motion.div 
-              className="relative w-fit mt-[-1.00px] font-other-menu-m font-[number:var(--other-menu-m-font-weight)] text-gray-700 dark:text-gray-200 text-[length:var(--other-menu-m-font-size)] tracking-[var(--other-menu-m-letter-spacing)] leading-[var(--other-menu-m-line-height)] whitespace-nowrap [font-style:var(--other-menu-m-font-style)] group-hover:text-sky-600 dark:text-sky-200 transition-colors"
-              whileHover={{ y: -1 }}
+            {mobileOpen ? <X className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile overlay + sheet */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.div
+              key="overlay"
+              initial="hidden"
+              animate="show"
+              exit="exit"
+              variants={overlayVariants}
+              onClick={() => setMobileOpen(false)}
+              className="fixed inset-0 z-40 bg-black/40"
+            />
+
+            <motion.div
+              key="sheet"
+              id="mobile-menu-panel"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Mobile menu"
+              tabIndex={0}
+              ref={mobilePanelRef}
+              initial="hidden"
+              animate="show"
+              exit="exit"
+              variants={sheetVariants}
+              onKeyDown={onMobileKeyDown}
+              className="fixed z-50 top-16 inset-x-0 rounded-b-3xl border-b border-black/10 dark:border-white/10 bg-white/95 dark:bg-black/90 backdrop-blur-xl"
             >
-              {item.label}
-            </motion.div>
-          </motion.a>
-        ))}
+              <div className="px-4 pt-3 pb-6">
+                {/* Top quick links */}
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <Link href="/#about" onClick={() => setMobileOpen(false)} className="rounded-xl border border-black/10 dark:border-white/10 bg-white/60 dark:bg-white/[0.06] px-3 py-2 text-center">About</Link>
+                  <Link href="/#features" onClick={() => setMobileOpen(false)} className="rounded-xl border border-black/10 dark:border-white/10 bg-white/60 dark:bg-white/[0.06] px-3 py-2 text-center">Services</Link>
+                  <Link href="/#pricing" onClick={() => setMobileOpen(false)} className="rounded-xl border border-black/10 dark:border-white/10 bg-white/60 dark:bg-white/[0.06] px-3 py-2 text-center">Packages</Link>
+                </div>
 
-        <motion.button
-          className="inline-flex items-center gap-2 px-3 py-2 relative flex-[0_0_auto] hover:bg-blue-50 dark:bg-blue-900/20 dark:bg-blue-900/20 transition-all duration-300 rounded-lg group"
-          aria-expanded={isMenuOpen}
-          aria-haspopup="true"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 + navigationItems.length * 0.1, duration: 0.4 }}
-          whileHover={{ 
-            scale: 1.05,
-            backgroundColor: "rgba(59, 130, 246, 0.1)"
-          }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <motion.div 
-            className="relative w-fit font-other-menu-m font-[number:var(--other-menu-m-font-weight)] text-gray-700 dark:text-gray-200 text-[length:var(--other-menu-m-font-size)] tracking-[var(--other-menu-m-letter-spacing)] leading-[var(--other-menu-m-line-height)] whitespace-nowrap [font-style:var(--other-menu-m-font-style)] group-hover:text-sky-600 dark:text-sky-200 transition-colors"
-            whileHover={{ y: -1 }}
-          >
-            Menu
-          </motion.div>
+                {/* Sections */}
+                <div className="mt-4 divide-y divide-black/5 dark:divide-white/10">
+                  <div className="pb-3">
+                    <div className="text-xs uppercase tracking-wide text-neutral-600 dark:text-neutral-300 mb-2">FMG Sections</div>
+                    <div className="grid grid-cols-1 gap-2">
+                      {MENU.map((m) => (
+                        <Link
+                          key={m.label}
+                          href={m.href}
+                          onClick={() => setMobileOpen(false)}
+                          className="group flex items-center gap-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.06] p-3"
+                        >
+                          <span className="grid size-9 place-items-center rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 text-white border border-white/30 dark:border-white/10">
+                            <m.Icon className="h-4 w-4" />
+                          </span>
+                          <span className="flex-1 min-w-0">
+                            <span className="block text-[15px] font-medium text-black/90 dark:text-white/90">{m.label}</span>
+                            <span className="block text-[12.5px] text-neutral-700 dark:text-neutral-300 line-clamp-1">{m.desc}</span>
+                          </span>
+                          <ArrowRight className="h-4 w-4 opacity-60 group-hover:opacity-100" />
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
 
-          <motion.div
-            animate={{ 
-              rotate: isMenuOpen ? 180 : 0 
-            }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-          >
-            <ChevronDown className="!relative !w-6 !h-6 text-neutral-600 dark:text-neutral-200 dark:text-gray-200 group-hover:text-sky-600 dark:text-sky-200 transition-colors" />
-          </motion.div>
-        </motion.button>
-      </motion.nav>
+                  <div className="pt-3">
+                    <Link
+                      href="/client/dashboard"
+                      onClick={() => setMobileOpen(false)}
+                      className="
+                        mt-1 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3
+                        text-sm font-semibold leading-none
+                        bg-black text-white dark:bg-white dark:text-black
+                        shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-colors
+                        hover:bg-gradient-to-r hover:from-indigo-600 hover:to-violet-600 hover:text-white
+                      "
+                    >
+                      Start My Project
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </div>
+                </div>
 
-      {/* Action Buttons with Pulse Effects */}
-      <motion.div 
-        ref={actionsRef}
-        className="inline-flex items-center justify-end gap-2 relative flex-[0_0_auto]"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5, duration: 0.6 }}
-      >
-        <motion.button
-          className="flex w-12 h-12 items-center justify-center gap-4 px-2 py-4 relative hover:bg-blue-50 dark:bg-blue-900/20 dark:bg-blue-900/20 transition-all duration-300 rounded-lg group"
-          aria-label={`Notifications (${notificationCount} unread)`}
-          initial={{ x: 50, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.4 }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <Bell className="!relative !w-6 !h-6 !mt-[-4.00px] !mb-[-4.00px] text-neutral-600 dark:text-neutral-200 dark:text-gray-200 group-hover:text-sky-600 dark:text-sky-200 transition-colors" />
-          {notificationCount > 0 && (
-            <motion.div 
-              className="inline-flex items-center justify-center gap-2.5 px-[5.5px] py-[0.5px] absolute top-2 left-6 bg-red-50 dark:bg-red-900/600 rounded-xl"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.8, type: "spring", stiffness: 500, damping: 15 }}
-            >
-              <div 
-                className="relative w-fit font-body-XS font-[number:var(--body-XS-font-weight)] text-white text-[length:var(--body-XS-font-size)] text-center tracking-[var(--body-XS-letter-spacing)] leading-[var(--body-XS-line-height)] whitespace-nowrap [font-style:var(--body-XS-font-style)]"
-              >
-                {notificationCount}
+                {/* Tagline */}
+                <div className="mt-4 text-center text-[12.5px] text-neutral-700 dark:text-neutral-300">
+                  “Beyond Sound. Built-in Intelligence.”
+                </div>
               </div>
             </motion.div>
-          )}
-        </motion.button>
-
-        <motion.button
-          className="flex w-12 h-12 items-center justify-center gap-4 px-2 py-4 relative hover:bg-blue-50 dark:bg-blue-900/20 dark:bg-blue-900/20 transition-all duration-300 rounded-lg group"
-          aria-label="Settings"
-          initial={{ x: 50, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ delay: 0.7, duration: 0.4 }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <motion.div
-            whileHover={{ 
-              rotate: 180,
-            }}
-            transition={{ duration: 0.5 }}
-          >
-            <Cog className="!relative !w-6 !h-6 !mt-[-4.00px] !mb-[-4.00px] text-neutral-600 dark:text-neutral-200 dark:text-gray-200 group-hover:text-sky-600 dark:text-sky-200 transition-colors" />
-          </motion.div>
-        </motion.button>
-
-        <motion.div 
-          className="inline-flex items-center justify-end relative flex-[0_0_auto]"
-          initial={{ x: 50, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ delay: 0.8, duration: 0.4 }}
-        >
-          <UserMenu />
-        </motion.div>
-      </motion.div>
-    </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </nav>
   );
 };
 

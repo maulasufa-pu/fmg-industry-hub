@@ -150,13 +150,33 @@ export const LoginSection = (): React.JSX.Element => {
 
   const handleSocialLogin = async (provider: "google") => {
     setErr(null);
-    const supabase = getSupabaseClient();
-    const redirectTo = `https://fmg-industry-hub.vercel.app/auth/callback?flow=login`;
     setSocialLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo }});
-    if (error) setErr(error.message);
-    setSocialLoading(false);  
+    try {
+      const supabase = getSupabaseClient();
+
+      const redirectTo = "https://fmg-industry-hub.vercel.app/auth/callback?flow=login";
+
+      // produksi (langsung redirect oleh SDK):
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo,
+          // skipBrowserRedirect: true, // <- set ke true kalau mau debug URL dulu
+        },
+      });
+
+      // DEBUG: kalau pakai skipBrowserRedirect:true di atas, kamu bisa manual redirect:
+      // if (!error && data?.url) window.location.assign(data.url);
+
+      if (error) setErr(error.message);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "OAuth failed");
+    } finally {
+      // kalau sukses normal, halaman akan pindah sebelum baris ini sempat jalan—gak apa-apa
+      setSocialLoading(false);
+    }
   };
+
 
   const emailInvalid = touched.email && !!errors.email;
   const passwordInvalid = touched.password && !!errors.password;

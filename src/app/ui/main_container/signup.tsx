@@ -152,11 +152,21 @@ export function SignUpSection(): React.JSX.Element {
   };
 
   const handleOAuth = async (provider: "google") => {
-    setErr(null); setMsg(null);
+  setErr(null);
+  setMsg(null);
+  try {
     const supabase = getSupabaseClient();
     const redirectTo = "https://fmg-industry-hub.vercel.app/auth/callback?flow=signup";
-    await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } });
-  };
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo }, // flowType di-set saat createClient, bukan di sini
+    });
+    if (error) setErr(error.message);
+  } catch (e) {
+    setErr(e instanceof Error ? e.message : "OAuth failed");
+  }
+};
+
 
   const firstInvalid = touched.firstName && !!errors.firstName;
   const lastInvalid = touched.lastName && !!errors.lastName;

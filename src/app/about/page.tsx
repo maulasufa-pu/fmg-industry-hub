@@ -237,7 +237,7 @@ export default function AboutIntlPage() {
       </section>
 
       {/* Content layout: sticky quick facts + long‑form content */}
-      <section className="mx-auto max-w-6xl grid grid-cols-1 gap-8 px-4 pb-10 pt-16 lg:grid-cols-[270px_1fr]">
+      <section className="text-black/70 dark:text-white/70 mx-auto max-w-6xl grid grid-cols-1 gap-8 px-4 pb-10 pt-16 lg:grid-cols-[270px_1fr]">
         <QuickFacts />
         <article className="prose prose-zinc max-w-none dark:prose-invert">
           <article className="prose prose-neutral max-w-none dark:prose-invert

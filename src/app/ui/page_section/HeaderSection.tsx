@@ -30,12 +30,12 @@ import { motion, AnimatePresence, Variants } from "framer-motion";
 
 const MENU: readonly MenuItem[] = [
   { label: "Creative", href: "/creative", desc: "Production, mixing, mastering, sound design.", Icon: Wand2 },
-  { label: "Talent", href: "/#features", desc: "Scouting, A&R, artist development & management.", Icon: Users2 },
-  { label: "Labs (AI/tuneXpert)", href: "/#features", desc: "R&D, AI tools, workflow acceleration.", Icon: Cpu },
-  { label: "Publishing", href: "/#features", desc: "Rights admin, licensing & royalty tracking.", Icon: BookOpen },
-  { label: "Academy", href: "/#features", desc: "Workshops, mentorships, career pathways.", Icon: GraduationCap },
-  { label: "Media", href: "/#features", desc: "Content, MV, promos & PR distribution.", Icon: Film },
-  { label: "Event & Festival", href: "/#features", desc: "Showcases, tours, venue & brand collabs.", Icon: PartyPopper },
+  { label: "Talent", href: "/talent", desc: "Scouting, A&R, artist development & management.", Icon: Users2 },
+  { label: "Labs (AI/tuneXpert)", href: "/labs", desc: "R&D, AI tools, workflow acceleration.", Icon: Cpu },
+  { label: "Publishing", href: "/publishing", desc: "Rights admin, licensing & royalty tracking.", Icon: BookOpen },
+  { label: "Academy", href: "/academy", desc: "Workshops, mentorships, career pathways.", Icon: GraduationCap },
+  { label: "Media", href: "/media", desc: "Content, MV, promos & PR distribution.", Icon: Film },
+  { label: "Event & Festival", href: "/event", desc: "Showcases, tours, venue & brand collabs.", Icon: PartyPopper },
 ];
 
 /*********************************

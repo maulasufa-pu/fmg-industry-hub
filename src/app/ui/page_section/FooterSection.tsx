@@ -26,7 +26,7 @@ export default function Footer() {
       ],
     },
     {
-      title: "FMGIHub",
+      title: "FMG Universe",
       links: [
         { label: "Overview", href: "https://hub.flemmomusic.com" },
         { label: "Network", href: "https://hub.flemmomusic.com/network" },

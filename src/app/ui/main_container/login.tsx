@@ -53,6 +53,7 @@ export const LoginSection = (): React.JSX.Element => {
   const qp = useSearchParams();
   const redirectedFrom = qp.get("redirectedFrom") || "/client/dashboard";
   const msg = qp.get("m");
+  const [socialLoading, setSocialLoading] = useState(false);
 
   // Prefill remembered email
   useEffect(() => {
@@ -85,7 +86,6 @@ export const LoginSection = (): React.JSX.Element => {
     setLoading(true);
     try {
       const supabase = getSupabaseClient();
-      const qp = useSearchParams();
       const rawNext = qp.get("next") || qp.get("redirectedFrom") || "";
       const safeNext = rawNext.startsWith("/") ? rawNext : "";
       // Clear existing session with timeout (defensive)
@@ -151,7 +151,6 @@ export const LoginSection = (): React.JSX.Element => {
   const handleSocialLogin = async (provider: "google") => {
     setErr(null);
     const supabase = getSupabaseClient();
-    const [socialLoading, setSocialLoading] = useState(false);
     const redirectTo = `https://fmg-industry-hub.vercel.app/auth/callback?flow=login`;
     setSocialLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo }});

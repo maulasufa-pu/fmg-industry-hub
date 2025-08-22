@@ -115,6 +115,8 @@ type UserProfile = {
   id: string;
   first_name: string;
   last_name: string;
+  name?: string;        // ⬅️ NEW
+  username?: string;    // ⬅️ NEW
   artist_name?: string;
   email: string;
   location?: string;
@@ -128,6 +130,8 @@ type UserProfile = {
 type FormData = {
   first_name: string;
   last_name: string;
+  name: string;         // ⬅️ NEW
+  username: string;     // ⬅️ NEW
   artist_name: string;
   email: string;
   location: string;
@@ -148,6 +152,8 @@ export default function ProfileSettingsPage() {
   const [formData, setFormData] = useState<FormData>({
     first_name: "",
     last_name: "",
+    name: "",
+    username: "",
     artist_name: "",
     email: "",
     location: "",
@@ -235,13 +241,15 @@ export default function ProfileSettingsPage() {
 
       setProfile(data);
       setFormData({
-        first_name: data.first_name || "",
-        last_name: data.last_name || "",
-        artist_name: data.artist_name || "",
-        email: data.email || "",
-        location: data.location || "",
-        phone_number: data.phone_number || "",
-      });
+      first_name: data.first_name || "",
+      last_name: data.last_name || "",
+      name: data.name || "",             // ⬅️ NEW
+      username: data.username || "",     // ⬅️ NEW
+      artist_name:  data.artist_name || "",
+      email: data.email || "",
+      location: data.location || "",
+      phone_number: data.phone_number || "",
+    });
 
       // Detect login provider dari user metadata atau identities
       if (user.app_metadata?.provider) {
@@ -287,20 +295,33 @@ export default function ProfileSettingsPage() {
     try {
       setSaving(true);
       
+      // Jika user mengisi username, pastikan unik via RPC generator
+      let finalUsername = formData.username?.trim() || null;
+      if (finalUsername) {
+        const { data: gen, error: genErr } = await supabase.rpc("gen_unique_username", {
+          base_in: finalUsername,
+          id_in: profile.id,
+        });
+        if (genErr) throw genErr;
+        finalUsername = gen || finalUsername;
+      }
+
       const { error } = await supabase
-        .from("profiles")
-        .update({
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          artist_name: formData.artist_name || null,
-          location: formData.location || null,
-          phone_number: formData.phone_number || null,
-        })
-        .eq("id", profile.id);
+      .from("profiles")
+      .update({
+        first_name: formData.first_name || null,
+        last_name: formData.last_name || null,
+        name: formData.name || null,                 // ⬅️ NEW
+        username: finalUsername,                     // ⬅️ NEW (unik via RPC)
+        artist_name: formData.artist_name || null,
+        location: formData.location || null,
+        phone_number: formData.phone_number || null,
+      })
+      .eq("id", profile.id);
 
       if (error) throw error;
 
-      setProfile(prev => prev ? { ...prev, ...formData } : null);
+      setProfile(prev => prev ? { ...prev, ...formData, username: finalUsername || undefined } : null);
       setIsEditing(false);
       setSuccess(true);
       
@@ -335,9 +356,14 @@ export default function ProfileSettingsPage() {
       setEmailConfirming(true);
       
       // Update email via Supabase Auth (akan kirim konfirmasi email)
-      const { error } = await supabase.auth.updateUser({
-        email: formData.email
-      });
+      const siteUrl =
+        (typeof window !== "undefined" ? window.location.origin : "") ||
+        process.env.NEXT_PUBLIC_SITE_URL || "";
+
+      const { error } = await supabase.auth.updateUser(
+        { email: formData.email },
+        { emailRedirectTo: `${siteUrl}/auth/callback` }  // ⬅️ penting
+      );
 
       if (error) throw error;
 
@@ -645,6 +671,31 @@ export default function ProfileSettingsPage() {
               className="grid grid-cols-1 md:grid-cols-2 gap-6"
               layout
             >
+              {/* Display Name */}
+              <motion.div layout className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Display Name</label>
+                <motion.input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  disabled={!isEditing}
+                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all ${isEditing ? "border-blue-300 focus:border-blue-500 focus:ring focus:ring-blue-200" : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"}`}
+                />
+              </motion.div>
+
+              {/* Username */}
+              <motion.div layout className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Username</label>
+                <motion.input
+                  type="text"
+                  value={formData.username}
+                  onChange={(e) => handleInputChange("username", e.target.value.replace(/[^a-zA-Z0-9._-]/g, "").toLowerCase())}
+                  disabled={!isEditing}
+                  placeholder="yourname"
+                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all ${isEditing ? "border-blue-300 focus:border-blue-500 focus:ring focus:ring-blue-200" : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"}`}
+                />
+                <p className="text-xs text-gray-500">Hanya huruf/angka, titik, garis bawah, dan minus. Unik (tidak bisa duplikat).</p>
+              </motion.div>
               {/* First Name */}
               <motion.div layout className="space-y-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-2">

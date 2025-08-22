@@ -131,8 +131,19 @@ export function SignUpSection(): React.JSX.Element {
       if (!data.session) {
         setMsg("We’ve sent a confirmation link to your email. Please verify to continue.");
       } else {
-        router.push("/client/dashboard");
+        // ⬇️ set HttpOnly cookie via server route
+        await fetch("/auth/set", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+          }),
+        });
+        // pakai replace supaya tidak balik ke /signup saat Back
+        router.replace("/client/dashboard");
       }
+
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Sign up failed");
     } finally {
@@ -143,9 +154,8 @@ export function SignUpSection(): React.JSX.Element {
   const handleOAuth = async (provider: "google") => {
     setErr(null); setMsg(null);
     const supabase = getSupabaseClient();
-    const redirectTo = `${window.location.origin}/auth/callback?flow=signup`;
-    const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } });
-    if (error) setErr(error.message);
+    const redirectTo = "https://fmg-industry-hub.vercel.app/auth/callback?flow=signup";
+    await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } });
   };
 
   const firstInvalid = touched.firstName && !!errors.firstName;

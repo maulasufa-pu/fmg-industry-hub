@@ -1,5 +1,4 @@
 // src/lib/supabase/server.ts
-// ❌ hapus: import "server-only";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 function assertServer() {

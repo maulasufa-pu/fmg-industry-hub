@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "generate:roles": "node scripts/generate-roles.mjs",
-    "prebuild": "node scripts/generate-roles.mjs && npm run seo:inject && npm run seo:refresh",
+    "prebuild": "node scripts/generate-roles.mjs && npm run seo:inject",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -23,13 +23,13 @@
     "fix-colors": "node scripts/fix-bright-colors.js",
     "clear-gradients": "node scripts/enhance-clear-gradients.js",
     "global-2025": "node scripts/global-standard-2025.js",
-    "seo:generate": "ts-node --transpile-only scripts/generate-seo.ts",
-    "seo:inject": "ts-node --transpile-only scripts/inject-seo-metadata.ts",
-    "sitemap": "next-sitemap",
-    "seo:dedupe": "ts-node --transpile-only scripts/seo-dedupe.ts",
-    "seo:refresh": "start-server-and-test \"next dev -p 3100\" http://localhost:3100 \"cross-env BASE_URL=http://localhost:3100 npm run seo:generate\""
+    "seo:generate": "ts-node --esm --transpile-only scripts/generate-seo.ts",
+    "seo:inject":   "ts-node --esm --transpile-only scripts/inject-seo-metadata.ts",
+    "seo:dedupe":   "ts-node --esm --transpile-only scripts/seo-dedupe.ts",
+    "sitemap": "next-sitemap"
   },
   "dependencies": {
+    "@hcaptcha/react-hcaptcha": "^1.12.1",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-slot": "^1.2.3",
     "@studio-freight/lenis": "^1.0.42",

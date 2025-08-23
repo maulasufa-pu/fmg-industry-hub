@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation"; // ⬅️ tambahkan useSearchParams
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 import { Google } from "@/icons";
 import {
   User,
@@ -16,7 +17,6 @@ import {
   Loader2,
   ShieldCheck,
   RefreshCcw,
-  CheckCircle2 
 } from "lucide-react";
 
 /*********************************
@@ -66,7 +66,7 @@ export function SignUpSection(): React.JSX.Element {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  const sp = useSearchParams(); // ⬅️ baca ?next bila ada
+  const sp = useSearchParams();
 
   const [errors, setErrors] = useState<FieldErrors>({});
   const [touched, setTouched] = useState<{
@@ -85,6 +85,27 @@ export function SignUpSection(): React.JSX.Element {
 
   const router = useRouter();
 
+  // --- hCaptcha
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaKey, setCaptchaKey] = useState<number>(0); // force re-mount on reset
+  const siteKey: string = process.env.NEXT_PUBLIC_HCAPTCHA_SITEKEY ?? "";
+
+  const verifyCaptcha = async (token: string): Promise<boolean> => {
+    const res = await fetch("/api/verify-hcaptcha", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+    if (!res.ok) return false;
+    const json: { ok: boolean } = await res.json();
+    return json.ok === true;
+  };
+
+  const resetCaptcha = (): void => {
+    setCaptchaToken(null);
+    setCaptchaKey((k) => k + 1);
+  };
+
   const [resendLoading, setResendLoading] = useState<boolean>(false);
   const [resendCooldown, setResendCooldown] = useState<number>(0);
 
@@ -94,12 +115,6 @@ export function SignUpSection(): React.JSX.Element {
     return () => clearInterval(t);
   }, [resendCooldown]);
 
-
-  // Optional UX: prefill first/last name if previously stored (customize as needed)
-  useEffect(() => {
-    // no-op (placeholder if you want to prefill later)
-  }, []);
-
   const buildRedirect = (flow: "signup" | "login") => {
     const origin =
       (typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || "")
@@ -107,10 +122,11 @@ export function SignUpSection(): React.JSX.Element {
     return `${origin}/auth/callback`;
   };
 
+  // Disabled submit if invalid or captcha belum ada
   const canSubmit = useMemo(() => {
     const v = validate({ firstName, lastName, email, password, agree });
-    return Object.keys(v).length === 0 && !loading;
-  }, [firstName, lastName, email, password, agree, loading]);
+    return Object.keys(v).length === 0 && !!captchaToken && !loading;
+  }, [firstName, lastName, email, password, agree, loading, captchaToken]);
 
   const focusFirstInvalid = (v: FieldErrors) => {
     if (v.firstName) { firstRef.current?.focus(); return; }
@@ -130,27 +146,41 @@ export function SignUpSection(): React.JSX.Element {
     setTouched({ firstName: true, lastName: true, email: true, password: true, agree: true });
     if (Object.keys(next).length > 0) { focusFirstInvalid(next); return; }
 
+    // Wajib captcha
+    if (!captchaToken) {
+      setErr("Please complete the captcha.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const supabase = getSupabaseClient();
+      // 0) Verify hCaptcha on server
+      const ok = await verifyCaptcha(captchaToken);
+      if (!ok) {
+        resetCaptcha();
+        throw new Error("Captcha verification failed. Please try again.");
+      }
 
+      // 1) Supabase signUp
+      const supabase = getSupabaseClient();
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: { first_name: firstName, last_name: lastName },
-          emailRedirectTo: buildRedirect("signup"), // ⬅️ normalisasi
+          emailRedirectTo: buildRedirect("signup"),
         },
       });
       if (error) throw error;
 
-      // kalau email-confirmation ON → tidak ada session
+      // 2) Jika email confirmation ON → session null → beri pesan
       if (!data.session) {
         setMsg("We’ve sent a confirmation link to your email. Please verify to continue.");
+        resetCaptcha(); // user bisa resend/solve lagi
         return;
       }
 
-      // set HttpOnly cookie via server
+      // 3) Set HttpOnly cookie
       const resp = await fetch("/auth/set", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -165,12 +195,13 @@ export function SignUpSection(): React.JSX.Element {
         throw new Error(m);
       }
 
-      // redirect sekali, hormati ?next yang aman
+      // 4) Redirect final (hormati ?next)
       const rawNext = sp.get("next") || sp.get("redirectedFrom") || "";
       const dest = rawNext.startsWith("/") ? rawNext : "/client/dashboard";
       router.replace(dest);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Sign up failed");
+      resetCaptcha();
     } finally {
       setLoading(false);
     }
@@ -180,8 +211,18 @@ export function SignUpSection(): React.JSX.Element {
     if (resendLoading || resendCooldown > 0 || !emailRe.test(email)) return;
     setErr(null);
     setMsg(null);
+
+    // Opsional (disarankan): butuh captcha utk resend agar anti-abuse
+    if (!captchaToken) {
+      setErr("Please complete the captcha before resending.");
+      return;
+    }
+
     setResendLoading(true);
     try {
+      const ok = await verifyCaptcha(captchaToken);
+      if (!ok) throw new Error("Captcha verification failed. Please try again.");
+
       const supabase = getSupabaseClient();
       const { error } = await supabase.auth.resend({
         type: "signup",
@@ -190,9 +231,11 @@ export function SignUpSection(): React.JSX.Element {
       });
       if (error) throw error;
       setMsg("We’ve re-sent the confirmation link. Please check your inbox/spam.");
-      setResendCooldown(30); // cooldown 30 detik
+      setResendCooldown(30);
+      resetCaptcha();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Resend failed");
+      resetCaptcha();
     } finally {
       setResendLoading(false);
     }
@@ -447,12 +490,28 @@ export function SignUpSection(): React.JSX.Element {
                 </p>
               )}
             </div>
+
             <Link
               href="/forgot-password"
               className="text-[13px] font-medium text-indigo-700 hover:text-indigo-800 dark:text-indigo-300 dark:hover:text-indigo-200"
             >
               Forgot password?
             </Link>
+
+            {/* hCaptcha */}
+            <div className="mt-4 flex justify-center">
+              <HCaptcha
+                key={captchaKey}
+                sitekey={siteKey}
+                onVerify={(token) => setCaptchaToken(token)}
+                onExpire={() => setCaptchaToken(null)}
+                onError={() => {
+                  setCaptchaToken(null);
+                  setErr("Captcha error. Please reload the captcha.");
+                }}
+              />
+            </div>
+
             {/* Submit */}
             <button
               type="submit"
@@ -483,6 +542,7 @@ export function SignUpSection(): React.JSX.Element {
                 {err ? err : msg}
               </div>
             )}
+
             {emailRe.test(email) && (
               <motion.button
                 type="button"
@@ -522,11 +582,13 @@ export function SignUpSection(): React.JSX.Element {
                 </span>
               </motion.button>
             )}
+
             {emailRe.test(email) && (
               <p className="mt-2 text-center text-[12px] text-neutral-600 dark:text-neutral-400">
                 We’ll send it to <span className="font-medium">{email}</span>.
               </p>
             )}
+
             {/* Divider */}
             <div className="mt-6 flex items-center gap-3">
               <div className="h-px flex-1 bg-black/10 dark:bg-white/10" />

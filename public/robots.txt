@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://fmg-industry-hub.vercel.app
+
+# Sitemaps
+Sitemap: https://fmg-industry-hub.vercel.app/sitemap.xml

@@ -14,6 +14,7 @@ import {
   Loader2,
   ShieldCheck,
 } from "lucide-react";
+import HCaptcha from '@hcaptcha/react-hcaptcha'
 
 /*********************************
  * Helpers & Types
@@ -36,6 +37,10 @@ const validate = (v: { email: string; password: string }): FieldErrors => {
  * Component
  *********************************/
 export const LoginSection = (): React.JSX.Element => {
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaKey, setCaptchaKey] = useState<number>(0); // untuk force re-mount widget jika perlu
+  const siteKey: string = process.env.NEXT_PUBLIC_HCAPTCHA_SITEKEY ?? "";
+
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [rememberMe, setRememberMe] = useState<boolean>(false);
@@ -67,8 +72,24 @@ export const LoginSection = (): React.JSX.Element => {
   // Disable submit if invalid
   const canSubmit = useMemo(() => {
     const v = validate({ email, password });
-    return Object.keys(v).length === 0 && !loading;
-  }, [email, password, loading]);
+    return Object.keys(v).length === 0 && !!captchaToken && !loading;
+  }, [email, password, loading, captchaToken]);
+
+  const verifyCaptcha = async (token: string): Promise<boolean> => {
+    const res = await fetch("/api/verify-hcaptcha", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+    if (!res.ok) return false;
+    const json: { ok: boolean } = await res.json();
+    return json.ok === true;
+  };
+
+  const resetCaptcha = (): void => {
+    setCaptchaToken(null);
+    setCaptchaKey((k) => k + 1);
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -83,18 +104,29 @@ export const LoginSection = (): React.JSX.Element => {
       return;
     }
 
+    // Wajib ada token
+    if (!captchaToken) {
+      setErr("Please complete the captcha.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const supabase = getSupabaseClient();
+      // 0) Verify hCaptcha on server
+      const ok = await verifyCaptcha(captchaToken);
+      if (!ok) {
+        resetCaptcha();
+        throw new Error("Captcha verification failed. Please try again.");
+      }
 
-      // 1) login biasa
+      // 1) Supabase login
+      const supabase = getSupabaseClient();
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw new Error(error.message || "Login failed");
-
       const session = data.session;
       if (!session) throw new Error("No session returned");
 
-      // 2) set HttpOnly cookie di server (WAJIB dicek)
+      // 2) Set HttpOnly cookie
       const resp = await fetch("/auth/set", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -104,26 +136,26 @@ export const LoginSection = (): React.JSX.Element => {
         }),
       });
       if (!resp.ok) {
-        let msg = "Failed to set server session";
-        try { msg = (await resp.json())?.error || msg; } catch {}
-        throw new Error(msg);
+        let m = "Failed to set server session";
+        try { m = (await resp.json())?.error || m; } catch {}
+        throw new Error(m);
       }
 
-      // 3) ingat email (opsional)
+      // 3) Remember email (opsional)
       if (rememberMe) localStorage.setItem("remember_email", email);
       else localStorage.removeItem("remember_email");
 
-      // 4) satu tujuan saja, pakai next yg sudah DISANITASI
+      // 4) Redirect final
       const rawNext = qp.get("next") || qp.get("redirectedFrom") || "";
       const dest = rawNext.startsWith("/") ? rawNext : "/client/dashboard";
-      router.replace(dest); // sekali saja, tanpa push lagi
-    } catch (e: unknown) {
+      router.replace(dest);
+    } catch (e) {
       setErr(e instanceof Error ? e.message : "Login failed");
+      resetCaptcha(); // paksa user solve lagi
     } finally {
       setLoading(false);
     }
   };
-
 
   const handleSocialLogin = async (provider: "google") => {
     setErr(null);

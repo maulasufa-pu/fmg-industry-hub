@@ -29,10 +29,10 @@ const nextConfig: NextConfig = {
       "frame-ancestors 'self'",
 
       // Iframe embed populer
-      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://w.soundcloud.com https://soundcloud.com https://open.spotify.com https://embed.spotify.com https://www.google.com https://maps.google.com https://calendar.google.com https://app.midtrans.com https://app.sandbox.midtrans.com",
+      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://w.soundcloud.com https://soundcloud.com https://open.spotify.com https://embed.spotify.com https://www.google.com https://maps.google.com https://calendar.google.com https://app.midtrans.com https://app.sandbox.midtrans.com https://hcaptcha.com https://*.hcaptcha.com",
 
       // Script: batasi ke self + midtrans (tambah kalau benar-benar perlu)
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://app.midtrans.com https://app.sandbox.midtrans.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://app.midtrans.com https://app.sandbox.midtrans.com https://hcaptcha.com https://*.hcaptcha.com",
 
       // Fetch/WebSocket: Supabase + Midtrans (tambah lainnya bila kamu fetch HLS/M3U8 dari origin lain)
       `connect-src 'self' ${supabaseOrigin} ${supabaseWs} https://*.supabase.co https://app.midtrans.com https://app.sandbox.midtrans.com https://api.midtrans.com https://api.sandbox.midtrans.com`,
@@ -42,6 +42,7 @@ const nextConfig: NextConfig = {
 
       "style-src 'self' 'unsafe-inline'",
       "font-src 'self' data:",
+      "style/img/connect-src",
 
       // Media (audio/video file langsung)
       `media-src 'self' data: blob: ${supabaseOrigin} https://*.supabase.co https://cdn.plyr.io https://storage.googleapis.com https://*.googlevideo.com https://audio-ssl.itunes.apple.com`,

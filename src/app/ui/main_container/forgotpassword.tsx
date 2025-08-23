@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, ArrowRight, Loader2, ShieldCheck } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -23,25 +24,63 @@ export default function ForgotPasswordPage(): React.JSX.Element {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
+  // hCaptcha
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaKey, setCaptchaKey] = useState<number>(0); // force re-mount widget on reset
+  const siteKey: string = process.env.NEXT_PUBLIC_HCAPTCHA_SITEKEY ?? "";
+
   const valid = useMemo(() => emailRe.test(email), [email]);
+
+  const verifyCaptcha = async (token: string): Promise<boolean> => {
+    const res = await fetch("/api/verify-hcaptcha", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+    if (!res.ok) return false;
+    const json: { ok: boolean } = await res.json();
+    return json.ok === true;
+  };
+
+  const resetCaptcha = (): void => {
+    setCaptchaToken(null);
+    setCaptchaKey((k) => k + 1);
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErr(null);
     setMsg(null);
+
     if (!valid) {
       setErr("Enter a valid email address.");
       return;
     }
+    if (!captchaToken) {
+      setErr("Please complete the captcha.");
+      return;
+    }
+
     setLoading(true);
     try {
+      // 0) Verify hCaptcha on server
+      const ok = await verifyCaptcha(captchaToken);
+      if (!ok) {
+        resetCaptcha();
+        throw new Error("Captcha verification failed. Please try again.");
+      }
+
+      // 1) Send reset email via Supabase
       const supabase = getSupabaseClient();
-      const redirectTo = `${getPublicOrigin()}/auth/callback`; // sama seperti flow signup kamu
+      const redirectTo = `${getPublicOrigin()}/auth/callback`;
       const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
       if (error) throw error;
+
       setMsg("We’ve sent a password reset link to your email. Please check your inbox/spam.");
+      resetCaptcha(); // optional: minta solve ulang bila ingin kirim lagi
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Failed to send reset link");
+      resetCaptcha();
     } finally {
       setLoading(false);
     }
@@ -98,12 +137,34 @@ export default function ForgotPasswordPage(): React.JSX.Element {
               />
             </div>
 
+            {/* hCaptcha */}
+            <div className="mt-4 flex justify-center">
+              <HCaptcha
+                key={captchaKey}
+                sitekey={siteKey}
+                onVerify={(token) => setCaptchaToken(token)}
+                onExpire={() => setCaptchaToken(null)}
+                onError={() => {
+                  setCaptchaToken(null);
+                  setErr("Captcha error. Please reload the captcha.");
+                }}
+              />
+            </div>
+
             <button
               type="submit"
-              disabled={!valid || loading}
+              disabled={!valid || !captchaToken || loading}
               className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-neutral-900 text-white dark:bg-white dark:text-black px-4 py-3 text-[15px] font-semibold shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-all hover:bg-gradient-to-r hover:from-indigo-600 hover:to-violet-600 hover:text-white hover:shadow-[0_12px_30px_-12px_rgba(0,0,0,0.35)] active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/50 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Sending reset link…</> : <>Send reset link <ArrowRight className="h-4 w-4" /></>}
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Sending reset link…
+                </>
+              ) : (
+                <>
+                  Send reset link <ArrowRight className="h-4 w-4" />
+                </>
+              )}
             </button>
 
             {(err || msg) && (

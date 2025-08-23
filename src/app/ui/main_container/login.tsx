@@ -86,42 +86,16 @@ export const LoginSection = (): React.JSX.Element => {
     setLoading(true);
     try {
       const supabase = getSupabaseClient();
-      const rawNext = qp.get("next") || qp.get("redirectedFrom") || "";
-      const safeNext = rawNext.startsWith("/") ? rawNext : "";
-      // Clear existing session with timeout (defensive)
-      try {
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Session check timeout")), 2000)
-        );
-        const sessionResult = (await Promise.race([
-          sessionPromise,
-          timeoutPromise,
-        ])) as Awaited<ReturnType<typeof supabase.auth.getSession>>;
-        if (sessionResult.data.session) await supabase.auth.signOut();
-      } catch (_) {
-        // non-fatal; continue
-      }
 
-      // Attempt login with timeout
-      const loginPromise = supabase.auth.signInWithPassword({ email, password });
-      const loginTimeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(
-          () => reject(new Error("Login timeout - please check your connection")),
-          10000
-        )
-      );
+      // 1) login biasa
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw new Error(error.message || "Login failed");
 
-      const loginResult = (await Promise.race([
-        loginPromise,
-        loginTimeoutPromise,
-      ])) as Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>;
-
-      const { data, error } = loginResult;
-      const { session } = loginResult.data ?? {};
+      const session = data.session;
       if (!session) throw new Error("No session returned");
 
-      await fetch("/auth/set", {
+      // 2) set HttpOnly cookie di server (WAJIB dicek)
+      const resp = await fetch("/auth/set", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -129,24 +103,27 @@ export const LoginSection = (): React.JSX.Element => {
           refresh_token: session.refresh_token,
         }),
       });
+      if (!resp.ok) {
+        let msg = "Failed to set server session";
+        try { msg = (await resp.json())?.error || msg; } catch {}
+        throw new Error(msg);
+      }
 
-      router.replace(safeNext || "/client/dashboard");
-
-      if (loginResult.error) throw new Error(loginResult.error.message || "Login failed");
-
-      // Remember email if opted-in
+      // 3) ingat email (opsional)
       if (rememberMe) localStorage.setItem("remember_email", email);
       else localStorage.removeItem("remember_email");
 
-      router.replace(safeNext || "/client/dashboard");
-      router.push(redirectedFrom);
+      // 4) satu tujuan saja, pakai next yg sudah DISANITASI
+      const rawNext = qp.get("next") || qp.get("redirectedFrom") || "";
+      const dest = rawNext.startsWith("/") ? rawNext : "/client/dashboard";
+      router.replace(dest); // sekali saja, tanpa push lagi
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Login failed";
-      setErr(message);
+      setErr(e instanceof Error ? e.message : "Login failed");
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleSocialLogin = async (provider: "google") => {
     setErr(null);

@@ -1,8 +1,7 @@
 // app/auth/callback/route.ts
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
-import { cookies as nextCookies } from "next/headers";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 
 type Role = "client" | "admin" | "owner";
 type ProfPick = { main_role: Role | null; staff_role: string[] | null };
@@ -13,28 +12,31 @@ export async function GET(req: NextRequest) {
   const nextParam = url.searchParams.get("next") || url.searchParams.get("redirectedFrom") || "";
   if (!code) return NextResponse.redirect(new URL("/login", url));
 
-  const cookieStore = await nextCookies(); // ✅ Next 15: cookies() async
+  // ⬇️ buat response redirect lebih dulu, supaya cookies ditulis ke response yg sama
+  const res = NextResponse.redirect(new URL("/client/dashboard", url), 307);
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value ?? null;
+        getAll() {
+          return req.cookies.getAll().map(c => ({ name: c.name, value: c.value }));
         },
-        set(name: string, value: string, options: CookieOptions) {
-          // ✅ pakai signature (name, value, options) — paling kompat
-          cookieStore.set(name, value, options);
-        },
-        remove(name: string, options: CookieOptions) {
-          cookieStore.set(name, "", { ...options, maxAge: 0 });
+        setAll(cookies) {
+          cookies.forEach(({ name, value, options }) => {
+            res.cookies.set(name, value, options); // ⬅️ TULIS KE RES
+          });
         },
       },
     }
   );
 
   const { error: exErr } = await supabase.auth.exchangeCodeForSession(code);
-  if (exErr) return NextResponse.redirect(new URL("/login?err=oauth", url));
+  if (exErr) {
+    res.headers.set("Location", new URL("/login?err=oauth", url).toString());
+    return res;
+  }
 
   let dest = "/client/dashboard";
   try {
@@ -58,9 +60,10 @@ export async function GET(req: NextRequest) {
         try {
           const u = new URL(nextParam, url.origin);
           const p = u.pathname;
-          if (p.startsWith("/admin") && isAdminLike) dest = p + u.search + u.hash;
-          else if (p.startsWith("/client") && !isAdminLike) dest = p + u.search + u.hash;
-          else dest = defaultDest;
+          dest =
+            (p.startsWith("/admin") && isAdminLike) || (p.startsWith("/client") && !isAdminLike)
+              ? p + u.search + u.hash
+              : defaultDest;
         } catch {
           dest = defaultDest;
         }
@@ -68,9 +71,8 @@ export async function GET(req: NextRequest) {
         dest = defaultDest;
       }
     }
-  } catch {
-    /* keep default dest */
-  }
+  } catch { /* keep default */ }
 
-  return NextResponse.redirect(new URL(dest, url));
+  res.headers.set("Location", new URL(dest, url).toString()); // ⬅️ update tujuan di response yg sama
+  return res;
 }

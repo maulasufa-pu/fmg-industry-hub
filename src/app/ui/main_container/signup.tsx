@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation"; // ⬅️ tambahkan useSearchParams
 import { motion } from "framer-motion";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { Google } from "@/icons";
@@ -50,6 +50,7 @@ const validate = (v: {
 /*********************************
  * Component
  *********************************/
+
 export function SignUpSection(): React.JSX.Element {
   const [firstName, setFirst] = useState<string>("");
   const [lastName, setLast] = useState<string>("");
@@ -61,6 +62,8 @@ export function SignUpSection(): React.JSX.Element {
   const [loading, setLoading] = useState<boolean>(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+
+  const sp = useSearchParams(); // ⬅️ baca ?next bila ada
 
   const [errors, setErrors] = useState<FieldErrors>({});
   const [touched, setTouched] = useState<{
@@ -84,6 +87,13 @@ export function SignUpSection(): React.JSX.Element {
     // no-op (placeholder if you want to prefill later)
   }, []);
 
+  const buildRedirect = (flow: "signup" | "login") => {
+    const origin =
+      (typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || "")
+        .replace(/\/+$/, "");
+    return `${origin}/auth/callback?flow=${flow}`;
+  };
+
   const canSubmit = useMemo(() => {
     const v = validate({ firstName, lastName, email, password, agree });
     return Object.keys(v).length === 0 && !loading;
@@ -105,68 +115,70 @@ export function SignUpSection(): React.JSX.Element {
     const next = validate({ firstName, lastName, email, password, agree });
     setErrors(next);
     setTouched({ firstName: true, lastName: true, email: true, password: true, agree: true });
-    if (Object.keys(next).length > 0) {
-      focusFirstInvalid(next);
-      return;
-    }
+    if (Object.keys(next).length > 0) { focusFirstInvalid(next); return; }
 
     setLoading(true);
     try {
       const supabase = getSupabaseClient();
-      const siteUrl =
-        (typeof window !== "undefined" ? window.location.origin : undefined) ||
-        process.env.NEXT_PUBLIC_SITE_URL ||
-        "";
 
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: { first_name: firstName, last_name: lastName },
-          emailRedirectTo: `${siteUrl}/auth/callback`,
+          emailRedirectTo: buildRedirect("signup"), // ⬅️ normalisasi
         },
       });
       if (error) throw error;
 
+      // kalau email-confirmation ON → tidak ada session
       if (!data.session) {
         setMsg("We’ve sent a confirmation link to your email. Please verify to continue.");
-      } else {
-        // ⬇️ set HttpOnly cookie via server route
-        await fetch("/auth/set", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token,
-          }),
-        });
-        // pakai replace supaya tidak balik ke /signup saat Back
-        router.replace("/client/dashboard");
+        return;
       }
 
-    } catch (e: unknown) {
+      // set HttpOnly cookie via server
+      const resp = await fetch("/auth/set", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        }),
+      });
+      if (!resp.ok) {
+        let m = "Failed to set server session";
+        try { m = (await resp.json())?.error || m; } catch {}
+        throw new Error(m);
+      }
+
+      // redirect sekali, hormati ?next yang aman
+      const rawNext = sp.get("next") || sp.get("redirectedFrom") || "";
+      const dest = rawNext.startsWith("/") ? rawNext : "/client/dashboard";
+      router.replace(dest);
+    } catch (e) {
       setErr(e instanceof Error ? e.message : "Sign up failed");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOAuth = async (provider: "google") => {
-  setErr(null);
-  setMsg(null);
-  try {
-    const supabase = getSupabaseClient();
-    const redirectTo = "https://fmg-industry-hub.vercel.app/auth/callback?flow=signup";
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo }, // flowType di-set saat createClient, bukan di sini
-    });
-    if (error) setErr(error.message);
-  } catch (e) {
-    setErr(e instanceof Error ? e.message : "OAuth failed");
-  }
-};
+  const [oauthLoading, setOauthLoading] = useState<null | "google">(null);
 
+  const handleOAuth = async (provider: "google") => {
+    setErr(null); setMsg(null);
+    setOauthLoading(provider);
+    try {
+      const supabase = getSupabaseClient();
+      const redirectTo = buildRedirect("signup");
+      const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } });
+      if (error) setErr(error.message);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "OAuth failed");
+    } finally {
+      setOauthLoading(null);
+    }
+  };
 
   const firstInvalid = touched.firstName && !!errors.firstName;
   const lastInvalid = touched.lastName && !!errors.lastName;

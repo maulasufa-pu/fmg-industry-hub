@@ -1,11 +1,11 @@
 // src/middleware.ts
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 
 export async function middleware(req: NextRequest) {
   const { pathname, origin, search } = req.nextUrl;
 
-  // Biarkan callback & static lewat tanpa guard
+  // Allow callback & static
   if (
     pathname.startsWith("/auth") ||
     pathname.startsWith("/_next") ||
@@ -15,22 +15,24 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  let res = NextResponse.next();
+  // ⬇️ tampung cookie yg ingin diset Supabase (jangan langsung nempel ke res)
+  const pendingCookies: { name: string; value: string; options?: Parameters<typeof NextResponse.prototype.cookies.set>[2] }[] = [];
 
-  // Supabase SSR cookies adapter (Edge)
+  // bikin client dengan adapter getAll/setAll
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return req.cookies.get(name)?.value ?? null;
+        getAll() {
+          // baca dari request
+          return req.cookies.getAll().map(c => ({ name: c.name, value: c.value }));
         },
-        set(name: string, value: string, options: CookieOptions) {
-          res.cookies.set({ name, value, ...options });
-        },
-        remove(name: string, options: CookieOptions) {
-          res.cookies.set({ name, value: "", ...options, maxAge: 0 });
+        setAll(cookies) {
+          // JANGAN set ke response dulu — masukkin ke buffer
+          cookies.forEach(({ name, value, options }) => {
+            pendingCookies.push({ name, value, options });
+          });
         },
       },
     }
@@ -38,45 +40,54 @@ export async function middleware(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Root panel redirect (tetap, tapi gated oleh auth)
+  // helper untuk apply cookie ke response apa pun yg dikembalikan
+  const withCookies = (res: NextResponse) => {
+    pendingCookies.forEach(({ name, value, options }) => {
+      res.cookies.set(name, value, options);
+    });
+    return res;
+  };
+
+  // Root panel redirect (gated)
   if (pathname === "/admin") {
     if (!user) {
       const url = new URL("/login", origin);
       url.searchParams.set("next", "/admin");
-      return NextResponse.redirect(url);
+      return withCookies(NextResponse.redirect(url));
     }
-    return NextResponse.redirect(new URL("/admin/dashboard", origin));
+    return withCookies(NextResponse.redirect(new URL("/admin/dashboard", origin)));
   }
 
   if (pathname === "/client") {
     if (!user) {
       const url = new URL("/login", origin);
       url.searchParams.set("next", "/client");
-      return NextResponse.redirect(url);
+      return withCookies(NextResponse.redirect(url));
     }
-    return NextResponse.redirect(new URL("/client/dashboard", origin));
+    return withCookies(NextResponse.redirect(new URL("/client/dashboard", origin)));
   }
 
-  // Proteksi semua halaman panel
+  // Proteksi halaman panel
   const isPrivate = pathname.startsWith("/admin/") || pathname.startsWith("/client/");
   if (isPrivate && !user) {
     const url = new URL("/login", origin);
     url.searchParams.set("next", pathname + search);
-    return NextResponse.redirect(url);
+    return withCookies(NextResponse.redirect(url));
   }
 
-  // Sudah login tapi masuk /login? —> lempar ke dashboard (hilang flicker)
+  // Sudah login tapi ke /login → lempar ke dashboard
   if (pathname === "/login" && user) {
     const nextParam = req.nextUrl.searchParams.get("next") ?? "";
     if (nextParam.startsWith("/client") || nextParam.startsWith("/admin")) {
       try {
-        return NextResponse.redirect(new URL(nextParam, origin));
-      } catch { /* ignore invalid */ }
+        return withCookies(NextResponse.redirect(new URL(nextParam, origin)));
+      } catch { /* ignore */ }
     }
-    return NextResponse.redirect(new URL("/client/dashboard", origin));
+    return withCookies(NextResponse.redirect(new URL("/client/dashboard", origin)));
   }
 
-  return res;
+  // default pass-through + apply cookies kalau Supabase minta set (refresh, dsb.)
+  return withCookies(NextResponse.next());
 }
 
 export const config = {

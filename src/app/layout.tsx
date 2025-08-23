@@ -1,15 +1,12 @@
 // src/app/layout.tsx
-
 "use client";
 import "./globals.css";
 import { HeaderSection } from "@/app/ui/page_section/HeaderSection";
-import HeaderVisibility from "@/components/ui/HeaderVisibility";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { usePathname } from "next/navigation";
 import GlobalSpotlight from "@/app/ui/GlobalSpotlight";
-import Footer from "@/app/ui/page_section/FooterSection"; // default import
-
+import Footer from "@/app/ui/page_section/FooterSection";
 
 function MainContainer({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -18,19 +15,16 @@ function MainContainer({ children }: { children: React.ReactNode }) {
     pathname?.startsWith("/admin") ||
     pathname?.startsWith("/profile");
 
-  // daftar halaman yang ingin full-bleed
-  const FULL_BLEED = ["/"]; // tambah path lain jika perlu
+  const FULL_BLEED = ["/"];
   const isFullBleed = FULL_BLEED.some(p => pathname === p || pathname?.startsWith(`${p}`));
 
   const wrapperCls = (isApp || isFullBleed)
-    ? "w-full"                               // ⬅️ tidak ada max-w
+    ? "w-full"
     : "mx-auto w-full max-w-screen-xl px-4 sm:px-6 lg:px-8";
 
   return <main className={wrapperCls}>{children}</main>;
 }
 
-
-// layout.tsx
 function Header() {
   const pathname = usePathname();
   const isApp =
@@ -39,18 +33,27 @@ function Header() {
     pathname?.startsWith("/profile");
 
   if (isApp) return null;
-
-  // langsung render, tanpa header/container tambahan
   return <HeaderSection />;
 }
 
 function ThemeToggleWrapper() {
   const pathname = usePathname();
-  const isApp = pathname?.startsWith("/client") || pathname?.startsWith("/admin") || pathname?.startsWith("/profile"); // halaman dengan sidebar
+  const isApp =
+    pathname?.startsWith("/client") ||
+    pathname?.startsWith("/admin") ||
+    pathname?.startsWith("/profile");
 
-  if (isApp) return null; // sembunyikan theme toggle di halaman app
-
+  if (isApp) return null;
   return <ThemeToggle />;
+}
+
+// ⬇️ HANYA sembunyikan footer di /admin dan /client
+function FooterWrapper() {
+  const pathname = usePathname();
+  const hideFooter =
+    pathname?.startsWith("/admin") || pathname?.startsWith("/client");
+  if (hideFooter) return null;
+  return <Footer />;
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -58,16 +61,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" data-scroll-behavior="smooth">
       <body className="bg-background text-foreground transition-colors duration-300">
         <GlobalSpotlight />
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
-          <Header/>
-          {/* <Header /> */}
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
+          <Header />
           <MainContainer>{children}</MainContainer>
-          <Footer />
+          <FooterWrapper /> {/* ← ganti dari <Footer /> */}
         </ThemeProvider>
       </body>
     </html>

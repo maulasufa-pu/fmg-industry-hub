@@ -7,13 +7,17 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 import { NewInvoiceDialog } from "./components/NewInvoiceDialog";
 import { formatIDRCurrency, isOverdue, nextStatusColor } from "@/lib/invoices/utils";
 import type { User } from "@supabase/supabase-js";
+import {
+  Search, X, Loader2, BellRing, CheckCircle2, XCircle, CreditCard,
+  Link2, RefreshCw, ExternalLink
+} from "lucide-react";
 
 type InvoiceStatus = "draft" | "unpaid" | "paid" | "cancelled";
 
 type InvoiceRow = {
   id: string;
   invoice_no: string;
-  client_id: string | null;          // ⬅️ NEW
+  client_id: string | null;
   client_name: string | null;
   client_email?: string | null;
   amount_total: number | null;
@@ -37,12 +41,9 @@ type InvoiceItemRow = {
 type InvoiceWithItems = InvoiceRow & { invoice_items: InvoiceItemRow[] };
 
 const COLS_INVOICES =
-  // ⬇️ tambahkan client_id
   "id,invoice_no,client_id,client_name,client_email,amount_total,currency,status,created_at,due_date,payment_url";
-
 const COLS_ITEMS =
   "invoice_items!invoice_items_invoice_id_fkey(id,invoice_id,service_id,description,qty,unit_price,position)";
-
 const SELECT_INVOICES = `${COLS_INVOICES},${COLS_ITEMS}`;
 
 declare global {
@@ -72,39 +73,58 @@ export default function InvoicesPage(): React.JSX.Element {
   const [me, setMe] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
+  // ready flags → cegah flicker
+  const [meReady, setMeReady] = useState(false);
+  const [roleReady, setRoleReady] = useState(false);
+  const authReady = meReady && roleReady;
+
+  // loading per-aksi (id + tipe)
+  const [busy, setBusy] = useState<{ id: string; type:
+    "remind"|"mark"|"cancel"|"pay"|"refresh" | null } | null>(null);
+
   const MIDTRANS_CLIENT_KEY = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY;
   const MIDTRANS_IS_PRODUCTION = (process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION ?? "false") === "true";
   useSnapLoader(MIDTRANS_CLIENT_KEY, MIDTRANS_IS_PRODUCTION);
 
-  // who am I
+  // who am I + role
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      const { data } = await sb.auth.getUser();
-      setMe(data.user ?? null);
-
       try {
-        const r = await sb.rpc("is_admin");
-        setIsAdmin(r.data === true && !r.error);
+        const [{ data: u }, r] = await Promise.all([
+          sb.auth.getUser(),
+          sb.rpc("is_admin"),
+        ]);
+        if (!cancelled) {
+          setMe(u.user ?? null);
+          setMeReady(true);
+          setIsAdmin(r.data === true && !r.error);
+          setRoleReady(true);
+        }
       } catch {
-        setIsAdmin(false);
+        if (!cancelled) {
+          setMe(null); setMeReady(true);
+          setIsAdmin(false); setRoleReady(true);
+        }
       }
     })();
+    return () => { cancelled = true; };
   }, [sb]);
 
   const load = async (): Promise<void> => {
+    if (!authReady) return;
     setLoading(true);
 
     let qb = sb.from("invoices").select(SELECT_INVOICES);
 
     if (tab !== "all") qb = qb.eq("status", tab);
-
     if (q.trim()) {
       const like = `%${q.trim()}%`;
       qb = qb.or(`invoice_no.ilike.${like},client_name.ilike.${like}`);
     }
 
-    // ⬇️ FILTER BERDASARKAN client_id == auth user id (untuk client)
-    if (!isAdmin && me?.id) {
+    if (!isAdmin) {
+      if (!me?.id) { setRows([]); setLoading(false); return; }
       qb = qb.eq("client_id", me.id);
     }
 
@@ -112,40 +132,55 @@ export default function InvoicesPage(): React.JSX.Element {
       .order("created_at", { ascending: false })
       .order("position", { ascending: true, foreignTable: "invoice_items" });
 
-    if (!error) setRows((data ?? []) as InvoiceWithItems[]);
+    const safe = (data ?? []).filter((r: any) => isAdmin || r.client_id === me?.id);
+    if (!error) setRows(safe as InvoiceWithItems[]);
     setLoading(false);
   };
 
-  useEffect(() => { void load(); /* eslint-disable-next-line */ }, [tab, q, isAdmin, me?.id]);
+  useEffect(() => { void load(); /* eslint-disable-next-line */ }, [authReady, tab, q, isAdmin, me?.id]);
 
   useEffect(() => {
-    const ch = sb
-      .channel("invoices-list")
-      .on("postgres_changes", { event: "*", schema: "public", table: "invoices" }, () => void load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "invoice_items" }, () => void load())
-      .subscribe();
-    return () => { void sb.removeChannel(ch); };
+    if (!authReady) return;
+    const ch = sb.channel("invoices-list");
+    if (isAdmin) {
+      ch.on("postgres_changes", { event: "*", schema: "public", table: "invoices" }, () => void load())
+       .on("postgres_changes", { event: "*", schema: "public", table: "invoice_items" }, () => void load());
+    } else if (me?.id) {
+      ch.on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "invoices", filter: `client_id=eq.${me.id}` },
+        () => void load()
+      );
+    }
+    const sub = ch.subscribe();
+    return () => { void sb.removeChannel(sub); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sb, tab, q, isAdmin, me?.id]);
+  }, [sb, authReady, isAdmin, me?.id, tab, q]);
 
   const markPaid = async (id: string): Promise<void> => {
     if (!isAdmin) return;
+    setBusy({ id, type: "mark" });
     const { error } = await sb.from("invoices").update({ status: "paid" }).eq("id", id);
+    setBusy(null);
     if (!error) void load();
   };
 
   const cancelInvoice = async (id: string): Promise<void> => {
     if (!isAdmin) return;
+    setBusy({ id, type: "cancel" });
     const { error } = await sb.from("invoices").update({ status: "cancelled" }).eq("id", id);
+    setBusy(null);
     if (!error) void load();
   };
 
   const createSnapAndPay = async (inv: InvoiceRow): Promise<void> => {
+    setBusy({ id: inv.id, type: "pay" });
     const res = await fetch("/api/payments/midtrans/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ invoiceId: inv.id }),
     });
+    setBusy(null);
     if (!res.ok) return;
     const json: { token: string; redirect_url: string } = await res.json();
     if (window.snap) {
@@ -160,15 +195,42 @@ export default function InvoicesPage(): React.JSX.Element {
     }
   };
 
+  // 🔥 Admin-only: Refresh Payment Link (regenerate & simpan ke DB)
+  const refreshPaymentLink = async (id: string): Promise<void> => {
+    if (!isAdmin) return;
+    setBusy({ id, type: "refresh" });
+    try {
+      const res = await fetch("/api/payments/midtrans/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invoiceId: id, refresh: true }),
+      });
+      if (!res.ok) throw new Error("failed to refresh link");
+      const json: { redirect_url?: string } = await res.json();
+
+      if (json.redirect_url) {
+        await sb.from("invoices").update({ payment_url: json.redirect_url }).eq("id", id);
+      }
+      await load();
+    } catch (e) {
+      console.error("refresh link error", e);
+      alert("Gagal refresh payment link");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const sendReminder = async (id: string): Promise<void> => {
     if (!isAdmin) return;
+    setBusy({ id, type: "remind" });
     const { error } = await sb.functions.invoke("send_invoice_reminder", { body: { invoiceId: id } });
+    setBusy(null);
     if (error) {
       console.error("send reminder error", error);
       alert("Gagal mengirim reminder.");
-      return;
+    } else {
+      alert("Reminder terkirim.");
     }
-    alert("Reminder terkirim.");
   };
 
   const Tabs: Array<{ key: InvoiceStatus | "all"; label: string }> = [
@@ -179,170 +241,292 @@ export default function InvoicesPage(): React.JSX.Element {
     { key: "all", label: "All" },
   ];
 
-  const totalUnpaid = rows.filter(r => r.status === "unpaid").reduce((acc, r) => acc + (Number(r.amount_total) || 0), 0);
+  const totalUnpaid = rows.filter(r => r.status === "unpaid")
+    .reduce((acc, r) => acc + (Number(r.amount_total) || 0), 0);
   const overdueCount = rows.filter(r => isOverdue(r.status, r.due_date)).length;
   const paidCount = rows.filter(r => r.status === "paid").length;
 
+  // --- UI helpers ---
+  const Chip = ({ children, active=false, onClick }:{
+    children: React.ReactNode; active?: boolean; onClick?: () => void;
+  }) => (
+    <button
+      onClick={onClick}
+      className={[
+        "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm transition-all",
+        active
+          ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow"
+          : "border border-border/60 hover:bg-muted"
+      ].join(" ")}
+    >
+      {children}
+    </button>
+  );
+
+  const ActionBtn = ({
+    onClick, children, tone="default", busying=false, title
+  }:{
+    onClick?: () => void; children: React.ReactNode;
+    tone?: "default"|"green"|"red"|"emerald"|"outline"|"blue";
+    busying?: boolean; title?: string;
+  }) => {
+    const map: Record<string,string> = {
+      default: "bg-foreground/10 hover:bg-foreground/15 text-foreground",
+      outline: "border hover:bg-muted",
+      green: "bg-green-600 hover:bg-green-700 text-white",
+      red: "bg-red-600 hover:bg-red-700 text-white",
+      emerald: "bg-emerald-600 hover:bg-emerald-700 text-white",
+      blue: "bg-blue-600 hover:bg-blue-700 text-white",
+    };
+    return (
+      <button
+        title={title}
+        onClick={onClick}
+        className={[
+          "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
+          tone === "outline" ? "border" : "",
+          map[tone]
+        ].join(" ")}
+        disabled={busying}
+      >
+        {busying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+        {children}
+      </button>
+    );
+  };
+
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Invoices</h1>
-          <p className="text-sm text-muted-foreground">
-            {isAdmin ? "Kelola & kirim invoice" : "Lihat dan bayar invoice kamu"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <input
-              value={q}
-              onChange={(e) => setQ(e.currentTarget.value)}
-              placeholder="Search invoice/client…"
-              className="h-9 w-[220px] rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-            />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 p-4 sm:p-6">
+      <div className="mx-auto w-full max-w-7xl space-y-6">
+        {/* Toolbar */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+              Invoices
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {isAdmin ? "Kelola & kirim invoice" : "Lihat dan bayar invoice kamu"}
+            </p>
           </div>
-          {isAdmin && (
-            <button
-              onClick={() => setOpenNew(true)}
-              className="h-9 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white shadow hover:bg-blue-700"
-            >
-              + New Invoice
-            </button>
-          )}
-        </div>
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <div className="text-sm text-muted-foreground">Total Unpaid</div>
-          <div className="mt-1 text-xl font-semibold">{formatIDRCurrency(totalUnpaid)}</div>
-        </div>
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <div className="text-sm text-muted-foreground">Overdue</div>
-          <div className="mt-1 text-xl font-semibold">{overdueCount}</div>
-        </div>
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <div className="text-sm text-muted-foreground">Paid</div>
-          <div className="mt-1 text-xl font-semibold">{paidCount}</div>
-        </div>
-      </div>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.currentTarget.value)}
+                placeholder="Search invoice/client…"
+                className="h-10 w-full sm:w-[260px] rounded-xl border bg-background pl-10 pr-10 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {q && (
+                <button
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted"
+                  onClick={() => setQ("")}
+                  aria-label="Clear search"
+                >
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </button>
+              )}
+            </div>
 
-      {/* Tabs */}
-      <div className="flex flex-wrap gap-2">
-        {Tabs.map((t) => {
-          const active = tab === t.key;
-          return (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={[
-                "px-3 py-1.5 text-sm rounded-full border",
-                active ? "bg-blue-600 text-white border-blue-600" : "hover:bg-muted",
-              ].join(" ")}
-            >
+            {isAdmin && (
+              <button
+                onClick={() => setOpenNew(true)}
+                className="h-10 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 text-sm font-semibold text-white shadow hover:opacity-95 active:translate-y-[1px]"
+              >
+                + New Invoice
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border bg-card/80 backdrop-blur p-5 shadow-sm">
+            <div className="text-xs uppercase text-muted-foreground">Total Unpaid</div>
+            <div className="mt-1 text-2xl font-semibold">{formatIDRCurrency(totalUnpaid)}</div>
+          </div>
+          <div className="rounded-2xl border bg-card/80 backdrop-blur p-5 shadow-sm">
+            <div className="text-xs uppercase text-muted-foreground">Overdue</div>
+            <div className="mt-1 text-2xl font-semibold">{overdueCount}</div>
+          </div>
+          <div className="rounded-2xl border bg-card/80 backdrop-blur p-5 shadow-sm">
+            <div className="text-xs uppercase text-muted-foreground">Paid</div>
+            <div className="mt-1 text-2xl font-semibold">{paidCount}</div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex flex-wrap gap-2">
+          {Tabs.map((t) => (
+            <Chip key={t.key} active={tab === t.key} onClick={() => setTab(t.key)}>
               {t.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Table / Empty / Loading */}
-      {loading ? (
-        <div className="rounded-xl border bg-card p-8 text-muted-foreground shadow-sm">Loading…</div>
-      ) : rows.length === 0 ? (
-        <div className="rounded-xl border bg-card p-8 text-muted-foreground shadow-sm">No invoices found.</div>
-      ) : (
-        <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/60 text-left">
-              <tr>
-                <th className="p-3">Invoice</th>
-                <th className="p-3">Client</th>
-                <th className="p-3">Items</th>
-                <th className="p-3">Amount</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Created</th>
-                <th className="p-3">Due</th>
-                <th className="p-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {rows.map((r) => {
-                const overdue = isOverdue(r.status, r.due_date);
-                const statusClass = nextStatusColor(r.status, overdue);
-                const items = [...(r.invoice_items ?? [])].sort((a, b) => Number(a.position ?? 0) - Number(b.position ?? 0));
-                return (
-                  <tr key={r.id} className="hover:bg-muted/30">
-                    <td className="p-3 font-medium">{r.invoice_no}</td>
-                    <td className="p-3">{r.client_name ?? "-"}</td>
-                    <td className="p-3">
-                      {items.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {items.slice(0, 2).map((it) => (
-                            <span key={it.id} className="rounded-full border px-2 py-0.5 text-xs"
-                                  title={`${it.description} × ${it.qty} @ ${formatIDRCurrency(Number(it.unit_price) || 0)}`}>
-                              {it.description}
-                            </span>
-                          ))}
-                          {items.length > 2 && <span className="text-xs text-muted-foreground">+{items.length - 2} more</span>}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      {r.amount_total != null
-                        ? `${(r.currency ?? "IDR").toUpperCase()} ${Number(r.amount_total).toLocaleString("id-ID")}`
-                        : "-"}
-                    </td>
-                    <td className="p-3">
-                      <span className={statusClass + " inline-flex items-center rounded-full px-2 py-0.5 text-xs capitalize"}>
-                        {overdue && r.status === "unpaid" ? "overdue" : r.status}
-                      </span>
-                    </td>
-                    <td className="p-3">{r.created_at ? new Date(r.created_at).toLocaleDateString("id-ID") : "-"}</td>
-                    <td className="p-3">{r.due_date ? new Date(r.due_date).toLocaleDateString("id-ID") : "-"}</td>
-                    <td className="p-3">
-                      <div className="flex justify-end gap-2">
-                        {/* ADMIN-ONLY buttons */}
-                        {isAdmin && r.status === "unpaid" && (
-                          <>
-                            <button onClick={() => void sendReminder(r.id)} className="rounded border px-2 py-1 text-xs hover:bg-muted">Reminder</button>
-                            <button onClick={() => void markPaid(r.id)} className="rounded bg-green-600 px-2 py-1 text-xs text-white hover:bg-green-700">Mark Paid</button>
-                            <button onClick={() => void cancelInvoice(r.id)} className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700">Cancel</button>
-                          </>
-                        )}
-                        {/* Everyone can Pay if unpaid */}
-                        {r.status === "unpaid" && (
-                          <button onClick={() => void createSnapAndPay(r)} className="rounded bg-emerald-600 px-2 py-1 text-xs text-white hover:bg-emerald-700">
-                            Pay
-                          </button>
-                        )}
-                        {r.payment_url ? (
-                          <a href={r.payment_url} target="_blank" rel="noreferrer" className="rounded border px-2 py-1 text-xs hover:bg-muted">
-                            Payment Link
-                          </a>
-                        ) : null}
-                        <Link href={`/admin/invoices/${r.id}`} className="rounded border px-2 py-1 text-xs hover:bg-muted">Open</Link>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+            </Chip>
+          ))}
         </div>
-      )}
 
-      {/* New Invoice Dialog */}
-      {isAdmin && openNew && (
-        <NewInvoiceDialog
-          onClose={() => setOpenNew(false)}
-          onCreated={() => { setOpenNew(false); void load(); }}
-        />
-      )}
+        {/* Table / Empty / Loading */}
+        {loading ? (
+          <div className="rounded-2xl border bg-card p-8 text-muted-foreground shadow-sm">Loading…</div>
+        ) : rows.length === 0 ? (
+          <div className="rounded-2xl border bg-card p-8 text-muted-foreground shadow-sm">
+            No invoices found.
+          </div>
+        ) : (
+          <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-[980px] w-full text-sm">
+                <thead className="bg-muted/60 text-left">
+                  <tr className="text-muted-foreground">
+                    <th className="p-3">Invoice</th>
+                    <th className="p-3">Client</th>
+                    <th className="p-3">Items</th>
+                    <th className="p-3">Amount</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3">Created</th>
+                    <th className="p-3">Due</th>
+                    <th className="p-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {rows.map((r) => {
+                    const overdue = isOverdue(r.status, r.due_date);
+                    const statusClass = nextStatusColor(r.status, overdue);
+                    const items = [...(r.invoice_items ?? [])]
+                      .sort((a, b) => Number(a.position ?? 0) - Number(b.position ?? 0));
+
+                    const isBusy = (t: NonNullable<typeof busy>["type"]) =>
+                      busy?.id === r.id && busy?.type === t;
+
+                    return (
+                      <tr key={r.id} className="hover:bg-muted/30">
+                        <td className="p-3 font-semibold">{r.invoice_no}</td>
+                        <td className="p-3">{r.client_name ?? "-"}</td>
+                        <td className="p-3">
+                          {items.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {items.slice(0, 2).map((it) => (
+                                <span
+                                  key={it.id}
+                                  className="rounded-full border px-2 py-0.5 text-[11px]"
+                                  title={`${it.description} × ${it.qty} @ ${formatIDRCurrency(Number(it.unit_price) || 0)}`}
+                                >
+                                  {it.description}
+                                </span>
+                              ))}
+                              {items.length > 2 && (
+                                <span className="text-xs text-muted-foreground">+{items.length - 2} more</span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          {r.amount_total != null
+                            ? `${(r.currency ?? "IDR").toUpperCase()} ${Number(r.amount_total).toLocaleString("id-ID")}`
+                            : "-"}
+                        </td>
+                        <td className="p-3">
+                          <span className={statusClass + " inline-flex items-center rounded-full px-2 py-0.5 text-xs capitalize"}>
+                            {overdue && r.status === "unpaid" ? "overdue" : r.status}
+                          </span>
+                        </td>
+                        <td className="p-3">{r.created_at ? new Date(r.created_at).toLocaleDateString("id-ID") : "-"}</td>
+                        <td className="p-3">{r.due_date ? new Date(r.due_date).toLocaleDateString("id-ID") : "-"}</td>
+                        <td className="p-3">
+                          <div className="flex justify-end gap-2 flex-wrap">
+                            {/* ADMIN-ONLY buttons */}
+                            {isAdmin && r.status === "unpaid" && (
+                              <>
+                                <ActionBtn
+                                  tone="outline"
+                                  onClick={() => void sendReminder(r.id)}
+                                  busying={isBusy("remind")}
+                                  title="Send reminder"
+                                >
+                                  <BellRing className="h-3.5 w-3.5" /> Reminder
+                                </ActionBtn>
+
+                                <ActionBtn
+                                  tone="blue"
+                                  onClick={() => void refreshPaymentLink(r.id)}
+                                  busying={isBusy("refresh")}
+                                  title="Refresh payment link"
+                                >
+                                  <RefreshCw className="h-3.5 w-3.5" /> Refresh Link
+                                </ActionBtn>
+
+                                <ActionBtn
+                                  tone="green"
+                                  onClick={() => void markPaid(r.id)}
+                                  busying={isBusy("mark")}
+                                  title="Mark as paid"
+                                >
+                                  <CheckCircle2 className="h-3.5 w-3.5" /> Mark Paid
+                                </ActionBtn>
+
+                                <ActionBtn
+                                  tone="red"
+                                  onClick={() => void cancelInvoice(r.id)}
+                                  busying={isBusy("cancel")}
+                                  title="Cancel invoice"
+                                >
+                                  <XCircle className="h-3.5 w-3.5" /> Cancel
+                                </ActionBtn>
+                              </>
+                            )}
+
+                            {/* Everyone can Pay if unpaid */}
+                            {r.status === "unpaid" && (
+                              <ActionBtn
+                                tone="emerald"
+                                onClick={() => void createSnapAndPay(r)}
+                                busying={isBusy("pay")}
+                                title="Pay now"
+                              >
+                                <CreditCard className="h-3.5 w-3.5" /> Pay
+                              </ActionBtn>
+                            )}
+
+                            {r.payment_url ? (
+                              <a
+                                href={r.payment_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs hover:bg-muted"
+                                title="Open payment link"
+                              >
+                                <Link2 className="h-3.5 w-3.5" /> Payment Link <ExternalLink className="h-3.5 w-3.5" />
+                              </a>
+                            ) : null}
+
+                            <Link
+                              href={`${isAdmin ? "/admin" : "/client"}/invoices/${r.id}`}
+                              className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs hover:bg-muted"
+                              title="Open invoice"
+                            >
+                              Open
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* New Invoice Dialog */}
+        {isAdmin && openNew && (
+          <NewInvoiceDialog
+            onClose={() => setOpenNew(false)}
+            onCreated={() => { setOpenNew(false); void load(); }}
+          />
+        )}
+      </div>
     </div>
   );
 }

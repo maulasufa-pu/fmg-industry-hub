@@ -7,11 +7,11 @@ type ProfPick = { main_role: Role | null; staff_role: string[] | null };
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
-  const code = url.searchParams.get("code");
   const nextParam = url.searchParams.get("next") || url.searchParams.get("redirectedFrom") || "";
+  const code = url.searchParams.get("code");
   if (!code) return NextResponse.redirect(new URL("/login", url));
 
-  // 1) Buffer cookies yang ingin diset Supabase
+  // ⬇️ buffer semua cookie yg mau diset Supabase
   const pendingCookies: { name: string; value: string; options?: Parameters<typeof NextResponse.prototype.cookies.set>[2] }[] = [];
 
   const supabase = createServerClient(
@@ -19,31 +19,24 @@ export async function GET(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return req.cookies.getAll().map(c => ({ name: c.name, value: c.value }));
-        },
-        setAll(cookies) {
-          cookies.forEach(({ name, value, options }) => {
-            pendingCookies.push({ name, value, options });
-          });
-        },
+        getAll: () => req.cookies.getAll().map(c => ({ name: c.name, value: c.value })),
+        setAll: (cookies) => cookies.forEach(({ name, value, options }) =>
+          pendingCookies.push({ name, value, options })
+        ),
       },
     }
   );
 
-  // 2) Tukar code -> session (pakai code ATAU pakai req.url; dua-duanya valid)
+  // ⬇️ WAJIB pakai req.url
   const { error: exErr } = await supabase.auth.exchangeCodeForSession(req.url);
-  // alternatif kalau masih error: 
-  //await supabase.auth.exchangeCodeForSession(code);
   if (exErr) {
-    // sementara: log ke server biar tahu pesan asli
     console.error("[callback] exchange error:", exErr);
     const resErr = NextResponse.redirect(new URL("/login?err=oauth", url));
     pendingCookies.forEach(({ name, value, options }) => resErr.cookies.set(name, value, options));
     return resErr;
   }
 
-  // 3) Hitung dest (role-aware)
+  // ⬇️ hitung dest role-aware (opsional)
   let dest = "/client/dashboard";
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -55,10 +48,10 @@ export async function GET(req: NextRequest) {
         .maybeSingle();
 
       const prof = data as ProfPick | null;
-      const roles: string[] = [];
-      if (prof?.main_role) roles.push(prof.main_role);
-      if (Array.isArray(prof?.staff_role)) roles.push(...prof.staff_role);
-
+      const roles = [
+        ...(prof?.main_role ? [prof.main_role] : []),
+        ...(Array.isArray(prof?.staff_role) ? prof!.staff_role : []),
+      ];
       const isAdminLike = roles.includes("owner") || roles.includes("admin");
       const defaultDest = isAdminLike ? "/admin/dashboard" : "/client/dashboard";
 
@@ -75,9 +68,9 @@ export async function GET(req: NextRequest) {
         dest = defaultDest;
       }
     }
-  } catch { /* keep default */ }
+  } catch {}
 
-  // 4) Tempel semua cookie ke response FINAL
+  // ⬇️ apply cookie ke RESPONSE FINAL yang dikembalikan
   const res = NextResponse.redirect(new URL(dest, url));
   pendingCookies.forEach(({ name, value, options }) => res.cookies.set(name, value, options));
   return res;

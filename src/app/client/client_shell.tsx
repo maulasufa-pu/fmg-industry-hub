@@ -6,6 +6,8 @@ import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { UserRole } from "@/lib/roles";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { openChat, toggleChat } from "@/lib/chatBus";
+
 
 const WAKE_EVENT = "client-wake";
 const DEBOUNCE_MS = 1500;
@@ -14,6 +16,30 @@ type Props = {
   role: UserRole;            // ⬅️ diterima dari layout (server)
   children: React.ReactNode;
 };
+
+
+export function OpenChatButton({ projectId, title }: { projectId: string; title?: string }) {
+  return (
+    <button
+      onClick={() => openChat({ id: projectId, title }, { minimized: false })}
+      className="rounded-xl bg-blue-600 text-white px-4 py-2"
+    >
+      Open Chat
+    </button>
+  );
+}
+
+export function ToggleChatFab({ projectId, title }: { projectId: string; title?: string }) {
+  return (
+    <button
+      onClick={() => toggleChat({ id: projectId, title })}
+      className="fixed right-4 bottom-24 rounded-full shadow-lg bg-indigo-600 text-white p-3"
+      aria-label="Toggle Chat"
+    >
+      Toggle Chat
+    </button>
+  );
+}
 
 export default function ClientShell({ role, children }: Props): React.JSX.Element {
   const last = useRef<number>(0);

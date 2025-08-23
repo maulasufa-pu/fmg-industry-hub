@@ -34,6 +34,23 @@ export default function AdminDashboard(): React.JSX.Element {
   const statsRef = useRef<HTMLDivElement>(null);
   const [role, setRole] = useState<UserRole>("guest");
 
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Ambil userId dari sesi Supabase (client-side, RLS aktif)
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (!mounted) return;
+      if (error) {
+        setUserId(null);
+        return;
+      }
+      setUserId(data.user?.id ?? null);
+    })();
+    return () => { mounted = false; };
+  }, [supabase]);
+
   // ⬇️ rename & sesuaikan KPI
   const [kpi, setKpi] = useState({
     newRequests: 0,
@@ -89,64 +106,104 @@ export default function AdminDashboard(): React.JSX.Element {
       setError(null);
       const nowIso = new Date().toISOString();
 
-      const newRequests = await getCountSafe("project_summary (new requests)", async () => {
+      // ⛔ Jangan jalan kalau client tapi belum tahu userId (hindari query tanpa filter)
+      if (role === "client" && !userId) {
+        setKpi({ newRequests: 0, unpaidProjects: 0, unassigned: 0, activeProjects: 0, upcomingMeetings: 0, unpaidInvoices: 0 });
+        return;
+      }
+
+      // ---------------- ADMIN / OWNER: agregat global (seperti sebelumnya) ----------------
+      if (role === "admin" || role === "owner") {
+        const newRequests = await getCountSafe("project_summary (new requests)", async () => {
+          const { count, error } = await supabase
+            .from("project_summary")
+            .select("project_id", { count: "estimated", head: true })
+            .eq("status", "requested");
+          return { count, error };
+        });
+
+        const unpaidProjects = await getCountSafe("project_summary (unpaid projects)", async () => {
+          const { count, error } = await supabase
+            .from("project_summary")
+            .select("project_id", { count: "estimated", head: true })
+            .eq("status", "unpaid");
+          return { count, error };
+        });
+
+        const unassigned = await getCountSafe("project_summary (unassigned)", async () => {
+          const { count, error } = await supabase
+            .from("project_summary")
+            .select("project_id", { count: "estimated", head: true })
+            .is("composer_id", null)
+            .is("producer_id", null)
+            .is("anr_id", null)
+            .is("engineer_id", null)
+            .is("publisher_id", null);
+          return { count, error };
+        });
+
+        const activeProjects = await getCountSafe("project_summary (active projects)", async () => {
+          const { count, error } = await supabase
+            .from("project_summary")
+            .select("project_id", { count: "estimated", head: true })
+            .eq("status", "in_progress");
+          return { count, error };
+        });
+
+        const upcomingMeetings = await getCountSafe("meetings (upcoming)", async () => {
+          const { count, error } = await supabase
+            .from("meetings")
+            .select("id", { count: "exact", head: true })
+            .gte("start_at", nowIso);
+          return { count, error };
+        });
+
+        const unpaidInvoices = await getCountSafe("invoices (unpaid)", async () => {
+          const { count, error } = await supabase
+            .from("invoices")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "unpaid");
+          return { count, error };
+        });
+
+        setKpi({ newRequests, unpaidProjects, unassigned, activeProjects, upcomingMeetings, unpaidInvoices });
+        return;
+      }
+
+      // ---------------- CLIENT: hanya milik sendiri, tidak ada data orang lain ----------------
+      const activeProjects = await getCountSafe("project_summary (active projects - client)", async () => {
         const { count, error } = await supabase
           .from("project_summary")
           .select("project_id", { count: "estimated", head: true })
-          .eq("status", "requested");
+          .eq("status", "in_progress")
+          .eq("client_id", userId!); // <-- filter milik sendiri
         return { count, error };
       });
 
-      // ⬇️ gunakan UNPAID (bukan waiting_payment)
-      const unpaidProjects = await getCountSafe("project_summary (unpaid projects)", async () => {
-        const { count, error } = await supabase
-          .from("project_summary")
-          .select("project_id", { count: "estimated", head: true })
-          .eq("status", "unpaid");
-        return { count, error };
-      });
-
-      // ⬇️ ganti publishing_id -> publisher_id
-      const unassigned = await getCountSafe("project_summary (unassigned)", async () => {
-        const { count, error } = await supabase
-          .from("project_summary")
-          .select("project_id", { count: "estimated", head: true })
-          .is("composer_id", null)
-          .is("producer_id", null)
-          .is("anr_id", null)
-          .is("engineer_id", null)
-          .is("publisher_id", null);
-        return { count, error };
-      });
-
-      const activeProjects = await getCountSafe("project_summary (active projects)", async () => {
-        const { count, error } = await supabase
-          .from("project_summary")
-          .select("project_id", { count: "estimated", head: true })
-          .eq("status", "in_progress");
-        return { count, error };
-      });
-
-      const upcomingMeetings = await getCountSafe("meetings (upcoming)", async () => {
+      const upcomingMeetings = await getCountSafe("meetings (upcoming - client)", async () => {
+        // Asumsi ada kolom client_id pada meetings; jika modelmu pakai attendees, buat view/RPC (lihat bagian RLS di bawah).
         const { count, error } = await supabase
           .from("meetings")
           .select("id", { count: "exact", head: true })
-          .gte("start_at", nowIso);
+          .gte("start_at", nowIso)
+          .eq("client_id", userId!); // <-- filter milik sendiri
         return { count, error };
       });
 
-      const unpaidInvoices = await getCountSafe("invoices (unpaid)", async () => {
+      const unpaidInvoices = await getCountSafe("invoices (unpaid - client)", async () => {
         const { count, error } = await supabase
           .from("invoices")
           .select("id", { count: "exact", head: true })
-          .eq("status", "unpaid");
+          .eq("status", "unpaid")
+          .eq("client_id", userId!); // <-- filter milik sendiri
         return { count, error };
       });
 
+      // KPI lain (newRequests, unpaidProjects, unassigned) tidak relevan untuk client => 0
       setKpi({
-        newRequests,
-        unpaidProjects,
-        unassigned,
+        newRequests: 0,
+        unpaidProjects: 0,
+        unassigned: 0,
         activeProjects,
         upcomingMeetings,
         unpaidInvoices
@@ -157,11 +214,13 @@ export default function AdminDashboard(): React.JSX.Element {
     } finally {
       setLoading(false);
     }
-  }, [supabase, getCountSafe]);
+  }, [supabase, getCountSafe, role, userId]);
 
   useEffect(() => {
     void loadDashboardData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadDashboardData]);
+
 
   // GSAP anim
   useEffect(() => {

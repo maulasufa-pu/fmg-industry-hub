@@ -86,10 +86,9 @@ const MENU: Partial<Record<UserRole, readonly NavItem[]>> = {
     // { href: "/admin/engineer/renders", label: "Renders", Icon: FileText },
   ],
   client: [
-    { href: "/admin/projects", label: "Projects", Icon: Clipboard },
-    // { href: "/client/dashboard/", label: "Dashboard", Icon: Layout },
-    // { href: "/client/projects/", label: "Projects", Icon: Clipboard },
-    // { href: "/client/invoices/", label: "Invoices", Icon: FileText },
+    { href: "/client/dashboard/", label: "Dashboard", Icon: Layout },
+    { href: "/client/projects/", label: "Projects", Icon: Clipboard },
+    { href: "/client/invoices/", label: "Invoices", Icon: FileText },
   ]
 } as const;
 

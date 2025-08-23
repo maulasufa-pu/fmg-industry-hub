@@ -1,12 +1,14 @@
 // src/app/admin/projects/page.tsx
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
 import { getEffectiveRole } from "@/lib/roles/effective";
 import type { UserRole } from "@/lib/roles";
+import { Plus } from "lucide-react";
+import CreateProjectPopover from "./CreateProjectPopover";
 import ProjectList, {
   TabKey, ProjectRow, PicOption, StageOption, StatusOption,
 } from "@/app/ui/panel/projects/project_list";
@@ -76,6 +78,9 @@ export default function ClientProjectsPage(): React.ReactElement {
   const router = useRouter();
   const params = useSearchParams();
   const supabase = useMemo(() => getSupabaseClient(), []);
+
+  const [openRequest, setOpenRequest] = useState(false);
+  const requestBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const getClientName = (row: DbProjectSummary): string => {
     const first = row.client_first_name?.trim() ?? "";
@@ -320,6 +325,28 @@ export default function ClientProjectsPage(): React.ReactElement {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Toolbar atas tabel */}
+      <div className="flex items-center justify-end">
+        <button
+          ref={requestBtnRef}
+          onClick={() => setOpenRequest(true)}
+          className={[
+            "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white",
+            "bg-gradient-to-r from-indigo-500 to-fuchsia-500 shadow-[0_12px_40px_rgba(99,102,241,.35)]",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/60",
+            "hover:opacity-95 transition"
+          ].join(" ")}
+        >
+          <Plus className="h-4 w-4" />
+          Request New Project
+        </button>
+      </div>
+
+      {/* POPUP Request New Project */}
+      <CreateProjectPopover
+        open={openRequest}
+        onClose={() => setOpenRequest(false)}
+      />
       <ProjectList
         rows={rows}
         counts={tabCounts}

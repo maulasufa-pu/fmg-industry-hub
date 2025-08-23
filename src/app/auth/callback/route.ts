@@ -32,9 +32,9 @@ export async function GET(req: NextRequest) {
   );
 
   // 2) Tukar code -> session (pakai code ATAU pakai req.url; dua-duanya valid)
-  const { error: exErr } = await supabase.auth.exchangeCodeForSession(code);
-  // alternatif kalau masih error: await supabase.auth.exchangeCodeForSession(req.url);
-
+  const { error: exErr } = await supabase.auth.exchangeCodeForSession(req.url);
+  // alternatif kalau masih error: 
+  //await supabase.auth.exchangeCodeForSession(code);
   if (exErr) {
     // sementara: log ke server biar tahu pesan asli
     console.error("[callback] exchange error:", exErr);

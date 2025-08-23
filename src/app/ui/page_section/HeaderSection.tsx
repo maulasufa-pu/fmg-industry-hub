@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useRef, useEffect, useState, useCallback } from "react";
+import React, { useMemo, useRef, useEffect, useState, useCallback, useLayoutEffect } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -26,7 +26,7 @@ import Portal from "@/components/ui/Portal";
 /*********************************
  * Types & Menu Data
  *********************************/
- type MenuItem = {
+type MenuItem = {
   label: string;
   href: string;
   desc: string;
@@ -77,8 +77,8 @@ type BrandLockupProps = {
   className?: string;
   // basis + batas agar tetap terbaca di layar kecil/besar
   subtitleBasePx?: number; // default 14
-  subtitleMinPx?: number;  // default 10
-  subtitleMaxPx?: number;  // default 48
+  subtitleMinPx?: number; // default 10
+  subtitleMaxPx?: number; // default 48
 };
 
 export function BrandLockup({
@@ -97,35 +97,28 @@ export function BrandLockup({
     const t = titleRef.current;
     const m = measureRef.current;
     if (!t || !m) return;
-
     const target = t.getBoundingClientRect().width;
-    m.style.fontSize = `${subtitleBasePx}px`; // ukuran basis pengukuran
+    m.style.fontSize = `${subtitleBasePx}px`;
     const natural = m.getBoundingClientRect().width;
-
     if (target > 0 && natural > 0) {
-      const next = Math.min(
-        subtitleMaxPx,
-        Math.max(subtitleMinPx, (target / natural) * subtitleBasePx)
-      );
+      const next = Math.min(subtitleMaxPx, Math.max(subtitleMinPx, (target / natural) * subtitleBasePx));
       setSubSize(next);
     }
   }, [subtitleBasePx, subtitleMinPx, subtitleMaxPx]);
 
   React.useLayoutEffect(() => {
     recalc();
-    const obs = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => recalc()) : null;
-    if (obs && titleRef.current) obs.observe(titleRef.current);
-    // Recalc setelah font siap
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => recalc()) : null;
+    if (ro && titleRef.current) ro.observe(titleRef.current);
     document.fonts?.ready?.then?.(() => recalc());
     const onResize = () => recalc();
     window.addEventListener("resize", onResize);
     return () => {
       window.removeEventListener("resize", onResize);
-      obs?.disconnect();
+      ro?.disconnect();
     };
   }, [recalc]);
 
-  // CSS var utk font-size subtitle (supaya bisa !important)
   type VarStyle = React.CSSProperties & { ['--sub-fs']?: string };
   const subStyle: VarStyle = {
     ['--sub-fs']: subSize ? `${subSize}px` : undefined,
@@ -133,16 +126,17 @@ export function BrandLockup({
   };
 
   return (
-    <div className={`relative ${className}`}>
-      {/* Judul (nowrap supaya lebarnya pasti) */}
+    <div className={`relative grid content-center ${className}`}>
+      {/* Judul */}
       <div
         ref={titleRef}
-        className="font-heading-1 leading-none text-gray-800 dark:text-gray-100 whitespace-nowrap"
+        className="font-heading-1 font-black leading-[1.05] text-gray-800 dark:text-gray-100 whitespace-nowrap"
+        style={{ fontWeight: 700 }} // jaga-jaga kalau font-heading-1 override
       >
         {title}
       </div>
 
-      {/* Elemen ukur (invisible tapi tetap layout) */}
+      {/* Elemen ukur */}
       <div
         ref={measureRef}
         className="absolute -z-10 invisible pointer-events-none select-none whitespace-nowrap font-body-XS"
@@ -150,15 +144,14 @@ export function BrandLockup({
         {subtitle}
       </div>
 
-      {/* Subtitle tampil, ukuran pakai CSS var + !important */}
+      {/* Subtitle: gap super-ringan */}
       <div
-        className="-mt-1 font-body-XS leading-none text-neutral-600 dark:text-neutral-300 py-0.5 whitespace-nowrap brand-subtitle"
+        className="mt-[-2px] font-body-XS leading-[1] text-neutral-600 dark:text-neutral-300 whitespace-nowrap brand-subtitle"
         style={subStyle}
       >
         {subtitle}
       </div>
 
-      {/* Aturan local untuk override !important dari util kelas */}
       <style jsx>{`
         .brand-subtitle {
           font-size: var(--sub-fs, 12px) !important;
@@ -167,7 +160,6 @@ export function BrandLockup({
     </div>
   );
 }
-
 
 /*********************************
  * Component
@@ -186,6 +178,7 @@ export const HeaderSection = (): React.JSX.Element => {
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const profileButtonRef = useRef<HTMLButtonElement>(null);
   const mobileProfileButtonRef = useRef<HTMLButtonElement>(null);
+
   // Focusable keyboard nav (ArrowUp/Down, Home/End)
   const containerRef = useRef<HTMLDivElement | null>(null);
   const linkRefs = useRef<Array<HTMLAnchorElement | null>>([]);
@@ -199,43 +192,82 @@ export const HeaderSection = (): React.JSX.Element => {
       itemRefs.current[idx] = el;
     };
 
+  const dropdownWrapperRef = useRef<HTMLDivElement | null>(null);
+
+  const clamp = (n: number, min: number, max: number) => Math.min(Math.max(n, min), max);
+
+  // Tombol profil yang sedang visible (mobile pakai sm:hidden, desktop pakai hidden sm:flex)
+  const getActiveProfileButton = () => {
+    const candidates = [mobileProfileButtonRef.current, profileButtonRef.current];
+    for (const el of candidates) {
+      if (el && el.offsetParent !== null) return el; // visible di layout
+    }
+    return profileButtonRef.current ?? mobileProfileButtonRef.current;
+  };
+
   // Calculate dropdown position
   const calculateDropdownPosition = useCallback(() => {
-    
-    const buttonRef = profileButtonRef.current || mobileProfileButtonRef.current;
-    if (buttonRef) {
-      const rect = buttonRef.getBoundingClientRect();
-      const dropdownHeight = 320;
-      const gap = 8;
-      const viewportHeight = window.innerHeight;
-      
-      // Check if this is mobile by checking which ref is being used
-      const isMobile = buttonRef === mobileProfileButtonRef.current;
-      
-      if (isMobile) {
-        // For mobile, position dropdown below the button to avoid going off-screen
-        setDropdownPosition({
-          top: rect.bottom + gap,
-          left: Math.max(16, rect.left), // Ensure minimum 16px from left edge
-        });
-      } else {
-        // Desktop positioning - above the button
-        const topPosition = rect.top - dropdownHeight - gap;
-        
-        setDropdownPosition({
-          top: topPosition < 0 ? rect.bottom + gap : topPosition, // Fallback if too high
-          left: rect.left-160,
-        });
-      }
-    }
+    const btn = getActiveProfileButton();
+    const menuEl = dropdownWrapperRef.current;
+    if (!btn) return;
+
+    const pad = 8; // safe padding dari tepi layar
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const br = btn.getBoundingClientRect();
+
+    // Ukur ukuran menu yang sebenarnya (kalau belum render, pakai perkiraan)
+    const fallbackW = 320;
+    const fallbackH = 320;
+    const mr = menuEl?.getBoundingClientRect();
+    const mw = mr?.width ?? fallbackW;
+    const mh = mr?.height ?? fallbackH;
+
+    const isMobile = window.matchMedia("(max-width: 639px)").matches;
+
+    // Preferensi posisi:
+    // - Mobile: di bawah tombol (bottom-start)
+    // - Desktop: di atas tombol (top-end), fallback ke bawah kalau gak muat
+    let top = isMobile ? br.bottom + pad : br.top - mh - pad;
+    if (!isMobile && top < pad) top = br.bottom + pad; // fallback kalau kepentok atas
+
+    // Horizontal align
+    let left = isMobile ? br.left : br.right - mw;
+
+    // Clamp agar tidak keluar viewport
+    top = clamp(top, pad, vh - mh - pad);
+    left = clamp(left, pad, vw - mw - pad);
+
+    setDropdownPosition({ top: Math.round(top), left: Math.round(left) });
   }, []);
-  
+
+  useLayoutEffect(() => {
+    if (!showUserMenu) return;
+
+    // tunggu element ter-render, lalu ukur & posisi
+    const raf = requestAnimationFrame(() => calculateDropdownPosition());
+
+    const onRelayout = () => calculateDropdownPosition();
+    window.addEventListener("resize", onRelayout);
+    window.addEventListener("scroll", onRelayout, true); // true: ikut scroll container apapun
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", onRelayout);
+      window.removeEventListener("scroll", onRelayout, true);
+    };
+  }, [showUserMenu, calculateDropdownPosition]);
+
   const handleProfileClick = useCallback(() => {
-      if (!showUserMenu) {
-        calculateDropdownPosition();
-      }
-      setShowUserMenu(!showUserMenu);
-    }, [showUserMenu, calculateDropdownPosition]);
+    if (!showUserMenu) {
+      setShowUserMenu(true);
+      // hitung posisi setelah open
+      setTimeout(() => calculateDropdownPosition(), 0);
+    } else {
+      setShowUserMenu(false);
+    }
+  }, [showUserMenu, calculateDropdownPosition]);
+
   // Close on click-outside & Esc & resize (desktop mega menu)
   React.useEffect(() => {
     const onDown = (e: MouseEvent) => {
@@ -360,256 +392,282 @@ export const HeaderSection = (): React.JSX.Element => {
         dark:supports-[backdrop-filter]:bg-black/20
       "
     >
-      <div className="relative mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
-        {/* Left: Brand */}
-        {/* <Link href="/" className="flex items-center gap-2 font-semibold"> */}
-          {/* <div className="h-6 w-6 rounded-md bg-gradient-to-br from-indigo-600 to-fuchsia-600" /> */}
-          {/* <div className="inline-flex flex-col items-start justify-center">
-            <div className="font-heading-1 text-gray-800 dark:text-gray-100">Flemmo Music</div>
-            <div className="-mt-1 font-body-XS text-neutral-600 dark:text-neutral-300">Global Universe Solution</div>
-          </div> */}
-          {/* <BrandLockup
-            title="Flemmo Music"
-            subtitle="Global Universe Solution"
-            subtitleBasePx={1}   // ukuran basis perhitungan
-            subtitleMinPx={1}    // batas minimum
-            subtitleMaxPx={20}    // batas maksimum
-          /> */}
-        {/* </Link> */}
-        <Link href="/" className="flex items-center gap-0.5 font-semibold">
-          {/* Logo ganti div jadi Image */}
-          <Image
-            src="/logo/FMG-Universe-Flemmo-Music-Global.png"   // path relatif dari /public
-            alt="FMG Universe Logo"
-            width={100}                     // sama dengan h-6 (6*4px)
-            height={100}
-            className="h-10 w-10 rounded-md object-cover"
-            priority
-          />
-
-          <BrandLockup
-            title="Flemmo Music"
-            subtitle="Global Universe Solution"
-            subtitleBasePx={1}
-            subtitleMinPx={1}
-            subtitleMaxPx={20}
-          />
-        </Link>
-
-        {/* Center: Nav (desktop only) */}
-        <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 sm:flex items-center gap-6 text-sm z-10">
-          <Link href="/#about" className="opacity-80 hover:opacity-100">
-            About
-          </Link>
-          <Link href="/#features" className="opacity-80 hover:opacity-100">
-            Services
-          </Link>
-          <Link href="/#pricing" className="opacity-80 hover:opacity-100">
-            Packages
-          </Link>
-
-          {/* Desktop Mega Menu */}
-          <div className="relative" ref={menuRef}>
+      <div className="relative mx-auto h-16 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* ===== MOBILE HEADER (≤ sm) ===== */}
+        <div className="relative flex h-16 items-center sm:hidden">
+          {/* LEFT: Menu + ThemeToggle (nempel) */}
+          <div className="flex items-center gap-2">
             <button
-              ref={triggerRef}
               type="button"
-              onClick={() => {
-                setOpen((v) => !v);
-                setFocusIndex((v) => (v < 0 ? 0 : v));
-              }}
-              onKeyDown={onTriggerKeyDown}
-              aria-haspopup="menu"
-              aria-expanded={open}
-              className="
-                inline-flex items-center gap-1 rounded-xl px-3 py-1.5
-                opacity-90 hover:opacity-100
-                focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/50 dark:focus-visible:ring-indigo-300/40
-                transition
-              "
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-menu-panel"
+              onClick={() => setMobileOpen((v) => !v)}
+              className="inline-flex h-8.5 w-8.5 items-center justify-center rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.06]"
             >
-              Menu
-              <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                <ChevronDown className="h-4 w-4" />
-              </motion.span>
+              {mobileOpen ? <X className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
             </button>
 
-            <AnimatePresence>
-              {open && (
-                <motion.div
-                  key="menu"
-                  variants={panel}
-                  initial="hidden"
-                  animate="show"
-                  exit="exit"
-                  onKeyDown={onMenuKeyDown}
-                  role="menu"
-                  aria-label="FMG Sections"
-                  className="
-                    fixed top-16 left-1/2 z-[60]
-                    w-[520px] max-w-[calc(100vw-1rem)] -translate-x-1/2 mx-2 sm:mx-0
-                    rounded-2xl ring-1 ring-white/80 dark:ring-black/90
-                    overflow-hidden shadow-[0_24px_60px_-12px_rgba(0,0,0,0.35)]
-                    bg-white/100 dark:bg-black/100
-                  "
-                >
-                  {/* CONTENT */}
-                  <div className="relative z-10 p-2">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-                      {MENU.map((m, idx) => (
-                        <motion.div key={m.label} variants={item}>
-                          <Link
-                            ref={setItemRef(idx)}
-                            href={m.href}
-                            role="menuitem"
-                            tabIndex={-1}
-                            onClick={() => {
-                              setOpen(false);
-                              setFocusIndex(-1);
-                            }}
-                            className="
-                              group relative flex items-center gap-4 rounded-2xl p-3
-                              ring-1 ring-black/10 dark:ring-white/10
-                              bg-white/65 dark:bg-white/[0.04]
-                              hover:bg-white/75 dark:hover:bg-white/[0.06]
-                              transition
-                              shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]
-                              dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]
-                              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40
-                              after:pointer-events-none after:absolute after:inset-0 after:rounded-2xl
-                              after:bg-gradient-to-br after:from-white/40 after:to-transparent
-                              after:opacity-0 group-hover:after:opacity-100 after:transition-opacity
-                            "
-                          >
-                            {/* Icon */}
-                            <div
+            {/* kecil, sama ukuran dengan avatar/menu = 40px */}
+            <ThemeToggle
+              className="grid h-5 w-5 place-items-center rounded-full border border-black/10 bg-white text-white dark:border-white/10 dark:bg-black"
+              aria-label="Toggle theme (mobile)"
+            />
+          </div>
+
+          {/* CENTER: Brand (benar-benar center) */}
+          <Link
+            href="/"
+            className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1"
+          >
+            <Image
+              src="/logo/FMG-Universe-Flemmo-Music-Global.png"
+              alt="FMG Universe Logo"
+              width={100}
+              height={100}
+              className="h-9 w-9 rounded-md object-cover"
+              priority
+            />
+            <BrandLockup
+              title="FMG"
+              subtitle="Universe"
+              subtitleBasePx={10}
+              subtitleMinPx={1}
+              subtitleMaxPx={11}
+            />
+          </Link>
+
+          {/* RIGHT: Avatar saja */}
+          <button
+            ref={mobileProfileButtonRef}
+            onClick={handleProfileClick}
+            className="ml-auto inline-flex items-center rounded-full p-1.5 border border-transparent"
+            aria-label="Open user menu"
+          >
+            <ProfileAvatar
+              avatarUrl={profile?.avatarUrl}
+              fullName={profile?.fullName}
+              size="md"
+              animate
+              showFallback={!profileLoading}
+            />
+          </button>
+        </div>
+
+        {/* ===== DESKTOP HEADER (≥ sm) ===== */}
+        <div className="hidden h-16 items-center sm:flex">
+          {/* Left: Brand lengkap */}
+          <Link href="/" className="flex items-center gap-1.5 font-semibold">
+            <Image
+              src="/logo/FMG-Universe-Flemmo-Music-Global.png"
+              alt="FMG Universe Logo"
+              width={100}
+              height={100}
+              className="block h-10 w-10 rounded-md object-cover"
+              priority
+            />
+            <BrandLockup
+              title="FLEMMO MUSIC"
+              subtitle="Global Universe Solution"
+              subtitleBasePx={10}
+              subtitleMinPx={1}
+              subtitleMaxPx={11}
+            />
+          </Link>
+
+          {/* Center: Nav (desktop only) */}
+          <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 sm:flex items-center gap-6 text-sm z-10">
+            <Link href="/#about" className="opacity-80 hover:opacity-100">
+              About
+            </Link>
+            <Link href="/#features" className="opacity-80 hover:opacity-100">
+              Services
+            </Link>
+            <Link href="/#pricing" className="opacity-80 hover:opacity-100">
+              Packages
+            </Link>
+
+            {/* Desktop Mega Menu */}
+            <div className="relative" ref={menuRef}>
+              <button
+                ref={triggerRef}
+                type="button"
+                onClick={() => {
+                  setOpen((v) => !v);
+                  setFocusIndex((v) => (v < 0 ? 0 : v));
+                }}
+                onKeyDown={onTriggerKeyDown}
+                aria-haspopup="menu"
+                aria-expanded={open}
+                className="
+                  inline-flex items-center gap-1 rounded-xl px-3 py-1.5
+                  opacity-90 hover:opacity-100
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/50 dark:focus-visible:ring-indigo-300/40
+                  transition
+                "
+              >
+                Menu
+                <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                  <ChevronDown className="h-4 w-4" />
+                </motion.span>
+              </button>
+
+              <AnimatePresence>
+                {open && (
+                  <motion.div
+                    key="menu"
+                    variants={panel}
+                    initial="hidden"
+                    animate="show"
+                    exit="exit"
+                    onKeyDown={onMenuKeyDown}
+                    role="menu"
+                    aria-label="FMG Sections"
+                    className="
+                      fixed top-16 left-1/2 z-[60]
+                      w-[520px] max-w-[calc(100vw-1rem)] -translate-x-1/2 mx-2 sm:mx-0
+                      rounded-2xl ring-1 ring-white/80 dark:ring-black/90
+                      overflow-hidden shadow-[0_24px_60px_-12px_rgba(0,0,0,0.35)]
+                      bg-white/100 dark:bg-black/100
+                    "
+                  >
+                    {/* CONTENT */}
+                    <div className="relative z-10 p-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                        {MENU.map((m, idx) => (
+                          <motion.div key={m.label} variants={item}>
+                            <Link
+                              ref={setItemRef(idx)}
+                              href={m.href}
+                              role="menuitem"
+                              tabIndex={-1}
+                              onClick={() => {
+                                setOpen(false);
+                                setFocusIndex(-1);
+                              }}
                               className="
-                                flex-shrink-0 grid size-11 place-items-center rounded-xl
-                                bg-gradient-to-br from-indigo-600 to-violet-600
-                                text-white
-                                border border-white/30 dark:border-white/10
-                                shadow-[0_6px_18px_rgba(79,70,229,0.35)]
+                                group relative flex items-center gap-4 rounded-2xl p-3
+                                ring-1 ring-black/10 dark:ring-white/10
+                                bg-white/65 dark:bg-white/[0.04]
+                                hover:bg-white/75 dark:hover:bg-white/[0.06]
+                                transition
+                                shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]
+                                dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]
+                                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40
+                                after:pointer-events-none after:absolute after:inset-0 after:rounded-2xl
+                                after:bg-gradient-to-br after:from-white/40 after:to-transparent
+                                after:opacity-0 group-hover:after:opacity-100 after:transition-opacity
                               "
                             >
-                              <m.Icon className="h-5 w-5" />
-                            </div>
-
-                            {/* Text */}
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-black/90 dark:text-white/90">{m.label}</span>
-                                <ArrowRight className="h-3.5 w-3.5 opacity-0 -translate-x-1 transition group-hover:opacity-100 group-hover:translate-x-0" />
+                              {/* Icon */}
+                              <div
+                                className="
+                                  flex-shrink-0 grid size-11 place-items-center rounded-xl
+                                  bg-gradient-to-br from-indigo-600 to-violet-600
+                                  text-white
+                                  border border-white/30 dark:border-white/10
+                                  shadow-[0_6px_18px_rgba(79,70,229,0.35)]
+                                "
+                              >
+                                <m.Icon className="h-5 w-5" />
                               </div>
-                              <p className="mt-0.5 text-[12.5px] leading-5 text-neutral-700 dark:text-neutral-300 line-clamp-2">
-                                {m.desc}
-                              </p>
-                            </div>
-                          </Link>
-                        </motion.div>
-                      ))}
-                    </div>
 
-                    <div className="mt-1 flex items-center justify-between rounded-xl border border-black/10 dark:border-white/10 bg-white/40 dark:bg-white/5 px-3 py-2">
-                      <span className="text-[12.5px] text-neutral-700 dark:text-neutral-300">
-                        “Beyond Sound. Built-in Intelligence.”
-                      </span>
-                      <Link
-                        href="/client/dashboard"
-                        className="
-                          inline-flex items-center gap-1.5 rounded-lg border border-black/10 dark:border-white/10
-                          bg-black text-white dark:bg-white dark:text-black px-3 py-1.5 text-xs font-semibold
-                          hover:opacity-90 transition
-                        "
-                      >
-                        Start Project <ArrowRight className="h-3.5 w-3.5" />
-                      </Link>
+                              {/* Text */}
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-black/90 dark:text-white/90">{m.label}</span>
+                                  <ArrowRight className="h-3.5 w-3.5 opacity-0 -translate-x-1 transition group-hover:opacity-100 group-hover:translate-x-0" />
+                                </div>
+                                <p className="mt-0.5 text-[12.5px] leading-5 text-neutral-700 dark:text-neutral-300 line-clamp-2">
+                                  {m.desc}
+                                </p>
+                              </div>
+                            </Link>
+                          </motion.div>
+                        ))}
+                      </div>
+
+                      <div className="mt-1 flex items-center justify-between rounded-xl border border-black/10 dark:border-white/10 bg-white/40 dark:bg-white/5 px-3 py-2">
+                        <span className="text-[12.5px] text-neutral-700 dark:text-neutral-300">
+                          “Beyond Sound. Built-in Intelligence.”
+                        </span>
+                        <Link
+                          href="/client/dashboard"
+                          className="
+                            inline-flex items-center gap-1.5 rounded-lg border border-black/10 dark:border-white/10
+                            bg-black text-white dark:bg-white dark:text-black px-3 py-1.5 text-xs font-semibold
+                            hover:opacity-90 transition
+                          "
+                        >
+                          Start Project <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          {/* Right: CTA + Theme + Profile (desktop only) */}
+          <div className="ml-auto hidden items-center gap-4 sm:flex">
+            <Link
+              href="/client/dashboard"
+              className="
+                group relative inline-flex h-11 items-center gap-2 rounded-2xl px-5
+                text-sm font-semibold leading-none
+                bg-black text-white dark:bg-white dark:text-black
+                shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-colors
+                hover:bg-gradient-to-r hover:from-indigo-600 hover:to-violet-600 hover:text-white
+              "
+            >
+              Start My Project
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              <span className="pointer-events-none absolute inset-0 rounded-2xl bg-white/10 opacity-0 blur-xl transition-opacity group-hover:opacity-100 dark:bg-black/10" />
+            </Link>
+
+            <ThemeToggle className="grid h-11 w-11 place-items-center rounded-full border border-black/10 bg-white/60 text-black dark:border-white/10 dark:bg-black/40" />
+
+            {/* Profile desktop: nama + avatar */}
+            <motion.div className="relative" whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
+              <button
+                ref={profileButtonRef}
+                onClick={handleProfileClick}
+                className="hidden sm:flex items-center gap-3 rounded-full px-1.5 py-1 transition-all duration-200 border border-transparent"
+              >
+                <span className="text-sm font-medium text-black/80 dark:text-slate-200 truncate">
+                  {profileLoading ? "Loading..." : profile?.fullName || "Profile"}
+                </span>
+                <div className="flex-shrink-0">
+                  <ProfileAvatar
+                    avatarUrl={profile?.avatarUrl}
+                    fullName={profile?.fullName}
+                    size="md"
+                    animate
+                    showFallback={!profileLoading}
+                  />
+                </div>
+              </button>
+            </motion.div>
           </div>
         </div>
 
-        {/* Right: CTA + Theme (desktop only) */}
-        <div className="ml-auto hidden items-center gap-4 sm:flex">
-          <Link
-            href="/client/dashboard"
-            className="
-              group relative inline-flex h-11 items-center gap-2 rounded-2xl px-5
-              text-sm font-semibold leading-none
-              bg-black text-white dark:bg-white dark:text-black
-              shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-colors
-              hover:bg-gradient-to-r hover:from-indigo-600 hover:to-violet-600 hover:text-white
-            "
-          >
-            Start My Project
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            <span className="pointer-events-none absolute inset-0 rounded-2xl bg-white/10 opacity-0 blur-xl transition-opacity group-hover:opacity-100 dark:bg-black/10" />
-          </Link>
-
-          <ThemeToggle className="grid h-11 w-11 place-items-center rounded-full border border-black/10 bg-white/60 text-black dark:border-white/10 dark:bg-black/40" />
-        </div>
-        <div className="flex items-center justify-center">
-          {/* Profile Picture - Opens UserMenu - Centered */}
-          <motion.div 
-            className="relative"
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.2 }}
-          >
-            <button
-              ref={profileButtonRef}
-              onClick={handleProfileClick}
-              className="group relative flex items-center gap-3 rounded-full px-1.5 py-1 w-full transition-all duration-200 border border-transparent"
+        {/* Shared Portal for UserDropdown (works on both mobile & desktop) */}
+        {showUserMenu && (
+          <Portal>
+            <div
+              ref={dropdownWrapperRef}
+              className="fixed z-[9999]"
+              style={{
+                top: dropdownPosition.top,
+                left: dropdownPosition.left,
+                maxWidth: "min(96vw, 360px)", // jaga agar tidak melewati layar
+              }}
             >
-              <span className="text-sm font-medium text-black-200 dark:text-slate-200 group-hover:text-black flex-1 truncate">
-                  {profileLoading ? "Loading..." : (profile?.fullName || "Profile")}
-                </span>
-              <div className="flex-shrink-0">
-                <ProfileAvatar
-                  avatarUrl={profile?.avatarUrl}
-                  fullName={profile?.fullName}
-                  size="md"
-                  animate
-                  showFallback={!profileLoading}
-                />
-              </div>
-            </button>
-            
-            {/* UserMenu positioned above the button */}
-            {showUserMenu && (
-              <Portal>
-                <div 
-                  className="fixed z-[9999]"
-                  style={{ 
-                    top: `${dropdownPosition.top}px`, 
-                    left: `${dropdownPosition.left}px`,
-                    pointerEvents: 'auto'
-                  }}
-                >
-                  <UserDropdown 
-                    isOpen={showUserMenu}
-                    onClose={() => setShowUserMenu(false)}
-                  />
-                </div>
-              </Portal>
-            )}
-          </motion.div>
-        </div>
-
-        {/* Right: Mobile controls */}
-        <div className="ml-auto flex items-center gap-2 sm:hidden">
-          <ThemeToggle className="grid h-10 w-10 place-items-center rounded-full border border-black/10 bg-white/60 text-black dark:border-white/10 dark:bg-black/40" />
-          <button
-            type="button"
-            aria-label={mobileOpen ? "Close menu" : "Open menu"}
-            aria-expanded={mobileOpen}
-            aria-controls="mobile-menu-panel"
-            onClick={() => setMobileOpen((v) => !v)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.06]"
-          >
-            {mobileOpen ? <X className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
-          </button>
-        </div>
+              <UserDropdown isOpen={showUserMenu} onClose={() => setShowUserMenu(false)} />
+            </div>
+          </Portal>
+        )}
       </div>
 
       {/* Mobile overlay + sheet */}
@@ -644,15 +702,35 @@ export const HeaderSection = (): React.JSX.Element => {
               <div className="px-4 pt-3 pb-6">
                 {/* Top quick links */}
                 <div className="grid grid-cols-3 gap-2 text-sm">
-                  <Link href="/#about" onClick={() => setMobileOpen(false)} className="rounded-xl border border-black/10 dark:border-white/10 bg-white/60 dark:bg-white/[0.06] px-3 py-2 text-center">About</Link>
-                  <Link href="/#features" onClick={() => setMobileOpen(false)} className="rounded-xl border border-black/10 dark:border-white/10 bg-white/60 dark:bg-white/[0.06] px-3 py-2 text-center">Services</Link>
-                  <Link href="/#pricing" onClick={() => setMobileOpen(false)} className="rounded-xl border border-black/10 dark:border-white/10 bg-white/60 dark:bg-white/[0.06] px-3 py-2 text-center">Packages</Link>
+                  <Link
+                    href="/#about"
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-xl border border-black/10 dark:border-white/10 bg-white/60 dark:bg-white/[0.06] px-3 py-2 text-center"
+                  >
+                    About
+                  </Link>
+                  <Link
+                    href="/#features"
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-xl border border-black/10 dark:border-white/10 bg-white/60 dark:bg-white/[0.06] px-3 py-2 text-center"
+                  >
+                    Services
+                  </Link>
+                  <Link
+                    href="/#pricing"
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-xl border border-black/10 dark:border-white/10 bg-white/60 dark:bg-white/[0.06] px-3 py-2 text-center"
+                  >
+                    Packages
+                  </Link>
                 </div>
 
                 {/* Sections */}
                 <div className="mt-4 divide-y divide-black/5 dark:divide-white/10">
                   <div className="pb-3">
-                    <div className="text-xs uppercase tracking-wide text-neutral-600 dark:text-neutral-300 mb-2">FMG Sections</div>
+                    <div className="text-xs uppercase tracking-wide text-neutral-600 dark:text-neutral-300 mb-2">
+                      FMG Sections
+                    </div>
                     <div className="grid grid-cols-1 gap-2">
                       {MENU.map((m) => (
                         <Link
@@ -665,8 +743,12 @@ export const HeaderSection = (): React.JSX.Element => {
                             <m.Icon className="h-4 w-4" />
                           </span>
                           <span className="flex-1 min-w-0">
-                            <span className="block text-[15px] font-medium text-black/90 dark:text-white/90">{m.label}</span>
-                            <span className="block text-[12.5px] text-neutral-700 dark:text-neutral-300 line-clamp-1">{m.desc}</span>
+                            <span className="block text-[15px] font-medium text-black/90 dark:text-white/90">
+                              {m.label}
+                            </span>
+                            <span className="block text-[12.5px] text-neutral-700 dark:text-neutral-300 line-clamp-1">
+                              {m.desc}
+                            </span>
                           </span>
                           <ArrowRight className="h-4 w-4 opacity-60 group-hover:opacity-100" />
                         </Link>

@@ -21,7 +21,7 @@ export function ThemeToggle({ className = "", ...props }: Props) {
       aria-pressed={isDark}
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
       className={[
-        "relative grid h-11 w-11 place-items-center rounded-full",
+        "relative grid h-9 w-9 place-items-center rounded-full",
         "border border-black/20 bg-black text-white shadow-sm",
         "hover:opacity-90 transition-all",
         className
@@ -31,7 +31,7 @@ export function ThemeToggle({ className = "", ...props }: Props) {
       {/* SunMedium: lebih jelas; hitam saat light */}
       <SunMedium
         strokeWidth={2.75}
-        className="h-5 w-5 text-black rotate-0 scale-100 transition-all duration-300 dark:-rotate-90 dark:scale-0"
+        className="h-5 w-5 text-yellow-500 rotate-0 scale-100 transition-all duration-300 dark:-rotate-90 dark:scale-0"
       />
 
       {/* Alternatif: kalau mau coba yang lebih minimal */}

@@ -427,7 +427,7 @@ function Hero() {
   useEffect(() => { controls.start("visible"); }, [controls]);
 
   return (
-    <section className="relative overflow-hidden pt-24 sm:pt-20">
+    <section className="relative overflow-hidden pt-12 sm:pt-12">
       {/* <Spotlight />  */}
       <Parallax speed={-0.03}>
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(1200px_500px_at_50%_-100px,rgba(79,70,229,0.15),transparent)]" />
@@ -436,7 +436,7 @@ function Hero() {
       <motion.div initial="hidden" animate={controls} className="mx-auto max-w-6xl px-4">
         <div className="flex flex-col items-center">
           <Parallax speed={0.08}>
-            <motion.div variants={fadeUp} className="mb-4 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3 py-1 text-xs shadow-sm backdrop-blur dark:border-white/10 dark:bg-black/40">
+            <motion.div variants={fadeUp} className="mb-4 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3 text-xs shadow-sm backdrop-blur dark:border-white/10 dark:bg-black/40">
               <Sparkles className="h-4 w-4 text-indigo-600" />
               <span>Build Ecosystem • Spark Innovation • Foster Collaboration</span>
             </motion.div>
@@ -451,8 +451,8 @@ function Hero() {
               <b>FMG Universe</b> is a creative-technology ecosystem and solution born from <b>Flemmo Music Global (FMG) 
               Publishing</b> and evolved into a holding that spans music, technology, and digital innovation. <b>Beyond Sound. 
               Built-in Intelligence</b>. We’re building one integrated operating system for music, rights-first, 
-              advanced technology platform that unites creation, talent, distribution & media, artist & repertoire (A&R), 
-              <b>AI research & development (R&D)</b>, publishing, live event, music academy, and musician community development—with collaboration as the connective layer. 
+              advanced technology platform that unites songwriting, composition, end-to-end music production (A-Z: Recording, Studio, Sound Design, Mixing and Mastering), talent, distribution & media, artist & repertoire (A&R),  
+              <b> AI research & development (R&D)</b>, publishing, live event, music academy, and musician community development—with collaboration as the connective layer. 
               By embedding intelligence into real workflows, <b>we help artists, labels, and brands</b> to scout smarter, produce faster, 
               own rights, grow royalties, and scale catalogs into lasting equity—future-ready for the next decade.
             </motion.p>
@@ -475,18 +475,189 @@ function Hero() {
 }
 
 /*************************
- * Features (UPDATED pemanggilan)
+ * Features — mobile 1-row infinite (sentinels) + desktop grid
+ *************************/
+/*************************
+ * Features — mobile 1-row infinite (sentinels) + desktop grid
+ * Auto-slide pause 10s setelah scroll manual
  *************************/
 function Features() {
+  const COUNT = DIVISIONS.length;
+  const extended = React.useMemo(
+    () => [DIVISIONS[COUNT - 1], ...DIVISIONS, DIVISIONS[0]],
+    []
+  );
+
+  const railRef = React.useRef<HTMLDivElement | null>(null);
+  const pausedRef = React.useRef(false);          // pause karena hover/touch
+  const idxRef = React.useRef(1);                 // index extended, mulai dari item "real" pertama
+  const scrollEndTimer = React.useRef<number | null>(null);
+
+  // === NEW: kontrol pause 10 detik setelah interaksi manual ===
+  const resumeAtRef = React.useRef(0);            // epoch ms kapan auto boleh jalan lagi
+  const autoGuardUntilRef = React.useRef(0);      // epoch ms: abaikan onScroll sampai waktu ini (programmatic)
+  const requestPause = React.useCallback((ms = 10000) => {
+    resumeAtRef.current = Date.now() + ms;
+  }, []);
+
+  const setPaused = (v: boolean) => { pausedRef.current = v; };
+
+  const targetLeft = (rail: HTMLDivElement, child: HTMLElement) =>
+    child.offsetLeft - (rail.clientWidth - child.offsetWidth) / 2;
+
+  const scrollToIndex = React.useCallback((i: number, smooth = true) => {
+    const rail = railRef.current;
+    if (!rail) return;
+    const child = rail.children[i] as HTMLElement | undefined;
+    if (!child) return;
+
+    // tandai scroll programmatic (abaikan onScroll selama durasi animasi)
+    autoGuardUntilRef.current = Date.now() + (smooth ? 650 : 60);
+
+    rail.scrollTo({ left: targetLeft(rail, child), behavior: smooth ? "smooth" : "auto" });
+    idxRef.current = i;
+  }, []);
+
+  const jumpToIndex = React.useCallback((i: number) => {
+    const rail = railRef.current;
+    if (!rail) return;
+    const child = rail.children[i] as HTMLElement | undefined;
+    if (!child) return;
+
+    const prevSnap = rail.style.scrollSnapType;
+    rail.style.scrollSnapType = "none";
+    rail.style.setProperty("scroll-behavior", "auto");
+
+    // tetap guard sebentar supaya onScroll dari jump tidak dihitung manual
+    autoGuardUntilRef.current = Date.now() + 80;
+
+    rail.scrollLeft = targetLeft(rail, child);
+    idxRef.current = i;
+
+    requestAnimationFrame(() => {
+      rail.style.scrollSnapType = prevSnap || "";
+      rail.style.removeProperty("scroll-behavior");
+    });
+  }, []);
+
+  React.useEffect(() => {
+    const t = window.setTimeout(() => jumpToIndex(1), 0);
+    return () => window.clearTimeout(t);
+  }, [jumpToIndex]);
+
+  // === Auto-step tiap 3s, tapi hormati pause hover/touch & pause 10s manual ===
+  React.useEffect(() => {
+    let timer: number;
+    const tick = () => {
+      const now = Date.now();
+      // jalanin step hanya kalau tidak hover/touch pause dan sudah lewat resumeAt
+      if (!pausedRef.current && now >= resumeAtRef.current) {
+        scrollToIndex(idxRef.current + 1, true);
+      }
+      timer = window.setTimeout(tick, 3000);
+    };
+    timer = window.setTimeout(tick, 3000);
+    return () => window.clearTimeout(timer);
+  }, [scrollToIndex]);
+
+  const onScroll = React.useCallback(() => {
+    if (scrollEndTimer.current) window.clearTimeout(scrollEndTimer.current);
+    scrollEndTimer.current = window.setTimeout(() => {
+      const rail = railRef.current;
+      if (!rail) return;
+
+      // cari child terdekat ke pusat viewport
+      const center = rail.scrollLeft + rail.clientWidth / 2;
+      let nearest = 0;
+      let best = Number.POSITIVE_INFINITY;
+      for (let i = 0; i < rail.children.length; i++) {
+        const el = rail.children[i] as HTMLElement;
+        const elCenter = el.offsetLeft + el.offsetWidth / 2;
+        const diff = Math.abs(elCenter - center);
+        if (diff < best) { best = diff; nearest = i; }
+      }
+      idxRef.current = nearest;
+
+      // sentinel jump (programmatic, jadi guarded)
+      if (nearest === 0) {
+        jumpToIndex(COUNT);
+      } else if (nearest === COUNT + 1) {
+        jumpToIndex(1);
+      }
+
+      // === NEW: kalau ini scroll manual (di luar guard), pause 10s ===
+      if (Date.now() > autoGuardUntilRef.current) {
+        requestPause(10000);
+      }
+    }, 120) as unknown as number;
+  }, [COUNT, jumpToIndex, requestPause]);
+
+  // re-layout saat resize
+  React.useEffect(() => {
+    const onResize = () => jumpToIndex(idxRef.current);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [jumpToIndex]);
+
   return (
     <section id="features" className="relative mx-auto max-w-6xl px-4 py-10">
-      {/* ...header tetap... */}
       <Parallax speed={0.1}>
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-10%" }}
-          className="mt-12 grid grid-cols-1 gap-y-8 gap-x-4 sm:grid-cols-2 sm:gap-x-4 lg:grid-cols-3 lg:gap-x-5 pb-8 lg:pb-16"
+          className="mx-auto max-w-3xl text-center"
+        >
+          <motion.h2 variants={fadeUp} className="text-3xl font-bold sm:text-4xl">Explore our divisions</motion.h2>
+          <motion.p variants={fadeUp} custom={1} className="mt-2 text-black/70 dark:text-white/70">
+            End-to-end capabilities for modern music workflows.
+          </motion.p>
+        </motion.div>
+      </Parallax>
+
+      {/* MOBILE carousel */}
+      <Parallax speed={0.08}>
+        <div
+          className="mt-12 sm:hidden relative"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+          onTouchStart={() => setPaused(true)}
+          onTouchEnd={() => { setPaused(false); requestPause(10000); }}  // <-- NEW: setelah lepas sentuh, pause 10s
+        >
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-white to-transparent dark:from-black" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent dark:from-black" />
+
+          <div
+            ref={railRef}
+            onScroll={onScroll}
+            className="
+              flex gap-4 overflow-x-auto overflow-y-visible scroll-smooth
+              snap-x snap-mandatory
+              [scrollbar-width:none] [-ms-overflow-style:none]
+              px-2 py-3
+            "
+            style={{ WebkitOverflowScrolling: "touch", overflowY: "visible" }}
+          >
+            <style>{`[data-hide-scrollbar]::-webkit-scrollbar{display:none}`}</style>
+            {extended.map((d, i) => {
+              const href = `/${slugFromDivisionTitle(d.title)}`;
+              return (
+                <div key={`${d.title}-${i}`} className="snap-center shrink-0 w-[88%]">
+                  <FeatureCard icon={d.icon} title={d.title} desc={d.desc} href={href} />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </Parallax>
+
+      {/* DESKTOP/TABLET grid tetap */}
+      <Parallax speed={0.1}>
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-10%" }}
+          className="mt-12 hidden grid-cols-1 gap-y-8 gap-x-4 sm:grid sm:grid-cols-2 sm:gap-x-4 lg:grid-cols-3 lg:gap-x-5 pb-8 lg:pb-16"
         >
           {DIVISIONS.map((d, i, arr) => {
             const isLast = i === arr.length - 1;
@@ -494,12 +665,10 @@ function Features() {
             const centerLast = isLast && arr.length % 3 === 1;
             const wingShift = !centerLast && (colLg === 0 || colLg === 2) ? "lg:translate-y-16 xl:translate-y-24" : "";
             const centerLastClass = centerLast ? "lg:col-start-2" : "";
-
-            const href = `/${slugFromDivisionTitle(d.title)}`;   // ⬅️ NEW
-
+            const href = `/${slugFromDivisionTitle(d.title)}`;
             return (
               <div key={d.title} className={`transform-gpu will-change-transform ${wingShift} ${centerLastClass}`}>
-                <FeatureCard icon={d.icon} title={d.title} desc={d.desc} href={href} /> {/* ⬅️ pass href */}
+                <FeatureCard icon={d.icon} title={d.title} desc={d.desc} href={href} />
               </div>
             );
           })}
@@ -508,6 +677,7 @@ function Features() {
     </section>
   );
 }
+
 
 /*************************
  * Numbers / Social Proof (REPLACED)
@@ -558,7 +728,7 @@ function Numbers() {
   }, [paused]);
 
   return (
-    <section className="relative border-y border-black/10 bg-gradient-to-b from-white to-indigo-50/40 py-16 dark:border-white/10 dark:from-black dark:to-indigo-950/20">
+    <section className="relative border-y border-black/10 bg-gradient-to-b from-white to-indigo-50/40 py-15 dark:border-white/10 dark:from-black dark:to-indigo-950/20">
       <Parallax speed={0.03}>
         <div className="mx-auto max-w-6xl px-4 text-center">
           <h2 className="text-pretty text-3xl font-bold sm:text-4xl">Numbers that matter</h2>
@@ -632,7 +802,111 @@ function AboutFMG() {
 /*************************
  * Testimonials
  *************************/
+/*************************
+ * Testimonials — infinite loop (2 sentinels), 1-row mobile
+ * - Swipe-able
+ * - Auto step tiap 3s (pause saat interaksi)
+ * - Tanpa "balik ke tengah" yang kelihatan
+ *************************/
+/*************************
+ * Testimonials — mobile infinite (sentinels)
+ * Auto-slide pause 10s setelah scroll manual
+ *************************/
 function Testimonials() {
+  const items = [
+    { quote:"The team quickly grasped the song’s direction. Communication was clear, and the final result still feels like me.", name:"Viokichi", role:"Artist — Pop/R&B" },
+    { quote:"My bossa nova single went from demo to release without hassle. Administration and delivery to DSPs were handled smoothly.", name:"Amandha Ayu", role:"Artist — Jazz/Bossa Nova" },
+    { quote:"Arrangement, tracking, through to release—everything in one workflow. Progress was always clear and on schedule.", name:"Nannouz", role:"Artist — Pop, Orchestra, Jazz, Rock" },
+    { quote:"Cross-language project ran smoothly. Technical direction was precise, distribution was fast, and the result was professional.", name:"Adilisius", role:"Artist — Pop/EDM" },
+    { quote:"They turned a rough idea into a record. Stems were organized, milestones were clear, and mix notes were laser-specific.", name:"BesThree", role:"Artist — Pop/EDM" },
+    { quote:"One workspace for creative in the music industry—clear notes, fast decisions, release-ready delivery", name:"Anthem Boys", role:"Artist — Pop/EDM" },
+  ];
+  const COUNT = items.length;
+  const extended = React.useMemo(() => [items[COUNT - 1], ...items, items[0]], [items, COUNT]);
+
+  const railRef = React.useRef<HTMLDivElement | null>(null);
+  const pausedRef = React.useRef(false);
+  const idxRef = React.useRef(1);
+  const scrollEndTimer = React.useRef<number | null>(null);
+
+  const resumeAtRef = React.useRef(0);
+  const autoGuardUntilRef = React.useRef(0);
+  const requestPause = React.useCallback((ms = 10000) => {
+    resumeAtRef.current = Date.now() + ms;
+  }, []);
+  const setPaused = (v: boolean) => { pausedRef.current = v; };
+
+  const targetLeft = (rail: HTMLDivElement, child: HTMLElement) =>
+    child.offsetLeft - (rail.clientWidth - child.offsetWidth) / 2;
+
+  const scrollToIndex = React.useCallback((i: number, smooth = true) => {
+    const rail = railRef.current;
+    if (!rail) return;
+    const child = rail.children[i] as HTMLElement | undefined;
+    if (!child) return;
+    autoGuardUntilRef.current = Date.now() + (smooth ? 650 : 60);
+    rail.scrollTo({ left: targetLeft(rail, child), behavior: smooth ? "smooth" : "auto" });
+    idxRef.current = i;
+  }, []);
+
+  const jumpToIndex = React.useCallback((i: number) => {
+    const rail = railRef.current;
+    if (!rail) return;
+    const child = rail.children[i] as HTMLElement | undefined;
+    if (!child) return;
+    const restore = rail.style.scrollSnapType;
+    rail.style.scrollSnapType = "none";
+    rail.style.setProperty("scroll-behavior", "auto");
+    autoGuardUntilRef.current = Date.now() + 80;
+    rail.scrollLeft = targetLeft(rail, child);
+    idxRef.current = i;
+    requestAnimationFrame(() => {
+      rail.style.scrollSnapType = restore || "";
+      rail.style.removeProperty("scroll-behavior");
+    });
+  }, []);
+
+  React.useEffect(() => {
+    const t = window.setTimeout(() => jumpToIndex(1), 0);
+    return () => window.clearTimeout(t);
+  }, [jumpToIndex]);
+
+  React.useEffect(() => {
+    let timer: number;
+    const tick = () => {
+      const now = Date.now();
+      if (!pausedRef.current && now >= resumeAtRef.current) {
+        scrollToIndex(idxRef.current + 1, true);
+      }
+      timer = window.setTimeout(tick, 3000);
+    };
+    timer = window.setTimeout(tick, 3000);
+    return () => window.clearTimeout(timer);
+  }, [scrollToIndex]);
+
+  const onScroll = React.useCallback(() => {
+    if (scrollEndTimer.current) window.clearTimeout(scrollEndTimer.current);
+    scrollEndTimer.current = window.setTimeout(() => {
+      const rail = railRef.current;
+      if (!rail) return;
+      const center = rail.scrollLeft + rail.clientWidth / 2;
+      let nearest = 0, best = Number.POSITIVE_INFINITY;
+      for (let i = 0; i < rail.children.length; i++) {
+        const el = rail.children[i] as HTMLElement;
+        const elCenter = el.offsetLeft + el.offsetWidth / 2;
+        const diff = Math.abs(elCenter - center);
+        if (diff < best) { best = diff; nearest = i; }
+      }
+      idxRef.current = nearest;
+      if (nearest === 0) jumpToIndex(COUNT);
+      else if (nearest === COUNT + 1) jumpToIndex(1);
+
+      if (Date.now() > autoGuardUntilRef.current) {
+        requestPause(10000);
+      }
+    }, 120) as unknown as number;
+  }, [COUNT, jumpToIndex, requestPause]);
+
   return (
     <section className="mx-auto max-w-6xl px-4 py-20">
       <Parallax speed={0.06}>
@@ -646,44 +920,51 @@ function Testimonials() {
         </motion.div>
       </Parallax>
 
+      {/* MOBILE: 1 row, swipe, infinite */}
+      <Parallax speed={0.08}>
+        <div
+          className="mt-12 sm:hidden relative"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+          onTouchStart={() => setPaused(true)}
+          onTouchEnd={() => { setPaused(false); requestPause(10000); }}  // <-- NEW
+        >
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-white to-transparent dark:from-black" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent dark:from-black" />
+
+          <div
+            ref={railRef}
+            onScroll={onScroll}
+            className="
+              flex gap-4 overflow-x-auto scroll-smooth
+              snap-x snap-mandatory
+              [scrollbar-width:none] [-ms-overflow-style:none]
+              px-1
+            "
+            style={{ WebkitOverflowScrolling: "touch" }}
+            aria-label="Testimonials carousel"
+          >
+            <style>{`[data-hide-scrollbar]::-webkit-scrollbar{display:none}`}</style>
+            {extended.map((t, i) => (
+              <div key={i} className="snap-center shrink-0 w-[88%]">
+                <Testimonial quote={t.quote} name={t.name} role={t.role} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </Parallax>
+
+      {/* DESKTOP/TABLET: grid */}
       <Parallax speed={0.08}>
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          className="mt-12 hidden grid-cols-1 gap-6 sm:grid sm:grid-cols-2 lg:grid-cols-3"
         >
-          <Testimonial
-            quote="The team quickly grasped the song’s direction. Communication was clear, and the final result still feels like me."
-            name="Viokichi"
-            role="Artist — Pop/R&B"
-          />
-          <Testimonial
-            quote="My bossa nova single went from demo to release without hassle. Administration and delivery to DSPs were handled smoothly."
-            name="Amandha Ayu"
-            role="Artist — Jazz/Bossa Nova"
-          />
-          <Testimonial
-            quote="Arrangement, tracking, through to release—everything in one workflow. Progress was always clear and on schedule."
-            name="Nannouz"
-            role="Artist — Pop, Orchestra, Jazz, Rock"
-          />
-          <Testimonial
-            quote="Cross-language project ran smoothly. Technical direction was precise, distribution was fast, and the result was professional."
-            name="Adilisius"
-            role="Artist — Pop/ED<"
-          />
-          <Testimonial
-            quote="They turned a rough idea into a record. Stems were organized, milestones were clear, and mix notes were laser-specific."
-            name="BesThree"
-            role="Artist — Pop/EDM"
-          />
-
-          <Testimonial
-            quote="One workspace for creative in the music industry—clear notes, fast decisions, release-ready delivery"
-            name="Anthem Boys"
-            role="Artist — Pop/EDM"
-          />
+          {items.map((t, i) => (
+            <Testimonial key={i} quote={t.quote} name={t.name} role={t.role} />
+          ))}
         </motion.div>
       </Parallax>
     </section>
@@ -696,7 +977,7 @@ function Testimonials() {
  *************************/
 function Pricing() {
   return (
-    <section id="pricing" className="relative mx-auto max-w-6xl px-4 py-20">
+    <section id="pricing" className="relative mx-auto max-w-6xl px-4 py-5">
       <Parallax speed={0.06}>
         <motion.div
           initial="hidden"

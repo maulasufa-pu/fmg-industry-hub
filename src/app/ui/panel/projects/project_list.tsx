@@ -28,6 +28,9 @@ import {
 } from "lucide-react";
 import { getEffectiveRole } from "@/lib/roles/effective";
 import type { UserRole } from "@/lib/roles";
+import { Plus } from "lucide-react";
+import CreateProjectPopover from "./CreateProjectPopover"; 
+
 
 export type TabKey = "All" | "Active" | "Finished" | "Pending" | "Unassigned" | "Requested";
 
@@ -278,6 +281,9 @@ export default function ProjectList(props: Props): React.JSX.Element {
   /** ====== Dapatkan role efektif (client-side) ====== */
   const [role, setRole] = useState<UserRole>("guest");
   const [roleLoaded, setRoleLoaded] = useState(false);
+
+  const [openRequest, setOpenRequest] = useState(false);
+  const requestBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -561,60 +567,78 @@ export default function ProjectList(props: Props): React.JSX.Element {
 
         {/* Modern Controls */}
         <motion.div
-          className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4"
+          className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4 justify-between"
           variants={itemVariants}
         >
-          {/* Enhanced Search */}
-          <motion.div
-            className="relative w/full sm:w-auto"
-            whileHover={{ scale: 1.01 }}
-            transition={{ type: "spring", stiffness: 400 }}
-          >
-            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-purple-400 w-4 sm:w-5 h-4 sm:h-5" />
-            <motion.input
-              value={search}
-              onChange={(e) => onSearchChange(e.currentTarget.value)}
-              placeholder="Search projects, clients, artists..."
-              className="h-10 sm:h-12 w-full sm:w-64 lg:w-80 rounded-lg sm:rounded-xl border border-purple-400/30 bg-slate-800/60 backdrop-blur-sm pl-10 sm:pl-12 pr-3 sm:pr-4 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400/50 transition-all duration-300 shadow-lg hover:bg-slate-800/80"
-              whileFocus={{
-                scale: 1.02,
-                boxShadow: "0 0 0 3px rgba(139, 92, 246, 0.1)"
-              }}
-            />
-          </motion.div>
+          {/* Kiri: Search + Filters dibungkus supaya fleksibel */}
+          <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+            {/* Search */}
+            <motion.div
+              className="relative w-full sm:w-auto"
+              whileHover={{ scale: 1.01 }}
+              transition={{ type: "spring", stiffness: 400 }}
+            >
+              <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-purple-400 w-4 sm:w-5 h-4 sm:h-5" />
+              <motion.input
+                value={search}
+                onChange={(e) => onSearchChange(e.currentTarget.value)}
+                placeholder="Search projects, clients, artists..."
+                className="h-10 sm:h-12 w-full sm:w-64 lg:w-80 rounded-lg sm:rounded-xl border border-purple-400/30 bg-slate-800/60 backdrop-blur-sm pl-10 sm:pl-12 pr-3 sm:pr-4 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400/50 transition-all duration-300 shadow-lg hover:bg-slate-800/80"
+                whileFocus={{ scale: 1.02, boxShadow: "0 0 0 3px rgba(139, 92, 246, 0.1)" }}
+              />
+            </motion.div>
 
-          {/* Modern Filters */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
-            {[
-              { value: filterPIC, onChange: onFilterPIC, options: filterOptions.picOptions, prefix: "PIC", icon: UserCircle },
-              { value: filterStage, onChange: onFilterStage, options: filterOptions.stageOptions, prefix: "Stage", icon: Target },
-              { value: filterStatus, onChange: onFilterStatus, options: filterOptions.statusOptions, prefix: "Status", icon: BarChart3 },
-            ].map((filter, index) => {
-              const IconComponent = filter.icon;
-              return (
-                <motion.div
-                  key={index}
-                  className="relative flex-1 sm:flex-initial min-w-0"
-                  whileHover={{ scale: 1.01 }}
-                >
-                  <motion.select
-                    className="h-10 sm:h-12 rounded-lg sm:rounded-xl border border-purple-400/30 bg-slate-800/60 backdrop-blur-sm px-3 sm:px-4 pr-8 sm:pr-10 text-xs sm:text-sm text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400/50 transition-all duration-300 shadow-lg hover:bg-slate-800/80 appearance-none w-full"
-                    value={filter.value}
-                    onChange={(e) => filter.onChange(e.currentTarget.value as PicOption | StageOption | StatusOption)}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {filter.options.map((o) => (
-                      <option key={o} value={o} className="bg-slate-800 text-white">
-                        {o === "any" ? `${filter.prefix}: All` : `${filter.prefix}: ${o}`}
-                      </option>
-                    ))}
-                  </motion.select>
-                  {/* Dropdown arrow */}
-                  <ChevronDown className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-3 sm:w-4 h-3 sm:h-4 text-purple-400 pointer-events-none" />
-                </motion.div>
-              );
-            })}
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              {[
+                { value: filterPIC, onChange: onFilterPIC, options: filterOptions.picOptions, prefix: "PIC", icon: UserCircle },
+                { value: filterStage, onChange: onFilterStage, options: filterOptions.stageOptions, prefix: "Stage", icon: Target },
+                { value: filterStatus, onChange: onFilterStatus, options: filterOptions.statusOptions, prefix: "Status", icon: BarChart3 },
+              ].map((filter, index) => {
+                const IconComponent = filter.icon;
+                return (
+                  <motion.div key={index} className="relative" whileHover={{ scale: 1.01 }}>
+                    <motion.select
+                      className="h-10 sm:h-12 rounded-lg sm:rounded-xl border border-purple-400/30 bg-slate-800/60 backdrop-blur-sm px-3 sm:px-4 pr-8 sm:pr-10 text-xs sm:text-sm text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400/50 transition-all duration-300 shadow-lg hover:bg-slate-800/80 appearance-none"
+                      value={filter.value}
+                      onChange={(e) => filter.onChange(e.currentTarget.value as PicOption | StageOption | StatusOption)}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      {filter.options.map((o) => (
+                        <option key={o} value={o} className="bg-slate-800 text-white">
+                          {o === "any" ? `${filter.prefix}: All` : `${filter.prefix}: ${o}`}
+                        </option>
+                      ))}
+                    </motion.select>
+                    <ChevronDown className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-3 sm:w-4 h-3 sm:h-4 text-purple-400 pointer-events-none" />
+                  </motion.div>
+                );
+              })}
+            </div>
           </div>
+
+          {/* Kanan: tombol Request New Project (responsive) */}
+          <motion.button
+            ref={requestBtnRef}
+            type="button"
+            onClick={() => setOpenRequest(true)}
+            className="
+              h-10 sm:h-12 w-full sm:w-auto
+              inline-flex items-center justify-center gap-2
+              rounded-xl px-4 sm:px-5 font-semibold
+              text-white
+              bg-gradient-to-r from-fuchsia-500 via-violet-500 to-indigo-500
+              shadow-[0_12px_40px_rgba(139,92,246,0.35)]
+              hover:opacity-95 active:opacity-90
+              focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/60
+              transition-all
+            "
+            whileHover={{ scale: 1.02, y: -1 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <Plus className="h-4 w-4" />
+            <span className="text-sm sm:text-base">Request New Project</span>
+          </motion.button>
         </motion.div>
       </motion.div>
 
@@ -1284,6 +1308,12 @@ export default function ProjectList(props: Props): React.JSX.Element {
           </motion.button>
         </motion.div>
       </motion.nav>
+      <CreateProjectPopover
+        open={openRequest}
+        onClose={() => setOpenRequest(false)}
+        anchorRef={requestBtnRef as unknown as React.RefObject<HTMLElement>} // nempel ke tombol
+        width={520}
+      />
     </motion.div>
   );
 }

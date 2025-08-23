@@ -33,6 +33,8 @@ type Props = {
   onClose: () => void;
   onSaved?: () => void;
   onSubmitted?: (info: { projectId: string | null; paymentPlan: "upfront" | "half" | "milestone" }) => void;
+  anchorRef?: React.RefObject<HTMLElement | null>; // <= ini kunci
+  width?: number;
 };
 
 type SubmitPayload = {

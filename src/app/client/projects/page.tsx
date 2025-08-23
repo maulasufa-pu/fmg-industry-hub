@@ -8,7 +8,7 @@ import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
 import { getEffectiveRole } from "@/lib/roles/effective";
 import type { UserRole } from "@/lib/roles";
 import { Plus } from "lucide-react";
-import CreateProjectPopover from "./CreateProjectPopover";
+import CreateProjectPopover from "../../ui/panel/projects/CreateProjectPopover";
 import ProjectList, {
   TabKey, ProjectRow, PicOption, StageOption, StatusOption,
 } from "@/app/ui/panel/projects/project_list";
@@ -343,10 +343,6 @@ export default function ClientProjectsPage(): React.ReactElement {
       </div>
 
       {/* POPUP Request New Project */}
-      <CreateProjectPopover
-        open={openRequest}
-        onClose={() => setOpenRequest(false)}
-      />
       <ProjectList
         rows={rows}
         counts={tabCounts}

@@ -65,7 +65,7 @@ function useSnapLoader(clientKey: string | undefined, isProduction: boolean) {
   }, [clientKey, isProduction]);
 }
 
-/** ---------- FMG-styled primitives (glass • gradient • glow) ---------- **/
+/** ---------- FMG-styled primitives ---------- **/
 const PillTab = ({ children, active=false, onClick }:{
   children: React.ReactNode; active?: boolean; onClick?: () => void;
 }) => (
@@ -90,19 +90,12 @@ const GlassButton = ({
   busying?: boolean; title?: string;
 }) => {
   const toneMap: Record<string, string> = {
-    primary:
-      // gradient + subtle glow
-      "bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white shadow-[0_6px_32px_rgba(99,102,241,0.35)] hover:opacity-95",
-    emerald:
-      "bg-gradient-to-r from-emerald-500 to-lime-500 text-white shadow-[0_6px_32px_rgba(16,185,129,0.35)] hover:opacity-95",
-    danger:
-      "bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-[0_6px_32px_rgba(244,63,94,0.35)] hover:opacity-95",
-    outline:
-      "bg-white/5 border border-white/15 text-white/90 hover:bg-white/10",
-    ink:
-      "bg-neutral-900/60 border border-white/10 text-white/90 hover:bg-neutral-800/70",
-    neutral:
-      "bg-white/8 border border-white/10 text-white hover:bg-white/12",
+    primary: "bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white shadow-[0_6px_32px_rgba(99,102,241,0.35)] hover:opacity-95",
+    emerald: "bg-gradient-to-r from-emerald-500 to-lime-500 text-white shadow-[0_6px_32px_rgba(16,185,129,0.35)] hover:opacity-95",
+    danger: "bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-[0_6px_32px_rgba(244,63,94,0.35)] hover:opacity-95",
+    outline: "bg-white/5 border border-white/15 text-white/90 hover:bg-white/10",
+    ink: "bg-neutral-900/60 border border-white/10 text-white/90 hover:bg-neutral-800/70",
+    neutral: "bg-white/8 border border-white/10 text-white hover:bg-white/12",
   };
   return (
     <button
@@ -135,7 +128,7 @@ const MoreMenu = ({ children }: { children: React.ReactNode }) => (
 const SkeletonTable = () => (
   <div className="rounded-3xl border border-white/10 bg-neutral-900/40 backdrop-blur shadow-xl overflow-hidden">
     <div className="overflow-x-auto">
-      <table className="min-w-[980px] w-full text-sm">
+      <table className="min-w-[1040px] w-full text-sm">
         <thead className="bg-white/5 text-left">
           <tr className="text-white/70">
             {["Invoice","Client","Items","Amount","Status","Created","Due","Actions"].map(h=>(
@@ -245,9 +238,9 @@ export default function InvoicesPage(): React.JSX.Element {
     }
 
     const { data, error } = await qb
-    .order("created_at", { ascending: false })
-    .order("position", { ascending: true, foreignTable: "invoice_items" }); // ✅ v2 style
-    
+      .order("created_at", { ascending: false })
+      .order("position", { ascending: true, foreignTable: "invoice_items" });
+
     const safe = (data ?? []).filter((r: any) => isAdmin || r.client_id === me?.id);
     if (!error) setRows(safe as InvoiceWithItems[]);
     setLoading(false);
@@ -361,14 +354,15 @@ export default function InvoicesPage(): React.JSX.Element {
 
   return (
     <div className="relative min-h-screen p-4 sm:p-6 bg-neutral-950 text-white overflow-hidden">
-      {/* luminous background (FMG vibe) */}
+      {/* luminous background */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-32 -left-28 h-[40rem] w-[40rem] rounded-full bg-gradient-to-br from-indigo-600/20 via-fuchsia-500/15 to-sky-500/10 blur-3xl" />
         <div className="absolute -bottom-40 -right-32 h-[36rem] w-[36rem] rounded-full bg-gradient-to-tr from-emerald-500/20 via-teal-400/15 to-cyan-400/10 blur-3xl" />
       </div>
 
-      <div className="mx-auto w-full max-w-7xl space-y-6">
-        {/* Header / Stats card dengan gradient border */}
+      {/* ⬅️ Rata kiri & full width */}
+      <div className="w-full max-w-none space-y-6">
+        {/* Header / Stats */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -385,25 +379,38 @@ export default function InvoicesPage(): React.JSX.Element {
                       Invoices
                     </span>
                   </h1>
-                  <p className="text-sm text-white/80">
+                  <p className="text-sm text-white/90">
                     {isAdmin ? "Kelola & kirim invoice" : "Lihat dan bayar invoice kamu"}
                   </p>
                 </div>
 
-                {/* quick stats */}
+                {/* Quick stats — sekarang ada warna background berbeda */}
                 <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full sm:w-auto">
                   {[
-                    { label:"Unpaid", icon: <Wallet className="h-3.5 w-3.5" />, value: formatIDRCurrency(totalUnpaid) },
-                    { label:"Overdue", icon: <AlertTriangle className="h-3.5 w-3.5" />, value: overdueCount },
-                    { label:"Paid",   icon: <CheckCircle2 className="h-3.5 w-3.5" />, value: paidCount },
-                  ].map((s, i)=>(
-                    <div key={i} className="rounded-2xl p-[1px] bg-[linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.06)_40%,transparent)]">
-                      <div className="rounded-2xl bg-neutral-900/60 backdrop-blur p-3 sm:p-4 shadow">
-                        <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-white/75">
-                          {s.icon} {s.label}
-                        </div>
-                        <div className="mt-1 text-lg sm:text-xl font-bold">{String(s.value)}</div>
+                    {
+                      label: "Unpaid",
+                      icon: <Wallet className="h-3.5 w-3.5" />,
+                      value: formatIDRCurrency(totalUnpaid),
+                      bg: "bg-indigo-500/15 ring-1 ring-inset ring-indigo-400/20",
+                    },
+                    {
+                      label: "Overdue",
+                      icon: <AlertTriangle className="h-3.5 w-3.5" />,
+                      value: overdueCount,
+                      bg: "bg-rose-500/15 ring-1 ring-inset ring-rose-400/25",
+                    },
+                    {
+                      label: "Paid",
+                      icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+                      value: paidCount,
+                      bg: "bg-emerald-500/15 ring-1 ring-inset ring-emerald-400/25",
+                    },
+                  ].map((s, i) => (
+                    <div key={i} className={`rounded-2xl p-3 sm:p-4 ${s.bg} backdrop-blur shadow`}>
+                      <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-white/85">
+                        {s.icon} {s.label}
                       </div>
+                      <div className="mt-1 text-lg sm:text-xl font-bold">{String(s.value)}</div>
                     </div>
                   ))}
                 </div>
@@ -427,7 +434,7 @@ export default function InvoicesPage(): React.JSX.Element {
                       value={q}
                       onChange={(e) => setQ(e.currentTarget.value)}
                       placeholder="Search invoice/client…"
-                      className="h-10 w-[min(80vw,260px)] rounded-full border border-white/10 bg-neutral-900/60 pl-10 pr-10 text-sm text-white placeholder:text-white/60 outline-none focus:ring-2 focus:ring-fuchsia-400/60"
+                      className="h-10 w-[min(80vw,320px)] rounded-full border border-white/10 bg-neutral-900/60 pl-10 pr-10 text-sm text-white placeholder:text-white/60 outline-none focus:ring-2 focus:ring-fuchsia-400/60"
                     />
                     {q && (
                       <button
@@ -465,13 +472,14 @@ export default function InvoicesPage(): React.JSX.Element {
           >
             <div className="rounded-[calc(theme(borderRadius.3xl)-1px)] bg-neutral-900/50 backdrop-blur">
               <div className="overflow-x-auto">
-                <table className="min-w-[980px] w-full text-sm">
+                <table className="min-w-[1040px] w-full text-sm">
                   <thead className="sticky top-0 z-[1] bg-white/[0.06] text-left">
                     <tr className="text-white/75">
                       <th className="p-3">Invoice</th>
                       <th className="p-3">Client</th>
                       <th className="p-3">Items</th>
-                      <th className="p-3">Amount</th>
+                      {/* ➕ Amount diperlebar */}
+                      <th className="p-3 w-[220px]">Amount</th>
                       <th className="p-3">Status</th>
                       <th className="p-3">Created</th>
                       <th className="p-3">Due</th>
@@ -516,13 +524,13 @@ export default function InvoicesPage(): React.JSX.Element {
                               <span className="text-white/70">—</span>
                             )}
                           </td>
-                          <td className="p-3">
+                          {/* ➕ non-wrap supaya rapi */}
+                          <td className="p-3 whitespace-nowrap tabular-nums">
                             {r.amount_total != null
                               ? `${(r.currency ?? "IDR").toUpperCase()} ${Number(r.amount_total).toLocaleString("id-ID")}`
                               : "-"}
                           </td>
                           <td className="p-3">
-                            {/* pakai class dari utils tapi kita bungkus biar bentuknya pill */}
                             <span className={statusClass + " inline-flex items-center rounded-full px-2.5 py-0.5 text-xs capitalize border border-white/10 bg-white/5 backdrop-blur"}>
                               {overdue && r.status === "unpaid" ? "overdue" : r.status}
                             </span>

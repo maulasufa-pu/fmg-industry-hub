@@ -2,9 +2,23 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { calcTotals, clientSideNextInvoiceNo, defaultDueDate } from "@/lib/invoices/utils";
+import {
+  X,
+  Plus,
+  Trash2,
+  ChevronDown,
+  CalendarDays,
+  BadgeCheck,
+  Loader2,
+  Wallet,
+  Percent,
+  Coins,
+} from "lucide-react";
 
+/* -------------------- Types -------------------- */
 type Props = { onClose: () => void; onCreated: () => void };
 
 type LineItem = {
@@ -27,8 +41,70 @@ type ServiceRow = {
 
 type ClientOption = { id: string; name: string; email: string | null; is_active: boolean };
 
+/* -------------------- Small UI helpers -------------------- */
+function ChipToggle({
+  options,
+  value,
+  onChange,
+  ariaLabel,
+}: {
+  options: { label: string; value: string }[];
+  value: string;
+  onChange: (v: string) => void;
+  ariaLabel: string;
+}) {
+  return (
+    <div role="tablist" aria-label={ariaLabel} className="inline-flex rounded-xl border bg-background/60 p-1">
+      {options.map((opt) => {
+        const active = opt.value === value;
+        return (
+          <button
+            key={opt.value}
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(opt.value)}
+            className={[
+              "px-3 py-1.5 text-sm rounded-lg transition-all",
+              active
+                ? "bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white shadow"
+                : "text-foreground/80 hover:bg-muted",
+            ].join(" ")}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function Field({
+  label,
+  hint,
+  children,
+  icon,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 text-sm">
+        {icon}
+        <label className="font-medium">{label}</label>
+      </div>
+      {children}
+      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+    </div>
+  );
+}
+
+/* -------------------- Dialog -------------------- */
 export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Element {
   const sb = useMemo(() => getSupabaseClient(), []);
+
   const [currency, setCurrency] = useState<"IDR" | "USD">("IDR");
   const [status, setStatus] = useState<"draft" | "unpaid">("unpaid");
   const [dueDays, setDueDays] = useState<number>(14);
@@ -50,7 +126,7 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
 
   const totals = calcTotals(items, ppnPercent);
 
-  // Load clients (ACTIVE)
+  /* --------- Load clients --------- */
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -65,10 +141,12 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
         setClientsLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [sb]);
 
-  // Load services (ACTIVE)
+  /* --------- Load services --------- */
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -81,36 +159,42 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
         .order("sort_order", { ascending: true })
         .returns<Array<Omit<ServiceRow, "price"> & { price: number | string }>>();
       if (!cancelled) {
-        if (!error) setServices((data ?? []).map(s => ({ ...s, price: Number(s.price) })));
+        if (!error) setServices((data ?? []).map((s) => ({ ...s, price: Number(s.price) })));
         setServicesLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [sb]);
 
+  /* --------- Items handlers --------- */
   const addItem = (): void =>
-    setItems(prev => [...prev, { service_id: null, description: "", qty: 1, unit_price: 0 }]);
+    setItems((prev) => [...prev, { service_id: null, description: "", qty: 1, unit_price: 0 }]);
 
   const addItemFromService = (svc: ServiceRow): void =>
-    setItems(prev => [...prev, { service_id: svc.id, description: svc.label, qty: 1, unit_price: Number(svc.price) }]);
+    setItems((prev) => [
+      ...prev,
+      { service_id: svc.id, description: svc.label, qty: 1, unit_price: Number(svc.price) },
+    ]);
 
   const updateItem = (idx: number, patch: Partial<LineItem>): void =>
-    setItems(prev => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
 
-  const removeItem = (idx: number): void =>
-    setItems(prev => prev.filter((_, i) => i !== idx));
+  const removeItem = (idx: number): void => setItems((prev) => prev.filter((_, i) => i !== idx));
 
   const onQuickAdd = (): void => {
-    const svc = services.find(s => s.id === quickServiceId);
+    const svc = services.find((s) => s.id === quickServiceId);
     if (svc) {
       addItemFromService(svc);
       setQuickServiceId("");
     }
   };
 
+  /* --------- Submit --------- */
   const submit = async (): Promise<void> => {
-    if (!selectedClientId) return;            // harus pilih client
-    if (items.length === 0) return;           // minimal 1 item
+    if (!selectedClientId) return;
+    if (items.length === 0) return;
     setSaving(true);
 
     let invoiceNo = clientSideNextInvoiceNo();
@@ -118,14 +202,12 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
       const rpc = await sb.rpc("next_invoice_no");
       if (!rpc.error && typeof rpc.data === "string") invoiceNo = rpc.data;
 
-      // snapshot client name/email dari view
-      const client = clients.find(c => c.id === selectedClientId) || null;
+      const client = clients.find((c) => c.id === selectedClientId) || null;
 
       const due = defaultDueDate(dueDays);
       const dueDate = due.toISOString().slice(0, 10);
       const issueDate = new Date().toISOString().slice(0, 10);
 
-      // 1) create invoice (manual = tanpa project_id)
       const { data: inv, error: e1 } = await sb
         .from("invoices")
         .insert({
@@ -140,11 +222,14 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
         })
         .select("id")
         .single<{ id: string }>();
-      if (e1 || !inv?.id) { console.error("[create invoice] failed:", e1); setSaving(false); return; }
+      if (e1 || !inv?.id) {
+        console.error("[create invoice] failed:", e1);
+        setSaving(false);
+        return;
+      }
 
       const invoiceId = inv.id;
 
-      // 2) insert items
       const payloads = items.map((it, idx) => ({
         invoice_id: invoiceId,
         service_id: it.service_id ?? null,
@@ -154,7 +239,11 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
         position: idx,
       }));
       const { error: e2 } = await sb.from("invoice_items").insert(payloads).select("id");
-      if (e2) { console.error("[insert invoice_items] failed:", e2); setSaving(false); return; }
+      if (e2) {
+        console.error("[insert invoice_items] failed:", e2);
+        setSaving(false);
+        return;
+      }
 
       onCreated();
     } finally {
@@ -162,168 +251,291 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
     }
   };
 
+  /* -------------------- UI -------------------- */
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
-      <div className="w-full max-w-2xl rounded-2xl border bg-card p-6 shadow-xl">
-        <div className="flex items-start justify-between">
-          <h2 className="text-lg font-semibold">New Invoice</h2>
-          <button onClick={onClose} className="rounded-md px-2 py-1 text-sm hover:bg-muted">✕</button>
-        </div>
+    <div className="fixed inset-0 z-50 grid place-items-center p-4">
+      {/* Backdrop with FMG glow */}
+      <div
+        className="absolute inset-0 bg-black/60"
+        onClick={onClose}
+        aria-hidden
+      />
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-gradient-to-br from-indigo-500/25 via-fuchsia-500/20 to-sky-500/15 blur-3xl" />
+        <div className="absolute -bottom-20 -right-24 h-80 w-80 rounded-full bg-gradient-to-tr from-emerald-500/25 via-teal-400/20 to-cyan-400/15 blur-3xl" />
+      </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* Client dropdown */}
-          <div className="space-y-2">
-            <label className="text-sm">Client</label>
-            <select
-              disabled={clientsLoading}
-              value={selectedClientId}
-              onChange={(e) => setSelectedClientId(e.currentTarget.value)}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
-            >
-              <option value="">{clientsLoading ? "Loading…" : "— pilih client —"}</option>
-              {clients.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.name}{c.email ? ` — ${c.email}` : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm">Currency</label>
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.currentTarget.value as "IDR" | "USD")}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
-            >
-              <option value="IDR">IDR</option>
-              <option value="USD">USD</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm">Status</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.currentTarget.value as "draft" | "unpaid")}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
-            >
-              <option value="unpaid">Unpaid</option>
-              <option value="draft">Draft</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm">Due in (days)</label>
-            <input
-              type="number"
-              min={1}
-              value={dueDays}
-              onChange={(e) => setDueDays(parseInt(e.currentTarget.value || "1", 10))}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm">PPN (%)</label>
-            <input
-              type="number"
-              min={0}
-              value={ppnPercent}
-              onChange={(e) => setPpnPercent(parseFloat(e.currentTarget.value || "0"))}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
-            />
-          </div>
-        </div>
-
-        {/* Quick add from Services */}
-        <div className="mt-6 rounded-lg border p-3">
-          <div className="flex items-end gap-2">
-            <div className="flex-1">
-              <label className="text-sm block">Quick add from Services</label>
-              <select
-                disabled={servicesLoading}
-                value={quickServiceId}
-                onChange={(e) => setQuickServiceId(e.currentTarget.value)}
-                className="mt-1 w-full rounded-lg border bg-background px-3 py-2 text-sm"
-              >
-                <option value="">— pilih service —</option>
-                {services.map(s => (
-                  <option key={s.id} value={s.id}>
-                    {s.label} — {Number(s.price).toLocaleString("id-ID")}
-                  </option>
-                ))}
-              </select>
+      {/* Dialog */}
+      <motion.div
+        initial={{ opacity: 0, y: 18, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        className="relative w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/70 to-white/40 p-0 shadow-2xl backdrop-blur dark:from-slate-900/70 dark:to-slate-900/40"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Create a new invoice"
+      >
+        {/* Header */}
+        <div className="relative px-5 py-4 sm:px-6">
+          <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-gradient-to-br from-indigo-500/20 via-fuchsia-400/15 to-amber-300/15 blur-2xl" />
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-amber-400">
+                New Invoice
+              </h2>
+              <p className="text-sm text-foreground/80">Create, stage, and send with FMG polish.</p>
             </div>
             <button
-              disabled={!quickServiceId}
-              onClick={onQuickAdd}
-              className="h-9 rounded-lg border px-3 text-sm hover:bg-muted disabled:opacity-50"
+              onClick={onClose}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white/40 text-foreground backdrop-blur hover:bg-white/60 dark:bg-white/10 dark:hover:bg-white/15"
+              aria-label="Close"
+              title="Close"
             >
-              + Add
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>
 
-        {/* Line items */}
-        <div className="mt-6">
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium">Line Items</h3>
-            <button onClick={addItem} className="rounded-md border px-2 py-1 text-xs hover:bg-muted">+ Add Item</button>
-          </div>
-          <div className="mt-3 space-y-3">
-            {items.map((it, idx) => (
-              <div key={idx} className="grid grid-cols-12 items-center gap-2">
-                <input
-                  placeholder="Description"
-                  value={it.description}
-                  onChange={(e) => updateItem(idx, { description: e.currentTarget.value })}
-                  className="col-span-6 rounded-lg border bg-background px-3 py-2 text-sm"
-                />
-                <input
-                  type="number"
-                  min={1}
-                  placeholder="Qty"
-                  value={it.qty}
-                  onChange={(e) => updateItem(idx, { qty: parseInt(e.currentTarget.value || "1", 10) })}
-                  className="col-span-2 rounded-lg border bg-background px-3 py-2 text-sm"
-                />
-                <input
-                  type="number"
-                  min={0}
-                  placeholder="Unit Price"
-                  value={it.unit_price}
-                  onChange={(e) => updateItem(idx, { unit_price: parseFloat(e.currentTarget.value || "0") })}
-                  className="col-span-3 rounded-lg border bg-background px-3 py-2 text-sm"
-                />
-                <button onClick={() => removeItem(idx)} className="col-span-1 rounded-md border px-2 py-2 text-xs hover:bg-muted">✕</button>
-                {it.service_id ? (
-                  <div className="col-span-12 text-[11px] text-muted-foreground">linked service: {it.service_id}</div>
-                ) : null}
+        {/* Body */}
+        <div className="px-5 pb-5 sm:px-6 sm:pb-6">
+          {/* Top controls */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {/* Client */}
+            <Field label="Client">
+              <div className="relative">
+                <select
+                  disabled={clientsLoading}
+                  value={selectedClientId}
+                  onChange={(e) => setSelectedClientId(e.currentTarget.value)}
+                  className="w-full appearance-none rounded-xl border bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">{clientsLoading ? "Loading…" : "— Select client —"}</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                      {c.email ? ` — ${c.email}` : ""}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60" />
               </div>
-            ))}
+            </Field>
+
+            {/* Currency */}
+            <Field label="Currency" icon={<Coins className="h-4 w-4 opacity-70" />}>
+              <ChipToggle
+                ariaLabel="Currency"
+                value={currency}
+                onChange={(v) => setCurrency(v as "IDR" | "USD")}
+                options={[
+                  { label: "IDR", value: "IDR" },
+                  { label: "USD", value: "USD" },
+                ]}
+              />
+            </Field>
+
+            {/* Status */}
+            <Field label="Status" icon={<BadgeCheck className="h-4 w-4 opacity-70" />}>
+              <ChipToggle
+                ariaLabel="Status"
+                value={status}
+                onChange={(v) => setStatus(v as "draft" | "unpaid")}
+                options={[
+                  { label: "Unpaid", value: "unpaid" },
+                  { label: "Draft", value: "draft" },
+                ]}
+              />
+            </Field>
+
+            {/* Due days */}
+            <Field label="Due in (days)" icon={<CalendarDays className="h-4 w-4 opacity-70" />}>
+              <input
+                type="number"
+                min={1}
+                value={dueDays}
+                onChange={(e) => setDueDays(parseInt(e.currentTarget.value || "1", 10))}
+                className="w-full rounded-xl border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="14"
+              />
+            </Field>
+
+            {/* PPN */}
+            <Field label="PPN (%)" icon={<Percent className="h-4 w-4 opacity-70" />}>
+              <input
+                type="number"
+                min={0}
+                step={0.5}
+                value={ppnPercent}
+                onChange={(e) => setPpnPercent(parseFloat(e.currentTarget.value || "0"))}
+                className="w-full rounded-xl border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="11"
+              />
+            </Field>
+
+            {/* Quick add services */}
+            <Field label="Quick add from Services">
+              <div className="flex items-end gap-2">
+                <div className="relative flex-1">
+                  <select
+                    disabled={servicesLoading}
+                    value={quickServiceId}
+                    onChange={(e) => setQuickServiceId(e.currentTarget.value)}
+                    className="mt-0 w-full appearance-none rounded-xl border bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">— Choose service —</option>
+                    <optgroup label="Core">
+                      {services
+                        .filter((s) => s.group_name === "core")
+                        .map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.label} — {Number(s.price).toLocaleString("id-ID")}
+                          </option>
+                        ))}
+                    </optgroup>
+                    <optgroup label="Additional">
+                      {services
+                        .filter((s) => s.group_name === "additional")
+                        .map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.label} — {Number(s.price).toLocaleString("id-ID")}
+                          </option>
+                        ))}
+                    </optgroup>
+                    <optgroup label="Business">
+                      {services
+                        .filter((s) => s.group_name === "business")
+                        .map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.label} — {Number(s.price).toLocaleString("id-ID")}
+                          </option>
+                        ))}
+                    </optgroup>
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60" />
+                </div>
+                <button
+                  disabled={!quickServiceId}
+                  onClick={onQuickAdd}
+                  className="inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm hover:bg-muted disabled:opacity-50"
+                  title="Add service"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add
+                </button>
+              </div>
+            </Field>
+          </div>
+
+          {/* Line items */}
+          <div className="mt-6 rounded-2xl border bg-card/70 p-4 ring-1 ring-black/5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold tracking-wide">Line Items</h3>
+              <button
+                onClick={addItem}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 px-3 py-1.5 text-xs font-semibold text-white shadow hover:opacity-95 active:translate-y-[1px]"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add Item
+              </button>
+            </div>
+
+            <div className="mt-3 space-y-3">
+              {items.length === 0 ? (
+                <div className="grid place-items-center rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
+                  No items yet. Add from services or create custom lines.
+                </div>
+              ) : null}
+
+              {items.map((it, idx) => (
+                <div
+                  key={idx}
+                  className="grid grid-cols-12 items-start gap-2 rounded-xl border bg-background/60 p-2 sm:p-3"
+                >
+                  <input
+                    placeholder="Description"
+                    value={it.description}
+                    onChange={(e) => updateItem(idx, { description: e.currentTarget.value })}
+                    className="col-span-12 sm:col-span-6 rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <input
+                    type="number"
+                    min={1}
+                    placeholder="Qty"
+                    value={it.qty}
+                    onChange={(e) => updateItem(idx, { qty: parseInt(e.currentTarget.value || "1", 10) })}
+                    className="col-span-6 sm:col-span-2 rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="Unit Price"
+                    value={it.unit_price}
+                    onChange={(e) => updateItem(idx, { unit_price: parseFloat(e.currentTarget.value || "0") })}
+                    className="col-span-6 sm:col-span-3 rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+
+                  <button
+                    onClick={() => removeItem(idx)}
+                    className="col-span-12 sm:col-span-1 inline-flex items-center justify-center rounded-lg border px-2 py-2 text-xs hover:bg-muted"
+                    title="Remove item"
+                    aria-label="Remove item"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+
+                  {it.service_id ? (
+                    <div className="col-span-12 text-[11px] text-muted-foreground">
+                      linked service: {it.service_id}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Totals */}
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border bg-card/80 p-4 shadow-sm ring-1 ring-black/5">
+              <div className="text-xs uppercase text-muted-foreground">Subtotal</div>
+              <div className="mt-1 text-lg font-semibold">
+                {totals.subtotal.toLocaleString("id-ID")}
+              </div>
+            </div>
+            <div className="rounded-2xl border bg-card/80 p-4 shadow-sm ring-1 ring-black/5">
+              <div className="text-xs uppercase text-muted-foreground">Tax ({ppnPercent}%)</div>
+              <div className="mt-1 text-lg font-semibold">
+                {totals.tax.toLocaleString("id-ID")}
+              </div>
+            </div>
+            <div className="rounded-2xl border bg-gradient-to-br from-indigo-500/10 to-fuchsia-500/10 p-4 shadow-sm ring-1 ring-black/5">
+              <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground">
+                <Wallet className="h-3.5 w-3.5" /> Grand Total
+              </div>
+              <div className="mt-1 text-xl font-extrabold tracking-tight">
+                {totals.grand_total.toLocaleString("id-ID")}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Totals */}
-        <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <div className="rounded-lg border p-3">
-            <div className="text-xs text-muted-foreground">Subtotal</div>
-            <div className="text-sm font-medium">{totals.subtotal.toLocaleString("id-ID")}</div>
-          </div>
-          <div className="rounded-lg border p-3">
-            <div className="text-xs text-muted-foreground">Tax ({ppnPercent}%)</div>
-            <div className="text-sm font-medium">{totals.tax.toLocaleString("id-ID")}</div>
-          </div>
-          <div className="rounded-lg border p-3">
-            <div className="text-xs text-muted-foreground">Grand Total</div>
-            <div className="text-sm font-semibold">{totals.grand_total.toLocaleString("id-ID")}</div>
-          </div>
-        </div>
-
-        <div className="mt-6 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-lg border px-4 py-2 text-sm hover:bg-muted">Cancel</button>
-          <button disabled={saving} onClick={() => void submit()} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60">
-            {saving ? "Saving…" : "Create"}
+        {/* Footer */}
+        <div className="flex flex-col-reverse gap-2 border-t bg-background/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6">
+          <button
+            onClick={onClose}
+            className="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm hover:bg-muted"
+          >
+            Cancel
+          </button>
+          <button
+            disabled={saving || !selectedClientId || items.length === 0}
+            onClick={() => void submit()}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 px-5 py-2 text-sm font-semibold text-white shadow hover:opacity-95 disabled:opacity-60 active:translate-y-[1px]"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Create Invoice
           </button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

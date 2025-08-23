@@ -3,13 +3,14 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { NewInvoiceDialog } from "./components/NewInvoiceDialog";
 import { formatIDRCurrency, isOverdue, nextStatusColor } from "@/lib/invoices/utils";
 import type { User } from "@supabase/supabase-js";
 import {
   Search, X, Loader2, BellRing, CheckCircle2, XCircle, CreditCard,
-  Link2, RefreshCw, ExternalLink
+  Link2, RefreshCw, ExternalLink, Wallet, AlertTriangle
 } from "lucide-react";
 
 type InvoiceStatus = "draft" | "unpaid" | "paid" | "cancelled";
@@ -61,6 +62,125 @@ function useSnapLoader(clientKey: string | undefined, isProduction: boolean) {
     return () => { document.body.removeChild(s); };
   }, [clientKey, isProduction]);
 }
+
+/* ---------- Tiny UI helpers ---------- */
+const Chip = ({ children, active=false, onClick }:{
+  children: React.ReactNode; active?: boolean; onClick?: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    className={[
+      "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm transition-all",
+      active
+        ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow"
+        : "border border-border/60 hover:bg-muted"
+    ].join(" ")}
+  >
+    {children}
+  </button>
+);
+
+const ActionBtn = ({
+  onClick, children, tone="default", busying=false, title
+}:{
+  onClick?: () => void; children: React.ReactNode;
+  tone?: "default"|"green"|"red"|"emerald"|"outline"|"blue";
+  busying?: boolean; title?: string;
+}) => {
+  const map: Record<string,string> = {
+    default: "bg-foreground/10 hover:bg-foreground/15 text-foreground",
+    outline: "border hover:bg-muted",
+    green: "bg-green-600 hover:bg-green-700 text-white",
+    red: "bg-red-600 hover:bg-red-700 text-white",
+    emerald: "bg-emerald-600 hover:bg-emerald-700 text-white",
+    blue: "bg-blue-600 hover:bg-blue-700 text-white",
+  };
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      className={[
+        "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
+        tone === "outline" ? "border" : "",
+        map[tone]
+      ].join(" ")}
+      disabled={busying}
+    >
+      {busying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+      {children}
+    </button>
+  );
+};
+
+/* Dropdown ringan untuk mobile actions */
+const MoreMenu = ({ children }: { children: React.ReactNode }) => (
+  <details className="relative md:hidden">
+    <summary className="list-none inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs hover:bg-muted cursor-pointer">
+      More
+    </summary>
+    <div className="absolute right-0 mt-2 w-44 rounded-lg border bg-card shadow-lg p-2 z-20">
+      <div className="flex flex-col gap-1">{children}</div>
+    </div>
+  </details>
+);
+
+/* Skeleton table saat loading */
+const SkeletonTable = () => (
+  <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+    <div className="overflow-x-auto">
+      <table className="min-w-[980px] w-full text-sm">
+        <thead className="bg-muted/60 text-left">
+          <tr className="text-muted-foreground">
+            {["Invoice","Client","Items","Amount","Status","Created","Due","Actions"].map(h=>(
+              <th key={h} className="p-3">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y">
+          {Array.from({length:6}).map((_,i)=>(
+            <tr key={i} className="animate-pulse">
+              {Array.from({length:8}).map((__,j)=>(
+                <td key={j} className="p-3">
+                  <div className="h-4 w-full max-w-[140px] rounded bg-muted" />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+);
+
+/* Empty state kece */
+const EmptyState = ({ isAdmin, onNew }: { isAdmin: boolean; onNew: () => void }) => (
+  <div className="rounded-2xl border bg-card/80 backdrop-blur p-10 shadow-sm text-center">
+    <motion.div
+      initial={{ scale: 0.95, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ duration: 0.35 }}
+      className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-blue-600/20 to-indigo-600/20 ring-1 ring-inset ring-white/10"
+    >
+      <Wallet className="h-7 w-7 text-blue-600 dark:text-indigo-300" />
+    </motion.div>
+    <h3 className="text-lg font-semibold">No invoices found</h3>
+    <p className="mt-1 text-sm text-muted-foreground">Mulai buat invoice atau ubah filter pencarianmu.</p>
+    <div className="mt-4 flex items-center justify-center gap-2">
+      {isAdmin ? (
+        <button
+          onClick={onNew}
+          className="h-10 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 text-sm font-semibold text-white shadow hover:opacity-95 active:translate-y-[1px]"
+        >
+          + New Invoice
+        </button>
+      ) : (
+        <Link href="/contact" className="inline-flex items-center gap-1.5 rounded-xl border px-4 py-2 text-sm hover:bg-muted">
+          Need help?
+        </Link>
+      )}
+    </div>
+  </div>
+);
 
 export default function InvoicesPage(): React.JSX.Element {
   const sb = useMemo(() => getSupabaseClient(), []);
@@ -195,7 +315,7 @@ export default function InvoicesPage(): React.JSX.Element {
     }
   };
 
-  // 🔥 Admin-only: Refresh Payment Link (regenerate & simpan ke DB)
+  // Admin-only: Refresh Payment Link
   const refreshPaymentLink = async (id: string): Promise<void> => {
     if (!isAdmin) return;
     setBusy({ id, type: "refresh" });
@@ -246,137 +366,109 @@ export default function InvoicesPage(): React.JSX.Element {
   const overdueCount = rows.filter(r => isOverdue(r.status, r.due_date)).length;
   const paidCount = rows.filter(r => r.status === "paid").length;
 
-  // --- UI helpers ---
-  const Chip = ({ children, active=false, onClick }:{
-    children: React.ReactNode; active?: boolean; onClick?: () => void;
-  }) => (
-    <button
-      onClick={onClick}
-      className={[
-        "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm transition-all",
-        active
-          ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow"
-          : "border border-border/60 hover:bg-muted"
-      ].join(" ")}
-    >
-      {children}
-    </button>
-  );
-
-  const ActionBtn = ({
-    onClick, children, tone="default", busying=false, title
-  }:{
-    onClick?: () => void; children: React.ReactNode;
-    tone?: "default"|"green"|"red"|"emerald"|"outline"|"blue";
-    busying?: boolean; title?: string;
-  }) => {
-    const map: Record<string,string> = {
-      default: "bg-foreground/10 hover:bg-foreground/15 text-foreground",
-      outline: "border hover:bg-muted",
-      green: "bg-green-600 hover:bg-green-700 text-white",
-      red: "bg-red-600 hover:bg-red-700 text-white",
-      emerald: "bg-emerald-600 hover:bg-emerald-700 text-white",
-      blue: "bg-blue-600 hover:bg-blue-700 text-white",
-    };
-    return (
-      <button
-        title={title}
-        onClick={onClick}
-        className={[
-          "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
-          tone === "outline" ? "border" : "",
-          map[tone]
-        ].join(" ")}
-        disabled={busying}
-      >
-        {busying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-        {children}
-      </button>
-    );
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 p-4 sm:p-6">
+    <div className="min-h-screen p-4 sm:p-6 bg-[radial-gradient(1200px_600px_at_10%_-10%,rgba(59,130,246,0.12),transparent),radial-gradient(1200px_600px_at_110%_10%,rgba(99,102,241,0.12),transparent)] dark:bg-[radial-gradient(1000px_500px_at_10%_-10%,rgba(59,130,246,0.12),transparent),radial-gradient(1000px_500px_at_110%_10%,rgba(99,102,241,0.12),transparent)]">
       <div className="mx-auto w-full max-w-7xl space-y-6">
-        {/* Toolbar */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-              Invoices
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {isAdmin ? "Kelola & kirim invoice" : "Lihat dan bayar invoice kamu"}
-            </p>
-          </div>
-
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                value={q}
-                onChange={(e) => setQ(e.currentTarget.value)}
-                placeholder="Search invoice/client…"
-                className="h-10 w-full sm:w-[260px] rounded-xl border bg-background pl-10 pr-10 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              {q && (
-                <button
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted"
-                  onClick={() => setQ("")}
-                  aria-label="Clear search"
-                >
-                  <X className="h-4 w-4 text-muted-foreground" />
-                </button>
-              )}
+        {/* Header Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="overflow-hidden rounded-2xl border bg-gradient-to-br from-white/60 to-white/30 backdrop-blur dark:from-slate-900/60 dark:to-slate-900/30 ring-1 ring-black/5"
+        >
+          <div className="relative p-5 sm:p-6">
+            <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/10 blur-2xl" />
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between relative">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+                  Invoices
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  {isAdmin ? "Kelola & kirim invoice" : "Lihat dan bayar invoice kamu"}
+                </p>
+              </div>
+              {/* Quick stats */}
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full sm:w-auto">
+                <div className="rounded-xl border bg-card/80 backdrop-blur p-3 sm:p-4 shadow-sm">
+                  <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground">
+                    <Wallet className="h-3.5 w-3.5" /> Unpaid
+                  </div>
+                  <div className="mt-1 text-lg sm:text-xl font-semibold">{formatIDRCurrency(totalUnpaid)}</div>
+                </div>
+                <div className="rounded-xl border bg-card/80 backdrop-blur p-3 sm:p-4 shadow-sm">
+                  <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground">
+                    <AlertTriangle className="h-3.5 w-3.5" /> Overdue
+                  </div>
+                  <div className="mt-1 text-lg sm:text-xl font-semibold">{overdueCount}</div>
+                </div>
+                <div className="rounded-xl border bg-card/80 backdrop-blur p-3 sm:p-4 shadow-sm">
+                  <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Paid
+                  </div>
+                  <div className="mt-1 text-lg sm:text-xl font-semibold">{paidCount}</div>
+                </div>
+              </div>
             </div>
+          </div>
 
-            {isAdmin && (
-              <button
-                onClick={() => setOpenNew(true)}
-                className="h-10 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 text-sm font-semibold text-white shadow hover:opacity-95 active:translate-y-[1px]"
-              >
-                + New Invoice
-              </button>
-            )}
-          </div>
-        </div>
+          {/* Sticky Toolbar */}
+          <div className="sticky top-0 z-10 border-t bg-background/70 backdrop-blur">
+            <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap gap-2">
+                {Tabs.map((t) => (
+                  <Chip key={t.key} active={tab === t.key} onClick={() => setTab(t.key)}>
+                    {t.label}
+                  </Chip>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    value={q}
+                    onChange={(e) => setQ(e.currentTarget.value)}
+                    placeholder="Search invoice/client…"
+                    className="h-10 w-[min(80vw,260px)] rounded-xl border bg-background pl-10 pr-10 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {q && (
+                    <button
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted"
+                      onClick={() => setQ("")}
+                      aria-label="Clear search"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  )}
+                </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border bg-card/80 backdrop-blur p-5 shadow-sm">
-            <div className="text-xs uppercase text-muted-foreground">Total Unpaid</div>
-            <div className="mt-1 text-2xl font-semibold">{formatIDRCurrency(totalUnpaid)}</div>
+                {isAdmin && (
+                  <button
+                    onClick={() => setOpenNew(true)}
+                    className="h-10 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 text-sm font-semibold text-white shadow hover:opacity-95 active:translate-y-[1px]"
+                  >
+                    + New Invoice
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="rounded-2xl border bg-card/80 backdrop-blur p-5 shadow-sm">
-            <div className="text-xs uppercase text-muted-foreground">Overdue</div>
-            <div className="mt-1 text-2xl font-semibold">{overdueCount}</div>
-          </div>
-          <div className="rounded-2xl border bg-card/80 backdrop-blur p-5 shadow-sm">
-            <div className="text-xs uppercase text-muted-foreground">Paid</div>
-            <div className="mt-1 text-2xl font-semibold">{paidCount}</div>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex flex-wrap gap-2">
-          {Tabs.map((t) => (
-            <Chip key={t.key} active={tab === t.key} onClick={() => setTab(t.key)}>
-              {t.label}
-            </Chip>
-          ))}
-        </div>
+        </motion.div>
 
         {/* Table / Empty / Loading */}
         {loading ? (
-          <div className="rounded-2xl border bg-card p-8 text-muted-foreground shadow-sm">Loading…</div>
+          <SkeletonTable />
         ) : rows.length === 0 ? (
-          <div className="rounded-2xl border bg-card p-8 text-muted-foreground shadow-sm">
-            No invoices found.
-          </div>
+          <EmptyState isAdmin={isAdmin} onNew={() => setOpenNew(true)} />
         ) : (
-          <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className="rounded-2xl border bg-card shadow-sm overflow-hidden ring-1 ring-black/[0.02]"
+          >
             <div className="overflow-x-auto">
               <table className="min-w-[980px] w-full text-sm">
-                <thead className="bg-muted/60 text-left">
+                <thead className="bg-muted/60 text-left sticky top-0 z-[1]">
                   <tr className="text-muted-foreground">
                     <th className="p-3">Invoice</th>
                     <th className="p-3">Client</th>
@@ -399,8 +491,15 @@ export default function InvoicesPage(): React.JSX.Element {
                       busy?.id === r.id && busy?.type === t;
 
                     return (
-                      <tr key={r.id} className="hover:bg-muted/30">
-                        <td className="p-3 font-semibold">{r.invoice_no}</td>
+                      <tr key={r.id} className="hover:bg-muted/30 focus-within:bg-muted/30 transition-colors">
+                        <td className="p-3 font-semibold">
+                          <Link
+                            href={`${isAdmin ? "/admin" : "/client"}/invoices/${r.id}`}
+                            className="underline-offset-2 hover:underline"
+                          >
+                            {r.invoice_no}
+                          </Link>
+                        </td>
                         <td className="p-3">{r.client_name ?? "-"}</td>
                         <td className="p-3">
                           {items.length > 0 ? (
@@ -408,7 +507,7 @@ export default function InvoicesPage(): React.JSX.Element {
                               {items.slice(0, 2).map((it) => (
                                 <span
                                   key={it.id}
-                                  className="rounded-full border px-2 py-0.5 text-[11px]"
+                                  className="rounded-full border px-2 py-0.5 text-[11px] bg-background/60"
                                   title={`${it.description} × ${it.qty} @ ${formatIDRCurrency(Number(it.unit_price) || 0)}`}
                                 >
                                   {it.description}
@@ -435,8 +534,8 @@ export default function InvoicesPage(): React.JSX.Element {
                         <td className="p-3">{r.created_at ? new Date(r.created_at).toLocaleDateString("id-ID") : "-"}</td>
                         <td className="p-3">{r.due_date ? new Date(r.due_date).toLocaleDateString("id-ID") : "-"}</td>
                         <td className="p-3">
-                          <div className="flex justify-end gap-2 flex-wrap">
-                            {/* ADMIN-ONLY buttons */}
+                          {/* Desktop action buttons */}
+                          <div className="hidden md:flex justify-end gap-2 flex-wrap">
                             {isAdmin && r.status === "unpaid" && (
                               <>
                                 <ActionBtn
@@ -477,8 +576,7 @@ export default function InvoicesPage(): React.JSX.Element {
                               </>
                             )}
 
-                            {/* Everyone can Pay if unpaid */}
-                            {r.status === "unpaid" && (
+                            {!isAdmin && r.status === "unpaid" && (
                               <ActionBtn
                                 tone="emerald"
                                 onClick={() => void createSnapAndPay(r)}
@@ -509,6 +607,76 @@ export default function InvoicesPage(): React.JSX.Element {
                               Open
                             </Link>
                           </div>
+
+                          {/* Mobile compact menu */}
+                          <div className="md:hidden flex justify-end">
+                            <MoreMenu>
+                              {r.status === "unpaid" && (
+                                <button
+                                    className="inline-flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs hover:bg-muted"
+                                    onClick={() => void refreshPaymentLink(r.id)}
+                                    disabled={isBusy("refresh")}
+                                  >
+                                    {isBusy("refresh") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                                    Refresh Link
+                                  </button>
+                              )}
+                              {!isAdmin && r.status === "unpaid" && (
+                                <button
+                                  className="inline-flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs hover:bg-muted"
+                                  onClick={() => void createSnapAndPay(r)}
+                                  disabled={isBusy("pay")}
+                                >
+                                  {isBusy("pay") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CreditCard className="h-3.5 w-3.5" />}
+                                  Pay now
+                                </button>
+                              )}
+                              {isAdmin && r.status === "unpaid" && (
+                                <>
+                                  <button
+                                    className="inline-flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs hover:bg-muted"
+                                    onClick={() => void sendReminder(r.id)}
+                                    disabled={isBusy("remind")}
+                                  >
+                                    {isBusy("remind") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BellRing className="h-3.5 w-3.5" />}
+                                    Reminder
+                                  </button>
+                                  <button
+                                    className="inline-flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs hover:bg-muted"
+                                    onClick={() => void markPaid(r.id)}
+                                    disabled={isBusy("mark")}
+                                  >
+                                    {isBusy("mark") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                                    Mark Paid
+                                  </button>
+                                  <button
+                                    className="inline-flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs hover:bg-muted"
+                                    onClick={() => void cancelInvoice(r.id)}
+                                    disabled={isBusy("cancel")}
+                                  >
+                                    {isBusy("cancel") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />}
+                                    Cancel
+                                  </button>
+                                </>
+                              )}
+                              {r.payment_url ? (
+                                <a
+                                  href={r.payment_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs hover:bg-muted"
+                                >
+                                  <Link2 className="h-3.5 w-3.5" /> Payment Link
+                                </a>
+                              ) : null}
+                              <Link
+                                href={`${isAdmin ? "/admin" : "/client"}/invoices/${r.id}`}
+                                className="inline-flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs hover:bg-muted"
+                              >
+                                Open <ExternalLink className="h-3.5 w-3.5" />
+                              </Link>
+                            </MoreMenu>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -516,7 +684,7 @@ export default function InvoicesPage(): React.JSX.Element {
                 </tbody>
               </table>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* New Invoice Dialog */}

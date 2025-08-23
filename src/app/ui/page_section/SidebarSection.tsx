@@ -523,7 +523,7 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
 
         {/* User Controls Footer */}
         <motion.div 
-          className="mt-4 mx-2 rounded-full border border-teal-400/40 dark:border-cyan-300/50 bg-gradient-to-br from-teal-800/90 to-cyan-800/90 backdrop-blur-sm px-3 py-1.5 shadow-lg shadow-teal-500/20 dark:shadow-cyan-900/30"
+          className="mt-4 mx-2 rounded-full backdrop-blur-sm px-3 py-1.5 shadow-lg shadow-teal-500/20 dark:shadow-cyan-900/30"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9, duration: 0.5 }}
@@ -538,7 +538,7 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
               <button
                 ref={profileButtonRef}
                 onClick={handleProfileClick}
-                className="group relative flex items-center gap-3 rounded-full px-1.5 py-1 w-full hover:bg-teal-600/30 hover:border-cyan-400/60 transition-all duration-200 border border-transparent"
+                className="group relative flex items-center gap-3 rounded-full px-1.5 py-1 w-full transition-all duration-200 border border-transparent"
               >
                 <div className="flex-shrink-0">
                   <ProfileAvatar
@@ -776,7 +776,7 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
 
             {/* Mobile User Controls Footer */}
             <motion.div 
-              className="mt-4 mx-2 mb-4 rounded-full border border-teal-400/40 dark:border-cyan-300/50 bg-gradient-to-br from-teal-800/90 to-cyan-800/90 backdrop-blur-sm px-3 py-1.5 shadow-lg shadow-teal-500/20 dark:shadow-cyan-900/30"
+              className="mt-4 mx-2 mb-4 rounded-full backdrop-blur-sm px-3 py-1.5 shadow-lg shadow-teal-500/20 dark:shadow-cyan-900/30"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.9, duration: 0.5 }}
@@ -791,7 +791,7 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
                   <button
                     ref={mobileProfileButtonRef}
                     onClick={handleProfileClick}
-                    className="group relative flex items-center gap-3 rounded-full px-1.5 py-1 w-full hover:bg-teal-600/30 hover:border-cyan-400/60 transition-all duration-200 border border-transparent"
+                    className="group relative flex items-center gap-3 rounded-full px-1.5 py-1 w-full transition-all duration-200 border border-transparent"
                   >
                     <div className="flex-shrink-0">
                       <ProfileAvatar

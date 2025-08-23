@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo, useRef, useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -18,6 +18,10 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import Image from "next/image";
+import UserDropdown from "../pop_over/user_dropdown";
+import { useProfile } from "@/hooks/useProfile";
+import ProfileAvatar from "@/components/ui/ProfileAvatar";
+import Portal from "@/components/ui/Portal";
 
 /*********************************
  * Types & Menu Data
@@ -164,6 +168,7 @@ export function BrandLockup({
   );
 }
 
+
 /*********************************
  * Component
  *********************************/
@@ -177,12 +182,60 @@ export const HeaderSection = (): React.JSX.Element => {
   const [mobileOpen, setMobileOpen] = React.useState<boolean>(false);
   const mobilePanelRef = React.useRef<HTMLDivElement | null>(null);
 
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const profileButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileProfileButtonRef = useRef<HTMLButtonElement>(null);
+  // Focusable keyboard nav (ArrowUp/Down, Home/End)
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const linkRefs = useRef<Array<HTMLAnchorElement | null>>([]);
+
+  // Load profile data
+  const { profile, loading: profileLoading } = useProfile();
+
   const setItemRef =
     (idx: number) =>
     (el: HTMLAnchorElement | null): void => {
       itemRefs.current[idx] = el;
     };
 
+  // Calculate dropdown position
+  const calculateDropdownPosition = useCallback(() => {
+    
+    const buttonRef = profileButtonRef.current || mobileProfileButtonRef.current;
+    if (buttonRef) {
+      const rect = buttonRef.getBoundingClientRect();
+      const dropdownHeight = 320;
+      const gap = 8;
+      const viewportHeight = window.innerHeight;
+      
+      // Check if this is mobile by checking which ref is being used
+      const isMobile = buttonRef === mobileProfileButtonRef.current;
+      
+      if (isMobile) {
+        // For mobile, position dropdown below the button to avoid going off-screen
+        setDropdownPosition({
+          top: rect.bottom + gap,
+          left: Math.max(16, rect.left), // Ensure minimum 16px from left edge
+        });
+      } else {
+        // Desktop positioning - above the button
+        const topPosition = rect.top - dropdownHeight - gap;
+        
+        setDropdownPosition({
+          top: topPosition < 0 ? rect.bottom + gap : topPosition, // Fallback if too high
+          left: rect.left-160,
+        });
+      }
+    }
+  }, []);
+  
+  const handleProfileClick = useCallback(() => {
+      if (!showUserMenu) {
+        calculateDropdownPosition();
+      }
+      setShowUserMenu(!showUserMenu);
+    }, [showUserMenu, calculateDropdownPosition]);
   // Close on click-outside & Esc & resize (desktop mega menu)
   React.useEffect(() => {
     const onDown = (e: MouseEvent) => {
@@ -495,6 +548,52 @@ export const HeaderSection = (): React.JSX.Element => {
           </Link>
 
           <ThemeToggle className="grid h-11 w-11 place-items-center rounded-full border border-black/10 bg-white/60 text-black dark:border-white/10 dark:bg-black/40" />
+        </div>
+        <div className="flex items-center justify-center">
+          {/* Profile Picture - Opens UserMenu - Centered */}
+          <motion.div 
+            className="relative"
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.2 }}
+          >
+            <button
+              ref={profileButtonRef}
+              onClick={handleProfileClick}
+              className="group relative flex items-center gap-3 rounded-full px-1.5 py-1 w-full transition-all duration-200 border border-transparent"
+            >
+              <span className="text-sm font-medium text-black-200 dark:text-slate-200 group-hover:text-black flex-1 truncate">
+                  {profileLoading ? "Loading..." : (profile?.fullName || "Profile")}
+                </span>
+              <div className="flex-shrink-0">
+                <ProfileAvatar
+                  avatarUrl={profile?.avatarUrl}
+                  fullName={profile?.fullName}
+                  size="md"
+                  animate
+                  showFallback={!profileLoading}
+                />
+              </div>
+            </button>
+            
+            {/* UserMenu positioned above the button */}
+            {showUserMenu && (
+              <Portal>
+                <div 
+                  className="fixed z-[9999]"
+                  style={{ 
+                    top: `${dropdownPosition.top}px`, 
+                    left: `${dropdownPosition.left}px`,
+                    pointerEvents: 'auto'
+                  }}
+                >
+                  <UserDropdown 
+                    isOpen={showUserMenu}
+                    onClose={() => setShowUserMenu(false)}
+                  />
+                </div>
+              </Portal>
+            )}
+          </motion.div>
         </div>
 
         {/* Right: Mobile controls */}

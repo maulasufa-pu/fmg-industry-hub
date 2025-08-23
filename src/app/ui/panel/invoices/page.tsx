@@ -56,14 +56,25 @@ declare global {
 function useSnapLoader(clientKey: string | undefined, isProduction: boolean) {
   useEffect(() => {
     if (!clientKey) return;
+
+    // hapus script lama jika ada
+    const existing = document.getElementById("midtrans-snap-script");
+    if (existing) existing.remove();
+
+    const host = isProduction ? "app.midtrans.com" : "app.sandbox.midtrans.com";
     const s = document.createElement("script");
-    s.src = isProduction ? "https://app.midtrans.com/snap/snap.js" : "https://sandbox.midtrans.com/snap/snap.js";
+    s.id = "midtrans-snap-script";
+    s.src = `https://${host}/snap/snap.js`;
     s.async = true;
     s.setAttribute("data-client-key", clientKey);
+    s.onload = () => console.info("[Midtrans] snap.js loaded");
+    s.onerror = (e) => console.error("[Midtrans] failed to load snap.js", e);
+
     document.body.appendChild(s);
-    return () => { document.body.removeChild(s); };
+    return () => { s.remove(); };
   }, [clientKey, isProduction]);
 }
+
 
 /** ---------- FMG-styled primitives ---------- **/
 const PillTab = ({ children, active=false, onClick }:{

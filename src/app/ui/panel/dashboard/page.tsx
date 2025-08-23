@@ -1,3 +1,4 @@
+//E:\FMGIH\fmg-industry-hub\src\app\ui\panel\dashboard\page.tsx
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
@@ -145,7 +146,7 @@ export default function AdminDashboard(): React.JSX.Element {
         const activeProjects = await getCountSafe("project_summary (active projects)", async () => {
           const { count, error } = await supabase
             .from("project_summary")
-            .select("project_id", { count: "estimated", head: true })
+            .select("project_id", { count: "exact", head: true }) // was: "estimated"
             .eq("status", "in_progress");
           return { count, error };
         });
@@ -174,11 +175,12 @@ export default function AdminDashboard(): React.JSX.Element {
       const activeProjects = await getCountSafe("project_summary (active projects - client)", async () => {
         const { count, error } = await supabase
           .from("project_summary")
-          .select("project_id", { count: "estimated", head: true })
+          .select("project_id", { count: "exact", head: true }) // was: "estimated"
           .eq("status", "in_progress")
-          .eq("client_id", userId!); // <-- filter milik sendiri
+          .eq("client_id", userId!);
         return { count, error };
       });
+
 
       const upcomingMeetings = await getCountSafe("meetings (upcoming - client)", async () => {
         // Asumsi ada kolom client_id pada meetings; jika modelmu pakai attendees, buat view/RPC (lihat bagian RLS di bawah).

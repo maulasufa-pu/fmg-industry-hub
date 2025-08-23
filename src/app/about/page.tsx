@@ -329,10 +329,10 @@ export default function AboutIntlPage() {
 
           <h2 className="mt-12">FAQ</h2>
           <div className="not-prose grid grid-cols-1 gap-4 md:grid-cols-2">
-            <FAQItem q="Berapa lama pengerjaan 1 lagu?" a="Tergantung kompleksitas. Umumnya 7–21 hari dari brief ke master final. Rush order bisa — hubungi kami untuk slot." />
-            <FAQItem q="Bisa bantu distribusi ke Spotify/Apple Music?" a="Bisa. Kami siapkan metadata, ISRC/UPC, QC, dan kirim ke DSPs. Pitching opsional sesuai rencana rilis." />
-            <FAQItem q="Apakah menerima revisi?" a="Ya, kami sertakan beberapa putaran revisi wajar per fase. Detail tercantum di proposal." />
-            <FAQItem q="Bisa kerja remote?" a="Ya. Seluruh proses bisa dikelola via portal: upload brief, komentar timecoded, persetujuan versi, hingga final delivery." />
+            <FAQItem q="How long does it take to finish a song?" a="Depends on complexity. Typically 7–21 days from brief to final master. Rush orders possible — contact us for available slots." />
+            <FAQItem q="Can you help distribute to Spotify/Apple Music?" a="Yes. We prepare metadata, ISRC/UPC, QC, and deliver to DSPs. Optional pitching based on release plan." />
+            <FAQItem q="Do you accept revisions?" a="Yes, we include several reasonable rounds of revisions per phase. Details are listed in the proposal." />
+            <FAQItem q="Can you work remotely?" a="Yes. The entire process can be managed via our portal: upload brief, timecoded comments, version approvals, and final delivery." />
           </div>
 
           <div className="not-prose mt-16 rounded-3xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">

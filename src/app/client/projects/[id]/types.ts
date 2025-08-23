@@ -29,6 +29,9 @@ export interface ProjectSummary {
   stage: ProjectStage | string | null;
   updated_at: string;
   client_id: string | null;
+  client_name: string | null;
+  client_first_name: string | null;
+  client_last_name: string | null;
   artist_name: string | null;
   genre: string | null;
   progress_percent: number | null;

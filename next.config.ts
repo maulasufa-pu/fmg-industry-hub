@@ -19,37 +19,35 @@ const nextConfig: NextConfig = {
     return config;
   },
   async headers() {
-    // Opsi dev: izinkan Supabase lokal (jika pakai CLI)
-    const devConnect =
-      isDev
-        ? " http://localhost:54321 http://127.0.0.1:54321 ws://localhost:54321 ws://127.0.0.1:54321"
-        : "";
+    const devConnect = isDev
+      ? " http://localhost:54321 http://127.0.0.1:54321 ws://localhost:54321 ws://127.0.0.1:54321"
+      : "";
 
     const csp = [
       "default-src 'self'",
       "base-uri 'self'",
       "frame-ancestors 'self'",
 
-      // Midtrans Snap iframe/redirect
-      "frame-src 'self' https://app.midtrans.com https://app.sandbox.midtrans.com",
+      // Iframe embed populer
+      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://w.soundcloud.com https://soundcloud.com https://open.spotify.com https://embed.spotify.com https://www.google.com https://maps.google.com https://calendar.google.com https://app.midtrans.com https://app.sandbox.midtrans.com",
 
-      // Script (Next + Midtrans Snap)
+      // Script: batasi ke self + midtrans (tambah kalau benar-benar perlu)
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://app.midtrans.com https://app.sandbox.midtrans.com",
 
-      // XHR/fetch/WebSocket targets (Supabase + Midtrans + self)
-      `connect-src 'self' ${supabaseOrigin} ${supabaseWs} https://*.supabase.co https://app.midtrans.com https://app.sandbox.midtrans.com https://api.midtrans.com https://api.sandbox.midtrans.com${devConnect}`,
+      // Fetch/WebSocket: Supabase + Midtrans (tambah lainnya bila kamu fetch HLS/M3U8 dari origin lain)
+      `connect-src 'self' ${supabaseOrigin} ${supabaseWs} https://*.supabase.co https://app.midtrans.com https://app.sandbox.midtrans.com https://api.midtrans.com https://api.sandbox.midtrans.com`,
 
-      // Gambar (termasuk Supabase Storage, data/blob, Unsplash)
-      "img-src 'self' data: blob: https://*.supabase.co https://source.unsplash.com https://images.unsplash.com",
+      // Gambar (thumbnail YouTube/Vimeo/OG)
+      "img-src 'self' data: blob: https://*.supabase.co https://i.ytimg.com https://img.youtube.com https://i.vimeocdn.com https://source.unsplash.com https://images.unsplash.com",
 
-      // Style & font
       "style-src 'self' 'unsafe-inline'",
       "font-src 'self' data:",
 
-      // Media/workers
-      "media-src 'self' data: blob:",
-      "worker-src 'self' blob:",
+      // Media (audio/video file langsung)
+      `media-src 'self' data: blob: ${supabaseOrigin} https://*.supabase.co https://cdn.plyr.io https://storage.googleapis.com https://*.googlevideo.com https://audio-ssl.itunes.apple.com`,
+      "audio-src 'self' data: blob: https://*.supabase.co https://*.googlevideo.com",
 
+      "worker-src 'self' blob:",
       "object-src 'none'",
       "form-action 'self'",
       "upgrade-insecure-requests",

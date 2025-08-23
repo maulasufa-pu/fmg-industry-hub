@@ -197,7 +197,7 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       console.error("payment create error:", text || res.statusText);
-      alert("Gagal memulai pembayaran.");
+      alert("Failed to start payment.");
       return;
     }
 
@@ -238,7 +238,7 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("refresh payment link failed:", err);
-      alert("Gagal refresh payment link.");
+      alert("Failed to refresh payment.");
     } finally {
       await load();
     }

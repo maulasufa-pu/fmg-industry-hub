@@ -22,6 +22,28 @@ interface MeetingsTabProps {
   setMeetings: React.Dispatch<React.SetStateAction<MeetingRow[] | null>>;
 }
 
+// Di atas component
+const normalizeLink = (raw: string | null | undefined): string | null => {
+  if (!raw) return null;
+  const s = raw.trim();
+  // anggap ini "tidak ada link"
+  if (s === "" || /^(dummy|null|undefined|#|-)$/i.test(s)) return null;
+
+  // auto-tambah protokol kalau user simpan 'meet.google.com/abc'
+  const withProto = /^https?:\/\//i.test(s) ? s : `https://${s}`;
+
+  try {
+    // valid URL?
+    // (kalau mau dibatasi ke domain tertentu, cek host di sini)
+    // eslint-disable-next-line no-new
+    new URL(withProto);
+    return withProto;
+  } catch {
+    return null;
+  }
+};
+
+
 const CardShell = ({
   title,
   right,
@@ -368,6 +390,9 @@ export default function MeetingsTab({ project, meetings, setMeetings }: Meetings
             const start = new Date(m.start_at);
             const end = new Date(start.getTime() + m.duration_min * 60_000);
 
+            const safeLink = normalizeLink(m.link);
+            const hasLink = !!safeLink;
+
             return (
               <motion.li
                 key={m.id}
@@ -380,7 +405,7 @@ export default function MeetingsTab({ project, meetings, setMeetings }: Meetings
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="inline-flex items-center rounded-full bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-1 text-[11px] font-medium text-indigo-700 dark:text-indigo-300">
-                        {m.link ? "Online" : "Offline"}
+                        {hasLink ? "Online" : "Offline"}
                       </span>
                       <div className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{m.title}</div>
                     </div>
@@ -405,18 +430,18 @@ export default function MeetingsTab({ project, meetings, setMeetings }: Meetings
                   </div>
 
                   <div className="flex items-center gap-2 sm:pl-4">
-                    {m.link ? (
+                    {hasLink ? (
                       <a
-                        href={m.link}
+                        href={safeLink!}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 rounded-xl border border-gray-300 dark:border-gray-700 px-3 py-2 text-xs font-medium hover:bg-gray-50 dark:hover:bg-gray-800"
                       >
                         Join <ExternalLink className="h-3.5 w-3.5" />
                       </a>
                     ) : (
                       <span className="inline-flex items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-xs text-gray-400">
-                        No link
+                        No Link
                       </span>
                     )}
 

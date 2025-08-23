@@ -206,7 +206,7 @@ export default function HeroSection({
                   <motion.span whileHover={{ rotate: 15 }} className="text-lg">
                     🏠
                   </motion.span>
-                  Projects (Admin)
+                  Projects
                 </Link>
               </li>
               <motion.li

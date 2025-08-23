@@ -57,7 +57,7 @@ const AnimatedCard = ({
   );
 };
 
-// helper kecil buat tampilan
+// small helper for display
 const pretty = (s?: string | null) =>
   (s ?? "N/A")
     .toString()
@@ -88,7 +88,7 @@ export default function OverviewTab({ project }: OverviewTabProps) {
     >
       {/* MAIN INFO */}
       <AnimatedCard title="📝 Main Info (Read-only)" gradient>
-        {/* Status & Stage — formatted, bukan input */}
+        {/* Status & Stage — formatted, not input */}
         <motion.div
           className="mb-6 space-y-3"
           initial={{ opacity: 0, y: 6 }}
@@ -114,12 +114,12 @@ export default function OverviewTab({ project }: OverviewTabProps) {
           </div>
 
           <p className="text-sm text-gray-700 dark:text-gray-300">
-            Project ini saat ini <span className="font-semibold">{pretty(project.status)}</span>{" "}
-            dan berada pada tahap <span className="font-semibold">{pretty(project.stage)}</span>.
+            This project is currently <span className="font-semibold">{pretty(project.status)}</span>{" "}
+            and is at the <span className="font-semibold">{pretty(project.stage)}</span> stage.
           </p>
         </motion.div>
 
-        {/* Detail lain — tetap read-only inputs biar rapi */}
+        {/* Other details — keep as read-only inputs for neatness */}
         <motion.div
           className="grid grid-cols-2 gap-4 text-sm"
           initial={{ opacity: 0 }}
@@ -132,7 +132,7 @@ export default function OverviewTab({ project }: OverviewTabProps) {
             { label: "🎼 Genre", value: project.genre || "N/A" },
             { label: "👤 Client ID", value: project.client_id || "N/A" },
             { label: "📅 Last Updated", value: lastUpdated },
-            // ⛔️ Progress DIHAPUS sesuai request
+            // ⛔️ Progress REMOVED as requested
             // { label: "📈 Progress", value: `${project.progress_percent || 0}%` },
           ].map((field, index) => (
             <motion.div
@@ -156,7 +156,7 @@ export default function OverviewTab({ project }: OverviewTabProps) {
         </motion.div>
       </AnimatedCard>
 
-      {/* DESCRIPTION dengan custom scrollbar */}
+      {/* DESCRIPTION with custom scrollbar */}
       <AnimatedCard title="📝 Project Description" gradient className="h-full flex flex-col">
         <motion.div
           className="flex-1 flex flex-col"
@@ -165,9 +165,9 @@ export default function OverviewTab({ project }: OverviewTabProps) {
           transition={{ delay: 0.4 }}
         >
           <div className="relative">
-            {/* Fade atas */}
+            {/* Top fade */}
             <div className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-white/70 dark:from-gray-900/70 to-transparent rounded-t-xl" />
-            {/* Konten scrollable */}
+            {/* Scrollable content */}
             <div
               className="descScroll whitespace-pre-wrap leading-relaxed text-sm text-gray-800 dark:text-gray-200 bg-white/70 dark:bg-gray-800/70 border border-gray-200 dark:border-gray-700 rounded-xl p-4 max-h-[420px] overflow-auto shadow-inner"
               role="region"
@@ -175,7 +175,7 @@ export default function OverviewTab({ project }: OverviewTabProps) {
             >
               {project.description?.trim() || "No description provided"}
             </div>
-            {/* Fade bawah */}
+            {/* Bottom fade */}
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-white/70 dark:from-gray-900/70 to-transparent rounded-b-xl" />
           </div>
         </motion.div>

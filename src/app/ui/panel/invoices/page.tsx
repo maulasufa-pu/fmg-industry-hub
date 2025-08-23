@@ -56,8 +56,6 @@ declare global {
 function useSnapLoader(clientKey: string | undefined, isProduction: boolean) {
   useEffect(() => {
     if (!clientKey) return;
-
-    // hapus script lama jika ada
     const existing = document.getElementById("midtrans-snap-script");
     if (existing) existing.remove();
 
@@ -74,7 +72,6 @@ function useSnapLoader(clientKey: string | undefined, isProduction: boolean) {
     return () => { s.remove(); };
   }, [clientKey, isProduction]);
 }
-
 
 /** ---------- FMG-styled primitives ---------- **/
 const PillTab = ({ children, active=false, onClick }:{
@@ -125,21 +122,10 @@ const GlassButton = ({
   );
 };
 
-const MoreMenu = ({ children }: { children: React.ReactNode }) => (
-  <details className="relative md:hidden">
-    <summary className="list-none inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs bg-white/8 border border-white/10 hover:bg-white/12 cursor-pointer backdrop-blur">
-      More
-    </summary>
-    <div className="absolute right-0 mt-2 w-48 rounded-2xl border border-white/10 bg-neutral-900/80 backdrop-blur shadow-xl p-2 z-20">
-      <div className="flex flex-col gap-1">{children}</div>
-    </div>
-  </details>
-);
-
 const SkeletonTable = () => (
   <div className="rounded-3xl border border-white/10 bg-neutral-900/40 backdrop-blur shadow-xl overflow-hidden">
     <div className="overflow-x-auto">
-      <table className="min-w-[1040px] w-full text-sm">
+      <table className="min-w-full w-full text-sm">
         <thead className="bg-white/5 text-left">
           <tr className="text-white/70">
             {["Invoice","Client","Items","Amount","Status","Created","Due","Actions"].map(h=>(
@@ -174,7 +160,7 @@ const EmptyState = ({ isAdmin, onNew }: { isAdmin: boolean; onNew: () => void })
       <Wallet className="h-7 w-7 text-white" />
     </motion.div>
     <h3 className="text-lg font-semibold text-white">No invoices found</h3>
-    <p className="mt-1 text-sm text-white/80">Mulai buat invoice atau ubah filter pencarianmu.</p>
+    <p className="mt-1 text-sm text-white/80">Start creating invoices or change your search filter.</p>
     <div className="mt-4 flex items-center justify-center gap-2">
       {isAdmin ? (
         <GlassButton tone="primary" onClick={onNew}>+ New Invoice</GlassButton>
@@ -186,6 +172,131 @@ const EmptyState = ({ isAdmin, onNew }: { isAdmin: boolean; onNew: () => void })
     </div>
   </div>
 );
+
+/** ---------- Mobile components ---------- **/
+const StatusPill: React.FC<{ status: InvoiceStatus; overdue: boolean }> = ({ status, overdue }) => {
+  const label = overdue && status === "unpaid" ? "overdue" : status;
+  const className =
+    nextStatusColor(status, overdue) +
+    " inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] capitalize border border-white/10 bg-white/5 backdrop-blur";
+  return <span className={className}>{label}</span>;
+};
+
+type InvoiceCardProps = {
+  r: InvoiceWithItems;
+  isAdmin: boolean;
+  busy: { id: string; type: "remind" | "mark" | "cancel" | "pay" | "refresh" | null } | null;
+  onPay: (inv: InvoiceRow) => Promise<void>;
+  onRefresh: (id: string) => Promise<void>;
+  onMarkPaid: (id: string) => Promise<void>;
+  onCancel: (id: string) => Promise<void>;
+  onRemind: (id: string) => Promise<void>;
+};
+
+const InvoiceCard: React.FC<InvoiceCardProps> = ({
+  r, isAdmin, busy, onPay, onRefresh, onMarkPaid, onCancel, onRemind
+}) => {
+  const overdue = isOverdue(r.status, r.due_date);
+  const items = [...(r.invoice_items ?? [])].sort((a, b) => Number(a.position ?? 0) - Number(b.position ?? 0));
+  const isBusy = (t: NonNullable<NonNullable<typeof busy>["type"]>) => busy?.id === r.id && busy?.type === t;
+
+  return (
+    <li className="rounded-2xl border border-white/10 bg-neutral-900/60 backdrop-blur p-4 shadow">
+      {/* Baris 1: Invoice & Amount */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <Link
+            href={`${isAdmin ? "/admin" : "/client"}/invoices/${r.id}`}
+            className="font-semibold underline-offset-2 hover:underline block truncate"
+            title={r.invoice_no}
+          >
+            {r.invoice_no}
+          </Link>
+          <div className="mt-1 text-xs text-white/70 truncate">{r.client_name ?? "-"}</div>
+        </div>
+        <div className="text-right whitespace-nowrap tabular-nums font-bold">
+          {r.amount_total != null
+            ? `${(r.currency ?? "IDR").toUpperCase()} ${Number(r.amount_total).toLocaleString("id-ID")}`
+            : "-"}
+        </div>
+      </div>
+
+      {/* Baris 2: Status & tanggal */}
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-white/80">
+        <StatusPill status={r.status} overdue={overdue} />
+        <span className="opacity-60">•</span>
+        <span>Created: {r.created_at ? new Date(r.created_at).toLocaleDateString("id-ID") : "-"}</span>
+        <span className="opacity-60">•</span>
+        <span>Due: {r.due_date ? new Date(r.due_date).toLocaleDateString("id-ID") : "-"}</span>
+      </div>
+
+      {/* Baris 3: Items ringkas */}
+      <div className="mt-3 text-xs">
+        {items.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {items.slice(0, 3).map((it) => (
+              <span
+                key={it.id}
+                className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[11px] text-white/90"
+                title={`${it.description} × ${it.qty} @ ${formatIDRCurrency(Number(it.unit_price) || 0)}`}
+              >
+                {it.description}
+              </span>
+            ))}
+            {items.length > 3 && <span className="text-white/70">+{items.length - 3} more</span>}
+          </div>
+        ) : (
+          <span className="text-white/60">No items</span>
+        )}
+      </div>
+
+      {/* Baris 4: Actions mobile-friendly */}
+      <div className="mt-4 flex flex-wrap justify-end gap-2">
+        {r.payment_url ? (
+          <a
+            href={r.payment_url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs bg-white/8 border border-white/10 hover:bg-white/12"
+            title="Open payment link"
+          >
+            <Link2 className="h-3.5 w-3.5" /> Payment Link <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        ) : null}
+
+        {!isAdmin && r.status === "unpaid" && (
+          <GlassButton tone="primary" onClick={() => void onPay(r)} busying={isBusy("pay")} title="Pay now">
+            <CreditCard className="h-3.5 w-3.5" /> Pay
+          </GlassButton>
+        )}
+
+        {isAdmin && r.status === "unpaid" && (
+          <>
+            <GlassButton tone="outline" onClick={() => void onRemind(r.id)} busying={isBusy("remind")} title="Send reminder">
+              <BellRing className="h-3.5 w-3.5" /> Reminder
+            </GlassButton>
+            <GlassButton tone="ink" onClick={() => void onRefresh(r.id)} busying={isBusy("refresh")} title="Refresh payment link">
+              <RefreshCw className="h-3.5 w-3.5" /> Refresh
+            </GlassButton>
+            <GlassButton tone="emerald" onClick={() => void onMarkPaid(r.id)} busying={isBusy("mark")} title="Mark as paid">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Paid
+            </GlassButton>
+            <GlassButton tone="danger" onClick={() => void onCancel(r.id)} busying={isBusy("cancel")} title="Cancel invoice">
+              <XCircle className="h-3.5 w-3.5" /> Cancel
+            </GlassButton>
+          </>
+        )}
+
+        <Link
+          href={`${isAdmin ? "/admin" : "/client"}/invoices/${r.id}`}
+          className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs bg-white/8 border border-white/10 hover:bg-white/12"
+        >
+          Open <ExternalLink className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+    </li>
+  );
+};
 
 /** ---------- Page ---------- **/
 export default function InvoicesPage(): React.JSX.Element {
@@ -237,7 +348,8 @@ export default function InvoicesPage(): React.JSX.Element {
     if (!authReady) return;
     setLoading(true);
 
-    let qb = sb.from("invoices").select(SELECT_INVOICES);
+    let qb = sb.from("invoices").select(SELECT_INVOICES) as
+      unknown as import("@supabase/postgrest-js").PostgrestFilterBuilder<any, any, InvoiceWithItems[], "invoices", unknown>;
     if (tab !== "all") qb = qb.eq("status", tab);
     if (q.trim()) {
       const like = `%${q.trim()}%`;
@@ -252,8 +364,7 @@ export default function InvoicesPage(): React.JSX.Element {
       .order("created_at", { ascending: false })
       .order("position", { ascending: true, foreignTable: "invoice_items" });
 
-    const safe = (data ?? []).filter((r: any) => isAdmin || r.client_id === me?.id);
-    if (!error) setRows(safe as InvoiceWithItems[]);
+    if (!error) setRows((data ?? []).filter((r) => isAdmin || r.client_id === me?.id));
     setLoading(false);
   };
 
@@ -331,7 +442,7 @@ export default function InvoicesPage(): React.JSX.Element {
       await load();
     } catch (e) {
       console.error("refresh link error", e);
-      alert("Gagal refresh payment link");
+      alert("Failed to refresh payment link");
     } finally {
       setBusy(null);
     }
@@ -344,9 +455,9 @@ export default function InvoicesPage(): React.JSX.Element {
     setBusy(null);
     if (error) {
       console.error("send reminder error", error);
-      alert("Gagal mengirim reminder.");
+      alert("Failed to send reminder.");
     } else {
-      alert("Reminder terkirim.");
+      alert("Reminder sent.");
     }
   };
 
@@ -372,6 +483,7 @@ export default function InvoicesPage(): React.JSX.Element {
       </div>
 
       {/* ⬅️ Rata kiri & full width */}
+      {/* ⬅️ Left align & full width */}
       <div className="w-full max-w-none space-y-6">
         {/* Header / Stats */}
         <motion.div
@@ -391,11 +503,11 @@ export default function InvoicesPage(): React.JSX.Element {
                     </span>
                   </h1>
                   <p className="text-sm text-white/90">
-                    {isAdmin ? "Kelola & kirim invoice" : "Lihat dan bayar invoice kamu"}
+                    {isAdmin ? "Manage & send invoices" : "View and pay your invoices"}
                   </p>
                 </div>
 
-                {/* Quick stats — sekarang ada warna background berbeda */}
+                {/* Quick stats */}
                 <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full sm:w-auto">
                   {[
                     {
@@ -475,204 +587,156 @@ export default function InvoicesPage(): React.JSX.Element {
         ) : rows.length === 0 ? (
           <EmptyState isAdmin={isAdmin} onNew={() => setOpenNew(true)} />
         ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-            className="rounded-3xl p-[1px] bg-[linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.06)_35%,transparent)] shadow-[0_1px_0_rgba(255,255,255,.05),0_20px_60px_rgba(2,6,23,.45)] overflow-hidden"
-          >
-            <div className="rounded-[calc(theme(borderRadius.3xl)-1px)] bg-neutral-900/50 backdrop-blur">
-              <div className="overflow-x-auto">
-                <table className="min-w-[1040px] w-full text-sm">
-                  <thead className="sticky top-0 z-[1] bg-white/[0.06] text-left">
-                    <tr className="text-white/75">
-                      <th className="p-3">Invoice</th>
-                      <th className="p-3">Client</th>
-                      <th className="p-3">Items</th>
-                      {/* ➕ Amount diperlebar */}
-                      <th className="p-3 w-[220px]">Amount</th>
-                      <th className="p-3">Status</th>
-                      <th className="p-3">Created</th>
-                      <th className="p-3">Due</th>
-                      <th className="p-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/10">
-                    {rows.map((r) => {
-                      const overdue = isOverdue(r.status, r.due_date);
-                      const statusClass = nextStatusColor(r.status, overdue);
-                      const items = [...(r.invoice_items ?? [])].sort((a, b) => Number(a.position ?? 0) - Number(b.position ?? 0));
-                      const isBusy = (t: NonNullable<typeof busy>["type"]) => busy?.id === r.id && busy?.type === t;
+          <>
+            {/* Desktop & large tablets: TABLE */}
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="hidden md:block rounded-3xl p-[1px] bg-[linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.06)_35%,transparent)] shadow-[0_1px_0_rgba(255,255,255,.05),0_20px_60px_rgba(2,6,23,.45)] overflow-hidden"
+            >
+              <div className="rounded-[calc(theme(borderRadius.3xl)-1px)] bg-neutral-900/50 backdrop-blur">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full w-full text-sm">
+                    <thead className="sticky top-0 z-[1] bg-white/[0.06] text-left">
+                      <tr className="text-white/75">
+                        <th className="p-3">Invoice</th>
+                        <th className="p-3">Client</th>
+                        <th className="p-3 hidden lg:table-cell">Items</th>
+                        <th className="p-3 w-[200px]">Amount</th>
+                        <th className="p-3">Status</th>
+                        <th className="p-3 hidden xl:table-cell">Created</th>
+                        <th className="p-3 hidden lg:table-cell">Due</th>
+                        <th className="p-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/10">
+                      {rows.map((r) => {
+                        const overdue = isOverdue(r.status, r.due_date);
+                        const items = [...(r.invoice_items ?? [])].sort((a, b) => Number(a.position ?? 0) - Number(b.position ?? 0));
+                        const statusClass = nextStatusColor(r.status, overdue);
+                        const isBusy = (t: NonNullable<typeof busy>["type"]) => busy?.id === r.id && busy?.type === t;
 
-                      return (
-                        <tr key={r.id} className="hover:bg-white/5 transition-colors">
-                          <td className="p-3 font-semibold">
-                            <Link
-                              href={`${isAdmin ? "/admin" : "/client"}/invoices/${r.id}`}
-                              className="underline-offset-2 hover:underline"
-                            >
-                              {r.invoice_no}
-                            </Link>
-                          </td>
-                          <td className="p-3">{r.client_name ?? "-"}</td>
-                          <td className="p-3">
-                            {items.length > 0 ? (
-                              <div className="flex flex-wrap gap-1.5">
-                                {items.slice(0, 2).map((it) => (
-                                  <span
-                                    key={it.id}
-                                    className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[11px] text-white/90 backdrop-blur"
-                                    title={`${it.description} × ${it.qty} @ ${formatIDRCurrency(Number(it.unit_price) || 0)}`}
-                                  >
-                                    {it.description}
-                                  </span>
-                                ))}
-                                {items.length > 2 && (
-                                  <span className="text-xs text-white/70">+{items.length - 2} more</span>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-white/70">—</span>
-                            )}
-                          </td>
-                          {/* ➕ non-wrap supaya rapi */}
-                          <td className="p-3 whitespace-nowrap tabular-nums">
-                            {r.amount_total != null
-                              ? `${(r.currency ?? "IDR").toUpperCase()} ${Number(r.amount_total).toLocaleString("id-ID")}`
-                              : "-"}
-                          </td>
-                          <td className="p-3">
-                            <span className={statusClass + " inline-flex items-center rounded-full px-2.5 py-0.5 text-xs capitalize border border-white/10 bg-white/5 backdrop-blur"}>
-                              {overdue && r.status === "unpaid" ? "overdue" : r.status}
-                            </span>
-                          </td>
-                          <td className="p-3">{r.created_at ? new Date(r.created_at).toLocaleDateString("id-ID") : "-"}</td>
-                          <td className="p-3">{r.due_date ? new Date(r.due_date).toLocaleDateString("id-ID") : "-"}</td>
-                          <td className="p-3">
-                            {/* Desktop actions */}
-                            <div className="hidden md:flex justify-end gap-2 flex-wrap">
-                              {isAdmin && r.status === "unpaid" && (
-                                <>
-                                  <GlassButton tone="outline" onClick={() => void sendReminder(r.id)} busying={isBusy("remind")} title="Send reminder">
-                                    <BellRing className="h-3.5 w-3.5" /> Reminder
-                                  </GlassButton>
-                                  <GlassButton tone="ink" onClick={() => void refreshPaymentLink(r.id)} busying={isBusy("refresh")} title="Refresh payment link">
-                                    <RefreshCw className="h-3.5 w-3.5" /> Refresh Link
-                                  </GlassButton>
-                                  <GlassButton tone="emerald" onClick={() => void markPaid(r.id)} busying={isBusy("mark")} title="Mark as paid">
-                                    <CheckCircle2 className="h-3.5 w-3.5" /> Mark Paid
-                                  </GlassButton>
-                                  <GlassButton tone="danger" onClick={() => void cancelInvoice(r.id)} busying={isBusy("cancel")} title="Cancel invoice">
-                                    <XCircle className="h-3.5 w-3.5" /> Cancel
-                                  </GlassButton>
-                                </>
-                              )}
-
-                              {!isAdmin && r.status === "unpaid" && (
-                                <GlassButton tone="primary" onClick={() => void createSnapAndPay(r)} busying={isBusy("pay")} title="Pay now">
-                                  <CreditCard className="h-3.5 w-3.5" /> Pay
-                                </GlassButton>
-                              )}
-
-                              {r.payment_url ? (
-                                <a
-                                  href={r.payment_url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs bg-white/8 border border-white/10 hover:bg-white/12 backdrop-blur"
-                                  title="Open payment link"
-                                >
-                                  <Link2 className="h-3.5 w-3.5" /> Payment Link <ExternalLink className="h-3.5 w-3.5" />
-                                </a>
-                              ) : null}
-
+                        return (
+                          <tr key={r.id} className="hover:bg-white/5 transition-colors">
+                            <td className="p-3 font-semibold truncate max-w-[220px]">
                               <Link
                                 href={`${isAdmin ? "/admin" : "/client"}/invoices/${r.id}`}
-                                className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs bg-white/8 border border-white/10 hover:bg-white/12 backdrop-blur"
-                                title="Open invoice"
+                                className="underline-offset-2 hover:underline"
+                                title={r.invoice_no}
                               >
-                                Open
+                                {r.invoice_no}
                               </Link>
-                            </div>
-
-                            {/* Mobile compact menu */}
-                            <div className="md:hidden flex justify-end">
-                              <MoreMenu>
-                                {r.status === "unpaid" && (
-                                  <button
-                                    className="inline-flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs hover:bg-white/10"
-                                    onClick={() => void refreshPaymentLink(r.id)}
-                                    disabled={isBusy("refresh")}
-                                  >
-                                    {isBusy("refresh") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-                                    Refresh Link
-                                  </button>
-                                )}
-                                {!isAdmin && r.status === "unpaid" && (
-                                  <button
-                                    className="inline-flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs hover:bg-white/10"
-                                    onClick={() => void createSnapAndPay(r)}
-                                    disabled={isBusy("pay")}
-                                  >
-                                    {isBusy("pay") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CreditCard className="h-3.5 w-3.5" />}
-                                    Pay now
-                                  </button>
-                                )}
+                            </td>
+                            <td className="p-3 truncate max-w-[220px]">{r.client_name ?? "-"}</td>
+                            <td className="p-3 hidden lg:table-cell">
+                              {items.length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {items.slice(0, 2).map((it) => (
+                                    <span
+                                      key={it.id}
+                                      className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[11px] text-white/90"
+                                      title={`${it.description} × ${it.qty} @ ${formatIDRCurrency(Number(it.unit_price) || 0)}`}
+                                    >
+                                      {it.description}
+                                    </span>
+                                  ))}
+                                  {items.length > 2 && <span className="text-xs text-white/70">+{items.length - 2} more</span>}
+                                </div>
+                              ) : (
+                                <span className="text-white/70">—</span>
+                              )}
+                            </td>
+                            <td className="p-3 whitespace-nowrap tabular-nums">
+                              {r.amount_total != null
+                                ? `${(r.currency ?? "IDR").toUpperCase()} ${Number(r.amount_total).toLocaleString("id-ID")}`
+                                : "-"}
+                            </td>
+                            <td className="p-3">
+                              <span className={statusClass + " inline-flex items-center rounded-full px-2.5 py-0.5 text-xs capitalize border border-white/10 bg-white/5 backdrop-blur"}>
+                                {overdue && r.status === "unpaid" ? "overdue" : r.status}
+                              </span>
+                            </td>
+                            <td className="p-3 hidden xl:table-cell">
+                              {r.created_at ? new Date(r.created_at).toLocaleDateString("id-ID") : "-"}
+                            </td>
+                            <td className="p-3 hidden lg:table-cell">
+                              {r.due_date ? new Date(r.due_date).toLocaleDateString("id-ID") : "-"}
+                            </td>
+                            <td className="p-3">
+                              <div className="flex justify-end gap-2 flex-wrap">
                                 {isAdmin && r.status === "unpaid" && (
                                   <>
-                                    <button
-                                      className="inline-flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs hover:bg-white/10"
-                                      onClick={() => void sendReminder(r.id)}
-                                      disabled={isBusy("remind")}
-                                    >
-                                      {isBusy("remind") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BellRing className="h-3.5 w-3.5" />}
-                                      Reminder
-                                    </button>
-                                    <button
-                                      className="inline-flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs hover:bg-white/10"
-                                      onClick={() => void markPaid(r.id)}
-                                      disabled={isBusy("mark")}
-                                    >
-                                      {isBusy("mark") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-                                      Mark Paid
-                                    </button>
-                                    <button
-                                      className="inline-flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs hover:bg-white/10"
-                                      onClick={() => void cancelInvoice(r.id)}
-                                      disabled={isBusy("cancel")}
-                                    >
-                                      {isBusy("cancel") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />}
-                                      Cancel
-                                    </button>
+                                    <GlassButton tone="outline" onClick={() => void sendReminder(r.id)} busying={isBusy("remind")} title="Send reminder">
+                                      <BellRing className="h-3.5 w-3.5" /> Reminder
+                                    </GlassButton>
+                                    <GlassButton tone="ink" onClick={() => void refreshPaymentLink(r.id)} busying={isBusy("refresh")} title="Refresh payment link">
+                                      <RefreshCw className="h-3.5 w-3.5" /> Refresh
+                                    </GlassButton>
+                                    <GlassButton tone="emerald" onClick={() => void markPaid(r.id)} busying={isBusy("mark")} title="Mark as paid">
+                                      <CheckCircle2 className="h-3.5 w-3.5" /> Paid
+                                    </GlassButton>
+                                    <GlassButton tone="danger" onClick={() => void cancelInvoice(r.id)} busying={isBusy("cancel")} title="Cancel invoice">
+                                      <XCircle className="h-3.5 w-3.5" /> Cancel
+                                    </GlassButton>
                                   </>
+                                )}
+                                {!isAdmin && r.status === "unpaid" && (
+                                  <GlassButton tone="primary" onClick={() => void createSnapAndPay(r)} busying={isBusy("pay")} title="Pay now">
+                                    <CreditCard className="h-3.5 w-3.5" /> Pay
+                                  </GlassButton>
                                 )}
                                 {r.payment_url ? (
                                   <a
                                     href={r.payment_url}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="inline-flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs hover:bg-white/10"
+                                    className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs bg-white/8 border border-white/10 hover:bg-white/12"
+                                    title="Open payment link"
                                   >
-                                    <Link2 className="h-3.5 w-3.5" /> Payment Link
+                                    <Link2 className="h-3.5 w-3.5" /> Payment Link <ExternalLink className="h-3.5 w-3.5" />
                                   </a>
                                 ) : null}
                                 <Link
                                   href={`${isAdmin ? "/admin" : "/client"}/invoices/${r.id}`}
-                                  className="inline-flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-xs hover:bg-white/10"
+                                  className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs bg-white/8 border border-white/10 hover:bg-white/12"
+                                  title="Open invoice"
                                 >
-                                  Open <ExternalLink className="h-3.5 w-3.5" />
+                                  Open
                                 </Link>
-                              </MoreMenu>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+
+            {/* Mobile & small tablets: CARD LIST */}
+            <motion.ul
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="md:hidden space-y-3"
+            >
+              {rows.map((r) => (
+                <InvoiceCard
+                  key={r.id}
+                  r={r}
+                  isAdmin={isAdmin}
+                  busy={busy}
+                  onPay={createSnapAndPay}
+                  onRefresh={refreshPaymentLink}
+                  onMarkPaid={markPaid}
+                  onCancel={cancelInvoice}
+                  onRemind={sendReminder}
+                />
+              ))}
+            </motion.ul>
+          </>
         )}
 
         {/* New Invoice Dialog */}
@@ -683,6 +747,18 @@ export default function InvoicesPage(): React.JSX.Element {
           />
         )}
       </div>
+
+      {/* FAB admin (mobile) */}
+      {isAdmin && (
+        <button
+          onClick={() => setOpenNew(true)}
+          className="fixed md:hidden bottom-5 right-5 inline-flex items-center justify-center h-12 w-12 rounded-full bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-white shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/60"
+          aria-label="+ New Invoice"
+          title="+ New Invoice"
+        >
+          +
+        </button>
+      )}
     </div>
   );
 }

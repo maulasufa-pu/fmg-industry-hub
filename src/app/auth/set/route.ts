@@ -1,4 +1,3 @@
-// app/auth/set/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
@@ -8,7 +7,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "missing tokens" }, { status: 400 });
   }
 
-  // buffer cookies yang Supabase mau set
   const pending: { name: string; value: string; options?: Parameters<typeof NextResponse.prototype.cookies.set>[2] }[] = [];
 
   const supabase = createServerClient(
@@ -16,12 +14,10 @@ export async function POST(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return req.cookies.getAll().map(c => ({ name: c.name, value: c.value }));
-        },
-        setAll(cookies) {
-          cookies.forEach(({ name, value, options }) => pending.push({ name, value, options }));
-        },
+        getAll: () => req.cookies.getAll().map(c => ({ name: c.name, value: c.value })),
+        setAll: (cookies) => cookies.forEach(({ name, value, options }) =>
+          pending.push({ name, value, options })
+        ),
       },
     }
   );

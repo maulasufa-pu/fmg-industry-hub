@@ -91,7 +91,7 @@ export function SignUpSection(): React.JSX.Element {
     const origin =
       (typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || "")
         .replace(/\/+$/, "");
-    return `${origin}/auth/callback?flow=${flow}`;
+    return `${origin}/auth/callback`;
   };
 
   const canSubmit = useMemo(() => {

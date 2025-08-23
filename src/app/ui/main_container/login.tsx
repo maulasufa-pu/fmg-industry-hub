@@ -131,7 +131,7 @@ export const LoginSection = (): React.JSX.Element => {
     try {
       const supabase = getSupabaseClient();
 
-      const redirectTo = "https://fmg-industry-hub.vercel.app/auth/callback?flow=login";
+      const redirectTo = "https://fmg-industry-hub.vercel.app/auth/callback";
 
       // produksi (langsung redirect oleh SDK):
       const { error } = await supabase.auth.signInWithOAuth({

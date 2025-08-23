@@ -18,7 +18,7 @@ export default function CallbackClient() {
       const supabase = getSupabaseClient();
 
       try {
-        // 1) EXCHANGE (manual, karena detectSessionInUrl=false)
+        // 1) EXCHANGE MANUAL (karena detectSessionInUrl=false)
         const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
         if (error || !data.session) {
           console.error("[callback] exchange error:", error);
@@ -26,7 +26,7 @@ export default function CallbackClient() {
           return;
         }
 
-        // 2) SET HttpOnly cookie di server (WAJIB cek OK)
+        // 2) SET HttpOnly cookie ke server
         const resp = await fetch("/auth/set", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -43,7 +43,7 @@ export default function CallbackClient() {
           return;
         }
 
-        // 3) Redirect (sekali saja, hormati ?next / ?redirectedFrom yang aman)
+        // 3) redirect sekali (hormati ?next / ?redirectedFrom kalau ada)
         const rawNext = sp.get("next") || sp.get("redirectedFrom") || "";
         const dest = rawNext.startsWith("/") ? rawNext : "/client/dashboard";
         router.replace(dest);

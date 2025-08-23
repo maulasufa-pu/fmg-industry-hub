@@ -1,10 +1,9 @@
+// app/auth/callback/CallbackClient.tsx
 "use client";
 
 import { useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
-
-type Role = "client" | "admin" | "owner";
 
 export default function CallbackClient() {
   const router = useRouter();
@@ -19,13 +18,7 @@ export default function CallbackClient() {
       const supabase = getSupabaseClient();
 
       try {
-        const code = sp.get("code");
-        if (!code) {
-          router.replace("/login");
-          return;
-        }
-
-        // 1) EXCHANGE di client (PKCE OK di sini)
+        // 1) EXCHANGE (manual, karena detectSessionInUrl=false)
         const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
         if (error || !data.session) {
           console.error("[callback] exchange error:", error);
@@ -33,7 +26,7 @@ export default function CallbackClient() {
           return;
         }
 
-        // 2) SET HttpOnly cookie di server
+        // 2) SET HttpOnly cookie di server (WAJIB cek OK)
         const resp = await fetch("/auth/set", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -50,37 +43,9 @@ export default function CallbackClient() {
           return;
         }
 
-        // 3) role-aware dest (opsional)
-        let dest: string = "/client/dashboard";
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user?.id) {
-            const { data: prof } = await supabase
-              .from("profiles").select("main_role,staff_role").eq("id", user.id).maybeSingle();
-
-            const roles: string[] = [];
-            if (prof?.main_role) roles.push(prof.main_role);
-            if (Array.isArray(prof?.staff_role)) roles.push(...prof.staff_role);
-            const isAdminLike = roles.includes("owner") || roles.includes("admin");
-            const defaultDest = isAdminLike ? "/admin/dashboard" : "/client/dashboard";
-
-            const rawNext = sp.get("next") || sp.get("redirectedFrom") || "";
-            if (rawNext) {
-              try {
-                const u = new URL(rawNext, window.location.origin);
-                const p = u.pathname;
-                dest =
-                  (p.startsWith("/admin") && isAdminLike) ||
-                  (p.startsWith("/client") && !isAdminLike)
-                    ? p + u.search + u.hash
-                    : defaultDest;
-              } catch { dest = defaultDest; }
-            } else {
-              dest = defaultDest;
-            }
-          }
-        } catch { /* keep default */ }
-
+        // 3) Redirect (sekali saja, hormati ?next / ?redirectedFrom yang aman)
+        const rawNext = sp.get("next") || sp.get("redirectedFrom") || "";
+        const dest = rawNext.startsWith("/") ? rawNext : "/client/dashboard";
         router.replace(dest);
       } catch (e) {
         console.error("[callback] unexpected:", e);

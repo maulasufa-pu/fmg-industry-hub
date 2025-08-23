@@ -25,14 +25,13 @@ export function getSupabaseClient(): SupabaseClient {
 
   const client = createClient(url, anon, {
     auth: {
-      flowType: "pkce",          
+      flowType: "pkce",
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true,
+      detectSessionInUrl: false, // ⬅️ MATIKAN, biar gak double exchange
     },
-    // optional: kecilkan burst event kalau perlu
-    // realtime: { params: { eventsPerSecond: 10 } },
   });
+
 
   // 1) seed token realtime sekali di awal (kalau sudah login)
   client.auth.getSession().then(({ data }) => {

@@ -2,6 +2,10 @@ import React from "react";
 import { Suspense } from "react";
 import { LoginSection } from "@/app/ui/main_container/login";
 import RedirectIfAuthenticated from "@/app/auth/RedirectIfAuthenticated";
+import type { Metadata } from "next";
+import { seoFromDB } from "@/lib/seo-loader";
+
+export const metadata: Metadata = seoFromDB("/login");
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

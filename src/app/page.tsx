@@ -398,7 +398,7 @@ function Hero() {
 
           <Parallax speed={0.14}>
             <motion.p variants={fadeUp} custom={4} className="mt-5 max-w-2xl text-center text-balance text-base leading-relaxed text-black/70 dark:text-white/70">
-              Flemo Music Global (FMG) Universe is a global music company and platform. <b>Beyond Sound. Built-in Intelligence.</b> We turn creativity into compounding value with one operating system for music—uniting creation, talent, distribution & media, R&D, publishing, live and education. Driven by technological innovation, we help artists, labels and brands scout smarter, produce faster, own rights, grow royalties, and scale catalogs into lasting equity.
+              Flemmo Music Global (FMG) Universe is a global music company and platform. <b>Beyond Sound. Built-in Intelligence.</b> We turn creativity into compounding value with one operating system for music—uniting creation, talent, distribution & media, R&D, publishing, live and education. Driven by technological innovation, we help artists, labels and brands scout smarter, produce faster, own rights, grow royalties, and scale catalogs into lasting equity.
             </motion.p>
           </Parallax>
 

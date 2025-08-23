@@ -1,2 +1,7 @@
-// src/app/admin/dashboard/page.tsx
+
+import type { Metadata } from "next";
+
+// @seo-injected
+export const metadata: Metadata = seoFromDB("/admin/dashboard");
+import { seoFromDB } from "@/lib/seo-loader";// src/app/admin/dashboard/page.tsx
 export { default } from "@/app/ui/panel/dashboard/page";

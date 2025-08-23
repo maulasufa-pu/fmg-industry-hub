@@ -4,6 +4,11 @@ export const fetchCache = "force-no-store";
 
 import { use } from "react";
 import ErrorClient from "./ErrorClient";
+import type { Metadata } from "next";
+import { seoFromDB } from "@/lib/seo-loader";
+// @seo-injected
+export const metadata: Metadata = seoFromDB("/payments/error");
+
 
 type SP = Record<string, string | string[] | undefined>;
 

@@ -4,6 +4,11 @@ export const fetchCache = "force-no-store";
 
 import { use } from "react";
 import FinishClient from "./FinishClient";
+import type { Metadata } from "next";
+import { seoFromDB } from "@/lib/seo-loader";
+// @seo-injected
+export const metadata: Metadata = seoFromDB("/payments/finish");
+
 
 type SP = Record<string, string | string[] | undefined>;
 

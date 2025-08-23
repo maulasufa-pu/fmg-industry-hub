@@ -6,6 +6,9 @@ import { motion, useAnimation, useInView, useMotionValue, useSpring, useTransfor
 import type { MotionValue } from "framer-motion";
 import { ArrowRight, Star, Check, CheckCircle2, Rocket, Music, ShieldCheck, Zap, Sparkles, PlayCircle, LineChart, Mic2 } from "lucide-react";
 import { Users, Share2, Cpu, BookOpen, Calendar, GraduationCap, type LucideIcon } from "lucide-react";
+import { JsonLd } from "@/components/JsonLd";
+import { siteConfig } from "@/lib/site";
+import { compact } from "@/lib/arrays";
 
 type Division = { icon: LucideIcon; title: string; desc: string };
 
@@ -744,6 +747,36 @@ function CTA() {
  * Page Component
  *************************/
 export default function LandingPage() {
+  const sameAs = compact([
+    siteConfig.social.website,
+    siteConfig.social.instagram,
+    siteConfig.social.youtube,
+    siteConfig.social.linkedin,
+    siteConfig.social.tiktok,
+    siteConfig.social.twitter, // opsional
+  ]);
+
+  const org = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: siteConfig.name,
+    url: siteConfig.url,
+    logo: `${siteConfig.url}/apple-touch-icon.png`,
+    sameAs, // sekarang pasti string[]
+  };
+
+  const website = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    url: siteConfig.url,
+    name: `${siteConfig.name} — ${siteConfig.tagline}`,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${siteConfig.url}/search?q={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
     <main className="relative min-h-screen bg-white text-black antialiased dark:bg-black dark:text-white">
       {/* subtle noise overlay */}
@@ -766,6 +799,8 @@ export default function LandingPage() {
       <Pricing />
       <CTA />
       {/* <Footer /> */}
+      <JsonLd id="org" data={org} />
+      <JsonLd id="website" data={website} />
     </main>
   );
 }

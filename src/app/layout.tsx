@@ -1,71 +1,96 @@
-// src/app/layout.tsx
-"use client";
+import type { Metadata, Viewport } from "next";
+import { siteConfig } from "@/lib/site";
 import "./globals.css";
-import { HeaderSection } from "@/app/ui/page_section/HeaderSection";
-import { ThemeProvider } from "@/components/theme-provider";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { usePathname } from "next/navigation";
-import GlobalSpotlight from "@/app/ui/GlobalSpotlight";
-import Footer from "@/app/ui/page_section/FooterSection";
+import AppShell from "./AppShell";
 
-function MainContainer({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const isApp =
-    pathname?.startsWith("/client") ||
-    pathname?.startsWith("/admin") ||
-    pathname?.startsWith("/profile");
+export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.url),
+  title: {
+    default: `${siteConfig.name} — ${siteConfig.tagline}`,
+    template: `%s — ${siteConfig.name}`,
+  },
+  description: siteConfig.description,
+  keywords: [
+    "FMG Universe",
+    "music production",
+    "publishing",
+    "mixing",
+    "mastering",
+    "A&R",
+    "global music",
+    "songwriting",
+    "distribution",
+  ],
+  applicationName: siteConfig.name,
+  alternates: {
+    canonical: "/",
+    languages: {
+      "en-US": "/",
+      "id-ID": "/id",
+    },
+  },
+  openGraph: {
+    type: "website",
+    url: siteConfig.url,
+    siteName: siteConfig.name,
+    title: `${siteConfig.name} — ${siteConfig.tagline}`,
+    description: siteConfig.description,
+    locale: siteConfig.localeDefault,
+    images: [{ url: "/og-default.jpg", width: 1200, height: 630, alt: siteConfig.name }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: siteConfig.social.twitter,
+    creator: siteConfig.social.twitter,
+    title: `${siteConfig.name} — ${siteConfig.tagline}`,
+    description: siteConfig.description,
+    images: ["/og-default.jpg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  category: "music",
+  creator: siteConfig.name,
+  publisher: siteConfig.name,
+  icons: {
+    icon: [
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    shortcut: ["/favicon.ico"],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  verification: {
+    google: "PASTE_GOOGLE_SITE_VERIFICATION_TOKEN",
+    other: { "msvalidate.01": "PASTE_BING_VERIFICATION_TOKEN" },
+  },
+  manifest: "/site.webmanifest",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+  ],
+};
 
-  const FULL_BLEED = ["/"];
-  const isFullBleed = FULL_BLEED.some(p => pathname === p || pathname?.startsWith(`${p}`));
-
-  const wrapperCls = (isApp || isFullBleed)
-    ? "w-full"
-    : "mx-auto w-full max-w-screen-xl px-4 sm:px-6 lg:px-8";
-
-  return <main className={wrapperCls}>{children}</main>;
-}
-
-function Header() {
-  const pathname = usePathname();
-  const isApp =
-    pathname?.startsWith("/client") ||
-    pathname?.startsWith("/admin") ||
-    pathname?.startsWith("/profile");
-
-  if (isApp) return null;
-  return <HeaderSection />;
-}
-
-function ThemeToggleWrapper() {
-  const pathname = usePathname();
-  const isApp =
-    pathname?.startsWith("/client") ||
-    pathname?.startsWith("/admin") ||
-    pathname?.startsWith("/profile");
-
-  if (isApp) return null;
-  return <ThemeToggle />;
-}
-
-// ⬇️ HANYA sembunyikan footer di /admin dan /client
-function FooterWrapper() {
-  const pathname = usePathname();
-  const hideFooter =
-    pathname?.startsWith("/admin") || pathname?.startsWith("/client");
-  if (hideFooter) return null;
-  return <Footer />;
-}
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#000000",
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" data-scroll-behavior="smooth">
       <body className="bg-background text-foreground transition-colors duration-300">
-        <GlobalSpotlight />
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
-          <Header />
-          <MainContainer>{children}</MainContainer>
-          <FooterWrapper /> {/* ← ganti dari <Footer /> */}
-        </ThemeProvider>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

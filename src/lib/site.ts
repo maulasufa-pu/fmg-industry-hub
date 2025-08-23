@@ -1,4 +1,3 @@
-// Strict types, no `any`
 export type Social = {
   twitter?: `@${string}`;
   instagram?: string;
@@ -13,7 +12,7 @@ export type SiteConfig = {
   tagline: string;
   description: string;
   url: string;             // absolute, no trailing slash
-  localeDefault: string;   // e.g. "id-ID"
+  localeDefault: string;   // e.g. "en-US"
   locales?: readonly string[];
   social: Social;
 };
@@ -27,10 +26,10 @@ export const siteConfig: SiteConfig = {
   name: "FMG Universe",
   tagline: "Beyond Sound. Built-in Intelligence.",
   description:
-    "FMG Universe adalah perusahaan & platform musik global: creation, distribution, publishing, media, R&D, live, academy — digerakkan inovasi teknologi.",
+    "FMG Universe is a global music company & platform—uniting creation, distribution, publishing, media, R&D, live, and education. We help artists, labels, and brands produce faster, grow royalties, and scale catalogs with technology.",
   url: APP_URL,
-  localeDefault: "id-ID",
-  locales: ["id-ID", "en-US"] as const,
+  localeDefault: "en-US",
+  locales: ["en-US", "id-ID"] as const, // English default, Indonesian secondary
   social: {
     twitter: "@fmg_universe",
     instagram: "https://instagram.com/fmg_universe",

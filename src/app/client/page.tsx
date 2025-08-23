@@ -1,6 +1,5 @@
 // src/app/cleint/page.tsx  (SERVER)
 import { redirect } from "next/navigation";
-
 import { getEffectiveRole } from "@/lib/roles/effective";
 
 export default async function ClientIndex() {

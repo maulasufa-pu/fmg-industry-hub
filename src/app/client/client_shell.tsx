@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { UserRole } from "@/lib/roles";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { openChat, toggleChat } from "@/lib/chatBus";
-
+import type { ProjectSummary } from "@/app/ui/panel/projects/types";
 
 const WAKE_EVENT = "client-wake";
 const DEBOUNCE_MS = 1500;
@@ -17,11 +17,11 @@ type Props = {
   children: React.ReactNode;
 };
 
-
-export function OpenChatButton({ projectId, title }: { projectId: string; title?: string }) {
+// contoh tombol buka chat
+export function OpenChatButton({ project }: { project: ProjectSummary }) {
   return (
     <button
-      onClick={() => openChat({ id: projectId, title }, { minimized: false })}
+      onClick={() => openChat({ id: project.project_id, title: project.title, project })}
       className="rounded-xl bg-blue-600 text-white px-4 py-2"
     >
       Open Chat
@@ -29,10 +29,11 @@ export function OpenChatButton({ projectId, title }: { projectId: string; title?
   );
 }
 
-export function ToggleChatFab({ projectId, title }: { projectId: string; title?: string }) {
+// contoh toggle (minimize/restore)
+export function ToggleChatAnywhere({ project }: { project: ProjectSummary }) {
   return (
     <button
-      onClick={() => toggleChat({ id: projectId, title })}
+      onClick={() => toggleChat({ id: project.project_id, title: project.title, project })}
       className="fixed right-4 bottom-24 rounded-full shadow-lg bg-indigo-600 text-white p-3"
       aria-label="Toggle Chat"
     >

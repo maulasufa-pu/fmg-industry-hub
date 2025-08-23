@@ -1,4 +1,3 @@
-// app/auth/callback/route.ts
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
@@ -12,8 +11,8 @@ export async function GET(req: NextRequest) {
   const nextParam = url.searchParams.get("next") || url.searchParams.get("redirectedFrom") || "";
   if (!code) return NextResponse.redirect(new URL("/login", url));
 
-  // ⬇️ buat response redirect lebih dulu, supaya cookies ditulis ke response yg sama
-  const res = NextResponse.redirect(new URL("/client/dashboard", url), 307);
+  // 1) Buffer cookies yang ingin diset Supabase
+  const pendingCookies: { name: string; value: string; options?: Parameters<typeof NextResponse.prototype.cookies.set>[2] }[] = [];
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,19 +24,26 @@ export async function GET(req: NextRequest) {
         },
         setAll(cookies) {
           cookies.forEach(({ name, value, options }) => {
-            res.cookies.set(name, value, options); // ⬅️ TULIS KE RES
+            pendingCookies.push({ name, value, options });
           });
         },
       },
     }
   );
 
+  // 2) Tukar code -> session (pakai code ATAU pakai req.url; dua-duanya valid)
   const { error: exErr } = await supabase.auth.exchangeCodeForSession(code);
+  // alternatif kalau masih error: await supabase.auth.exchangeCodeForSession(req.url);
+
   if (exErr) {
-    res.headers.set("Location", new URL("/login?err=oauth", url).toString());
-    return res;
+    // sementara: log ke server biar tahu pesan asli
+    console.error("[callback] exchange error:", exErr);
+    const resErr = NextResponse.redirect(new URL("/login?err=oauth", url));
+    pendingCookies.forEach(({ name, value, options }) => resErr.cookies.set(name, value, options));
+    return resErr;
   }
 
+  // 3) Hitung dest (role-aware)
   let dest = "/client/dashboard";
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -64,15 +70,15 @@ export async function GET(req: NextRequest) {
             (p.startsWith("/admin") && isAdminLike) || (p.startsWith("/client") && !isAdminLike)
               ? p + u.search + u.hash
               : defaultDest;
-        } catch {
-          dest = defaultDest;
-        }
+        } catch { dest = defaultDest; }
       } else {
         dest = defaultDest;
       }
     }
   } catch { /* keep default */ }
 
-  res.headers.set("Location", new URL(dest, url).toString()); // ⬅️ update tujuan di response yg sama
+  // 4) Tempel semua cookie ke response FINAL
+  const res = NextResponse.redirect(new URL(dest, url));
+  pendingCookies.forEach(({ name, value, options }) => res.cookies.set(name, value, options));
   return res;
 }

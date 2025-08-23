@@ -649,3 +649,9 @@ html {
 
 html { scroll-behavior: smooth; }
 html, body { overflow-x: clip; }
+
+@media (max-width: 640px) {
+  html, body {
+    font-size: 18px; /* lebih besar di mobile */
+  }
+}

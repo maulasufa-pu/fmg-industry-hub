@@ -63,7 +63,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <GlobalSpotlight />
       <ThemeProvider
         attribute="class"
-        defaultTheme="light"
+        defaultTheme="dark"
         enableSystem={false}
         disableTransitionOnChange
       >

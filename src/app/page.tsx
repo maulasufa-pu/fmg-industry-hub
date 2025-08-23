@@ -22,6 +22,36 @@ const DIVISIONS: ReadonlyArray<Division> = [
   { icon: GraduationCap, title: "Academy", desc: "Training, mentorship, and industry-ready skills that ship real work and careers." },
 ];
 
+/*************************
+ * Data untuk Numbers
+ *************************/
+const STATS: ReadonlyArray<{ label: string; value: number }> = [
+  { label: "Clients", value: 300 },
+  { label: "Projects shipped", value: 1050 },
+  { label: "Songs delivered", value: 1500 },
+  { label: "On-time delivery (%)", value: 99 },
+  { label: "Countries reached", value: 30 },
+  { label: "DSPs & Platforms", value: 35 },
+  { label: "Catalog managed (tracks)", value: 3000 },
+  { label: "Avg. turnarounds (days)", value: 14 },
+];
+
+/*************************
+ * Util: slug untuk DIVISIONS
+ *************************/
+const SPECIAL_SLUGS: Readonly<Record<string, string>> = {
+  "Labs (AI/tuneXpert)": "labs",
+  "Event & Festival": "event",
+};
+const slugFromDivisionTitle = (title: string): string =>
+  SPECIAL_SLUGS[title] ??
+  title
+    .toLowerCase()
+    .replace(/ *\([^)]*\) */g, "")     // buang isi dalam kurung
+    .replace(/&/g, "and")              // & -> and (opsional)
+    .replace(/[^a-z0-9]+/g, "-")       // selain alnum -> -
+    .replace(/^-+|-+$/g, "");          // trim hyphen
+
 type PricingCardProps = {
   name: string;
   price: string;
@@ -246,9 +276,19 @@ function Stat({ label, value }: { label: string; value: number }) {
 }
 
 /*************************
- * Feature Card
+ * Feature Card (UPDATED)
  *************************/
-function FeatureCard({ icon: Icon, title, desc }: { icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; title: string; desc: string; }) {
+function FeatureCard({
+  icon: Icon,
+  title,
+  desc,
+  href,                           // ⬅️ NEW
+}: {
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  title: string;
+  desc: string;
+  href: string;                   // ⬅️ NEW
+}): React.JSX.Element {
   return (
     <Parallax speed={0.08}>
       <motion.div
@@ -262,9 +302,19 @@ function FeatureCard({ icon: Icon, title, desc }: { icon: React.ComponentType<Re
           </div>
           <h3 className="text-lg font-semibold">{title}</h3>
         </div>
+
         <p className="mt-3 text-sm leading-6 text-black/70 dark:text-white/70">{desc}</p>
-        <div className="mt-4 flex items-center gap-2 text-xs font-medium text-indigo-600 dark:text-indigo-400">
-          Learn more <ArrowRight className="h-3.5 w-3.5" />
+
+        {/* Hanya area "Learn more" yang bisa diklik, sesuai permintaan */}
+        <div className="mt-4">
+          <Link
+            href={href}
+            prefetch
+            aria-label={`Learn more about ${title}`}
+            className="inline-flex items-center gap-2 text-xs font-medium text-indigo-600 transition-colors hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+          >
+            Learn more <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
         </div>
       </motion.div>
     </Parallax>
@@ -388,7 +438,7 @@ function Hero() {
           <Parallax speed={0.08}>
             <motion.div variants={fadeUp} className="mb-4 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3 py-1 text-xs shadow-sm backdrop-blur dark:border-white/10 dark:bg-black/40">
               <Sparkles className="h-4 w-4 text-indigo-600" />
-              <span>Build Ecosystem • Spark Innovation • Make Collaboration</span>
+              <span>Build Ecosystem • Spark Innovation • Foster Collaboration</span>
             </motion.div>
           </Parallax>
 
@@ -397,8 +447,14 @@ function Hero() {
           </Parallax>
 
           <Parallax speed={0.14}>
-            <motion.p variants={fadeUp} custom={4} className="mt-5 max-w-2xl text-center text-balance text-base leading-relaxed text-black/70 dark:text-white/70">
-              Flemmo Music Global (FMG) Universe is a global music company and platform. <b>Beyond Sound. Built-in Intelligence.</b> We turn creativity into compounding value with one operating system for music—uniting creation, talent, distribution & media, R&D, publishing, live and education. Driven by technological innovation, we help artists, labels and brands scout smarter, produce faster, own rights, grow royalties, and scale catalogs into lasting equity.
+            <motion.p variants={fadeUp} custom={4} className="mt-5 max-w-2xl text-center text-balance text-base leading-relaxed text-black/100 dark:text-white/100">
+              <b>FMG Universe</b> is a creative-technology ecosystem and solution born from <b>Flemmo Music Global (FMG) 
+              Publishing</b> and evolved into a holding that spans music, technology, and digital innovation. <b>Beyond Sound. 
+              Built-in Intelligence</b>. We’re building one integrated operating system for music, rights-first, 
+              advanced technology platform that unites creation, talent, distribution & media, artist & repertoire (A&R), 
+              <b>AI research & development (R&D)</b>, publishing, live event, music academy, and musician community development—with collaboration as the connective layer. 
+              By embedding intelligence into real workflows, <b>we help artists, labels, and brands</b> to scout smarter, produce faster, 
+              own rights, grow royalties, and scale catalogs into lasting equity—future-ready for the next decade.
             </motion.p>
           </Parallax>
 
@@ -419,51 +475,12 @@ function Hero() {
 }
 
 /*************************
- * Features Section (services)
+ * Features (UPDATED pemanggilan)
  *************************/
-// function Features() {
-//   return (
-//     <section id="features" className="relative mx-auto max-w-6xl px-4 py-20">
-//       <Parallax speed={0.06}>
-//         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-10%" }} className="mx-auto max-w-3xl text-center">
-//           <motion.h2 variants={fadeUp} className="text-pretty text-3xl font-bold sm:text-4xl">A full-service studio & publisher</motion.h2>
-//           <motion.p variants={fadeUp} custom={1} className="mt-3 text-black/70 dark:text-white/70">From brief to release, FMGIH powers every step with a single, secure client portal.</motion.p>
-//         </motion.div>
-//       </Parallax>
-
-//       <Parallax speed={0.1}>
-//         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-10%" }} className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-//           <FeatureCard icon={Music} title="Songwriting & Production" desc="Original songs tailored to your story: topline, lyrics, arrangement, and full production." />
-//           <FeatureCard icon={Mic2} title="Recording & Editing" desc="High‑quality tracking, vocal comping, tuning, timing, and editing for pristine takes." />
-//           <FeatureCard icon={Zap} title="Mixing & Mastering" desc="Radio‑ready mixes and transparent masters optimized for every DSP." />
-//           <FeatureCard icon={Rocket} title="Publishing & Distribution" desc="Register works, manage splits, and deliver to Spotify, Apple Music, and more." />
-//           <FeatureCard icon={ShieldCheck} title="Licensing & Rights" desc="Clearances, watermarking, and audit trails to protect and monetize your catalog." />
-//           <FeatureCard icon={LineChart} title="Client Portal & Analytics" desc="Approve drafts, track status, and view royalty insights — all in one place." />
-//         </motion.div>
-//       </Parallax>
-//     </section>
-//   );
-// }
-
 function Features() {
   return (
     <section id="features" className="relative mx-auto max-w-6xl px-4 py-10">
-      <Parallax speed={0.06}>
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-10%" }}
-          className="mx-auto max-w-3xl text-center"
-        >
-          <motion.h2 variants={fadeUp} className="text-pretty text-3xl font-bold sm:text-4xl">
-            Seven divisions, one operating system
-          </motion.h2>
-          {/* <motion.p variants={fadeUp} custom={1} className="mt-3 text-black/70 dark:text-white/70">
-            FMG Universe unites in a single secure client portal.
-          </motion.p> */}
-        </motion.div>
-      </Parallax>
-
+      {/* ...header tetap... */}
       <Parallax speed={0.1}>
         <motion.div
           initial="hidden"
@@ -473,21 +490,16 @@ function Features() {
         >
           {DIVISIONS.map((d, i, arr) => {
             const isLast = i === arr.length - 1;
-            const colLg = i % 3;                // 0 kiri, 1 tengah, 2 kanan
+            const colLg = i % 3;
             const centerLast = isLast && arr.length % 3 === 1;
-
-            // turunkan hanya kiri/kanan (tanpa bikin jarak kosong)
-            const wingShift =
-              !centerLast && (colLg === 0 || colLg === 2) ? "lg:translate-y-16 xl:translate-y-24" : "";
-
+            const wingShift = !centerLast && (colLg === 0 || colLg === 2) ? "lg:translate-y-16 xl:translate-y-24" : "";
             const centerLastClass = centerLast ? "lg:col-start-2" : "";
 
+            const href = `/${slugFromDivisionTitle(d.title)}`;   // ⬅️ NEW
+
             return (
-              <div
-                key={d.title}
-                className={`transform-gpu will-change-transform ${wingShift} ${centerLastClass}`}
-              >
-                <FeatureCard icon={d.icon} title={d.title} desc={d.desc} />
+              <div key={d.title} className={`transform-gpu will-change-transform ${wingShift} ${centerLastClass}`}>
+                <FeatureCard icon={d.icon} title={d.title} desc={d.desc} href={href} /> {/* ⬅️ pass href */}
               </div>
             );
           })}
@@ -498,33 +510,94 @@ function Features() {
 }
 
 /*************************
- * Numbers / Social Proof
+ * Numbers / Social Proof (REPLACED)
  *************************/
 function Numbers() {
+  const viewportRef = React.useRef<HTMLDivElement | null>(null);
+  const contentRef = React.useRef<HTMLUListElement | null>(null);
+  const [paused, setPaused] = React.useState(false);
+
+  // auto-scroll (idle)
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+    if (reduce) return;
+
+    const el = viewportRef.current;
+    const list = contentRef.current;
+    if (!el || !list) return;
+
+    let raf: number | null = null;
+    let last = performance.now();
+    const speedPxPerMs = 0.08; // ~80px/s
+
+    const tick = (now: number) => {
+      if (!el || !list) return;
+      const dt = now - last;
+      last = now;
+
+      if (!paused) {
+        const half = list.scrollWidth / 2; // karena kita render 2x
+        el.scrollLeft += speedPxPerMs * dt;
+        // loop mulus
+        if (el.scrollLeft >= half) el.scrollLeft -= half;
+        if (el.scrollLeft < 0) el.scrollLeft += half;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+
+    const onVis = () => { if (document.hidden) setPaused(true); };
+    document.addEventListener("visibilitychange", onVis);
+
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [paused]);
+
   return (
     <section className="relative border-y border-black/10 bg-gradient-to-b from-white to-indigo-50/40 py-16 dark:border-white/10 dark:from-black dark:to-indigo-950/20">
       <Parallax speed={0.03}>
         <div className="mx-auto max-w-6xl px-4 text-center">
           <h2 className="text-pretty text-3xl font-bold sm:text-4xl">Numbers that matter</h2>
-          <p className="mt-2 text-black/70 dark:text-white/70">
-            Proof of scale, reliability, and global reach.
-          </p>
+          <p className="mt-2 text-black/70 dark:text-white/70">Proof of scale, reliability, and global reach.</p>
         </div>
       </Parallax>
 
-      <Parallax speed={0.05}>
-        <div className="mx-auto mt-10 grid max-w-6xl grid-cols-2 gap-6 px-4 sm:grid-cols-3 lg:grid-cols-4">
-          <Stat label="Clients" value={300}/>
-          <Stat label="Projects shipped" value={1050} />
-          <Stat label="Songs delivered" value={1500} />
-          <Stat label="On-time delivery (%)" value={99} />
+      <div
+        ref={viewportRef}
+        className="relative mx-auto mt-10 w-full max-w-6xl overflow-x-auto px-4 [scrollbar-width:none] [-ms-overflow-style:none]"
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+        onTouchStart={() => setPaused(true)}
+        onTouchEnd={() => setPaused(false)}
+        aria-label="FMG key numbers carousel"
+      >
+        {/* hide scrollbar in webkit */}
+        <style>{`
+          [data-hide-scrollbar]::-webkit-scrollbar { display: none; }
+        `}</style>
 
-          <Stat label="Countries reached" value={30} />
-          <Stat label="DSPs & Platforms" value={35} />
-          <Stat label="Catalog managed (tracks)" value={3000} />
-          <Stat label="Avg. turnarounds (days)" value={14} />
-        </div>
-      </Parallax>
+        {/* kiri/kanan fade */}
+        <div className="pointer-events-none absolute left-0 top-0 h-full w-10 bg-gradient-to-r from-white to-transparent dark:from-black" />
+        <div className="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-white to-transparent dark:from-black" />
+
+        <ul
+          ref={contentRef}
+          data-hide-scrollbar
+          className="flex select-none gap-6 py-1"
+          role="list"
+        >
+          {/* render 2x untuk loop mulus */}
+          {[...STATS, ...STATS].map((s, i) => (
+            <li key={`${s.label}-${i}`} className="min-w-[220px] sm:min-w-[240px] lg:min-w-[260px]">
+              <Stat label={s.label} value={s.value} />
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }

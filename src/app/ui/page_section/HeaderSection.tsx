@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { motion, AnimatePresence, Variants } from "framer-motion";
+import Image from "next/image";
 
 /*********************************
  * Types & Menu Data
@@ -65,6 +66,103 @@ const sheetVariants: Variants = {
   show: { y: 0, opacity: 1, transition: { type: "tween", duration: 0.22 } },
   exit: { y: -16, opacity: 0, transition: { duration: 0.15 } },
 };
+
+type BrandLockupProps = {
+  title: string;
+  subtitle: string;
+  className?: string;
+  // basis + batas agar tetap terbaca di layar kecil/besar
+  subtitleBasePx?: number; // default 14
+  subtitleMinPx?: number;  // default 10
+  subtitleMaxPx?: number;  // default 48
+};
+
+export function BrandLockup({
+  title,
+  subtitle,
+  className = "",
+  subtitleBasePx = 14,
+  subtitleMinPx = 10,
+  subtitleMaxPx = 48,
+}: BrandLockupProps): React.JSX.Element {
+  const titleRef = React.useRef<HTMLDivElement | null>(null);
+  const measureRef = React.useRef<HTMLDivElement | null>(null);
+  const [subSize, setSubSize] = React.useState<number | null>(null);
+
+  const recalc = React.useCallback(() => {
+    const t = titleRef.current;
+    const m = measureRef.current;
+    if (!t || !m) return;
+
+    const target = t.getBoundingClientRect().width;
+    m.style.fontSize = `${subtitleBasePx}px`; // ukuran basis pengukuran
+    const natural = m.getBoundingClientRect().width;
+
+    if (target > 0 && natural > 0) {
+      const next = Math.min(
+        subtitleMaxPx,
+        Math.max(subtitleMinPx, (target / natural) * subtitleBasePx)
+      );
+      setSubSize(next);
+    }
+  }, [subtitleBasePx, subtitleMinPx, subtitleMaxPx]);
+
+  React.useLayoutEffect(() => {
+    recalc();
+    const obs = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => recalc()) : null;
+    if (obs && titleRef.current) obs.observe(titleRef.current);
+    // Recalc setelah font siap
+    document.fonts?.ready?.then?.(() => recalc());
+    const onResize = () => recalc();
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      obs?.disconnect();
+    };
+  }, [recalc]);
+
+  // CSS var utk font-size subtitle (supaya bisa !important)
+  type VarStyle = React.CSSProperties & { ['--sub-fs']?: string };
+  const subStyle: VarStyle = {
+    ['--sub-fs']: subSize ? `${subSize}px` : undefined,
+    opacity: subSize ? 1 : 0,
+  };
+
+  return (
+    <div className={`relative ${className}`}>
+      {/* Judul (nowrap supaya lebarnya pasti) */}
+      <div
+        ref={titleRef}
+        className="font-heading-1 leading-none text-gray-800 dark:text-gray-100 whitespace-nowrap"
+      >
+        {title}
+      </div>
+
+      {/* Elemen ukur (invisible tapi tetap layout) */}
+      <div
+        ref={measureRef}
+        className="absolute -z-10 invisible pointer-events-none select-none whitespace-nowrap font-body-XS"
+      >
+        {subtitle}
+      </div>
+
+      {/* Subtitle tampil, ukuran pakai CSS var + !important */}
+      <div
+        className="-mt-1 font-body-XS leading-none text-neutral-600 dark:text-neutral-300 py-0.5 whitespace-nowrap brand-subtitle"
+        style={subStyle}
+      >
+        {subtitle}
+      </div>
+
+      {/* Aturan local untuk override !important dari util kelas */}
+      <style jsx>{`
+        .brand-subtitle {
+          font-size: var(--sub-fs, 12px) !important;
+        }
+      `}</style>
+    </div>
+  );
+}
 
 /*********************************
  * Component
@@ -211,12 +309,38 @@ export const HeaderSection = (): React.JSX.Element => {
     >
       <div className="relative mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
         {/* Left: Brand */}
-        <Link href="/" className="flex items-center gap-2 font-semibold">
-          <div className="h-6 w-6 rounded-md bg-gradient-to-br from-indigo-600 to-fuchsia-600" />
-          <div className="inline-flex flex-col items-start justify-center">
-            <div className="font-heading-4 text-gray-800 dark:text-gray-100">Flemmo Music</div>
-            <div className="-mt-1 font-body-XS text-neutral-600 dark:text-neutral-300">Global Universe</div>
-          </div>
+        {/* <Link href="/" className="flex items-center gap-2 font-semibold"> */}
+          {/* <div className="h-6 w-6 rounded-md bg-gradient-to-br from-indigo-600 to-fuchsia-600" /> */}
+          {/* <div className="inline-flex flex-col items-start justify-center">
+            <div className="font-heading-1 text-gray-800 dark:text-gray-100">Flemmo Music</div>
+            <div className="-mt-1 font-body-XS text-neutral-600 dark:text-neutral-300">Global Universe Solution</div>
+          </div> */}
+          {/* <BrandLockup
+            title="Flemmo Music"
+            subtitle="Global Universe Solution"
+            subtitleBasePx={1}   // ukuran basis perhitungan
+            subtitleMinPx={1}    // batas minimum
+            subtitleMaxPx={20}    // batas maksimum
+          /> */}
+        {/* </Link> */}
+        <Link href="/" className="flex items-center gap-0.5 font-semibold">
+          {/* Logo ganti div jadi Image */}
+          <Image
+            src="/logo/FMG-Universe-Flemmo-Music-Global.png"   // path relatif dari /public
+            alt="FMG Universe Logo"
+            width={100}                     // sama dengan h-6 (6*4px)
+            height={100}
+            className="h-10 w-10 rounded-md object-cover"
+            priority
+          />
+
+          <BrandLockup
+            title="Flemmo Music"
+            subtitle="Global Universe Solution"
+            subtitleBasePx={1}
+            subtitleMinPx={1}
+            subtitleMaxPx={20}
+          />
         </Link>
 
         {/* Center: Nav (desktop only) */}

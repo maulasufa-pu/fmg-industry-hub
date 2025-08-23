@@ -10,6 +10,21 @@ const idr = (n: number) => `IDR ${n.toLocaleString("id-ID")}`;
 const toDateStr = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
 const clampInt = (n: number) => Math.max(0, Math.round(n));
 const isYmd = (s?: string | null) => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
+const addDays = (d: Date, days: number) => {
+  const x = new Date(d);
+  x.setDate(x.getDate() + days);
+  return x;
+};
+const fallbackInvoiceNo = (): string => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  const ss = String(now.getSeconds()).padStart(2, "0");
+  return `INV-${y}${m}${dd}-${hh}${mm}${ss}`;
+};
 
 /** ---------- schema ---------- */
 const ServiceSchema = z.object({
@@ -27,7 +42,7 @@ const BundleSchema = z.object({
 const PayloadSchema = z.object({
   songTitle: z.string().min(1),
   artistName: z.string().default("").optional(),
-  albumTitle: z.string().default("").optional(), // <— TAMBAHKAN
+  albumTitle: z.string().default("").optional(),
   genre: z.string().default("").optional(),
   subGenre: z.string().default("").optional(),
   description: z.string().default("").optional(),
@@ -38,12 +53,11 @@ const PayloadSchema = z.object({
   deliveryFormat: z.array(z.string()).optional(),
   referenceLinks: z.string().optional(),
   paymentPlan: z.enum(["upfront", "half", "milestone"]),
-  // ndaRequired: z.boolean().optional(),
-  // preferredEngineerId: z.string().uuid().nullable().optional(),
   total: z.number().finite().nonnegative(),
-  status: z.enum(["requested","pending","in_progress","revision","approved","published","archived","cancelled"]).optional(),
+  status: z.enum([
+    "requested","pending","in_progress","revision","approved","published","archived","cancelled"
+  ]).optional(),
 });
-
 
 /** ---------- handler ---------- */
 export async function GET(req: Request) {
@@ -56,38 +70,43 @@ export async function POST(req: Request) {
     // env guard
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !serviceKey) {
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !serviceKey || !anonKey) {
       return NextResponse.json(
         { error: "Server misconfigured: missing Supabase envs" },
         { status: 500 }
       );
     }
 
-    // auth (session user via cookies)
+    // auth (session user via cookies atau Bearer)
     const cookieStore = cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
-    const { data: auth } = await supabase.auth.getUser();
+    const supabaseCookie = createRouteHandlerClient({ cookies: () => cookieStore });
+    await supabaseCookie.auth.getUser(); // keep cookie session warm
 
     const authHeader = req.headers.get("Authorization");
     const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
-    let uid: string | null = null;
+    // Klien service-role (srv) untuk semua write (bypass RLS)
+    const srv = createClient(url, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
+    // Klien anon (svcBearer) buat verifikasi Bearer kalau ada
+    const svcBearer = createClient(url, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: bearer ? { headers: { Authorization: `Bearer ${bearer}` } } : undefined,
+    });
+
+    // Resolve uid
+    let uid: string | null = null;
     if (bearer) {
-      // verifikasi token langsung (tanpa cookies)
-      const svc = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-        auth: { persistSession: false, autoRefreshToken: false },
-        global: { headers: { Authorization: `Bearer ${bearer}` } },
-      });
-      const { data: u } = await svc.auth.getUser();
+      const { data: u } = await svcBearer.auth.getUser();
       uid = u.user?.id ?? null;
     } else {
-      // fallback ke cookies (kalau ada)
       const supabase = createRouteHandlerClient({ cookies });
       const { data: u } = await supabase.auth.getUser();
       uid = u.user?.id ?? null;
     }
-
     if (!uid) {
       return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
     }
@@ -101,45 +120,7 @@ export async function POST(req: Request) {
     const startDate = isYmd(body.startDate ?? undefined) ? body.startDate : null;
     const deadline = isYmd(body.deadline ?? undefined) ? body.deadline : null;
 
-    // build human description
-    const serviceLines = body.selectedServices.map(
-      (s) => `- ${s.label}${s.isSubscription ? " (subscription)" : ""} — ${idr(s.price)}`
-    );
-    const bundleLine = body.bundle
-      ? `Bundle: ${body.bundle.label} — ${idr(body.bundle.bundlePrice)}`
-      : null;
-
-    // const desc = [
-    //   body.description?.trim(),
-    //   "",
-    //   "— Requested Services —",
-    //   ...(bundleLine ? [bundleLine] : []),
-    //   ...serviceLines,
-    //   "",
-    //   `Total Estimate: ${idr(body.total)}`,
-    //   "",
-    //   "— Preferences —",
-    //   startDate ? `Start: ${startDate}` : null,
-    //   deadline ? `Deadline: ${deadline}` : null,
-    //   body.deliveryFormat?.length ? `Delivery: ${body.deliveryFormat.join(", ")}` : null,
-    //   body.referenceLinks?.trim() ? `Refs:\n${body.referenceLinks.trim()}` : null,
-    //   `Payment Plan: ${body.paymentPlan}`,
-    //   `NDA Required: ${body.ndaRequired ? "Yes" : "No"}`,
-    //   "",
-    //   `Song Title: ${body.songTitle || "-"}`,
-    //   `Artist: ${body.artistName || "-"}`,
-    //   `Genre: ${body.genre || "-"}${body.subGenre ? " / " + body.subGenre : ""}`,
-    //   body.preferredEngineerId ? `Preferred Engineer: ${body.preferredEngineerId}` : null,
-    // ]
-    //   .filter(Boolean)
-    //   .join("\n");
-
-      const rawDescription = body.description?.trim() || null;
-
-    // service-role client (no session)
-    const srv = createClient(url, serviceKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+    const rawDescription = body.description?.trim() || null;
 
     /** 1) projects */
     type ProjectInsertResult = { project_id: string };
@@ -149,28 +130,25 @@ export async function POST(req: Request) {
         client_id: uid,
         title: body.songTitle || "(Untitled)",
         artist_name: body.artistName || null,
-        album_title: body.albumTitle || null,      // <— SIMPAN DI SINI
+        album_title: body.albumTitle || null,
         genre: body.genre || null,
         sub_genre: body.subGenre || null,
         stage: "drafting",
         status: body.status ?? "requested",
-        description: rawDescription,               // description murni
+        description: rawDescription,
         budget_amount: clampInt(body.total) || null,
         budget_currency: "IDR",
-        payment_plan: body.paymentPlan,            // jika kolom ada
+        payment_plan: body.paymentPlan,
         start_date: startDate,
         deadline: deadline,
         delivery_format: body.deliveryFormat ?? null,
-        // nda_required: body.ndaRequired ?? null,
-        // preferred_engineer_id: body.preferredEngineerId ?? null,
       })
       .select("project_id")
       .single<ProjectInsertResult>();
-
     if (projErr) throw projErr;
     const projectId = proj.project_id;
 
-    /** 2) milestones (DP, First Draft, Final Mix, Mastering) */
+    /** 2) milestones */
     const start = startDate ? new Date(startDate) : new Date();
     const end = deadline ? new Date(deadline) : null;
     const mid = end
@@ -210,17 +188,7 @@ export async function POST(req: Request) {
       if (refErr) throw refErr;
     }
 
-    /** 4) preferred engineer → assignments (optional) */
-    // if (body.preferredEngineerId) {
-    //   const { error: asgErr } = await srv.from("assignments").insert({
-    //     project_id: projectId,
-    //     engineer_id: body.preferredEngineerId,
-    //     assigned_by: uid,
-    //   });
-    //   if (asgErr) throw asgErr;
-    // }
-
-    /** 5) payment schedules (berdasarkan plan) */
+    /** 4) payment schedules */
     const addSched = (
       label: string,
       percent: number,
@@ -264,9 +232,140 @@ export async function POST(req: Request) {
       createdSchedules = schData ?? [];
     }
 
+    /** 5) siapkan info client (nama & email) */
+    type ClientRow = { id: string; name: string | null; email: string | null };
+    const { data: clientRow } = await srv
+      .from("clients")
+      .select("id,name,email")
+      .eq("id", uid)
+      .maybeSingle<ClientRow>();
+
+    let clientName: string | null = clientRow?.name ?? null;
+    let clientEmail: string | null = clientRow?.email ?? null;
+
+    if (!clientName || !clientEmail) {
+      // fallback ke auth admin (email & full_name)
+      const { data: adminUser } = await srv.auth.admin.getUserById(uid);
+      const meta = (adminUser?.user?.user_metadata ?? {}) as Record<string, unknown>;
+      const maybeFullName = typeof meta.full_name === "string" ? meta.full_name : null;
+      clientName = clientName ?? maybeFullName ?? null;
+      clientEmail = clientEmail ?? (adminUser?.user?.email ?? null);
+    }
+
+    /** 6) AUTO-CREATE INVOICE */
+    // 6a) nomor invoice
+    let invoiceNo = fallbackInvoiceNo();
+    const rpc = await srv.rpc("next_invoice_no");
+    if (!rpc.error && typeof rpc.data === "string" && rpc.data.trim()) {
+      invoiceNo = rpc.data;
+    }
+
+    // 6b) tanggal issue + due (default 14 hari)
+    const today = new Date();
+    const issueDate = toDateStr(today);
+    const dueDate = toDateStr(addDays(today, 14));
+
+    // 6c) insert invoice (coba dengan project_id dulu; jika gagal, retry tanpa)
+    type InvoiceInsertResult = { id: string };
+    const baseInvoice = {
+      invoice_no: invoiceNo,
+      client_id: uid,
+      client_name: clientName,
+      client_email: clientEmail,
+      currency: "IDR",
+      status: "unpaid" as const,
+      issue_date: issueDate,
+      due_date: dueDate,
+    };
+    let invoiceId: string | null = null;
+
+    // attempt with project_id
+    {
+      const { data: inv1, error: invErr1 } = await srv
+        .from("invoices")
+        .insert({ ...baseInvoice, project_id: projectId })
+        .select("id")
+        .single<InvoiceInsertResult>();
+      if (!invErr1 && inv1?.id) {
+        invoiceId = inv1.id;
+      } else {
+        // retry without project_id (kolom mungkin belum ada)
+        const { data: inv2, error: invErr2 } = await srv
+          .from("invoices")
+          .insert(baseInvoice)
+          .select("id")
+          .single<InvoiceInsertResult>();
+        if (invErr2 || !inv2?.id) {
+          throw new Error(invErr2?.message ?? invErr1?.message ?? "Failed to create invoice");
+        }
+        invoiceId = inv2.id;
+      }
+    }
+
+    // 6d) mapping service_key -> service_id
+    type ServiceMapRow = { id: string; service_key: string };
+    const uniqueKeys = Array.from(new Set(body.selectedServices.map((s) => s.key)));
+    const { data: svcRows, error: svcErr } = await srv
+      .from("services")
+      .select("id,service_key")
+      .in("service_key", uniqueKeys)
+      .returns<ServiceMapRow[]>();
+    if (svcErr) {
+      // bersihkan invoice agar tidak orphan
+      await srv.from("invoices").delete().eq("id", invoiceId);
+      throw svcErr;
+    }
+    const keyToId = new Map<string, string>((svcRows ?? []).map((r) => [r.service_key, r.id]));
+
+    // 6e) susun invoice_items
+    type InvoiceItemInsert = {
+      invoice_id: string;
+      service_id: string | null;
+      description: string;
+      qty: number;
+      unit_price: number;
+      position: number;
+    };
+    const items: InvoiceItemInsert[] = [];
+    let pos = 0;
+
+    if (body.bundle) {
+      items.push({
+        invoice_id: invoiceId!,
+        service_id: null,
+        description: `Bundle: ${body.bundle.label}`,
+        qty: 1,
+        unit_price: clampInt(body.bundle.bundlePrice),
+        position: pos++,
+      });
+    }
+
+    for (const s of body.selectedServices) {
+      items.push({
+        invoice_id: invoiceId!,
+        service_id: keyToId.get(s.key) ?? null,
+        description: s.label,
+        qty: 1,
+        unit_price: clampInt(s.price),
+        position: pos++,
+      });
+    }
+
+    if (items.length) {
+      const { error: itErr } = await srv.from("invoice_items").insert(items).select("invoice_id");
+      if (itErr) {
+        await srv.from("invoices").delete().eq("id", invoiceId);
+        throw itErr;
+      }
+    }
+
+    /** 7) backlink (opsional) — abaikan error jika kolom tidak ada */
+    await srv.from("projects").update({ invoice_id: invoiceId }).eq("project_id", projectId);
+
     return NextResponse.json(
       {
         project_id: projectId,
+        invoice_id: invoiceId,
         milestones: msData,
         payment_schedules: createdSchedules,
       },

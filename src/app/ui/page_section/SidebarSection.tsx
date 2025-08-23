@@ -9,7 +9,7 @@ import {
   BarChart3, Music, Headphones, Mic2, Settings, Package2 // ⬅️ tambah ini
 } from "lucide-react";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, MotionConfig } from "framer-motion";
 import UserDropdown from "../pop_over/user_dropdown";
 import { useProfile } from "@/hooks/useProfile";
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
@@ -163,6 +163,11 @@ const getPageColorScheme = (pathname: string) => {
   };
 };
 
+const EASE: [number, number, number, number] = [0.2, 0.8, 0.2, 1];
+const TWEEN_FAST = { type: "tween" as const, duration: 0.18, ease: EASE };
+const SPRING_SNAPPY = { type: "spring" as const, stiffness: 600, damping: 42, mass: 0.6 };
+const STAGGER = 0.03;
+
 /** ------------------------------------------------------------------
  * Component
  * ------------------------------------------------------------------ */
@@ -292,6 +297,7 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
 
   /** Render */
   return (
+    <MotionConfig reducedMotion="user" transition={TWEEN_FAST}>
     <>
       {/* Desktop Sidebar - Always visible on lg+ screens */}
       <aside
@@ -336,9 +342,9 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
       {/* Header / Brand */}
       <motion.div 
         className="relative px-7 pt-6 pb-5"
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
+        transition={TWEEN_FAST}
       >
         <div className="flex items-center gap-4">
           <motion.div 
@@ -408,15 +414,9 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
           <AnimatePresence initial={false}>
             {mounted && (
               <motion.ul
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ 
-                  type: "spring", 
-                  stiffness: 300, 
-                  damping: 24,
-                  delay: 0.4,
-                  staggerChildren: 0.1
-                }}
+                transition={{ ...SPRING_SNAPPY, delay: 0.08, staggerChildren: STAGGER }}
                 className="space-y-2"
                 role="list"
               >
@@ -429,18 +429,17 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
                         {active && (
                           <motion.span
                             layoutId="active-indicator"
-                            className="absolute inset-y-0 my-2 -left-2 w-1.5 rounded-full bg-gradient-to-br from-purple-600 via-violet-500 to-purple-700 shadow dark:shadow-slate-800/25 dark:shadow-lg z-20"
-                            aria-hidden="true"
+                            className="absolute inset-y-0 my-2 -left-2 w-1.5 rounded-full bg-gradient-to-br from-purple-600 via-violet-500 to-purple-700 shadow dark:shadow-slate-800/25 z-20"
                             initial={{ scaleY: 0, opacity: 0 }}
                             animate={{ scaleY: 1, opacity: 1 }}
-                            transition={{ duration: 0.3, ease: "easeOut" }}
+                            transition={{ duration: 0.16, ease: "easeOut" }}
                           />
                         )}
                         <motion.div
-                          initial={{ opacity: 0, x: -20 }}
+                          initial={{ opacity: 0, x: -12 }}
                           animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: idx * 0.1, duration: 0.5 }}
-                          whileHover={{ x: 4 }}
+                          transition={TWEEN_FAST}
+                          whileHover={{ x: 2 }}
                         >
                           <Link
                             ref={(el) => setRef(el, idx)}
@@ -505,13 +504,13 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
           className="mt-6 mx-2 rounded-xl border border-purple-400/30 dark:border-purple-500/40 bg-gradient-to-br from-slate-800/90 via-purple-900/20 to-violet-900/30 backdrop-blur-sm p-5 shadow-lg dark:shadow-purple-900/25"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.5 }}
+          transition={{ delay: 0.2, ...TWEEN_FAST }}
         >
           <motion.div 
             className="text-xs font-semibold uppercase tracking-wider text-purple-300 dark:text-purple-200 mb-4 flex items-center gap-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1, duration: 0.3 }}
+            transition={{ delay: 0.25, ...TWEEN_FAST }}
           >
             <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-violet-500 rounded-full shadow-sm shadow-purple-400/50"></div>
             Quick Actions
@@ -605,49 +604,35 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
     </aside>
 
     {/* Mobile Sidebar */}
-    <AnimatePresence>
+    <AnimatePresence initial={false}>
       {isOpen && (
         <motion.aside
           data-sidebar
           className="lg:hidden fixed top-16 left-0 z-50 h-[calc(100svh-4rem)] w-80 max-w-[90vw] border-r border-slate-600 bg-gradient-to-b from-slate-700 via-slate-600 to-slate-800 shadow-2xl"
-          initial={{ x: -320 }}
+          initial={{ x: -288 }}
           animate={{ x: 0 }}
-          exit={{ x: -320 }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          exit={{ x: -288 }}
+          transition={{ type: "tween", ease: EASE, duration: 0.22 }}
           aria-label="Mobile admin sidebar"
         >
           {/* Mobile Sidebar Content - Same as Desktop */}
           {/* Animated background pattern */}
           <motion.div 
-            className="absolute inset-0 opacity-5 pointer-events-none"
+            className="absolute inset-0 opacity-5 pointer-events-none transform-gpu will-change-transform will-change-opacity hidden lg:block"
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.05 }}
-            transition={{ duration: 2 }}
+            transition={{ duration: 0.2 }}
           >
             <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-indigo-600/10" />
-            <motion.div 
+            <motion.div
               className="absolute top-10 right-10 w-32 h-32 bg-gradient-to-br from-blue-400/20 to-indigo-400/20 rounded-full blur-3xl"
-              animate={{ 
-                scale: [1, 1.2, 1],
-                rotate: [0, 180, 360]
-              }}
-              transition={{ 
-                duration: 20, 
-                repeat: Infinity, 
-                ease: "linear" 
-              }}
+              animate={{ scale: [1, 1.06, 1], rotate: [0, 120, 240] }}
+              transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
             />
-            <motion.div 
+            <motion.div
               className="absolute bottom-20 left-10 w-24 h-24 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-3xl"
-              animate={{ 
-                scale: [1.2, 1, 1.2],
-                rotate: [360, 180, 0]
-              }}
-              transition={{ 
-                duration: 15, 
-                repeat: Infinity, 
-                ease: "linear" 
-              }}
+              animate={{ scale: [1.04, 1, 1.04], rotate: [240, 120, 0] }}
+              transition={{ duration: 9, repeat: Infinity, ease: "linear" }}
             />
           </motion.div>
 
@@ -715,15 +700,9 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
               <AnimatePresence initial={false}>
                 {mounted && (
                   <motion.ul
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ 
-                      type: "spring", 
-                      stiffness: 300, 
-                      damping: 24,
-                      delay: 0.4,
-                      staggerChildren: 0.1
-                    }}
+                    transition={{ ...SPRING_SNAPPY, delay: 0.06, staggerChildren: STAGGER }}
                     className="space-y-3"
                     role="list"
                   >
@@ -744,10 +723,10 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
                               />
                             )}
                             <motion.div
-                              initial={{ opacity: 0, x: -20 }}
+                              initial={{ opacity: 0, x: -12 }}
                               animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: idx * 0.1, duration: 0.5 }}
-                              whileHover={{ x: 4 }}
+                              transition={TWEEN_FAST}
+                              whileHover={{ x: 2 }}
                             >
                               <Link
                                 href={n.href}
@@ -880,6 +859,7 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
       )}
     </AnimatePresence>
     </>
+    </MotionConfig>
   );
 }
 

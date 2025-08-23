@@ -325,23 +325,6 @@ export default function ClientProjectsPage(): React.ReactElement {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Toolbar atas tabel */}
-      <div className="flex items-center justify-end">
-        <button
-          ref={requestBtnRef}
-          onClick={() => setOpenRequest(true)}
-          className={[
-            "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white",
-            "bg-gradient-to-r from-indigo-500 to-fuchsia-500 shadow-[0_12px_40px_rgba(99,102,241,.35)]",
-            "focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/60",
-            "hover:opacity-95 transition"
-          ].join(" ")}
-        >
-          <Plus className="h-4 w-4" />
-          Request New Project
-        </button>
-      </div>
-
       {/* POPUP Request New Project */}
       <ProjectList
         rows={rows}

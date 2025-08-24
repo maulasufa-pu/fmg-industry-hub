@@ -113,16 +113,22 @@ export const LoginSection = (): React.JSX.Element => {
     setLoading(true);
     try {
       // 0) Verify hCaptcha on server
-      const ok = await verifyCaptcha(captchaToken);
-      if (!ok) {
-        resetCaptcha();
-        throw new Error("Captcha verification failed. Please try again.");
-      }
+      // const ok = await verifyCaptcha(captchaToken);
+      // if (!ok) {
+      //   resetCaptcha();
+      //   throw new Error("Captcha verification failed. Please try again.");
+      // }
 
       // 1) Supabase login
-      const supabase = getSupabaseClient();
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw new Error(error.message || "Login failed");
+      const supabase = getSupabaseClient()
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+        options: { captchaToken: captchaToken! }, // <-- penting
+      })
+
+      if (error) throw new Error(error.message || "Login failed")
+
       const session = data.session;
       if (!session) throw new Error("No session returned");
 

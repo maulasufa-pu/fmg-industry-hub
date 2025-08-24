@@ -152,8 +152,8 @@ export default function Hero(): React.JSX.Element {
                 kicker="FMG Universe • Custom Music"
                 heading="Let’s Create Your Music."
                 subheading="End-to-end production: composition, recording, mixing, mastering, and distribution — plus anamorphic music videos."
-                ctaPrimary={{ label: "Start Your Project", href: "/contact" }}
-                ctaSecondary={{ label: "Free Consultation", href: "/consult" }}
+                ctaPrimary={{ label: "Start My Project", href: "/client/dashboard" }}
+                ctaSecondary={{ label: "Free Consultation", href: "https://wa.me/6282298288188" }}
                 credit="Viokichi — You Are Enough"
                 revealDelayMs={3000}  // text appears after 3s
                 />

@@ -169,6 +169,7 @@ export function SignUpSection(): React.JSX.Element {
         options: {
           data: { first_name: firstName, last_name: lastName },
           emailRedirectTo: buildRedirect("signup"),
+          captchaToken: captchaToken ?? undefined, // ⬅️ WAJIB kalau Captcha ON
         },
       });
       if (error) throw error;
@@ -227,9 +228,13 @@ export function SignUpSection(): React.JSX.Element {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email,
-        options: { emailRedirectTo: buildRedirect("signup") },
+        options: {
+          emailRedirectTo: buildRedirect("signup"),
+          captchaToken: captchaToken ?? undefined, // ⬅️ kirim juga
+        },
       });
       if (error) throw error;
+
       setMsg("We’ve re-sent the confirmation link. Please check your inbox/spam.");
       setResendCooldown(30);
       resetCaptcha();

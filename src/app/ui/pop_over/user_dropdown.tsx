@@ -13,6 +13,7 @@ import {
   Settings,
   Users,
   BarChart3,
+  Home, // ⬅️ ditambahkan
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import LogoutButton from "@/app/auth/LogoutButton";
@@ -61,7 +62,7 @@ export default function UserDropdown({ isOpen, onClose, className = "" }: UserDr
       onMouseDownCapture={(e) => e.stopPropagation()}
       onTouchStartCapture={(e) => e.stopPropagation()}
       className={[
-        "w-[min(92vw,22rem)] overflow-hidden rounded-2xl pointer-events-auto", // <-- tambah pointer-events-auto
+        "w-[min(92vw,22rem)] overflow-hidden rounded-2xl pointer-events-auto",
         "border border-black/10 bg-white/90 backdrop-blur-xl shadow-2xl",
         "dark:border-white/10 dark:bg-black/70",
         "ring-1 ring-white/40 dark:ring-white/5",
@@ -108,10 +109,10 @@ export default function UserDropdown({ isOpen, onClose, className = "" }: UserDr
             )}
           </div>
 
-          {/* Actions (theme + close) — tidak tumpang tindih */}
+          {/* Actions (theme + close) */}
           <div className="ml-auto flex items-center gap-2">
             <button
-              type="button"                        // <-- tambah
+              type="button"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className="inline-flex h-9 w-9 items-center justify-center rounded-full
                          border border-black/10 bg-white text-slate-900 hover:bg-white/85
@@ -123,7 +124,7 @@ export default function UserDropdown({ isOpen, onClose, className = "" }: UserDr
             </button>
 
             <button
-              type="button"                        // <-- tambah
+              type="button"
               onClick={onClose}
               aria-label="Close"
               className="inline-flex h-9 w-9 items-center justify-center rounded-full
@@ -146,7 +147,16 @@ export default function UserDropdown({ isOpen, onClose, className = "" }: UserDr
           <div className="h-10 w-full animate-pulse rounded-xl bg-slate-200 dark:bg-slate-700" />
         </div>
       ) : isGuest ? (
-        <div className="p-4">
+        <div className="p-4 space-y-2">
+          {/* ⬅️ Tombol Home untuk Guest */}
+          <Link
+            href="/"
+            onClick={onClose}
+            className="block h-10 w-full rounded-xl border border-black/10 bg-white/70 text-center font-semibold leading-10 text-slate-900 transition hover:bg-white
+                       dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-100"
+          >
+            Home
+          </Link>
           <Link
             href="/login"
             onClick={onClose}
@@ -164,6 +174,20 @@ export default function UserDropdown({ isOpen, onClose, className = "" }: UserDr
                 Client Hub
               </div>
               <div className="grid grid-cols-2 gap-2">
+                {/* ⬅️ Tile Home untuk user yang login */}
+                <Link
+                  href="/"
+                  onClick={onClose}
+                  className="group flex items-center gap-2 rounded-xl border border-black/10 bg-white/70 px-3 py-2
+                             text-sm font-medium text-slate-900 shadow-sm ring-1 ring-white/40 transition
+                             hover:bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-100 dark:ring-white/10"
+                >
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-slate-600/10 text-slate-700 dark:text-slate-200">
+                    <Home className="h-4 w-4" />
+                  </span>
+                  <span>Home</span>
+                </Link>
+
                 <Link
                   href="/client/dashboard"
                   onClick={onClose}
@@ -219,7 +243,7 @@ export default function UserDropdown({ isOpen, onClose, className = "" }: UserDr
             </div>
           )}
 
-          {/* Admin Hub (tambahan) */}
+          {/* Admin Hub */}
           {isAdmin && (
             <>
               <hr className="mx-4 border-t border-black/10 dark:border-white/10" />

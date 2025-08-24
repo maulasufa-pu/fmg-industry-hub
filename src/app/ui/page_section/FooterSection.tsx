@@ -19,7 +19,6 @@ export default function Footer() {
     {
       title: "Services",
       links: [
-        { label: "Studio", href: "/studio" },
         { label: "Creative", href: "/creative" },
         { label: "Academy", href: "/academy" },
         { label: "Publishing", href: "/publishing" },
@@ -28,10 +27,9 @@ export default function Footer() {
     {
       title: "FMG Universe",
       links: [
-        { label: "Overview", href: "https://hub.flemmomusic.com" },
-        { label: "Network", href: "https://hub.flemmomusic.com/network" },
-        { label: "Products", href: "https://hub.flemmomusic.com/products" },
-        { label: "Sign in", href: "https://app.flemmomusic.com/login" },
+        { label: "Overview", href: "/about" },
+        { label: "Products", href: "/#features" },
+        { label: "Sign in", href: "/login" },
       ],
     },
     {
@@ -77,14 +75,14 @@ export default function Footer() {
 
           <form onSubmit={onSubmit} className="flex w-full max-w-md items-center gap-2 sm:w-auto">
             <div className="flex h-10 flex-1 items-center rounded-md border border-black/10 bg-white/80 pl-3 pr-2 backdrop-blur-sm dark:border-white/10 dark:bg-white/5">
-              <Envelope className="h-5 w-5 text-black/60 dark:text-white/60" />
+              <Envelope className="text-black/60 dark:text-white/60" />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email for updates"
                 aria-label="Email address"
-                className="ml-2 w-full bg-transparent text-sm placeholder:text-black/50 focus:outline-none dark:placeholder:text-white/50"
+                className="pl-3 w-full bg-transparent text-sm placeholder:text-black/50 focus:outline-none dark:placeholder:text-white/50"
               />
             </div>
             <button

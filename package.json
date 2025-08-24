@@ -7,6 +7,7 @@
     "generate:roles": "node scripts/generate-roles.mjs",
     "prebuild": "node scripts/generate-roles.mjs && npm run seo:inject",
     "build": "next build",
+    "postbuild": "npm run sitemap",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",

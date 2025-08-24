@@ -4,7 +4,8 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useAnimation, useInView, useMotionValue, useSpring, useTransform, useScroll, Variants } from "framer-motion";
 import type { MotionValue } from "framer-motion";
-import { ArrowRight, Star, Check, CheckCircle2, Rocket, Music, ShieldCheck, Zap, Sparkles, PlayCircle, LineChart, Mic2 } from "lucide-react";
+// di baris import icon lucide, tambahkan MessageCircle
+import { ArrowRight, Star, Check, CheckCircle2, Rocket, Music, ShieldCheck, Zap, Sparkles, PlayCircle, LineChart, Mic2, MessageCircle } from "lucide-react";
 import { Users, Share2, Cpu, BookOpen, Calendar, GraduationCap, type LucideIcon } from "lucide-react";
 import { JsonLd } from "@/components/JsonLd";
 import { siteConfig } from "@/lib/site";
@@ -343,7 +344,6 @@ function PricingCard({
   accent = "indigo", badge,
   ctaHref, ctaTarget, ctaRel,
 }: PricingCardProps) {
-  // tint gradient per accent
   const tint =
     accent === "gold"
       ? "before:from-amber-400/55 before:to-yellow-500/35"
@@ -351,22 +351,24 @@ function PricingCard({
       ? "before:from-fuchsia-500/45 before:to-indigo-500/35"
       : "before:from-indigo-500/45 before:to-sky-500/30";
 
-  // dot/check color per accent
   const dot =
-    accent === "gold"
-      ? "bg-amber-400 text-black"
-      : accent === "violet"
-      ? "bg-fuchsia-500 text-white"
-      : "bg-indigo-600 text-white";
+    accent === "gold" ? "bg-amber-400 text-black"
+    : accent === "violet" ? "bg-fuchsia-500 text-white"
+    : "bg-indigo-600 text-white";
+
+  // >>> NEW: badge “Best seller” merah
+  const badgeColor = /best\s*seller/i.test(badge ?? "") ? "bg-red-600" : "bg-indigo-600";
+
+  // >>> NEW: WhatsApp deep-link (pesan prefilled)
+  const waHref =
+    "https://wa.me/6282298288188?text=Halo%20kak%2C%20saya%20dari%20website%20FMG%20Universe%2C%20ingin%20order%20jasa%20musik.";
 
   return (
     <div
       className={[
         "relative overflow-hidden rounded-3xl border",
         "border-black/10 dark:border-white/10",
-        // base surface (bukan hitam): sedikit translucent supaya tint terlihat
         "bg-white/80 dark:bg-black/40 backdrop-blur-sm",
-        // tint layer di DALAM card agar tidak ada sisa div/transparan
         "before:absolute before:inset-0 before:-z-10 before:bg-gradient-to-br",
         "before:mix-blend-multiply dark:before:mix-blend-screen",
         "before:opacity-30 dark:before:opacity-35",
@@ -374,9 +376,9 @@ function PricingCard({
         "p-8 shadow-sm",
       ].join(" ")}
     >
-      {/* badge: di dalam card, tidak terpotong */}
+      {/* badge */}
       {badge && (
-        <span className="absolute right-4 top-4 z-10 inline-flex items-center gap-1 rounded-full bg-indigo-600 px-3 py-1 text-xs font-medium text-white shadow-lg ring-1 ring-white/20">
+        <span className={`absolute right-4 top-4 z-10 inline-flex items-center gap-1 rounded-full ${badgeColor} px-3 py-1 text-xs font-medium text-white shadow-lg ring-1 ring-white/20`}>
           {badge}
         </span>
       )}
@@ -387,7 +389,6 @@ function PricingCard({
         <span className="text-sm text-black/60 dark:text-white/60">/{period}</span>
       </div>
 
-      {/* checklist selalu sejajar */}
       <ul className="mt-6 space-y-3 text-sm">
         {features.map((f, i) => (
           <li key={i} className="flex items-start gap-3 leading-6">
@@ -399,15 +400,31 @@ function PricingCard({
         ))}
       </ul>
 
-      <div className="mt-8">
-        <MagneticButton
-          href={ctaHref}
-          target={ctaTarget}
-          rel={ctaRel}
-          className="w-full justify-center"
+      {/* >>> NEW: dua tombol berdampingan */}
+      <div className="mt-8 flex items-center gap-2">
+         <MagneticButton
+            href={ctaHref}
+            target={ctaTarget}
+            rel={ctaRel}
+            className="w-full justify-center"
+          >
+            {cta}
+          </MagneticButton>
+
+        <a
+          href="https://wa.me/6282298288188?text=Halo%2C%20saya%20dapat%20informasi%20dari%20website%20FMG%20Universe%2C%20ingin%20order%20jasa%20musik."
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full
+                    bg-emerald-500 text-white shadow-[0_8px_30px_rgba(0,0,0,0.12)]
+                    ring-1 ring-white/20 transition-transform hover:scale-[1.03]
+                    dark:bg-emerald-600"
+          aria-label="Chat via WhatsApp"
+          title="Chat via WhatsApp"
         >
-          {cta}
-        </MagneticButton>
+          <MessageCircle className="h-5 w-5" />
+          <span className="sr-only">WhatsApp</span>
+        </a>
       </div>
     </div>
   );
@@ -443,7 +460,7 @@ function Hero() {
           </Parallax>
 
           <Parallax speed={0.12}>
-            <SplitHeadline text="Beyond Sound. Built-in Intelligence" />
+            <SplitHeadline text="Beyond Sound. Built-in Intelligence." />
           </Parallax>
 
           <Parallax speed={0.14}>
@@ -452,9 +469,9 @@ function Hero() {
               Publishing</b> and evolved into a holding that spans music, technology, and digital innovation. <b>Beyond Sound. 
               Built-in Intelligence</b>. We’re building one integrated operating system for music, rights-first, 
               advanced technology platform that unites songwriting, composition, end-to-end music production (A-Z: Recording, Studio, Sound Design, Mixing and Mastering), talent, distribution & media, artist & repertoire (A&R),  
-              <b> AI research & development (R&D)</b>, publishing, live event, music academy, and musician community development—with collaboration as the connective layer. 
+              <b> AI research & development (R&D)</b>, publishing, live event, music academy, and musician community development—with worldwide collaboration as the connective layer. 
               By embedding intelligence into real workflows, <b>we help artists, labels, and brands</b> to scout smarter, produce faster, 
-              own rights, grow royalties, and scale catalogs into lasting equity—future-ready for the next decade.
+              own rights, grow royalties, and scale catalogs into lasting equity—ready for shaping positive impact for the next generation in the future.
             </motion.p>
           </Parallax>
 
@@ -979,12 +996,7 @@ function Pricing() {
   return (
     <section id="pricing" className="relative mx-auto max-w-6xl px-4 py-5">
       <Parallax speed={0.06}>
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="mx-auto max-w-3xl text-center"
-        >
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="mx-auto max-w-3xl text-center">
           <motion.h2 variants={fadeUp} className="text-pretty text-3xl font-bold sm:text-4xl">
             Pricing & Packages
           </motion.h2>
@@ -999,10 +1011,11 @@ function Pricing() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3 items-start"  // ⬅️ here
+          className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 items-start"
         >
+          {/* Basic */}
           <PricingCard
-            name="Standard (Single)"
+            name="Basic (Single)"
             price="IDR 10.000.000"
             cta="Start My Project"
             ctaHref="/client/dashboard"
@@ -1015,13 +1028,14 @@ function Pricing() {
             accent="indigo"
           />
 
+          {/* Pro */}
           <PricingCard
             name="Pro (Single)"
             price="IDR 15.000.000"
             cta="Start My Project"
             ctaHref="/client/dashboard"
             features={[
-              "Everything in Standard +",
+              "Everything in Basic +",
               "Multi-version deliverables (original/acoustic/remix/instrumental)",
               "Advanced music production",
               "Detailed mixing & mastering (stems, format targets)",
@@ -1031,13 +1045,14 @@ function Pricing() {
             badge="Best seller"
           />
 
+          {/* Ultimate */}
           <PricingCard
             name="Ultimate (Single)"
             price="IDR 30.000.000"
             cta="Start My Project"
             ctaHref="/client/dashboard"
             features={[
-              "Everything in Standard & Pro +",
+              "Everything in Basic & Pro +",
               "Music video direction & production",
               "Advanced production workflow (pre-pro → post)",
               "Focused creative direction & talent assets",
@@ -1046,11 +1061,28 @@ function Pricing() {
             ]}
             accent="gold"
           />
+
+          {/* >>> NEW: Custom plan */}
+          <PricingCard
+            name="Custom Plan"
+            price="Custom"
+            period="project"
+            cta="Start My Project"
+            ctaHref="/client/dashboard"
+            features={[
+              "Scope-based pricing",
+              "Pick any combination of services",
+              "Milestone plan & timeline",
+              "Dedicated production manager",
+            ]}
+            accent="indigo"
+          />
         </motion.div>
       </Parallax>
     </section>
   );
 }
+
 
 /*************************
  * CTA

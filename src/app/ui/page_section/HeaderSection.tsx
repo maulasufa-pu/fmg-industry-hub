@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { motion, AnimatePresence, Variants } from "framer-motion";
+import { motion, AnimatePresence, Variants, useReducedMotion, MotionConfig } from "framer-motion";
 import Image from "next/image";
 import UserDropdown from "../pop_over/user_dropdown";
 import { useProfile } from "@/hooks/useProfile";
@@ -46,29 +46,59 @@ const MENU: readonly MenuItem[] = [
 /*********************************
  * Animations
  *********************************/
+// Desktop mega panel
 const panel: Variants = {
-  hidden: { opacity: 0, y: -8, scale: 0.98, pointerEvents: "none" as const },
+  hidden: { opacity: 0, y: -10, scale: 0.985 },
   show: {
     opacity: 1,
     y: 0,
     scale: 1,
-    pointerEvents: "auto" as const,
-    transition: { duration: 0.18, ease: "easeOut", when: "beforeChildren", staggerChildren: 0.035 },
+    transition: {
+      type: "spring",
+      stiffness: 420,
+      damping: 32,
+      mass: 0.6,
+      when: "beforeChildren",
+      delayChildren: 0.03,
+      staggerChildren: 0.045,
+    },
   },
-  exit: { opacity: 0, y: -6, scale: 0.985, transition: { duration: 0.12 } },
+  exit: {
+    opacity: 0,
+    y: -10,
+    scale: 0.985,
+    transition: { duration: 0.16, ease: [0.4, 0, 0.2, 1] },
+  },
 };
-const item: Variants = { hidden: { opacity: 0, y: -6 }, show: { opacity: 1, y: 0 } };
 
-// Mobile sheet animations
+const item: Variants = {
+  hidden: { opacity: 0, y: -8 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 520, damping: 34, mass: 0.5 },
+  },
+};
+
+// Mobile overlay & sheet
 const overlayVariants: Variants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.18 } },
-  exit: { opacity: 0, transition: { duration: 0.12 } },
+  show: { opacity: 1, transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] } },
+  exit: { opacity: 0, transition: { duration: 0.16, ease: "linear" } },
 };
+
 const sheetVariants: Variants = {
   hidden: { y: -24, opacity: 0 },
-  show: { y: 0, opacity: 1, transition: { type: "tween", duration: 0.22 } },
-  exit: { y: -16, opacity: 0, transition: { duration: 0.15 } },
+  show: {
+    y: 0,
+    opacity: 1,
+    transition: { type: "spring", stiffness: 460, damping: 36, mass: 0.65 },
+  },
+  exit: {
+    y: -16,
+    opacity: 0,
+    transition: { duration: 0.18, ease: [0.4, 0, 0.2, 1] },
+  },
 };
 
 type BrandLockupProps = {
@@ -232,12 +262,13 @@ export const HeaderSection = (): React.JSX.Element => {
     if (!isMobile && top < pad) top = br.bottom + pad; // fallback kalau kepentok atas
 
     // Horizontal align
+    // const NUDGE_X = 0; // geser 6–10px sesuai selera
+    // let left = isMobile ? br.left - NUDGE_X : br.right - mw - NUDGE_X;
     let left = isMobile ? br.left : br.right - mw;
 
     // Clamp agar tidak keluar viewport
     top = clamp(top, pad, vh - mh - pad);
     left = clamp(left, pad, vw - mw - pad);
-
     setDropdownPosition({ top: Math.round(top), left: Math.round(left) });
   }, []);
 
@@ -382,9 +413,8 @@ export const HeaderSection = (): React.JSX.Element => {
   };
 
   return (
-    <nav
-      className="
-        sticky top-0 inset-x-0 z-50
+    <MotionConfig reducedMotion="user">
+    <nav className="sticky top-0 inset-x-0 z-50
         border-b border-black/5 dark:border-white/10
         bg-white/30 dark:bg-black/25
         backdrop-blur-xl
@@ -428,13 +458,13 @@ export const HeaderSection = (): React.JSX.Element => {
               className="h-9 w-9 rounded-md object-cover"
               priority
             />
-            <BrandLockup
+            {/* <BrandLockup
               title="FMG"
               subtitle="Universe"
               subtitleBasePx={10}
               subtitleMinPx={1}
               subtitleMaxPx={11}
-            />
+            /> */}
           </Link>
 
           {/* RIGHT: Avatar saja */}
@@ -523,19 +553,21 @@ export const HeaderSection = (): React.JSX.Element => {
                     onKeyDown={onMenuKeyDown}
                     role="menu"
                     aria-label="FMG Sections"
+                    style={{ willChange: "transform, opacity" }}
                     className="
                       fixed top-16 left-1/2 z-[60]
                       w-[520px] max-w-[calc(100vw-1rem)] -translate-x-1/2 mx-2 sm:mx-0
                       rounded-2xl ring-1 ring-white/80 dark:ring-black/90
                       overflow-hidden shadow-[0_24px_60px_-12px_rgba(0,0,0,0.35)]
                       bg-white/100 dark:bg-black/100
+                      transform-gpu
                     "
                   >
                     {/* CONTENT */}
                     <div className="relative z-10 p-2">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                         {MENU.map((m, idx) => (
-                          <motion.div key={m.label} variants={item}>
+                          <motion.div key={m.label} variants={item} style={{ willChange: "transform, opacity" }}>
                             <Link
                               ref={setItemRef(idx)}
                               href={m.href}
@@ -657,11 +689,11 @@ export const HeaderSection = (): React.JSX.Element => {
           <Portal>
             <div
               ref={dropdownWrapperRef}
-              className="fixed z-[9999]"
+              className="fixed z-[9999] pointer-events-auto"   // <-- tambah pointer-events-auto
               style={{
                 top: dropdownPosition.top,
-                left: dropdownPosition.left,
-                maxWidth: "min(96vw, 360px)", // jaga agar tidak melewati layar
+                left: dropdownPosition.left - 5,               // <-- geser 8px ke kiri
+                maxWidth: "min(96vw, 360px)",
               }}
             >
               <UserDropdown isOpen={showUserMenu} onClose={() => setShowUserMenu(false)} />
@@ -697,9 +729,36 @@ export const HeaderSection = (): React.JSX.Element => {
               exit="exit"
               variants={sheetVariants}
               onKeyDown={onMobileKeyDown}
-              className="fixed z-50 top-16 inset-x-0 rounded-b-3xl border-b border-black/10 dark:border-white/10 bg-white/95 dark:bg-black/90 backdrop-blur-xl"
+              style={{ willChange: "transform, opacity" }}
+              className="
+                fixed inset-x-0 top-0 z-[60]
+                rounded-b-3xl border-b border-black/10 dark:border-white/10
+                bg-white/99 dark:bg-black/90 backdrop-blur-xl transform-gpu
+              "
             >
-              <div className="px-4 pt-3 pb-6">
+              {/* TOP CAP putih + tombol close */}
+              <div className="sticky top-0 inset-x-0 z-10 bg-white/90 dark:bg-black/90">
+                <div
+                  className="flex items-center justify-start px-2 pb-2 "
+                  style={{ paddingTop: "max(10px, env(safe-area-inset-top))" }} // aman notch
+                >
+                  <button
+                    onClick={() => setMobileOpen(false)}
+                    aria-label="Close menu"
+                    className="
+                      inline-flex h-9 w-9 items-center justify-center rounded-full
+                      border border-black/10 bg-white/80 text-black
+                      dark:border-white/10 dark:bg-white/10 dark:text-white
+                      hover:opacity-90 transition
+                    "
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* KONTEN MENU */}
+              <div className="px-4 pt-2 pb-6">
                 {/* Top quick links */}
                 <div className="grid grid-cols-3 gap-2 text-sm">
                   <Link
@@ -784,6 +843,7 @@ export const HeaderSection = (): React.JSX.Element => {
         )}
       </AnimatePresence>
     </nav>
+    </MotionConfig>
   );
 };
 

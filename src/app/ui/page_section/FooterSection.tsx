@@ -3,13 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Envelope, Facebook, Instagram, Linkedin, Twitter, Youtube } from "@/icons";
+import BrandMark from "../BrandMark";
 
 export default function Footer() {
   const [email, setEmail] = useState("");
 
   const columns = [
     {
-      title: "Flemmo",
+      title: "Company",
       links: [
         { label: "About", href: "/about" },
         { label: "Careers", href: "/careers" },
@@ -17,7 +18,8 @@ export default function Footer() {
       ],
     },
     {
-      title: "Services",
+      // Pakai istilah yang kamu pakai di site: Divisions/Services
+      title: "Divisions",
       links: [
         { label: "Creative", href: "/creative" },
         { label: "Academy", href: "/academy" },
@@ -25,11 +27,12 @@ export default function Footer() {
       ],
     },
     {
-      title: "FMG Universe",
+      // Bisa "FMG Universe" jika mau brand-forward
+      title: "Platform",
       links: [
-        { label: "Overview", href: "/about" },
+        { label: "Overview", href: "/#about" },   // atau page khusus platform
         { label: "Products", href: "/#features" },
-        { label: "Sign in", href: "/login" },
+        { label: "Client Portal", href: "/login" }, // dulu "Sign in"
       ],
     },
     {
@@ -62,7 +65,7 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
         {/* Top row: logo + subscribe */}
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
+          {/* <div className="flex items-center gap-3">
             <div
               aria-hidden
               className="h-8 w-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-fuchsia-500"
@@ -71,7 +74,8 @@ export default function Footer() {
               <div className="font-semibold">Flemmo Music</div>
               <div className="text-xs text-black/60 dark:text-white/60">Global Universe</div>
             </div>
-          </div>
+          </div> */}
+          <BrandMark href="/" />
 
           <form onSubmit={onSubmit} className="flex w-full max-w-md items-center gap-2 sm:w-auto">
             <div className="flex h-10 flex-1 items-center rounded-md border border-black/10 bg-white/80 pl-3 pr-2 backdrop-blur-sm dark:border-white/10 dark:bg-white/5">

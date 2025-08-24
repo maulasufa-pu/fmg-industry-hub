@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseOrigin = SUPABASE_URL ? new URL(SUPABASE_URL).origin : "https://*.supabase.co";
-const supabaseWs = supabaseOrigin.replace("https://", "wss://");
+const supabaseWs = SUPABASE_URL ? new URL(SUPABASE_URL).origin.replace("https://", "wss://") : "wss://*.supabase.co";
 const isDev = process.env.NODE_ENV !== "production";
 
 const nextConfig: NextConfig = {
@@ -28,23 +28,22 @@ const nextConfig: NextConfig = {
       "base-uri 'self'",
       "frame-ancestors 'self'",
 
-      // Iframe embed populer
+      // Iframe embeds
       "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://w.soundcloud.com https://soundcloud.com https://open.spotify.com https://embed.spotify.com https://www.google.com https://maps.google.com https://calendar.google.com https://app.midtrans.com https://app.sandbox.midtrans.com https://hcaptcha.com https://*.hcaptcha.com",
 
-      // Script: batasi ke self + midtrans (tambah kalau benar-benar perlu)
+      // Scripts
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://app.midtrans.com https://app.sandbox.midtrans.com https://hcaptcha.com https://*.hcaptcha.com",
 
-      // Fetch/WebSocket: Supabase + Midtrans (tambah lainnya bila kamu fetch HLS/M3U8 dari origin lain)
-      `connect-src 'self' ${supabaseOrigin} ${supabaseWs} https://*.supabase.co https://app.midtrans.com https://app.sandbox.midtrans.com https://api.midtrans.com https://api.sandbox.midtrans.com`,
+      // XHR/WebSocket (hls.js juga pakai jalur ini)
+      `connect-src 'self' ${supabaseOrigin} ${supabaseWs} https://*.supabase.co https://app.midtrans.com https://app.sandbox.midtrans.com https://api.midtrans.com https://api.sandbox.midtrans.com${devConnect}`,
 
-      // Gambar (thumbnail YouTube/Vimeo/OG)
+      // Images (OG, YouTube thumb, Unsplash, Supabase)
       "img-src 'self' data: blob: https://*.supabase.co https://i.ytimg.com https://img.youtube.com https://i.vimeocdn.com https://source.unsplash.com https://images.unsplash.com",
 
       "style-src 'self' 'unsafe-inline'",
       "font-src 'self' data:",
-      "style/img/connect-src",
 
-      // Media (audio/video file langsung)
+      // Media (audio/video) — untuk <video> tag & source HLS/MP4
       `media-src 'self' data: blob: ${supabaseOrigin} https://*.supabase.co https://cdn.plyr.io https://storage.googleapis.com https://*.googlevideo.com https://audio-ssl.itunes.apple.com`,
       "audio-src 'self' data: blob: https://*.supabase.co https://*.googlevideo.com",
 
@@ -55,6 +54,18 @@ const nextConfig: NextConfig = {
     ].join("; ");
 
     return [
+      // 1) Header khusus untuk file di /public/videos/** → inline streaming + range
+      {
+        source: "/videos/:path*",
+        headers: [
+          { key: "Content-Disposition", value: "inline" },
+          { key: "Accept-Ranges", value: "bytes" },
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+          // Boleh dipakai jika kamu embed lintas-origin; kalau satu origin, biarkan same-origin
+          { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+        ],
+      },
+      // 2) CSP global (letakkan SETELAH rule spesifik videos supaya precedence tetap benar)
       {
         source: "/(.*)",
         headers: [{ key: "Content-Security-Policy", value: csp }],

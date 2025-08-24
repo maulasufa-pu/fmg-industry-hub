@@ -11,6 +11,98 @@ import { JsonLd } from "@/components/JsonLd";
 import { siteConfig } from "@/lib/site";
 import { compact } from "@/lib/arrays";
 
+import type { PanInfo } from "framer-motion";
+import CinematicVideoHeroHLS from "@/components/CinematicVideoHeroHLS";
+// import Hero from "./ui/main_container/hero";
+/** urutan & “berat” ukuran: basic kecil, pro sedang, ultimate besar, custom terbesar */
+type PlanKey = "basic" | "pro" | "ultimate" | "custom";
+type Weight = 0 | 1 | 2 | 3;
+
+type Plan = {
+  key: PlanKey;
+  weight: Weight;
+  props: PricingCardProps;
+};
+
+const PLANS: readonly Plan[] = [
+  {
+    key: "basic",
+    weight: 0,
+    props: {
+      name: "Basic (Single)",
+      price: "IDR 10.000.000",
+      cta: "Start My Project",
+      ctaHref: "/client/dashboard",
+      features: [
+        "Original songwriting",
+        "Arrangement & production",
+        "Mixing & mastering",
+        "Publisher-ready metadata",
+      ],
+      accent: "indigo",
+    },
+  },
+  {
+    key: "pro",
+    weight: 1,
+    props: {
+      name: "Pro (Single)",
+      price: "IDR 15.000.000",
+      cta: "Start My Project",
+      ctaHref: "/client/dashboard",
+      features: [
+        "Everything in Basic +",
+        "Multi-version deliverables (original/acoustic/remix/instrumental)",
+        "Advanced music production",
+        "Detailed mixing & mastering (stems, format targets)",
+        "Vocal directing & coaching",
+      ],
+      accent: "violet",
+      badge: "Best seller",
+    },
+  },
+  {
+    key: "ultimate",
+    weight: 2,
+    props: {
+      name: "Ultimate (Single)",
+      price: "IDR 30.000.000",
+      cta: "Start My Project",
+      ctaHref: "/client/dashboard",
+      features: [
+        "Everything in Basic & Pro +",
+        "Music video direction & production",
+        "Advanced production workflow (pre-pro → post)",
+        "Focused creative direction & talent assets",
+        "Release ops & distribution checks",
+        "Priority support",
+      ],
+      accent: "gold",
+    },
+  },
+  {
+    key: "custom",
+    weight: 3,
+    props: {
+      name: "Custom Plan",
+      price: "Custom",
+      period: "project",
+      cta: "Start My Project",
+      ctaHref: "/client/dashboard",
+      features: [
+        "Scope-based pricing",
+        "Pick any combination of services",
+        "Milestone plan & timeline",
+        "Dedicated production manager",
+      ],
+      accent: "indigo",
+    },
+  },
+];
+
+const clamp = (n: number, min: number, max: number): number => Math.min(Math.max(n, min), max);
+const mod = (n: number, m: number): number => ((n % m) + m) % m;
+
 type Division = { icon: LucideIcon; title: string; desc: string };
 
 const DIVISIONS: ReadonlyArray<Division> = [
@@ -214,22 +306,22 @@ function SplitHeadline({ text }: { text: string }) {
 /*************************
  * Parallax ribbon (mid layer)
  *************************/
-function ParallaxRibbon() {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const yRaw = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
-  const y = useSpring(yRaw, { stiffness: 260, damping: 32, mass: 0.3 });
+// function ParallaxRibbon() {
+//   const ref = useRef<HTMLDivElement | null>(null);
+//   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+//   const yRaw = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
+//   const y = useSpring(yRaw, { stiffness: 260, damping: 32, mass: 0.3 });
 
-  return (
-    <div ref={ref} className="relative z-10 mx-auto mt-16 w-full max-w-6xl">
-      <motion.div
-        style={{ y }}
-        className="h-48 w-full rounded-3xl bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 opacity-100 ring-1 ring-black/10 dark:ring-white/10 shadow-lg shadow-indigo-500/10 transform-gpu will-change-transform"
-      />
-      <div className="pointer-events-none absolute inset-0 -z-10 rounded-3xl bg-black/5 ring-1 ring-black/10 dark:bg-white/5 dark:ring-white/10" />
-    </div>
-  );
-}
+//   return (
+//     <div ref={ref} className="relative z-10 mx-auto mt-16 w-full max-w-6xl">
+//       <motion.div
+//         style={{ y }}
+//         className="h-48 w-full rounded-3xl bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 opacity-100 ring-1 ring-black/10 dark:ring-white/10 shadow-lg shadow-indigo-500/10 transform-gpu will-change-transform"
+//       />
+//       <div className="pointer-events-none absolute inset-0 -z-10 rounded-3xl bg-black/5 ring-1 ring-black/10 dark:bg-white/5 dark:ring-white/10" />
+//     </div>
+//   );
+// }
 
 /*************************
  * Marquee (keywords)
@@ -343,7 +435,7 @@ function PricingCard({
   name, price, features, cta, period = "single",
   accent = "indigo", badge,
   ctaHref, ctaTarget, ctaRel,
-}: PricingCardProps) {
+}: PricingCardProps): React.JSX.Element {
   const tint =
     accent === "gold"
       ? "before:from-amber-400/55 before:to-yellow-500/35"
@@ -356,12 +448,7 @@ function PricingCard({
     : accent === "violet" ? "bg-fuchsia-500 text-white"
     : "bg-indigo-600 text-white";
 
-  // >>> NEW: badge “Best seller” merah
   const badgeColor = /best\s*seller/i.test(badge ?? "") ? "bg-red-600" : "bg-indigo-600";
-
-  // >>> NEW: WhatsApp deep-link (pesan prefilled)
-  const waHref =
-    "https://wa.me/6282298288188?text=Halo%20kak%2C%20saya%20dari%20website%20FMG%20Universe%2C%20ingin%20order%20jasa%20musik.";
 
   return (
     <div
@@ -370,28 +457,37 @@ function PricingCard({
         "border-black/10 dark:border-white/10",
         "bg-white/80 dark:bg-black/40 backdrop-blur-sm",
         "before:absolute before:inset-0 before:-z-10 before:bg-gradient-to-br",
-        "before:mix-blend-multiply dark:before:mix-blend-screen",
-        "before:opacity-30 dark:before:opacity-35",
+        "before:mix-blend-multiply dark:before:mix-blend-screen before:opacity-30 dark:before:opacity-35",
         tint,
-        "p-8 shadow-sm",
+        // === penting: kartu lega & fleksibel ===
+        "p-6 sm:p-7 lg:p-8",
+        "h-full flex flex-col min-w-0 shadow-sm",
       ].join(" ")}
     >
-      {/* badge */}
       {badge && (
         <span className={`absolute right-4 top-4 z-10 inline-flex items-center gap-1 rounded-full ${badgeColor} px-3 py-1 text-xs font-medium text-white shadow-lg ring-1 ring-white/20`}>
           {badge}
         </span>
       )}
 
-      <h3 className="text-xl font-semibold">{name}</h3>
-      <div className="mt-2 flex items-baseline gap-2">
-        <span className="text-4xl font-extrabold">{price}</span>
-        <span className="text-sm text-black/60 dark:text-white/60">/{period}</span>
+      <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold leading-tight break-words">
+        {name}
+      </h3>
+
+      {/* harga: bisa wrap saat sempit */}
+      <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 min-w-0">
+        <span className="text-[34px] sm:text-4xl lg:text-5xl font-extrabold leading-none">
+          {price}
+        </span>
+        <span className="text-sm text-black/60 dark:text-white/60 whitespace-nowrap">/{period}</span>
       </div>
 
-      <ul className="mt-6 space-y-3 text-sm">
+      <ul className="mt-6 space-y-3 text-[13.5px] sm:text-sm lg:text-[15px]">
         {features.map((f, i) => (
-          <li key={i} className="flex items-start gap-3 leading-6">
+          <li
+            key={i}
+            className="flex items-start gap-3 leading-relaxed break-words [overflow-wrap:anywhere] [hyphens:auto]"
+          >
             <span className={`${dot} inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full mt-[2px]`}>
               <Check className="h-3.5 w-3.5" />
             </span>
@@ -400,25 +496,25 @@ function PricingCard({
         ))}
       </ul>
 
-      {/* >>> NEW: dua tombol berdampingan */}
+      {/* CTA di bawah */}
       <div className="mt-8 flex items-center gap-2">
-         <MagneticButton
-            href={ctaHref}
-            target={ctaTarget}
-            rel={ctaRel}
-            className="w-full justify-center"
-          >
-            {cta}
-          </MagneticButton>
+        <MagneticButton
+          href={ctaHref}
+          target={ctaTarget}
+          rel={ctaRel}
+          className="w-full justify-center"
+        >
+          {cta}
+        </MagneticButton>
 
         <a
           href="https://wa.me/6282298288188?text=Halo%2C%20saya%20dapat%20informasi%20dari%20website%20FMG%20Universe%2C%20ingin%20order%20jasa%20musik."
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex h-11 w-11 items-center justify-center rounded-full
-                    bg-emerald-500 text-white shadow-[0_8px_30px_rgba(0,0,0,0.12)]
-                    ring-1 ring-white/20 transition-transform hover:scale-[1.03]
-                    dark:bg-emerald-600"
+                     bg-emerald-500 text-white shadow-[0_8px_30px_rgba(0,0,0,0.12)]
+                     ring-1 ring-white/20 transition-transform hover:scale-[1.03]
+                     dark:bg-emerald-600"
           aria-label="Chat via WhatsApp"
           title="Chat via WhatsApp"
         >
@@ -468,7 +564,7 @@ function Hero() {
               <b>FMG Universe</b> is a creative-technology ecosystem and solution born from <b>Flemmo Music Global (FMG) 
               Publishing</b> and evolved into a holding that spans music, technology, and digital innovation. <b>Beyond Sound. 
               Built-in Intelligence</b>. We’re building one integrated operating system for music, rights-first, 
-              advanced technology platform that unites songwriting, composition, end-to-end music production (A-Z: Recording, Studio, Sound Design, Mixing and Mastering), talent, distribution & media, artist & repertoire (A&R),  
+              advanced technology platform that unites songwriting, composition, end-to-end music production (A-Z: Recording, Studio, Sound Design, Mixing and Mastering), audio-visual content creation (film, video, and sound) talent, distribution & media , artist & repertoire (A&R),  
               <b> AI research & development (R&D)</b>, publishing, live event, music academy, and musician community development—with worldwide collaboration as the connective layer. 
               By embedding intelligence into real workflows, <b>we help artists, labels, and brands</b> to scout smarter, produce faster, 
               own rights, grow royalties, and scale catalogs into lasting equity—ready for shaping positive impact for the next generation in the future.
@@ -484,16 +580,20 @@ function Hero() {
             </motion.div>
           </Parallax>
 
-          <ParallaxRibbon />
+          {/* <ParallaxRibbon /> */}
+          <CinematicVideoHeroHLS
+            shape="rounded"
+            m3u8="/videos/vaa/index.m3u8"
+            mp4Fallback="/videos/viokichi-you-are-enough-official-music-video-mv.mp4"
+            poster="/images/hero-poster.jpg"
+            maxWidthClass="max-w-7xl" // opsional: ubah lebar
+          />
         </div>
       </motion.div>
     </section>
   );
 }
 
-/*************************
- * Features — mobile 1-row infinite (sentinels) + desktop grid
- *************************/
 /*************************
  * Features — mobile 1-row infinite (sentinels) + desktop grid
  * Auto-slide pause 10s setelah scroll manual
@@ -794,9 +894,9 @@ function Numbers() {
  *************************/
 function AboutFMG() {
   return (
-    <section id="about" className="relative mx-auto max-w-6xl px-4 py-5">
+    <section id="about" className="relative mx-auto max-w-6xl px-4">
       <Parallax speed={0.06}>
-        <div className="mx-auto mt-14 w-full max-w-6xl py-10">
+        <div className="mx-auto mt-5 w-full max-w-6xl py-10">
             <MarqueeRow
               speed={60}
               items={["Custom Songwriting","Arrangement & Production","Recording Studio","Mixing & Mastering","Music Publishing","Label & Distribution","Licensing & Rights","Client Portal & Analytics"]}
@@ -824,10 +924,6 @@ function AboutFMG() {
  * - Swipe-able
  * - Auto step tiap 3s (pause saat interaksi)
  * - Tanpa "balik ke tengah" yang kelihatan
- *************************/
-/*************************
- * Testimonials — mobile infinite (sentinels)
- * Auto-slide pause 10s setelah scroll manual
  *************************/
 function Testimonials() {
   const items = [
@@ -989,100 +1085,201 @@ function Testimonials() {
 }
 
 
-/*************************
- * Pricing
- *************************/
-function Pricing() {
+/** offset circular terpendek dari i ke center */
+function circularOffset(i: number, center: number, len: number): number {
+  const raw = i - center;
+  const pos = mod(raw, len);
+  return pos > len / 2 ? pos - len : pos; // range kira2 (-len/2 .. +len/2]
+}
+
+const SPRING = { type: "spring", stiffness: 240, damping: 28, mass: 0.65 } as const;
+// sebaran slot – boleh kamu tweak 0.26 -> 0.28 kalau mau lebih jauh
+const slotGap = (w: number) => Math.max(200, Math.min(360, Math.round(w * 0.26)));
+
+function scaleFor(offset: number, weight: 0 | 1 | 2 | 3) {
+  if (offset === 0) return 1.0;
+  if (offset === -1) return Math.max(0.86 - weight * 0.02, 0.80);
+  if (offset === -2) return 0.78;
+  if (offset === 1)  return Math.min(1.10 + weight * 0.02, 1.18);
+  if (offset === 2)  return Math.min(1.16 + weight * 0.04, 1.26);
+  return 0.7;
+}
+
+function Pricing3DCarousel(): React.JSX.Element {
+  const [active, setActive] = React.useState<number>(1); // mulai dari "Pro"
+  const wrapNext = React.useCallback(() => setActive(i => ((i + 1) % PLANS.length + PLANS.length) % PLANS.length), []);
+  const wrapPrev = React.useCallback(() => setActive(i => ((i - 1) % PLANS.length + PLANS.length) % PLANS.length), []);
+
+  // ukuran container -> jarak slot
+  const ref = React.useRef<HTMLDivElement | null>(null);
+  const [width, setWidth] = React.useState(0);
+  React.useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver((e) => setWidth(Math.round(e[0].contentRect.width)));
+    ro.observe(el);
+    setWidth(el.clientWidth);
+    return () => ro.disconnect();
+  }, []);
+  // snap ulang ke center tiap lebar berubah / orientation berubah
+  React.useEffect(() => {
+    const recenter = () => requestAnimationFrame(() => setActive(a => a));
+    recenter();
+    window.addEventListener("orientationchange", recenter);
+    return () => window.removeEventListener("orientationchange", recenter);
+  }, [width]);
+
+  const onDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const dx = info.offset.x;
+    if (dx > 60) wrapPrev();
+    else if (dx < -60) wrapNext();
+  };
+  const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      if (e.deltaX > 4) wrapNext();
+      if (e.deltaX < -4) wrapPrev();
+    }
+  };
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") wrapNext();
+      if (e.key === "ArrowLeft")  wrapPrev();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [wrapNext, wrapPrev]);
+
+  const g = slotGap(width);
+
+  /* ===== ARIA live: umumkan paket aktif ===== */
+  const [ariaMsg, setAriaMsg] = React.useState("");
+  React.useEffect(() => {
+    const plan = PLANS[active]?.props;
+    if (plan) setAriaMsg(`${plan.name} — ${plan.price}`);
+  }, [active]);
+
   return (
-    <section id="pricing" className="relative mx-auto max-w-6xl px-4 py-5">
+    <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6" onWheel={onWheel}>
+      {/* dots */}
+      <div className="mb-4 flex items-center justify-center gap-2">
+        {PLANS.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setActive(i)}
+            aria-label={`Go to plan ${i + 1}`}
+            className={["h-2.5 rounded-full transition-all", i === active ? "w-6 bg-indigo-500" : "w-2.5 bg-black/20 dark:bg-white/20"].join(" ")}
+          />
+        ))}
+      </div>
+
+      {/* ARIA live region (visually hidden) */}
+      <div aria-live="polite" role="status" className="sr-only">{ariaMsg}</div>
+
+      <div
+        ref={ref}
+        className="relative h-[560px] sm:h-[580px] md:h-[600px] lg:h-[620px] select-none"
+        style={{ perspective: "1200px" }}
+      >
+        <motion.div drag="x" dragConstraints={{ left: 0, right: 0 }} onDragEnd={onDragEnd} className="absolute inset-0">
+          {PLANS.map((p, i) => {
+            // offset circular dari aktif (-2..+2)
+            const raw = i - active;
+            const len = PLANS.length;
+            const pos = ((raw % len) + len) % len;
+            const off = pos > len / 2 ? pos - len : pos;
+
+            const x = off * g;
+            const scale = scaleFor(off as -2 | -1 | 0 | 1 | 2, p.weight);
+            const rotateY = -10 * off;
+            const zIndex = 50 + (3 - Math.abs(off)) * 10 + p.weight;
+
+            // non-aktif: transparan + blur; aktif: solid
+            const blur = off === 0 ? 0 : Math.abs(off) === 1 ? 6 : 10;
+            const opacity = off === 0 ? 1 : 0.9;
+            const isActive = off === 0;
+
+            return (
+              <motion.div
+                key={p.key}
+                className="absolute left-1/2 top-1/2 w-[min(88vw,460px)] -translate-x-1/2 -translate-y-1/2 will-change-transform"
+                style={{ transformStyle: "preserve-3d", zIndex, pointerEvents: Math.abs(off) <= 1 ? "auto" : "none", filter: `blur(${blur}px)` }}
+                animate={{ x, scale, rotateY, opacity }}
+                transition={SPRING}
+              >
+                {/* ===== layer solid + glow untuk kartu aktif ===== */}
+                <div className="relative">
+                  {isActive && (
+                    <>
+                      {/* solid filler supaya benar2 tidak tembus */}
+                      <div className="pointer-events-none absolute inset-0 z-0 rounded-3xl bg-white dark:bg-black" />
+                      {/* glow halus (ring gradient) */}
+                      <motion.div
+                        className="pointer-events-none absolute -inset-3 z-[1] rounded-[28px]
+                                   bg-gradient-to-r from-indigo-500/35 via-violet-500/25 to-fuchsia-500/35 blur-xl"
+                        initial={{ opacity: 0.0, scale: 0.98 }}
+                        animate={{ opacity: 0.2, scale: 1.0 }}
+                        transition={{ type: "spring", stiffness: 220, damping: 24, mass: 0.55 }}
+                      />
+                      {/* ring tipis agar crisp */}
+                      <div className="pointer-events-none absolute inset-0 z-[2] rounded-3xl ring-1 ring-black/10 dark:ring-white/10" />
+                    </>
+                  )}
+
+                  {/* kartu di atas semuanya */}
+                  <div className={isActive ? "relative z-10" : undefined}>
+                    <PricingCard {...p.props} />
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+
+        {/* panah */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center justify-between px-2">
+          <button
+            aria-label="Previous"
+            onClick={wrapPrev}
+            className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/70 text-black backdrop-blur hover:opacity-90 dark:border-white/10 dark:bg-white/10 dark:text-white"
+          >
+            ‹
+          </button>
+          <button
+            aria-label="Next"
+            onClick={wrapNext}
+            className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/70 text-black backdrop-blur hover:opacity-90 dark:border-white/10 dark:bg-white/10 dark:text-white"
+          >
+            ›
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =========================
+ * Section wrapper
+ * ========================= */
+function Pricing(): React.JSX.Element {
+  return (
+    <section id="pricing" className="relative mx-auto w-full max-w-none py-8">
       <Parallax speed={0.06}>
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="mx-auto max-w-3xl text-center">
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="mx-auto max-w-3xl px-4 text-center">
           <motion.h2 variants={fadeUp} className="text-pretty text-3xl font-bold sm:text-4xl">
-            Pricing & Packages
+            Pricing &amp; Packages
           </motion.h2>
           <motion.p variants={fadeUp} custom={1} className="mt-2 text-black/70 dark:text-white/70">
-            Choose a package or request a custom quote.
+            Swipe to view packages. The active selection is always centered.
           </motion.p>
         </motion.div>
       </Parallax>
 
       <Parallax speed={0.1}>
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 items-start"
-        >
-          {/* Basic */}
-          <PricingCard
-            name="Basic (Single)"
-            price="IDR 10.000.000"
-            cta="Start My Project"
-            ctaHref="/client/dashboard"
-            features={[
-              "Original songwriting",
-              "Arrangement & production",
-              "Mixing & mastering",
-              "Publisher-ready metadata",
-            ]}
-            accent="indigo"
-          />
-
-          {/* Pro */}
-          <PricingCard
-            name="Pro (Single)"
-            price="IDR 15.000.000"
-            cta="Start My Project"
-            ctaHref="/client/dashboard"
-            features={[
-              "Everything in Basic +",
-              "Multi-version deliverables (original/acoustic/remix/instrumental)",
-              "Advanced music production",
-              "Detailed mixing & mastering (stems, format targets)",
-              "Vocal directing & coaching",
-            ]}
-            accent="violet"
-            badge="Best seller"
-          />
-
-          {/* Ultimate */}
-          <PricingCard
-            name="Ultimate (Single)"
-            price="IDR 30.000.000"
-            cta="Start My Project"
-            ctaHref="/client/dashboard"
-            features={[
-              "Everything in Basic & Pro +",
-              "Music video direction & production",
-              "Advanced production workflow (pre-pro → post)",
-              "Focused creative direction & talent assets",
-              "Release ops & distribution checks",
-              "Priority support",
-            ]}
-            accent="gold"
-          />
-
-          {/* >>> NEW: Custom plan */}
-          <PricingCard
-            name="Custom Plan"
-            price="Custom"
-            period="project"
-            cta="Start My Project"
-            ctaHref="/client/dashboard"
-            features={[
-              "Scope-based pricing",
-              "Pick any combination of services",
-              "Milestone plan & timeline",
-              "Dedicated production manager",
-            ]}
-            accent="indigo"
-          />
-        </motion.div>
+        <Pricing3DCarousel />
       </Parallax>
     </section>
   );
 }
-
 
 /*************************
  * CTA

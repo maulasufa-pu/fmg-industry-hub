@@ -236,14 +236,14 @@ function FounderCard() {
         <div>
           <h3 className="text-2xl font-bold">Alfath Flemmo</h3>
           <p className="mt-1 text-sm text-black/60 dark:text-white/60">
-            Founder & CEO — Flemmo Music Global Industry Hub (FMGIHub) / Flemmo Studio
+            Founder & CEO — Flemmo Music Global (FMG) Universe
           </p>
           <ul className="mt-4 space-y-2 text-sm text-black/80 dark:text-white/80">
             <li className="flex items-start gap-2">
               <Star className="mt-0.5 h-4 w-4 text-indigo-600" /> Composer, songwriter, arranger, audio engineer, and digital music producer.
             </li>
             <li className="flex items-start gap-2">
-              <Globe2 className="mt-0.5 h-4 w-4 text-indigo-600" /> Leads FMGIHub across publishing, distribution, licensing, and studio operations.
+              <Globe2 className="mt-0.5 h-4 w-4 text-indigo-600" /> Leads FMG Universe across publishing, distribution, licensing, and studio operations.
             </li>
             <li className="flex items-start gap-2">
               <Users className="mt-0.5 h-4 w-4 text-indigo-600" /> Collaborates with indie artists, labels, and brands across markets.
@@ -625,7 +625,7 @@ export default function AboutClientV2() {
             <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
               <div>
                 <h3 className="text-pretty text-2xl font-bold sm:text-3xl">
-                  Work with FMGIHub
+                  Work with FMG Universe
                 </h3>
                 <p className="mt-2 text-sm text-black/70 dark:text-white/70">
                   Share your references, timeline, and deliverables — we’ll
@@ -647,7 +647,7 @@ export default function AboutClientV2() {
       </section>
 
       {/* Footer (light) — hapus bila sudah pakai global Footer dari layout */}
-      <footer className="border-t border-black/10 py-10 text-sm dark:border-white/10">
+      {/* <footer className="border-t border-black/10 py-10 text-sm dark:border-white/10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 sm:flex-row">
           <div className="text-black/60 dark:text-white/60">
             © {new Date().getFullYear()} FMGIHub / Flemmo Studio
@@ -658,7 +658,7 @@ export default function AboutClientV2() {
             <Link href="/about">About</Link>
           </div>
         </div>
-      </footer>
+      </footer> */}
     </main>
   );
 }

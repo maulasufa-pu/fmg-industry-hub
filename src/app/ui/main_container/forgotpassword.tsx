@@ -19,19 +19,21 @@ const getPublicOrigin = (): string => {
 };
 
 export default function ForgotPasswordPage(): React.JSX.Element {
-  const [email, setEmail] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   // hCaptcha
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const [captchaKey, setCaptchaKey] = useState<number>(0); // force re-mount widget on reset
+  const [captchaKey, setCaptchaKey] = useState(0);
   const siteKey: string = process.env.NEXT_PUBLIC_HCAPTCHA_SITEKEY ?? "";
 
   const valid = useMemo(() => emailRe.test(email), [email]);
 
-  const verifyCaptcha = async (token: string): Promise<boolean> => {
+  // (Opsional) verifikasi ke server kamu sendiri.
+  // Boleh dihapus kalau kamu mau rely 100% ke verifikasi Supabase.
+  const verifyCaptchaLocally = async (token: string): Promise<boolean> => {
     const res = await fetch("/api/verify-hcaptcha", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -42,9 +44,9 @@ export default function ForgotPasswordPage(): React.JSX.Element {
     return json.ok === true;
   };
 
-  const resetCaptcha = (): void => {
+  const resetCaptcha = () => {
     setCaptchaToken(null);
-    setCaptchaKey((k) => k + 1);
+    setCaptchaKey((k) => k + 1); // re-mount widget
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -63,21 +65,26 @@ export default function ForgotPasswordPage(): React.JSX.Element {
 
     setLoading(true);
     try {
-      // 0) Verify hCaptcha on server
-      const ok = await verifyCaptcha(captchaToken);
-      if (!ok) {
+      // (Opsional) cek juga ke backend kamu sendiri:
+      // kalau mau, biarkan; kalau tidak perlu, hapus blok ini.
+      const localOk = await verifyCaptchaLocally(captchaToken);
+      if (!localOk) {
         resetCaptcha();
         throw new Error("Captcha verification failed. Please try again.");
       }
 
-      // 1) Send reset email via Supabase
+      // Wajib: kirim captchaToken ke Supabase jika Captcha ON untuk reset password
       const supabase = getSupabaseClient();
       const redirectTo = `${getPublicOrigin()}/auth/callback`;
-      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo,
+        captchaToken: captchaToken ?? undefined, // <-- INI KUNCI-NYA
+      });
       if (error) throw error;
 
       setMsg("We’ve sent a password reset link to your email. Please check your inbox/spam.");
-      resetCaptcha(); // optional: minta solve ulang bila ingin kirim lagi
+      resetCaptcha();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Failed to send reset link");
       resetCaptcha();

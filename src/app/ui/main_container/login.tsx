@@ -124,8 +124,8 @@ export const LoginSection = (): React.JSX.Element => {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-        options: { captchaToken: captchaToken! }, // <-- penting
-      })
+        options: { captchaToken: captchaToken! }, // wajib saat CAPTCHA ON
+      });
 
       if (error) throw new Error(error.message || "Login failed")
 
@@ -339,6 +339,20 @@ export const LoginSection = (): React.JSX.Element => {
               >
                 Forgot password?
               </button>
+            </div>
+
+              {/* hCaptcha */}
+            <div className="mt-4 flex justify-center">
+              <HCaptcha
+                key={captchaKey}
+                sitekey={siteKey}
+                onVerify={(token) => setCaptchaToken(token)}
+                onExpire={() => setCaptchaToken(null)}
+                onError={() => {
+                  setCaptchaToken(null);
+                  setErr("Captcha error. Please reload the captcha.");
+                }}
+              />
             </div>
 
             {/* Submit */}

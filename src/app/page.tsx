@@ -583,9 +583,10 @@ function Hero() {
           {/* <ParallaxRibbon /> */}
           <CinematicVideoHeroHLS
             shape="rounded"
-            m3u8="/videos/vaa/index.m3u8"
-            mp4Fallback="/videos/viokichi-you-are-enough-official-music-video-mv.mp4"
-            poster="/images/hero-poster.jpg"
+            // m3u8="/videos/vaa/index.m3u8"
+            // mp4Fallback="/videos/viokichi-you-are-enough-official-music-video-mv.mp4"
+            youtubeUrl="https://youtu.be/3zI-HFaUevg"
+            // poster="/images/hero-poster.jpg"
             maxWidthClass="max-w-7xl" // opsional: ubah lebar
           />
         </div>

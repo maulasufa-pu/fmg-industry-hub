@@ -5,30 +5,26 @@ import { useReducedMotion, motion, useScroll, useTransform } from "framer-motion
 import {
   ArrowDown,
   ArrowUp,
-  BadgeCheck,
-  Brain,
-  CalendarClock,
-  LineChart,
-  Mic2,
-  Network,
-  Rocket,
-  Search,
-  Share2,
   Stars,
+  Search,
+  Network,
+  Mic2,
   Users,
+  Rocket,
+  Share2,
 } from "lucide-react";
 
 /*************************************************
  * FMG Universe — /talent (Light + Dark friendly)
- * Scouting • A&R • Development • Management • Career Acceleration • Collaboration
  * - Fullpage vertical slides (scroll-snap, per-section paging)
- * - Parallax gradient art (mobile moves DOWN so tidak menutupi teks)
- * - Reduced-motion aware (animasi diringankan/disable)
- * - Right nav rail (desktop) + bottom rail tipis berwarna (mobile)
+ * - Parallax gradient art (mobile moves DOWN so it never covers text)
+ * - Reduced-motion aware (no extra motion when prefers-reduced-motion)
+ * - Right-side nav rail (desktop), bottom rail (mobile, thin colored)
+ * - Palette dan UI disamakan dengan /creative
  *************************************************/
 
 /* ---------- Utils ---------- */
-function useIsMobile(breakpoint = 768): boolean {
+function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -59,8 +55,8 @@ function TopBar(): React.JSX.Element {
   );
 }
 
-/* ---------- Global floating parallax background ---------- */
-function ParallaxField({ container }: { container: React.RefObject<HTMLDivElement | null> }) {
+/* ---------- Global floating parallax background (match /creative) ---------- */
+function ParallaxField({ container }: { container: React.RefObject<HTMLDivElement | null> }): React.JSX.Element {
   const reduce = useReducedMotion();
   const isMobile = useIsMobile();
   const { scrollYProgress } = useScroll({ container: container as React.RefObject<HTMLElement> });
@@ -71,29 +67,30 @@ function ParallaxField({ container }: { container: React.RefObject<HTMLDivElemen
 
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+      {/* Soft radial washes (sama seperti /creative, beda palet dari /academy) */}
       <motion.div
         style={reduce ? undefined : { y: ySlow }}
-        className="absolute -top-32 -left-24 h-[28rem] w-[28rem] rounded-full bg-gradient-to-br from-indigo-500/16 via-fuchsia-500/14 to-sky-500/10 sm:h-[36rem] sm:w-[36rem] sm:-top-40 sm:-left-32 blur-xl sm:blur-2xl"
+        className="absolute -top-32 -left-24 h-[30rem] w-[30rem] rounded-full bg-gradient-to-br from-rose-400/18 via-orange-300/14 to-lime-300/12 sm:h-[38rem] sm:w-[38rem] sm:-top-40 sm:-left-32 blur-2xl"
       />
       <motion.div
         style={reduce ? undefined : { y: yMed }}
-        className="absolute -bottom-32 -right-20 h-[24rem] w-[24rem] rounded-full bg-gradient-to-tr from-emerald-500/18 via-teal-400/14 to-cyan-400/10 sm:h-[34rem] sm:w-[34rem] sm:-bottom-40 sm:-right-24 blur-xl sm:blur-2xl"
+        className="absolute -bottom-36 -right-24 h-[28rem] w-[28rem] rounded-full bg-gradient-to-tr from-cyan-400/18 via-sky-300/14 to-indigo-300/12 sm:h-[36rem] sm:w-[36rem] sm:-bottom-44 sm:-right-28 blur-2xl"
       />
 
-      {/* Floating blobs (disable jika reduced-motion atau mobile) */}
+      {/* Floating gradient orbs (continuous + parallax) */}
       {!reduce && !isMobile && (
         <>
           <motion.div
             style={{ y: yFast }}
             animate={{ x: [0, 18, -18, 0], y: [0, -12, 12, 0], rotate: [0, 8, -8, 0] }}
             transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute left-[8%] top-[25%] h-32 w-32 rounded-full bg-gradient-to-br from-violet-500/50 via-fuchsia-400/45 to-amber-300/45 blur-lg"
+            className="absolute left-[10%] top-[22%] h-36 w-36 rounded-full bg-gradient-to-br from-teal-400/45 via-cyan-300/40 to-emerald-300/40 blur-lg"
           />
           <motion.div
             style={{ y: yMed }}
             animate={{ x: [0, -14, 14, 0], y: [0, 10, -10, 0], rotate: [0, -10, 10, 0] }}
             transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute right-[12%] top-[60%] h-40 w-40 rounded-full bg-gradient-to-br from-sky-400/50 via-indigo-400/45 to-fuchsia-300/45 blur-xl"
+            className="absolute right-[12%] top-[60%] h-48 w-48 rounded-full bg-gradient-to-br from-amber-300/45 via-rose-300/40 to-fuchsia-300/40 blur-xl"
           />
         </>
       )}
@@ -103,7 +100,7 @@ function ParallaxField({ container }: { container: React.RefObject<HTMLDivElemen
 
 type Palette = "indigo" | "violet" | "emerald" | "amber";
 
-/* ---------- Gradient artwork for each slide ---------- */
+/* ---------- Gradient artwork for each slide (palette & behavior match /creative) ---------- */
 function GradientArt({
   palette = "indigo",
   container,
@@ -119,25 +116,26 @@ function GradientArt({
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ container: container as React.RefObject<HTMLElement> });
 
-  // Mobile bergerak turun agar tidak menutupi teks, desktop bergerak naik untuk parallax
+  // Parallax: desktop naik (-y), mobile turun (+y) agar tidak menutup teks
   const y = useTransform(scrollYProgress, [0, 1], isMobile ? [0, 36 * depth] : [0, -72 * depth]);
 
+  // Palet disamakan dengan /creative
   const map: Record<Palette, { a: string; b: string }> = {
     indigo: {
-      a: "from-indigo-400/50 via-fuchsia-400/40 to-sky-300/40",
-      b: "from-sky-400/40 via-cyan-300/32 to-indigo-300/32",
+      a: "from-indigo-300/55 via-cyan-300/45 to-violet-300/45",
+      b: "from-fuchsia-300/45 via-sky-300/40 to-rose-300/40",
     },
     violet: {
-      a: "from-violet-400/50 via-fuchsia-400/40 to-indigo-300/40",
-      b: "from-rose-300/40 via-amber-300/32 to-violet-300/32",
+      a: "from-violet-300/55 via-rose-300/45 to-amber-300/45",
+      b: "from-indigo-300/45 via-fuchsia-300/40 to-sky-300/40",
     },
     emerald: {
-      a: "from-emerald-400/50 via-teal-400/40 to-cyan-300/40",
-      b: "from-lime-300/40 via-emerald-300/32 to-teal-300/32",
+      a: "from-emerald-300/55 via-teal-300/45 to-cyan-300/45",
+      b: "from-lime-300/45 via-emerald-300/40 to-teal-300/40",
     },
     amber: {
-      a: "from-amber-300/50 via-orange-300/40 to-rose-300/40",
-      b: "from-fuchsia-300/40 via-rose-300/32 to-amber-300/32",
+      a: "from-amber-300/55 via-orange-300/45 to-rose-300/45",
+      b: "from-lime-300/45 via-amber-300/40 to-fuchsia-300/40",
     },
   };
 
@@ -145,26 +143,25 @@ function GradientArt({
 
   return (
     <motion.div
-      style={reduce ? undefined : { y, contain: "paint" as const }}
-      className="relative z-0 mx-auto w-full max-w-[18rem] sm:max-w-xs will-change-transform"
+      style={reduce ? undefined : { y, contain: "paint" }}
+      className="relative z-0 mx-auto w-full max-w-[16rem] sm:max-w-xs will-change-transform"
     >
-      {/* Card */}
       <div className="relative aspect-square overflow-hidden rounded-2xl border border-neutral-900/10 bg-white/70 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
         {/* Soft highlight */}
         <div className="absolute inset-0 -z-10 rounded-2xl bg-gradient-to-br from-black/0 to-black/0 dark:from-white/10 dark:to-transparent" />
 
-        {/* Animated blobs (2) */}
+        {/* Animated blobs */}
         <motion.div
           aria-hidden
-          animate={reduce ? undefined : { x: [0, 14, -14, 0], y: [0, -10, 10, 0], rotate: [0, 6, -6, 0] }}
-          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          className={`absolute -left-12 -top-10 h-52 w-52 rounded-full bg-gradient-to-br ${col.a} blur-2xl`}
+          animate={reduce ? undefined : { x: [0, 16, -16, 0], y: [0, -12, 12, 0], rotate: [0, 6, -6, 0] }}
+          transition={reduce ? undefined : { duration: 18, repeat: Infinity, ease: "easeInOut" }}
+          className={`absolute -left-10 -top-8 h-48 w-48 rounded-full bg-gradient-to-br ${col.a} blur-2xl`}
         />
         <motion.div
           aria-hidden
-          animate={reduce ? undefined : { x: [0, -12, 12, 0], y: [0, 8, -8, 0], rotate: [0, -6, 6, 0] }}
-          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut", delay: 0.15 }}
-          className={`absolute -bottom-14 -right-12 h-64 w-64 rounded-full bg-gradient-to-br ${col.b} blur-2xl`}
+          animate={reduce ? undefined : { x: [0, -14, 14, 0], y: [0, 10, -10, 0], rotate: [0, -8, 8, 0] }}
+          transition={reduce ? undefined : { duration: 22, repeat: Infinity, ease: "easeInOut", delay: 0.15 }}
+          className={`absolute -bottom-12 -right-10 h-60 w-60 rounded-full bg-gradient-to-br ${col.b} blur-2xl`}
         />
 
         {/* Center radial */}
@@ -173,11 +170,11 @@ function GradientArt({
           className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_60%,rgba(0,0,0,0.06)_0%,rgba(0,0,0,0.02)_35%,transparent_60%)] dark:bg-[radial-gradient(circle_at_50%_60%,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0.06)_35%,transparent_60%)]"
         />
 
-        {/* Big center icon */}
+        {/* Icon overlay (match size/style with /creative) */}
         {OverlayIcon && (
           <div className="absolute inset-0 grid place-items-center">
-            <div className="rounded-2xl bg-neutral-900/10 p-3 backdrop-blur-md dark:bg-black/25">
-              <OverlayIcon className="h-16 w-16 text-neutral-900 drop-shadow dark:h-20 dark:w-20 dark:text-white" />
+            <div className="rounded-2xl bg-neutral-900/10 p-2.5 backdrop-blur-md dark:bg-black/25">
+              <OverlayIcon className="h-10 w-10 text-neutral-900 drop-shadow dark:h-12 dark:w-12 dark:text-white" />
             </div>
           </div>
         )}
@@ -226,7 +223,7 @@ const Slide = forwardRef<HTMLDivElement, SlideProps>(function Slide(
           {/* TEXT */}
           <div className="relative z-10 md:col-span-7">
             {kicker && (
-              <div className="inline-flex items-center gap-2 rounded-full bg-neutral-900/70 px-3 py-1 text-[11px] uppercase tracking-wider text-white backdrop-blur dark:bg-white/10 dark:text-white">
+              <div className="inline-flex items-center gap-2 rounded-full bg-neutral-900/70 px-3 py-1 text-[11px] uppercase tracking-wider text-white backdrop-blur dark:bg:white/10 dark:text-white">
                 <span className="h-1.5 w-1.5 rounded-full bg-white/90" />
                 {kicker}
               </div>
@@ -258,7 +255,7 @@ const Slide = forwardRef<HTMLDivElement, SlideProps>(function Slide(
             )}
           </div>
 
-          {/* ART – di bawah teks saat mobile */}
+          {/* ART */}
           <div className="md:col-span-5 md:mt-0 mt-1 relative z-0">
             <GradientArt palette={tint} container={scrollContainer} depth={artDepth} overlayIcon={HeadIcon} />
           </div>
@@ -268,7 +265,50 @@ const Slide = forwardRef<HTMLDivElement, SlideProps>(function Slide(
   );
 });
 
-/* ---------- Right-side vertical nav (rail — desktop only) ---------- */
+/* ---------- Bottom rail (mobile) — thin, colored (match /creative) ---------- */
+function MobileRail({
+  total,
+  activeIndex,
+  onGo,
+}: {
+  total: number;
+  activeIndex: number;
+  onGo: (i: number) => void;
+}) {
+  return (
+    <nav aria-label="Slide navigation" className="fixed inset-x-0 bottom-0 z-[90] md:hidden">
+      <div className="mx-auto w-fit max-w-full" style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}>
+        <div className="mx-4 mb-2 rounded-2xl bg-neutral-900/50 px-3 py-2 backdrop-blur-md ring-1 ring-black/10 dark:bg-black/40 dark:ring-white/10">
+          <div className="flex items-center justify-center gap-0">
+            {Array.from({ length: total }).map((_, i) => {
+              const active = i === activeIndex;
+              return (
+                <button
+                  key={i}
+                  onClick={() => onGo(i)}
+                  aria-label={`Go to slide ${i + 1}`}
+                  aria-current={active ? "true" : undefined}
+                  className={`relative h-4 shrink-0 transition-[width,margin] duration-300 ease-out ${active ? "w-[38px] mx-1.5" : "w-[20px] mx-[2px] group"}`}
+                >
+                  <span
+                    className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[3px] rounded-full transition-[width,background-color,box-shadow] duration-300 ease-out
+                    ${
+                      active
+                        ? "w-[30px] bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-amber-300 shadow-[0_0_8px_rgba(99,102,241,0.45)]"
+                        : "w-[10px] bg-neutral-300/80 dark:bg-white/60 group-hover:w-[14px] group-hover:bg-neutral-500/70 dark:group-hover:bg-white/80"
+                    }`}
+                  />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+/* ---------- Right-side vertical nav (desktop only) ---------- */
 function NavRail({
   total,
   activeIndex,
@@ -307,55 +347,6 @@ function NavRail({
   );
 }
 
-/* ---------- Bottom rail (mobile) — tipis & berwarna ---------- */
-function MobileRail({
-  total,
-  activeIndex,
-  onGo,
-}: {
-  total: number;
-  activeIndex: number;
-  onGo: (i: number) => void;
-}) {
-  return (
-    <nav
-      aria-label="Slide navigation"
-      className="fixed inset-x-0 bottom-0 z-[90] md:hidden"
-    >
-      <div
-        className="mx-auto w-fit max-w-full"
-        style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
-      >
-        <div className="mx-4 mb-2 rounded-2xl bg-neutral-900/50 px-3 py-2 backdrop-blur-md ring-1 ring-black/10 dark:bg-black/40 dark:ring-white/10">
-          <div className="flex items-center justify-center gap-1.5">
-            {Array.from({ length: total }).map((_, i) => {
-              const active = i === activeIndex;
-              return (
-                <button
-                  key={i}
-                  onClick={() => onGo(i)}
-                  aria-label={`Go to slide ${i + 1}`}
-                  aria-current={active ? "true" : undefined}
-                  className="group relative h-4 w-4 shrink-0 sm:h-4 sm:w-4"
-                >
-                  <span
-                    className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[3px] rounded-full transition-[width,background-color,box-shadow] duration-300 ease-out
-                      ${
-                        active
-                          ? "w-[30px] bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-amber-300 shadow-[0_0_8px_rgba(99,102,241,0.45)]"
-                          : "w-[10px] bg-neutral-300/80 dark:bg-white/60 group-hover:w-14 group-hover:bg-neutral-500/70 dark:group-hover:bg-white/80"
-                      }`}
-                  />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </nav>
-  );
-}
-
 /* ---------- Arrows (desktop) ---------- */
 function FloatArrows({ onPrev, onNext }: { onPrev: () => void; onNext: () => void }) {
   return (
@@ -378,14 +369,14 @@ function FloatArrows({ onPrev, onNext }: { onPrev: () => void; onNext: () => voi
   );
 }
 
-/* ---------- A&R mini pipeline (chips) ---------- */
+/* ---------- (Optional) A&R pipeline chips (konten tambahan) ---------- */
 function PipelineChips(): React.JSX.Element {
   const steps: ReadonlyArray<{ label: string; Icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }> = [
     { label: "Discover", Icon: Search },
-    { label: "Qualify", Icon: BadgeCheck },
-    { label: "Develop", Icon: Brain },
-    { label: "Release", Icon: CalendarClock },
-    { label: "Grow", Icon: LineChart },
+    { label: "Qualify", Icon: Stars },
+    { label: "Develop", Icon: Mic2 },
+    { label: "Release", Icon: Network },
+    { label: "Grow", Icon: Users },
   ];
   return (
     <div className="mt-6 flex flex-wrap gap-2">
@@ -575,12 +566,12 @@ export default function TalentPage(): React.JSX.Element {
     [slides.length]
   );
 
-  /* Desktop wheel → page-by-page (seperti /academy) */
+  /* Desktop wheel → page-by-page (smooth, throttle) */
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-    if (isTouch) return; // mobile pakai native snap
+    if (isTouch) return;
 
     let locked = false;
     let accum = 0;
@@ -602,7 +593,7 @@ export default function TalentPage(): React.JSX.Element {
     };
 
     el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel as EventListener);
+    return () => el.removeEventListener("wheel", onWheel as unknown as EventListener);
   }, [active, jump]);
 
   return (
@@ -615,13 +606,13 @@ export default function TalentPage(): React.JSX.Element {
       {/* Right-side vertical nav (desktop) */}
       <NavRail total={slides.length + 1} activeIndex={active} onGo={jump} />
 
-      {/* Bottom rail (mobile) — tipis, berwarna */}
+      {/* Bottom rail (mobile) — thin, colored */}
       <MobileRail total={slides.length + 1} activeIndex={active} onGo={jump} />
 
-      {/* Scroll container */}
+      {/* Scroll container (match /creative) */}
       <div
         ref={containerRef}
-        className="relative z-10 h[100dvh] md:h-[100dvh] overflow-y-auto overscroll-y-contain scroll-smooth snap-y snap-mandatory pb-[84px] md:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="relative z-10 h-[100dvh] overflow-y-auto overscroll-y-contain scroll-smooth snap-y snap-mandatory pb-[84px] md:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {slides.map((s, i) => (
           <Slide
@@ -640,7 +631,7 @@ export default function TalentPage(): React.JSX.Element {
           />
         ))}
 
-        {/* CTA / Closing slide */}
+        {/* CTA / Closing slide (match /creative) */}
         <section
           ref={registerRef(slides.length)}
           className="relative grid min-h-[100dvh] snap-start place-items-center px-4 pt-12 pb-28 sm:pt-16 sm:pb-24 sm:px-8"
@@ -681,7 +672,7 @@ export default function TalentPage(): React.JSX.Element {
                 href="/contact"
                 className="inline-flex items-center justify-center rounded-xl border border-neutral-900/30 px-5 py-2.5 text-sm font-semibold text-neutral-900 hover:bg-neutral-900/5 dark:border-white/40 dark:text-white dark:hover:bg-white/10"
               >
-                Talk to A&R
+                Talk to A&amp;R
               </a>
             </div>
           </motion.div>

@@ -1,3 +1,4 @@
+//E:\FMGIH\fmg-industry-hub\src\app\auth\set\route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 

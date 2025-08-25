@@ -15,16 +15,22 @@ import { Volume2, VolumeX, ArrowRight } from "lucide-react";
 type FrameShape = "keystone" | "octagon" | "hex" | "ticket" | "rounded";
 type Align = "left" | "center" | "right";
 type MobileCopyPos = "above" | "below";
-
 type CTA = { label: string; href: string; newTab?: boolean; rel?: string };
 
 type Props = {
-  // Video
+  // HLS
   m3u8?: string;
   mp4Fallback?: string;
   poster?: string;
+
+  // YouTube
+  youtubeId?: string;
+  youtubeUrl?: string;
+
+  // Common
   loop?: boolean;
-  forceAspect?: number; // desktop ratio (auto if omitted, fallback 2.39)
+  forceAspect?: number;             // desktop ratio; default 2.39 (anamorphic)
+  mobileZoom?: number;              // YT zoom khusus HP (cut letterbox). Default ~1.38
 
   // Frame & layout
   className?: string;
@@ -41,17 +47,62 @@ type Props = {
   credit?: string;
 
   // Behavior
-  revealDelayMs?: number;        // desktop initial show duration (ms)
+  revealDelayMs?: number;
   showLightSweep?: boolean;
-  mobileCopyPosition?: MobileCopyPos; // "above" | "below"
+  mobileCopyPosition?: MobileCopyPos;
 };
 
+declare global {
+  interface Window {
+    YT?: any;
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
+
+function extractYouTubeId(input?: string | null): string | null {
+  if (!input) return null;
+  if (/^[A-Za-z0-9_-]{11}$/.test(input)) return input; // pure ID
+  try {
+    const url = new URL(input);
+    if (url.hostname.includes("youtu.be")) return url.pathname.slice(1) || null;
+    const v = url.searchParams.get("v");
+    if (v) return v;
+    const m = url.pathname.match(/\/embed\/([A-Za-z0-9_-]{11})/);
+    if (m) return m[1];
+  } catch {}
+  return null;
+}
+
+function loadYouTubeAPI(): Promise<any> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") return;
+    if (window.YT && window.YT.Player) return resolve(window.YT);
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      prev?.();
+      resolve(window.YT);
+    };
+    const s = document.createElement("script");
+    s.src = "https://www.youtube.com/iframe_api";
+    s.async = true;
+    document.head.appendChild(s);
+  });
+}
+
 export default function CinematicVideoHeroHLS({
+  // HLS
   m3u8 = "/videos/vaa/index.m3u8",
   mp4Fallback,
   poster,
+
+  // YouTube
+  youtubeId,
+  youtubeUrl,
+
+  // Common
   loop = true,
-  forceAspect,
+  forceAspect,                       // if undefined -> default anamorphic 2.39
+  mobileZoom = 1.38,                 // ← zoom YT di HP biar 1:1 full tanpa bar
 
   className,
   shape = "rounded",
@@ -70,10 +121,19 @@ export default function CinematicVideoHeroHLS({
   mobileCopyPosition = "below",
 }: Props) {
   const sectionRef = useRef<HTMLDivElement | null>(null);
+
+  // ----- mode detection
+  const ytId = extractYouTubeId(youtubeId || youtubeUrl);
+  const useYouTube = Boolean(ytId);
+
+  // refs
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const hlsRef = useRef<import("hls.js").default | null>(null);
 
-  // Parallax & tilt
+  const ytBoxRef = useRef<HTMLDivElement | null>(null); // wrapper (absolute, overflow-hidden)
+  const ytPlayerRef = useRef<any | null>(null);
+
+  // parallax & tilt
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start end", "end start"] });
   const y = useTransform(scrollYProgress, [0, 1], ["-1%", "1%"]);
   const parallaxScale = useTransform(scrollYProgress, [0, 1], [1.006, 1.0]);
@@ -82,13 +142,14 @@ export default function CinematicVideoHeroHLS({
   const rotateX = useSpring(useTransform(mvY, [0, 1], [3.5, -3.5]), { stiffness: 150, damping: 20, mass: 0.35 });
   const rotateY = useSpring(useTransform(mvX, [0, 1], [-4.5, 4.5]), { stiffness: 150, damping: 20, mass: 0.35 });
 
+  // state
   const [muted, setMuted] = useState(true);
-  const [aspect, setAspect] = useState<number | null>(forceAspect ?? null); // desktop ratio
-  const [showCopy, setShowCopy] = useState(true);     // desktop: visible first N ms
+  const [aspect, setAspect] = useState<number | null>(forceAspect ?? 2.39); // desktop ratio -> anamorphic default
+  const [showCopy, setShowCopy] = useState(true);
   const [hover, setHover] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);    // breakpoint watcher
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Clip-path (prevent “cut bottom” with 99%)
+  // clip-path
   const clipMap: Record<Exclude<FrameShape, "rounded">, string> = {
     keystone: "polygon(8% 0%, 92% 0%, 100% 99%, 0% 99%)",
     octagon: "polygon(3% 0%, 97% 0%, 100% 12%, 100% 88%, 97% 99%, 3% 99%, 0% 88%, 0% 12%)",
@@ -99,28 +160,35 @@ export default function CinematicVideoHeroHLS({
   const clipStyle = clipPath ? { clipPath } : undefined;
   const radiusClass = shape === "rounded" ? "rounded-[20px] md:rounded-[24px]" : "";
 
-  // Breakpoint watcher (mobile = ≤767px)
+  // mobile breakpoint
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
     const set = () => setIsMobile(mq.matches);
-    set(); // initial
+    set();
     mq.addEventListener("change", set);
     return () => mq.removeEventListener("change", set);
   }, []);
 
-  // Init playback + read aspect for desktop
+  // ------- HLS init (only if NOT YouTube)
   useEffect(() => {
+    if (useYouTube) {
+      const t = setTimeout(() => setShowCopy(false), revealDelayMs);
+      return () => clearTimeout(t);
+    }
+
     const v = videoRef.current;
     if (!v) return;
     let cancelled = false;
     let localHls: import("hls.js").default | null = null;
 
-    const onPause: EventListener = () => { if (document.visibilityState === "visible") void v.play(); };
+    const onPause: EventListener = () => {
+      if (document.visibilityState === "visible") void v.play();
+    };
     const onClick: EventListener = () => { void v.play(); };
     const onMeta = (): void => {
-      if (forceAspect) return;
+      if (forceAspect) return; // pakai forceAspect jika ada
       const vw = v.videoWidth || 0, vh = v.videoHeight || 0;
-      setAspect(vw > 0 && vh > 0 ? vw / vh : 2.39);
+      if (vw > 0 && vh > 0) setAspect(vw / vh);
     };
 
     v.addEventListener("pause", onPause);
@@ -144,13 +212,14 @@ export default function CinematicVideoHeroHLS({
             v.src = mp4Fallback;
           }
         }
-      } else if (mp4Fallback) v.src = mp4Fallback;
+      } else if (mp4Fallback) {
+        v.src = mp4Fallback;
+      }
 
       v.muted = true;
-      void v.play();
+      void v.play().catch(() => {});
     })();
 
-    // desktop: hide copy after delay
     const timer = setTimeout(() => setShowCopy(false), revealDelayMs);
 
     return () => {
@@ -162,24 +231,134 @@ export default function CinematicVideoHeroHLS({
       try { localHls?.destroy(); } catch {}
       hlsRef.current = null;
     };
-  }, [m3u8, mp4Fallback, forceAspect, revealDelayMs]);
+  }, [useYouTube, m3u8, mp4Fallback, forceAspect, revealDelayMs]);
 
-  // Mute toggle (no restart)
+  // ------- YouTube init (only if YouTube)
   useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    v.muted = muted;
-    if (!muted) { v.volume = 0.9; void v.play(); }
-  }, [muted]);
+    if (!useYouTube || !ytId) return;
+    let destroyed = false;
 
-  // Mouse tilt
+    (async () => {
+      const YT = await loadYouTubeAPI();
+      if (destroyed || !ytBoxRef.current) return;
+
+      ytPlayerRef.current = new YT.Player(ytBoxRef.current, {
+        width: "100%",
+        height: "100%",
+        videoId: ytId,
+        host: "https://www.youtube-nocookie.com",
+        playerVars: {
+          autoplay: 1,
+          mute: 1,                // autoplay mulus
+          controls: 0,            // MATIKAN controls native
+          rel: 0,
+          iv_load_policy: 3,
+          playsinline: 1,
+          modestbranding: 1,
+          loop: loop ? 1 : 0,
+          playlist: loop ? ytId : undefined,
+          origin: typeof window !== "undefined" ? window.location.origin : undefined,
+          enablejsapi: 1,
+          fs: 0,
+          disablekb: 1,
+        },
+        events: {
+          onReady: (e: any) => {
+            try {
+              e.target.mute(); // start muted
+              e.target.playVideo();
+            } catch {}
+            styleYouTubeIframe(); // sizing pertama
+            // rerun sebentar lagi untuk jaga-jaga setelah iframe settle
+            setTimeout(styleYouTubeIframe, 150);
+          },
+        },
+      });
+
+      // sembunyikan copy setelah delay
+      const t = setTimeout(() => setShowCopy(false), revealDelayMs);
+      (ytPlayerRef.current as any).__fmgtimer = t;
+
+      // update sizing saat resize/orientasi
+      const onResize = () => styleYouTubeIframe();
+      window.addEventListener("resize", onResize);
+      window.addEventListener("orientationchange", onResize);
+
+      function styleYouTubeIframe() {
+        const iframe = ytBoxRef.current?.querySelector("iframe") as HTMLIFrameElement | null;
+        if (!iframe) return;
+
+        const rv = 16 / 9;                              // rasio asli frame YT
+        const isPhone = window.matchMedia("(max-width: 767px)").matches;
+        const rContainer = isPhone ? 1 : (forceAspect ?? 2.39); // HP = 1:1, desktop = anamorphic
+        const zoom = isPhone ? mobileZoom : 1;          // ← ZOOM khusus HP biar benar-benar 1:1 full
+
+        Object.assign(iframe.style, {
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          border: "0",
+          transformOrigin: "center center",
+          willChange: "transform",
+        } as CSSStyleDeclaration);
+
+        if (rContainer > rv) {
+          // container lebih lebar (2.39) → width 100%, height > 100%
+          iframe.style.width = "100%";
+          iframe.style.height = `${(rContainer / rv) * 100}%`;
+        } else {
+          // container lebih sempit (HP 1:1) → height 100%, width > 100%
+          iframe.style.height = "100%";
+          iframe.style.width = `${(rv / rContainer) * 100}%`; // ≈177.78% saat 1:1
+        }
+
+        // terapkan zoom (hilangkan letterbox bawaan video 2.39 di dalam 16:9)
+        iframe.style.transform = `translate(-50%, -50%) scale(${zoom})`;
+      }
+
+      // cleanup
+      return () => {
+        window.removeEventListener("resize", onResize);
+        window.removeEventListener("orientationchange", onResize);
+      };
+    })();
+
+    return () => {
+      destroyed = true;
+      try {
+        const p = ytPlayerRef.current;
+        if (p && (p as any).__fmgtimer) clearTimeout((p as any).__fmgtimer);
+        p?.destroy?.();
+      } catch {}
+      ytPlayerRef.current = null;
+    };
+  }, [useYouTube, ytId, loop, revealDelayMs, forceAspect, mobileZoom]);
+
+  // ----- mute toggle (HLS & YouTube)
+  useEffect(() => {
+    if (!useYouTube) {
+      const v = videoRef.current;
+      if (!v) return;
+      v.muted = muted;
+      if (!muted) { v.volume = 0.9; void v.play(); }
+      return;
+    }
+    const p = ytPlayerRef.current;
+    if (!p || !p.getPlayerState) return;
+    try {
+      if (muted) p.mute();
+      else { p.unMute(); p.setVolume(90); p.playVideo?.(); }
+    } catch {}
+  }, [muted, useYouTube]);
+
+  // mouse tilt
   const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     mvX.set((e.clientX - r.left) / r.width);
     mvY.set((e.clientY - r.top) / r.height);
   };
 
-  const aspectNumber = aspect ?? 2.39; // desktop fallback
+  const aspectNumber = (isMobile ? 1 : (forceAspect ?? aspect ?? 2.39)); // mobile 1:1, desktop anamorphic
 
   const alignCls =
     align === "center" ? "items-center text-center"
@@ -187,7 +366,7 @@ export default function CinematicVideoHeroHLS({
       : "items-start text-left";
 
   const Sweep: React.FC = () => (
-    <span aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-md">
+    <span aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-md">
       <motion.span
         initial={{ x: "-120%" }}
         animate={{ x: "120%" }}
@@ -198,7 +377,7 @@ export default function CinematicVideoHeroHLS({
     </span>
   );
 
-  // Mobile CTA (outside video)
+  // mobile copy
   const MobileCopy = (
     <div className="md:hidden mx-auto w-full max-w-prose px-1.5 mt-4">
       {kicker && (
@@ -240,9 +419,8 @@ export default function CinematicVideoHeroHLS({
     <section
       ref={sectionRef}
       className={`relative w-full px-4 md:px-6 mt-12 md:mt-20 mb-10 md:mb-14 ${className ?? ""}`}
-      aria-label="FMG Universe Music Video"
+      aria-label="FMG Universe Video"
     >
-      {/* Mobile copy ABOVE if chosen */}
       {mobileCopyPosition === "above" ? MobileCopy : null}
 
       <div className={`mx-auto w-full ${maxWidthClass}`}>
@@ -251,11 +429,10 @@ export default function CinematicVideoHeroHLS({
           onMouseMove={onMouseMove}
           onPointerEnter={() => setHover(true)}
           onPointerLeave={() => setHover(false)}
-          className="relative"
+          className="relative group"
         >
-          {/* Outer container (not clipped) */}
           <div className="relative">
-            {/* Masked video frame */}
+            {/* masked frame */}
             <div
               className={`relative ${radiusClass} overflow-hidden bg-neutral-100/10 ring-1 ring-neutral-900/10 shadow-xl shadow-black/10 dark:bg-black/80 dark:ring-white/10 dark:shadow-black/40`}
               style={clipStyle}
@@ -263,29 +440,46 @@ export default function CinematicVideoHeroHLS({
               <div
                 className="relative w-full"
                 style={{
-                  // Mobile square + fill; Desktop anamorphic + contain
-                  aspectRatio: isMobile ? 1 : aspectNumber,
-                  minHeight: isMobile ? "360px" : "320px",
+                  aspectRatio: isMobile ? 1 : (forceAspect ?? aspect ?? 2.39), // HP 1:1, desktop anamorphic
+                  minHeight: isMobile ? undefined : "320px",                    // no minHeight on mobile
                 }}
               >
-                <video
-                  ref={videoRef}
-                  className={`absolute inset-0 h-full w-full select-none ${isMobile ? "object-cover" : "object-contain"} bg-black`}
-                  loop={loop}
-                  autoPlay
-                  playsInline
-                  controls={false}
-                  controlsList="nodownload noplaybackrate noremoteplayback"
-                  disablePictureInPicture
-                  poster={poster}
-                  preload="auto"
-                  crossOrigin="anonymous"
-                  onContextMenu={(e) => e.preventDefault()}
-                />
+                {useYouTube ? (
+                  <div
+                    ref={ytBoxRef}
+                    className="absolute inset-0 h-full w-full bg-black overflow-hidden"
+                  />
+                ) : (
+                  <video
+                    ref={videoRef}
+                    className={`absolute inset-0 h-full w-full ${
+                      isMobile ? "object-cover" : "object-contain"
+                    } select-none bg-black`}
+                    loop={loop}
+                    autoPlay
+                    playsInline
+                    controls={false}
+                    controlsList="nodownload noplaybackrate noremoteplayback"
+                    disablePictureInPicture
+                    poster={poster}
+                    preload="auto"
+                    crossOrigin="anonymous"
+                    onContextMenu={(e) => e.preventDefault()}
+                    onError={() => {
+                      if (mp4Fallback && videoRef.current) {
+                        console.warn("[video] native error, fallback MP4");
+                        videoRef.current.src = mp4Fallback;
+                        videoRef.current.load();
+                        videoRef.current.muted = true;
+                        void videoRef.current.play().catch(() => {});
+                      }
+                    }}
+                  />
+                )}
               </div>
             </div>
 
-            {/* Credit & Sound toggle OUTSIDE the mask (won’t be clipped) */}
+            {/* credit */}
             {credit && (
               <div className="absolute left-3 bottom-3 z-10">
                 <span className="rounded-full bg-neutral-900/70 px-2.5 py-1 text-[11px] leading-none text-white ring-1 ring-black/20 backdrop-blur-sm dark:bg-white/15 dark:text-white dark:ring-white/20">
@@ -293,16 +487,27 @@ export default function CinematicVideoHeroHLS({
                 </span>
               </div>
             )}
+
+            {/* custom sound toggle */}
             <button
               type="button"
               onClick={() => setMuted((m) => !m)}
               aria-label={muted ? "Turn sound on" : "Turn sound off"}
-              className="absolute bottom-3 right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/85 text-neutral-900 ring-1 ring-black/10 backdrop-blur-md shadow-lg transition hover:bg-white dark:bg-zinc-900/80 dark:text-white dark:ring-white/15"
+              className="
+                absolute right-3 bottom-3 z-10
+                flex h-10 w-10 items-center justify-center
+                rounded-full bg-white/85 text-neutral-900 ring-1 ring-black/10
+                backdrop-blur-md shadow-lg
+                transition-transform duration-200 will-change-transform
+                md:group-hover:-translate-y-8
+                hover:bg-white
+                dark:bg-zinc-900/80 dark:text-white dark:ring-white/15
+              "
             >
               {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
             </button>
 
-            {/* DESKTOP CTA overlay — 3s then hide; reappear on hover */}
+            {/* desktop CTA overlay */}
             <AnimatePresence>
               {!isMobile && (hover || showCopy) ? (
                 <motion.div
@@ -358,7 +563,6 @@ export default function CinematicVideoHeroHLS({
         </motion.div>
       </div>
 
-      {/* Mobile copy BELOW if chosen */}
       {mobileCopyPosition === "below" ? MobileCopy : null}
     </section>
   );

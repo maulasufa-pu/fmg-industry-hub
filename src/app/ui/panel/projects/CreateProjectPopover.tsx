@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState, useLayoutEffect } from "re
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { Close } from "@/icons";
+import BrandMark from "@/app/ui/BrandMark";
 import type {
   ServiceRow,
   BundleRow,
@@ -540,6 +541,19 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
           >
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
+                {/* Brand FMG + lockup di kiri */}
+                <BrandMark
+                  href="/"
+                  logoSize={28}
+                  className="[&_*]:!text-white"
+                  subtitle="Client Portal"
+                  subtitleBasePx={9}
+                  subtitleMinPx={8}
+                  subtitleMaxPx={11}
+                />
+
+                <div className="hidden h-6 w-px bg-white/30 sm:block" />
+
                 <h2 className="text-base md:text-lg font-bold">Request New Project</h2>
                 <div className="text-[11px] md:text-xs text-white/80">Step {step} of 3</div>
               </div>

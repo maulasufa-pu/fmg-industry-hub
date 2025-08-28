@@ -373,7 +373,7 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
 
                 <div 
                   className="relative w-fit -mt-1 font-body-XS font-[number:var(--body-XS-font-weight)] text-neutral-600 dark:text-neutral-200 dark:text-gray-200 text-[length:var(--body-XS-font-size)] tracking-[var(--body-XS-letter-spacing)] leading-[var(--body-XS-line-height)] whitespace-nowrap [font-style:var(--body-XS-font-style)]">
-                Global Industry Hub
+                Global Universe Solution
                 </div>
               </div>
             </motion.div>
@@ -670,7 +670,7 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
 
                     <div 
                       className="relative w-fit -mt-1 font-body-XS font-[number:var(--body-XS-font-weight)] text-neutral-600 dark:text-neutral-200 dark:text-gray-200 text-[length:var(--body-XS-font-size)] tracking-[var(--body-XS-letter-spacing)] leading-[var(--body-XS-line-height)] whitespace-nowrap [font-style:var(--body-XS-font-style)]">
-                    Global Industry Hub
+                    Global Universe Solution
                     </div>
                   </div> */}
                 {/* </motion.div> */}

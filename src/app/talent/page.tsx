@@ -16,11 +16,11 @@ import {
 
 /*************************************************
  * FMG Universe — /talent (Light + Dark friendly)
- * - Fullpage vertical slides (scroll-snap, per-section paging)
+ * - Full-page vertical slides (scroll-snap, per-section paging)
  * - Parallax gradient art (mobile moves DOWN so it never covers text)
  * - Reduced-motion aware (no extra motion when prefers-reduced-motion)
  * - Right-side nav rail (desktop), bottom rail (mobile, thin colored)
- * - Palette dan UI disamakan dengan /creative
+ * - Palette and UI aligned with /creative
  *************************************************/
 
 /* ---------- Utils ---------- */
@@ -67,7 +67,7 @@ function ParallaxField({ container }: { container: React.RefObject<HTMLDivElemen
 
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-      {/* Soft radial washes (sama seperti /creative, beda palet dari /academy) */}
+      {/* Soft radial washes (same as /creative, different palette from /academy) */}
       <motion.div
         style={reduce ? undefined : { y: ySlow }}
         className="absolute -top-32 -left-24 h-[30rem] w-[30rem] rounded-full bg-gradient-to-br from-rose-400/18 via-orange-300/14 to-lime-300/12 sm:h-[38rem] sm:w-[38rem] sm:-top-40 sm:-left-32 blur-2xl"
@@ -116,10 +116,10 @@ function GradientArt({
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ container: container as React.RefObject<HTMLElement> });
 
-  // Parallax: desktop naik (-y), mobile turun (+y) agar tidak menutup teks
+  // Parallax: desktop moves up (-y), mobile moves down (+y) so it never covers text
   const y = useTransform(scrollYProgress, [0, 1], isMobile ? [0, 36 * depth] : [0, -72 * depth]);
 
-  // Palet disamakan dengan /creative
+  // Palette aligned with /creative
   const map: Record<Palette, { a: string; b: string }> = {
     indigo: {
       a: "from-indigo-300/55 via-cyan-300/45 to-violet-300/45",
@@ -170,7 +170,7 @@ function GradientArt({
           className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_60%,rgba(0,0,0,0.06)_0%,rgba(0,0,0,0.02)_35%,transparent_60%)] dark:bg-[radial-gradient(circle_at_50%_60%,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0.06)_35%,transparent_60%)]"
         />
 
-        {/* Icon overlay (match size/style with /creative) */}
+        {/* Icon overlay (size/style matches /creative) */}
         {OverlayIcon && (
           <div className="absolute inset-0 grid place-items-center">
             <div className="rounded-2xl bg-neutral-900/10 p-2.5 backdrop-blur-md dark:bg-black/25">
@@ -223,7 +223,7 @@ const Slide = forwardRef<HTMLDivElement, SlideProps>(function Slide(
           {/* TEXT */}
           <div className="relative z-10 md:col-span-7">
             {kicker && (
-              <div className="inline-flex items-center gap-2 rounded-full bg-neutral-900/70 px-3 py-1 text-[11px] uppercase tracking-wider text-white backdrop-blur dark:bg:white/10 dark:text-white">
+              <div className="inline-flex items-center gap-2 rounded-full bg-neutral-900/70 px-3 py-1 text-[11px] uppercase tracking-wider text-white backdrop-blur dark:bg-white/10 dark:text-white">
                 <span className="h-1.5 w-1.5 rounded-full bg-white/90" />
                 {kicker}
               </div>
@@ -369,7 +369,7 @@ function FloatArrows({ onPrev, onNext }: { onPrev: () => void; onNext: () => voi
   );
 }
 
-/* ---------- (Optional) A&R pipeline chips (konten tambahan) ---------- */
+/* ---------- (Optional) A&R pipeline chips (extra content) ---------- */
 function PipelineChips(): React.JSX.Element {
   const steps: ReadonlyArray<{ label: string; Icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }> = [
     { label: "Discover", Icon: Search },
@@ -408,7 +408,7 @@ export default function TalentPage(): React.JSX.Element {
         title: "FMG Talent",
         kicker: "Beyond Sound. Built-in Intelligence.",
         description:
-          "Scouting, A&R pipelines, development, management, dan kolaborasi—satu operating system untuk talent. Kami menemukan potensi, membentuk artistry, dan mengompound value lintas rilis.",
+          "Scouting, A&R pipelines, development, management, and collaboration—one operating system for talent. We spot potential, shape artistry, and compound value across releases.",
         headIcon: Stars,
         tint: "indigo" as const,
         artDepth: 0.85,
@@ -433,12 +433,12 @@ export default function TalentPage(): React.JSX.Element {
         title: "Scouting Intelligence",
         kicker: "Signals • Fit • Momentum",
         description:
-          "Kami menilai prospek dari socials, DSPs, UGC, dan live circuits. Scorecard memadukan catatan A&R kualitatif dengan sinyal pertumbuhan kuantitatif untuk pandangan yang fair.",
+          "We assess prospects from socials, DSPs, UGC, and live circuits. The scorecard blends qualitative A&R notes with quantitative growth signals for a fair view.",
         bullets: [
           "Multi-source discovery: TikTok/IG/YouTube • DSP analytics • live tips",
-          "Similarity search ke roster & niche pasar",
-          "Readiness scoring: konsistensi, identitas, live, brand fit",
-          "Ethical intake: feedback transparan & next steps",
+          "Similarity search with roster & niche markets",
+          "Readiness scoring: consistency, identity, live, brand fit",
+          "Ethical intake: transparent feedback & next steps",
         ] as const,
         headIcon: Search,
         tint: "violet" as const,
@@ -449,12 +449,12 @@ export default function TalentPage(): React.JSX.Element {
         title: "A&R Pipelines",
         kicker: "From idea to release",
         description:
-          "Stage-gated A&R dengan brief jelas, reference boards, dan sesi iteratif. Alignment pada sound, story, audiens sebelum greenlight.",
+          "Stage-gated A&R with clear briefs, reference boards, and iterative sessions. We align on sound, story, and audience before greenlighting.",
         bullets: [
           "Brief → Demo → Iterations → Pre-pro → Recording → Post",
-          "Reference boards & moodmaps untuk creative north star",
-          "Weekly check-ins, versioning, dan decision logs",
-          "Go/No-Go gates terkait milestone & budget",
+          "Reference boards & mood maps for a creative north star",
+          "Weekly check-ins, versioning, and decision logs",
+          "Go/No-Go gates tied to milestones & budget",
         ] as const,
         headIcon: Network,
         tint: "emerald" as const,
@@ -464,12 +464,12 @@ export default function TalentPage(): React.JSX.Element {
         title: "Development Tracks",
         kicker: "Vocal • Writing • Performance • Content",
         description:
-          "Sprint pengembangan kustom untuk mempertajam craft & output. Coaching vokal & writing, co-write labs, dan engine konten yang autentik.",
+          "Custom development sprints to sharpen craft and output. Vocal & writing coaching, co-write labs, and an authentic content engine.",
         bullets: [
           "Vocal coaching & ear training—goal-based",
           "Songwriting labs & topline camps",
           "Performance readiness: stagecraft & MD",
-          "Content calendars dengan creative toolkits",
+          "Content calendars with creative toolkits",
         ] as const,
         headIcon: Mic2,
         tint: "amber" as const,
@@ -479,10 +479,10 @@ export default function TalentPage(): React.JSX.Element {
         title: "Management Operations",
         kicker: "Rights • Releases • Ops",
         description:
-          "Manajemen 360°: kalender, budget, rights, dan reporting. Split transparan, kontrak, dan analytics pasca-rilis untuk compound learning.",
+          "360° management: calendars, budgets, rights, and reporting. Transparent splits, contracts, and post-release analytics for compounding learnings.",
         bullets: [
-          "Release roadmap & OKR per siklus",
-          "Contracts & split sheets dengan audit trails",
+          "Release roadmap & OKRs per cycle",
+          "Contracts & split sheets with audit trails",
           "Budgeting & vendor management",
           "Post-mortems: performance & LTV signals",
         ] as const,
@@ -494,12 +494,12 @@ export default function TalentPage(): React.JSX.Element {
         title: "Career Acceleration",
         kicker: "Growth • Partnerships • Touring",
         description:
-          "Kami memasukkan artis ke growth loops—PR, storytelling, partnerships, brand deals, dan touring yang berkelanjutan.",
+          "We plug artists into growth loops—PR, storytelling, partnerships, brand deals, and sustainable touring.",
         bullets: [
           "Narrative PR & owned media flywheel",
-          "Strategi playlisting yang patuh aturan platform",
-          "Brand & creator partnerships dengan value jelas",
-          "Tour mapping: market, timing, unit economics",
+          "Playlisting strategy compliant with platform rules",
+          "Brand & creator partnerships with clear value",
+          "Tour mapping: markets, timing, unit economics",
         ] as const,
         headIcon: Rocket,
         tint: "violet" as const,
@@ -509,12 +509,12 @@ export default function TalentPage(): React.JSX.Element {
         title: "Collaboration Workflows",
         kicker: "Co-writes • Sessions • Approvals",
         description:
-          "Kolaborasi tanpa friction lintas penulis, produser, dan brand. IP jelas, version control, stems, dan approvals—semua tercatat.",
+          "Frictionless collaboration across writers, producers, and brands. Clear IP, version control, stems, and approvals—all tracked.",
         bullets: [
           "Session planning & hold calendars",
-          "Co-writes remote/IRL dengan alur file aman",
+          "Co-writes remote/IRL with secure file flows",
           "Versioning: stems, alt mixes, vocal comps",
-          "Approvals & usage tracking untuk sync & campaigns",
+          "Approvals & usage tracking for sync & campaigns",
         ] as const,
         headIcon: Share2,
         tint: "emerald" as const,
@@ -566,7 +566,7 @@ export default function TalentPage(): React.JSX.Element {
     [slides.length]
   );
 
-  /* Desktop wheel → page-by-page (smooth, throttle) */
+  /* Desktop wheel → page-by-page (smooth, throttled) */
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -609,7 +609,7 @@ export default function TalentPage(): React.JSX.Element {
       {/* Bottom rail (mobile) — thin, colored */}
       <MobileRail total={slides.length + 1} activeIndex={active} onGo={jump} />
 
-      {/* Scroll container (match /creative) */}
+      {/* Scroll container (aligned with /creative) */}
       <div
         ref={containerRef}
         className="relative z-10 h-[100dvh] overflow-y-auto overscroll-y-contain scroll-smooth snap-y snap-mandatory pb-[84px] md:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -631,7 +631,7 @@ export default function TalentPage(): React.JSX.Element {
           />
         ))}
 
-        {/* CTA / Closing slide (match /creative) */}
+        {/* CTA / Closing slide (aligned with /creative) */}
         <section
           ref={registerRef(slides.length)}
           className="relative grid min-h-[100dvh] snap-start place-items-center px-4 pt-12 pb-28 sm:pt-16 sm:pb-24 sm:px-8"
@@ -659,7 +659,7 @@ export default function TalentPage(): React.JSX.Element {
           >
             <h2 className="text-3xl font-semibold sm:text-4xl md:text-5xl">Join the roster.</h2>
             <p className="mx-auto mt-3 max-w-xl text-neutral-700 dark:text-white/80">
-              Ceritakan artistry, visi, dan goal kamu—kami review dan respon. No shortcuts: growth beretika.
+              Tell us about your artistry, vision, and goals—we’ll review and respond. No shortcuts: ethical growth.
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <a

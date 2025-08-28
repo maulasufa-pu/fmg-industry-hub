@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState, useLayoutEffect } from "re
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { Close } from "@/icons";
-import BrandMark from "@/app/ui/BrandMark";
+import BrandMark from "@/app/ui/BrandMark"; // ← pakai BrandMark yang ada, TANPA mengubah file aslinya
 import type {
   ServiceRow,
   BundleRow,
@@ -245,7 +245,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
         .or("main_role.eq.admin,staff_role.cs.{engineer}")
         .order("first_name", { ascending: true });
 
-      if (ac.signal.aborted || error) return;
+    if (ac.signal.aborted || error) return;
 
       if (mountedRef.current) {
         setEngineers(
@@ -523,9 +523,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
           onClick={(e) => e.stopPropagation()}
         >
           {/* MOBILE drag handle */}
-          <div
-            className="md:hidden pt-[max(env(safe-area-inset-top),0px)]"
-          >
+          <div className="md:hidden pt-[max(env(safe-area-inset-top),0px)]">
             <div className="h-1.5 w-12 bg-slate-300/80 dark:bg-slate-600/70 rounded-full mx-auto mt-2 mb-1.5" />
           </div>
 
@@ -540,23 +538,29 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
             style={{ paddingTop: "max(env(safe-area-inset-top),0px)" }}
           >
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                {/* Brand FMG + lockup di kiri */}
-                <BrandMark
-                  href="/"
-                  logoSize={28}
-                  className="[&_*]:!text-white"
-                  subtitle="Client Portal"
-                  subtitleBasePx={9}
-                  subtitleMinPx={8}
-                  subtitleMaxPx={11}
-                />
+              <div className="flex items-center gap-2 sm:gap-3">
+                {/* BRAND — tanpa mengubah BrandMark.tsx */}
+                <div className="-translate-y-[1px]">
+                  <BrandMark
+                    href="/"
+                    logoSize={24}
+                    gapClassName="gap-1.5"
+                    className="select-none [&_*]:!text-white"
+                    subtitle="Client Portal"
+                    // clamp kecil agar subtitle tidak 'lompat'
+                    subtitleBasePx={9}
+                    subtitleMinPx={8}
+                    subtitleMaxPx={11}
+                    priority
+                  />
+                </div>
 
                 <div className="hidden h-6 w-px bg-white/30 sm:block" />
 
-                <h2 className="text-base md:text-lg font-bold">Request New Project</h2>
-                <div className="text-[11px] md:text-xs text-white/80">Step {step} of 3</div>
+                <h2 className="text-base md:text-lg font-bold leading-none tracking-tight">Request New Project</h2>
+                <div className="text-[11px] md:text-xs text-white/80 leading-none">Step {step} of 3</div>
               </div>
+
               <button
                 type="button"
                 onClick={onClose}

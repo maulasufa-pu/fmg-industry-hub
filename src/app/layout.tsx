@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
 import AppShell from "./AppShell";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -91,6 +92,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" data-scroll-behavior="smooth">
       <body className="bg-background text-foreground transition-colors duration-300">
         <AppShell>{children}</AppShell>
+        <SpeedInsights/>
       </body>
     </html>
   );

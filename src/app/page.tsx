@@ -10,7 +10,7 @@ import { Users, Share2, Cpu, BookOpen, Calendar, GraduationCap, type LucideIcon 
 import { JsonLd } from "@/components/JsonLd";
 import { siteConfig } from "@/lib/site";
 import { compact } from "@/lib/arrays";
-import { getArtworks } from "@/lib/getArtworks";
+// import { getArtworks } from "@/lib/getArtworks";
 
 import type { PanInfo } from "framer-motion";
 import CinematicVideoHeroHLS from "@/components/CinematicVideoHeroHLS";
@@ -1486,7 +1486,18 @@ function CTA() {
  * Page Component
  *************************/
 export default function LandingPage() {
-  const artworks = getArtworks();
+  const [artworks, setArtworks] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    fetch("/api/artworks")
+      .then((res) => res.json())
+      .then((data: string[]) => setArtworks(data));
+  }, []);
+
+  if (artworks.length === 0) {
+    return <p className="text-center py-20">Loading artworks…</p>;
+  }
+  // const artworks = getArtworks();
   const sameAs = compact([
     siteConfig.social.website,
     siteConfig.social.instagram,

@@ -1,3 +1,5 @@
+export { default as Threads } from "./threads.svg";
+export { default as TikTok } from "./tiktok.svg";
 export { default as Fivehundredpx } from "./500px.svg";
 export { default as Accessibility } from "./accessibility.svg";
 export { default as Activity } from "./activity.svg";

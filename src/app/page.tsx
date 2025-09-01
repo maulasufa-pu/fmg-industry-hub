@@ -340,7 +340,7 @@ function MarqueeRow({ items, speed = 50 }: { items: ReadonlyArray<React.ReactNod
       <div className="relative flex overflow-hidden">
         <motion.div className="flex min-w-max gap-12 pr-12" animate={{ x: ["0%", "-50%"] }} transition={transition}>
           {[...items, ...items].map((it, i) => (
-            <div key={i} className="flex items-center gap-3 text-black/60 dark:text-white/60">
+            <div key={i} className="flex items-center gap-3 text-black/60 dark:text-white/100">
               <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/5 ring-1 ring-black/10 dark:bg-white/10 dark:ring-white/10">
                 <Star className="h-4 w-4" />
               </div>
@@ -923,7 +923,7 @@ function AboutFMG() {
   return (
     <section id="about" className="relative mx-auto max-w-6xl px-4">
       <Parallax speed={0.06}>
-        <div className="mx-auto mt-5 w-full max-w-6xl py-10">
+        <div className="mx-auto mt-5 w-full max-w-6xl py-5">
             <MarqueeRow
               speed={60}
               items={["Custom Songwriting","Arrangement & Production","Recording Studio","Mixing & Mastering","Music Publishing","Label & Distribution","Licensing & Rights","Client Portal & Analytics"]}

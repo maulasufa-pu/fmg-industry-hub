@@ -109,11 +109,11 @@ export default function CinematicVideoHeroHLS({
   maxWidthClass = "max-w-7xl",
 
   kicker = "FMG Universe • Custom Music",
-  heading = "Let’s Create Your Music.",
+  heading = "Let’s Create Music.",
   subheading = "Composition, recording, mixing, mastering, and distribution — plus anamorphic music videos.",
   align = "left",
-  ctaPrimary = { label: "Start Your Project", href: "/contact" },
-  ctaSecondary = { label: "Free Consultation", href: "/consult" },
+  ctaPrimary = { label: "Start My Project", href: "/contact" },
+  ctaSecondary = { label: "Free Consultation", href: "https://wa.me/6282298288188" },
   credit = "Viokichi — You Are Enough",
 
   revealDelayMs = 3000,

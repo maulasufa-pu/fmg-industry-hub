@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Envelope, Facebook, Instagram, Linkedin, Twitter, Youtube } from "@/icons";
+import { Envelope, Facebook, Instagram, Linkedin, Twitter, Youtube, TikTok, Threads } from "@/icons";
 import BrandMark from "../BrandMark";
 
 type Column = {
@@ -55,11 +55,13 @@ export default function Footer(): React.JSX.Element {
   ];
 
   const socials: SocialItem[] = [
-    { Icon: Youtube, href: "https://youtube.com/flemmo" },
+    { Icon: Youtube, href: "https://youtube.com/flemmomusicglobal" },
     { Icon: Facebook, href: "https://facebook.com/flemmomusicglobal" },
-    { Icon: Twitter, href: "https://x.com/flemmomusicglobal" },
+    { Icon: Twitter, href: "https://x.com/@flemmomusic" },
     { Icon: Instagram, href: "https://instagram.com/flemmomusicglobal" },
-    { Icon: Linkedin, href: "https://linkedin.com/company/flemmomusicglobal" },
+    { Icon: Linkedin, href: "https://linkedin.com/companyflemmomusicglobal" },
+    { Icon: TikTok, href: "https://tiktok.com/@flemmomusicglobal"},
+    { Icon: Threads, href: "https://threads.com/@flemmomusicglobal"}
   ];
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -149,7 +151,7 @@ export default function Footer(): React.JSX.Element {
                   aria-label={label}
                   className="rounded p-1 text-neutral-600 transition-colors hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900/20 dark:text-neutral-300 dark:hover:text-white dark:focus-visible:ring-white/30"
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="" />
                 </a>
               );
             })}

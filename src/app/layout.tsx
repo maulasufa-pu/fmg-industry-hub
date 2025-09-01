@@ -4,6 +4,7 @@ import "./globals.css";
 import AppShell from "./AppShell";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next"
+import { ParallaxProvider } from "react-scroll-parallax";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -92,7 +93,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" data-scroll-behavior="smooth">
       <body className="bg-background text-foreground transition-colors duration-300">
+        <ParallaxProvider>
         <AppShell>{children}</AppShell>
+        </ParallaxProvider>
         <SpeedInsights/>
         <Analytics></Analytics>
       </body>

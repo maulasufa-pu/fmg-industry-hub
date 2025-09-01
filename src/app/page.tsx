@@ -590,8 +590,8 @@ function Hero() {
               className="mt-5 max-w-2xl text-center text-balance text-base leading-relaxed text-black/100 dark:text-white/100"
             >
               <b>FMG Universe</b> is a creative-technology ecosystem and
-              solution born from{" "}
-              <b>Flemmo Music Global (FMG) Publishing</b> since 2018 and evolved
+              solution, born from{" "}
+              <b>Flemmo Music Global (FMG) Publishing</b> established since 2018, and later evolved
               into a holding in 2025 that spans music, technology, and digital
               innovation. <b>Beyond Sound. Built-in Intelligence</b>. We’re
               building one integrated operating system for music, rights-first,
@@ -621,7 +621,7 @@ function Hero() {
                 <h3 className="text-lg font-bold tracking-widest text-indigo-600 dark:text-indigo-400">
                   VISION
                 </h3>
-                <p className="mt-3 max-w-xl mx-auto text-base leading-relaxed text-black/90 dark:text-white/90">
+                <p className="mt-3 max-w-xl mx-auto text-base leading-relaxed text-black/90 dark:text-white/100">
                   Empowering the future of music through innovation,
                   technology, and intelligence.
                 </p>
@@ -630,7 +630,7 @@ function Hero() {
                 <h3 className="text-lg font-bold tracking-widest text-indigo-600 dark:text-indigo-400">
                   MISSION
                 </h3>
-                <p className="mt-3 max-w-xl mx-auto text-base leading-relaxed text-black/90 dark:text-white/90">
+                <p className="mt-3 max-w-xl mx-auto text-base leading-relaxed text-black/90 dark:text-white/100">
                   To unite creativity and technology in one ecosystem—helping
                   artists and brands create, own, and grow lasting value.
                 </p>

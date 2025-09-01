@@ -72,7 +72,7 @@ export default function ArtworkSlider({ artworks }: { artworks: string[] }) {
       if (!pausedRef.current && now >= resumeAtRef.current) {
         scrollToIndex(idxRef.current + 1, true);
       }
-      timer = window.setTimeout(tick, 3000);
+      timer = window.setTimeout(tick, 1000);
     };
     timer = window.setTimeout(tick, 3000);
     return () => window.clearTimeout(timer);

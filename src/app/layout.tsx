@@ -3,6 +3,7 @@ import { siteConfig } from "@/lib/site";
 import "./globals.css";
 import AppShell from "./AppShell";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next"
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -93,6 +94,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-background text-foreground transition-colors duration-300">
         <AppShell>{children}</AppShell>
         <SpeedInsights/>
+        <Analytics></Analytics>
       </body>
     </html>
   );

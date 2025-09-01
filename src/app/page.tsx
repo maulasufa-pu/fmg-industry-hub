@@ -12,6 +12,7 @@ import { siteConfig } from "@/lib/site";
 import { compact } from "@/lib/arrays";
 // import { getArtworks } from "@/lib/getArtworks";
 
+import InnovationBadge from "./ui/InnovationBadge";
 import type { PanInfo } from "framer-motion";
 import CinematicVideoHeroHLS from "@/components/CinematicVideoHeroHLS";
 // import Hero from "./ui/main_container/hero";
@@ -549,12 +550,13 @@ function Hero() {
 
       <motion.div initial="hidden" animate={controls} className="mx-auto max-w-6xl px-4">
         <div className="flex flex-col items-center">
-          <Parallax speed={0.08}>
+          {/* <Parallax speed={0.08}>
             <motion.div variants={fadeUp} className="mb-4 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3 text-xs shadow-sm backdrop-blur dark:border-white/10 dark:bg-black/40">
               <Sparkles className="h-4 w-4 text-indigo-600" />
               <span>Build Ecosystem • Spark Innovation • Foster Collaboration</span>
             </motion.div>
-          </Parallax>
+          </Parallax> */}
+          <InnovationBadge></InnovationBadge>
 
           <Parallax speed={0.12}>
             <SplitHeadline text="Beyond Sound. Built-in Intelligence." />
@@ -1464,16 +1466,18 @@ function CTA() {
               className="absolute inset-0 h-full w-full object-cover"
             />
 
-            {/* Overlay grid + text */}
+            {/* Overlay grid */}
             <div className="absolute inset-0 grid grid-cols-12 grid-rows-6 opacity-20">
               {[...Array(72)].map((_, i) => (
                 <div key={i} className="border border-white/20" />
               ))}
             </div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              {/* <div className="rounded-2xl bg-black/40 px-4 py-2 text-xs text-white backdrop-blur-md">
-                Secure portfolio preview
-              </div> */}
+
+            {/* Caption text bottom-right */}
+            <div className="absolute bottom-3 right-3 rounded-lg bg-black/50 px-3 py-2 text-right text-xs sm:text-sm font-medium text-white backdrop-blur-md shadow-md">
+              <p>Alfath Flemmo</p>
+              <p className="text-[11px] sm:text-xs font-normal">Founder &amp; CEO</p>
+              <p className="text-[11px] sm:text-xs font-light opacity-90">FMG Universe</p>
             </div>
           </motion.div>
         </Parallax>

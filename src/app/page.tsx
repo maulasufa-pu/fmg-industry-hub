@@ -1437,16 +1437,13 @@ function CTA() {
               alt="Alfath Flemmo - Founder & CEO Flemmo Music Global Publishing (FMG Universe)"
               className="absolute inset-0 h-full w-full object-cover" loading="lazy"
             />
-
-            {/* Overlay grid */}
-            <div className="absolute inset-0 grid grid-cols-12 grid-rows-6 opacity-20">
-              {[...Array(72)].map((_, i) => (
-                <div key={i} className="border border-white/20" />
-              ))}
-            </div>
-
-            {/* Caption text bottom-right */}
-            <div className="absolute bottom-3 right-3 rounded-lg bg-black/50 px-3 py-2 text-right text-xs sm:text-sm font-medium text-white backdrop-blur-md shadow-md">
+            <div
+              className="absolute bottom-2 left-2/3 
+                          translate-x-[-40px]
+                          rounded-lg bg-black/50 px-3 py-2 text-center
+                          text-xs sm:text-sm font-medium text-white
+                          backdrop-blur-md shadow-md"
+            >
               <p>Alfath Flemmo</p>
               <p className="text-[11px] sm:text-xs font-normal">Founder &amp; CEO</p>
               <p className="text-[11px] sm:text-xs font-light opacity-90">FMG Universe</p>

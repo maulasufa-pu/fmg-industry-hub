@@ -1,5 +1,5 @@
 /** @type {import('next-sitemap').IConfig} */
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://fmg-industry-hub.vercel.app';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://flemmomusic.com';
 const isProdDomain = !/vercel\.app$/i.test(SITE_URL); // disallow crawling on preview domains
 
 const IMPORTANT = new Set([

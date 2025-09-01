@@ -3,8 +3,7 @@ import { siteConfig } from "@/lib/site";
 import "./globals.css";
 import AppShell from "./AppShell";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Analytics } from "@vercel/analytics/next"
-import { ParallaxProvider } from "react-scroll-parallax";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -72,8 +71,8 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   verification: {
-    google: "PASTE_GOOGLE_SITE_VERIFICATION_TOKEN",
-    other: { "msvalidate.01": "PASTE_BING_VERIFICATION_TOKEN" },
+    google: "GANTI_DENGAN_TOKEN_ASLI",
+    other: { "msvalidate.01": "GANTI_DENGAN_TOKEN_ASLI" },
   },
   manifest: "/site.webmanifest",
   themeColor: [
@@ -86,18 +85,15 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#000000",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    <html lang="en">
       <body className="bg-background text-foreground transition-colors duration-300">
-        <ParallaxProvider>
-        <AppShell>{children}</AppShell>
-        </ParallaxProvider>
-        <SpeedInsights/>
-        <Analytics></Analytics>
+          <AppShell>{children}</AppShell>
+        <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );

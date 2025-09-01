@@ -588,7 +588,7 @@ function Hero() {
           <Parallax speed={0.14}>
             <motion.p variants={fadeUp} custom={4} className="mt-5 max-w-2xl text-center text-balance text-base leading-relaxed text-black/100 dark:text-white/100">
               <b>FMG Universe</b> is a creative-technology ecosystem and solution born from <b>Flemmo Music Global (FMG) 
-              Publishing</b> and evolved into a holding that spans music, technology, and digital innovation. <b>Beyond Sound. 
+              Publishing</b> since 2018 and evolved into a holding in 2025 that spans music, technology, and digital innovation. <b>Beyond Sound. 
               Built-in Intelligence</b>. We’re building one integrated operating system for music, rights-first, 
               advanced technology platform that unites songwriting, composition, end-to-end music production (A-Z: Recording, Studio, Sound Design, Mixing and Mastering), audio-visual content creation (film, video, and sound) talent, distribution & media , artist & repertoire (A&R),  
               <b> AI research & development (R&D)</b>, publishing, live event, music academy, and musician community development—with worldwide collaboration as the connective layer. 

@@ -60,7 +60,7 @@ function FooterWrapper() {
 export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <GlobalSpotlight />
+      {/* <GlobalSpotlight /> */}
       <ThemeProvider
         attribute="class"
         defaultTheme="dark"

@@ -155,7 +155,7 @@ export default function Footer(): React.JSX.Element {
         {/* Bottom row */}
         <div className="mt-10 flex flex-col items-start justify-between gap-3 text-xs text-neutral-500 dark:text-neutral-400 sm:flex-row sm:items-center">
           <div>
-            © {new Date().getFullYear()} PT. Flemmo Music Global. All rights
+            © {new Date().getFullYear()} PT. Flemmo Music Global (Powered by FMG Universe). All rights
             reserved.
           </div>
           <div className="flex items-center gap-2">

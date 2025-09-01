@@ -40,7 +40,7 @@ export default function InnovationBadge() {
                  px-8 py-5 text-s overflow-hidden h-7 text-white"
     >
       <Sparkles className="h-4 w-4 shrink-0 text-red-400" />
-      <div className="relative h-5 min-w-[160px] overflow-hidden flex items-center justify-center">
+      <div className="relative h-5 min-w-[190px] overflow-hidden flex items-center justify-center">
         <AnimatePresence initial={false} mode="wait">
           <motion.span
             key={index}

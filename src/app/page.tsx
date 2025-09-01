@@ -31,7 +31,8 @@ const PLANS: readonly Plan[] = [
     weight: 0,
     props: {
       name: "Basic (Single)",
-      price: "IDR 10.000.000",
+      priceIDR: "IDR 11.500.000",
+      priceUSD: "$700 USD",  // ⬅️ baru
       cta: "Start My Project",
       ctaHref: "/client/dashboard",
       features: [
@@ -40,7 +41,7 @@ const PLANS: readonly Plan[] = [
         "Mixing & mastering",
         "Publisher-ready metadata",
       ],
-      accent: "indigo",
+      accent: "spotify",
     },
   },
   {
@@ -48,7 +49,8 @@ const PLANS: readonly Plan[] = [
     weight: 1,
     props: {
       name: "Pro (Single)",
-      price: "IDR 15.000.000",
+      priceIDR: "IDR 16.500.000",
+      priceUSD: "$1000 USD",  // ⬅️ baru
       cta: "Start My Project",
       ctaHref: "/client/dashboard",
       features: [
@@ -67,7 +69,8 @@ const PLANS: readonly Plan[] = [
     weight: 2,
     props: {
       name: "Ultimate (Single)",
-      price: "IDR 30.000.000",
+      priceIDR: "IDR 33.000.000",
+      priceUSD: "$2000 USD",  // ⬅️ baru
       cta: "Start My Project",
       ctaHref: "/client/dashboard",
       features: [
@@ -86,7 +89,8 @@ const PLANS: readonly Plan[] = [
     weight: 3,
     props: {
       name: "Custom Plan",
-      price: "Custom",
+      priceIDR: "Custom",
+      priceUSD: "", // ⬅️ baru
       period: "project",
       cta: "Start My Project",
       ctaHref: "/client/dashboard",
@@ -148,16 +152,18 @@ const slugFromDivisionTitle = (title: string): string =>
 
 type PricingCardProps = {
   name: string;
-  price: string;
+  priceIDR: string;   // contoh: "10.000.000"
+  priceUSD: string;   // contoh: "2000"
   features: readonly string[];
   cta: string;
   period?: string;
-  accent?: "indigo" | "violet" | "gold";
+  accent?: "indigo" | "violet" | "gold" | "spotify";
   badge?: string;
-  ctaHref?: string;      // ⬅️ baru
-  ctaTarget?: string;    // ⬅️ baru
-  ctaRel?: string;       // ⬅️ baru
+  ctaHref?: string;
+  ctaTarget?: string;
+  ctaRel?: string;
 };
+
 
 /*************************
  * Tiny util
@@ -397,7 +403,7 @@ function FeatureCard({
           <h3 className="text-lg font-semibold">{title}</h3>
         </div>
 
-        <p className="mt-3 text-sm leading-6 text-black/70 dark:text-white/70">{desc}</p>
+        <p className="mt-3 text-sm leading-6 text-black/70 dark:text-white">{desc}</p>
 
         {/* Hanya area "Learn more" yang bisa diklik, sesuai permintaan */}
         <div className="mt-4">
@@ -433,23 +439,31 @@ function Testimonial({ quote, name, role }: { quote: string; name: string; role:
  * Pricing (service packages)
  *************************/
 function PricingCard({
-  name, price, features, cta, period = "single",
+  name, priceIDR, priceUSD, features, cta, period = "single",
   accent = "indigo", badge,
   ctaHref, ctaTarget, ctaRel,
 }: PricingCardProps): React.JSX.Element {
   const tint =
     accent === "gold"
-      ? "before:from-amber-400/55 before:to-yellow-500/35"
+      ? "before:from-amber-400/45 before:to-yellow-500/90"
       : accent === "violet"
-      ? "before:from-fuchsia-500/45 before:to-indigo-500/35"
-      : "before:from-indigo-500/45 before:to-sky-500/30";
+      ? "before:from-fuchsia-500/45 before:to-indigo-500/90"
+      : accent === "spotify"
+      ? "before:from-[#1DB954]/45 before:to-[#1DB954]/90"
+      : "before:from-indigo-500/45 before:to-sky-500/90";
 
   const dot =
-    accent === "gold" ? "bg-amber-400 text-black"
-    : accent === "violet" ? "bg-fuchsia-500 text-white"
-    : "bg-indigo-600 text-white";
+    accent === "gold"
+      ? "bg-amber-400 text-black"
+      : accent === "violet"
+      ? "bg-fuchsia-500 text-white"
+      : accent === "spotify"
+      ? "bg-[#1DB954] text-white"
+      : "bg-indigo-600 text-white";
 
-  const badgeColor = /best\s*seller/i.test(badge ?? "") ? "bg-red-600" : "bg-indigo-600";
+  const badgeColor = /best\s*seller/i.test(badge ?? "")
+    ? "bg-red-600"
+    : "bg-indigo-600";
 
   return (
     <div
@@ -458,9 +472,8 @@ function PricingCard({
         "border-black/10 dark:border-white/10",
         "bg-white/80 dark:bg-black/40 backdrop-blur-sm",
         "before:absolute before:inset-0 before:-z-10 before:bg-gradient-to-br",
-        "before:mix-blend-multiply dark:before:mix-blend-screen before:opacity-30 dark:before:opacity-35",
+        "before:mix-blend-multiply dark:before:mix-blend-screen before:opacity-30 dark:before:opacity-80",
         tint,
-        // === penting: kartu lega & fleksibel ===
         "p-6 sm:p-7 lg:p-8",
         "h-full flex flex-col min-w-0 shadow-sm",
       ].join(" ")}
@@ -476,11 +489,22 @@ function PricingCard({
       </h3>
 
       {/* harga: bisa wrap saat sempit */}
-      <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 min-w-0">
-        <span className="text-[34px] sm:text-4xl lg:text-5xl font-extrabold leading-none">
-          {price}
-        </span>
-        <span className="text-sm text-black/60 dark:text-white/60 whitespace-nowrap">/{period}</span>
+      <div className="mt-2 flex flex-col gap-1 min-w-0">
+        {/* Harga dalam IDR */}
+        <div className="flex items-baseline gap-x-2">
+          <span className="text-[30px] sm:text-4xl lg:text-5xl font-extrabold leading-none">
+            {priceIDR}
+          </span>
+          <span className="text-sm lg:text-2xl text-black/60 dark:text-white/60 whitespace-nowrap">/{period}</span>
+        </div>
+
+        {/* Harga dalam USD */}
+        <div className="flex items-baseline gap-x-2 mt-1">
+          <span className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-none text-black/80 dark:text-white/90">
+            {priceUSD}
+          </span>
+          <span className="text-sm text-black/50 dark:text-white/50 whitespace-nowrap"></span>
+        </div>
       </div>
 
       <ul className="mt-6 space-y-3 text-[13.5px] sm:text-sm lg:text-[15px]">
@@ -492,7 +516,7 @@ function PricingCard({
             <span className={`${dot} inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full mt-[2px]`}>
               <Check className="h-3.5 w-3.5" />
             </span>
-            <span className="text-black/80 dark:text-white/80">{f}</span>
+            <span className="text-black/80 dark:text-white/100">{f}</span>
           </li>
         ))}
       </ul>
@@ -729,7 +753,7 @@ function Features() {
           className="mx-auto max-w-3xl text-center"
         >
           <motion.h2 variants={fadeUp} className="text-3xl font-bold sm:text-4xl">Explore our divisions</motion.h2>
-          <motion.p variants={fadeUp} custom={1} className="mt-2 text-black/70 dark:text-white/70">
+          <motion.p variants={fadeUp} custom={1} className="mt-2 text-black/70 dark:text-white">
             End-to-end capabilities for modern music workflows.
           </motion.p>
         </motion.div>
@@ -852,7 +876,7 @@ function Numbers() {
       <Parallax speed={0.03}>
         <div className="mx-auto max-w-6xl px-4 text-center">
           <h2 className="text-pretty text-3xl font-bold sm:text-4xl">Numbers that matter</h2>
-          <p className="mt-2 text-black/70 dark:text-white/70">Proof of scale, reliability, and global reach.</p>
+          <p className="mt-2 text-black/70 dark:text-white">Proof of scale, reliability, and global reach.</p>
         </div>
       </Parallax>
 
@@ -907,7 +931,7 @@ function AboutFMG() {
           </div>
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="mx-auto max-w-3xl text-center">
           <motion.h2 variants={fadeUp} className="text-3xl font-bold sm:text-4xl">What is Flemmo Music Global?</motion.h2>
-          <motion.p variants={fadeUp} custom={1} className="mt-3 text-black/70 dark:text-white/70">
+          <motion.p variants={fadeUp} custom={1} className="mt-3 text-black/70 dark:text-white">
             Flemmo Music Global (powered by FMG Universe) is a professional music company providing comprehensive services across the creative and business spectrum. 
             Our expertise spans songwriting, composition, arranging, recording, mixing, mastering, and sound design, as well as publishing, copyright management, licensing, 
             digital and physical distribution, marketing, promotion, public relations, artist branding, image development, business development, partnerships, sponsorships, and monetization.
@@ -1030,7 +1054,7 @@ function Testimonials() {
           <motion.h2 variants={fadeUp} className="text-3xl font-bold sm:text-4xl">
             Artists, labels & brands choose FMG Universe
           </motion.h2>
-          <motion.p variants={fadeUp} custom={1} className="mt-3 text-black/70 dark:text-white/70">
+          <motion.p variants={fadeUp} custom={1} className="mt-3 text-black/70 dark:text-white">
             Real feedback. Measurable outcomes.
           </motion.p>
         </motion.div>
@@ -1167,7 +1191,7 @@ function ArtworkSlider({ artworks }: { artworks: string[] }) {
         <motion.p
           variants={fadeUp}
           custom={1}
-          className="mt-3 text-black/70 dark:text-white/70"
+          className="mt-3 text-black/70 dark:text-white"
         >
           Explore a showcase of singles and projects crafted and released
           through FMG Universe.
@@ -1268,7 +1292,7 @@ function Pricing3DCarousel(): React.JSX.Element {
   const [ariaMsg, setAriaMsg] = React.useState("");
   React.useEffect(() => {
     const plan = PLANS[active]?.props;
-    if (plan) setAriaMsg(`${plan.name} — ${plan.price}`);
+    if (plan) setAriaMsg(`${plan.name} — ${plan.priceIDR}`);
   }, [active]);
 
   return (
@@ -1381,7 +1405,7 @@ function Pricing(): React.JSX.Element {
           <motion.h2 variants={fadeUp} className="text-pretty text-3xl font-bold sm:text-4xl">
             Pricing &amp; Packages
           </motion.h2>
-          <motion.p variants={fadeUp} custom={1} className="mt-2 text-black/70 dark:text-white/70">
+          <motion.p variants={fadeUp} custom={1} className="mt-2 text-black/70 dark:text-white">
             Swipe to view packages. The active selection is always centered.
           </motion.p>
         </motion.div>
@@ -1409,7 +1433,7 @@ function CTA() {
             <h3 className="text-pretty text-3xl font-bold sm:text-4xl">
               Ready to make your next release?
             </h3>
-            <p className="mt-3 text-black/70 dark:text-white/70">
+            <p className="mt-3 text-black/70 dark:text-white">
               Tell us your vision — we&#39;ll craft the sound and handle publishing & distribution.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
@@ -1445,8 +1469,9 @@ function CTA() {
                           backdrop-blur-md shadow-md"
             >
               <p>Alfath Flemmo</p>
-              <p className="text-[11px] sm:text-xs font-normal">Founder &amp; CEO</p>
-              <p className="text-[11px] sm:text-xs font-light opacity-90">FMG Universe</p>
+              <p className="text-[11px] sm:text-xs font-normal">Founder and CEO</p>
+              <p className="text-[11px] sm:text-xs font-normal">PT. Flemmo Music Global</p>
+              <p className="text-[11px] sm:text-xs font-light opacity-90">(FMG Universe)</p>
             </div>
           </motion.div>
         </Parallax>

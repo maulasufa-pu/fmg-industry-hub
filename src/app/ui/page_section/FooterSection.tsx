@@ -135,7 +135,7 @@ export default function Footer(): React.JSX.Element {
 
         {/* Bottom row */}
         <div className="mt-10 flex flex-col items-start justify-between gap-4 text-xs text-neutral-500 dark:text-neutral-400 sm:flex-row sm:items-center">
-          <div>© {new Date().getFullYear()} Flemmo Music Global. All rights reserved.</div>
+          <div>© {new Date().getFullYear()} PT. Flemmo Music Global. All rights reserved.</div>
 
           <div className="flex items-center gap-4">
             {socials.map(({ Icon, href }, i) => {
@@ -156,8 +156,8 @@ export default function Footer(): React.JSX.Element {
           </div>
         </div>
 
-        <div className="mt-2 space-y-1 text-xs text-neutral-500 dark:text-neutral-400">
-          <div>FMG Publishing is a division of Flemmo Music Global.</div>
+        <div className="space-y-1 text-xs text-neutral-500 dark:text-neutral-400">
+          <div>Beyond Sound. Built-in Intelligence.</div>
         </div>
       </div>
     </footer>

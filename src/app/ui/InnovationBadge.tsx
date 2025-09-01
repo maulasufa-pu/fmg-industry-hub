@@ -4,17 +4,16 @@ import { Sparkles } from "lucide-react";
 import React from "react";
 
 export default function InnovationBadge() {
-  const texts = ["Build Ecosystem", "Spark Innovation", "Foster Collaboration"];
+  const texts = ["Flemmo Music", "Build Ecosystem", "Spark Innovation", "Foster Collaboration"];
   const [index, setIndex] = React.useState(0);
 
-  // Durasi tampil (2 detik) + durasi animasi (0.5s masuk + 0.5s keluar)
-  const stayDuration = 1500; // 1s
+  const stayDuration = 1500; // 1.5s
   const animDuration = 500;  // 0.5s
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setIndex((prev) => (prev + 1) % texts.length);
-    }, stayDuration + animDuration); // total siklus
+    }, stayDuration + animDuration);
     return () => clearTimeout(timer);
   }, [index, texts.length]);
 
@@ -24,10 +23,24 @@ export default function InnovationBadge() {
     exit: { y: "-100%", opacity: 0 },
   };
 
+  const isFlemmo = texts[index] === "Flemmo Music";
+
   return (
-    <div className="mb-4 inline-flex items-center justify-center gap-2 rounded-full border border-black/10 bg-white/70 px-4 py-1 text-xs shadow-sm backdrop-blur dark:border-white/10 dark:bg-black/40 overflow-hidden h-7">
-      <Sparkles className="h-4 w-4 text-indigo-600 shrink-0" />
-      <div className="relative h-5 min-w-[140px] overflow-hidden flex items-center justify-center">
+    <motion.div
+      initial={false}
+      animate={{
+        backgroundColor: isFlemmo ? "rgb(220,38,38)" : "rgba(0,0,0,0)", // merah-600
+        borderColor: isFlemmo ? "rgb(220,38,38)" : "rgba(239,68,68,0.5)", // merah-500/80
+        boxShadow: isFlemmo
+          ? "0 0 18px rgba(239,68,68,0.9)"
+          : "0 0 12px rgba(239,68,68,0.7)",
+      }}
+      transition={{ duration: 0.4, ease: "easeInOut" }}
+      className="mb-4 inline-flex items-center justify-center gap-2 rounded-full 
+                 px-8 py-5 text-s overflow-hidden h-7 text-white"
+    >
+      <Sparkles className="h-4 w-4 shrink-0 text-red-400" />
+      <div className="relative h-5 min-w-[160px] overflow-hidden flex items-center justify-center">
         <AnimatePresence initial={false} mode="wait">
           <motion.span
             key={index}
@@ -42,6 +55,6 @@ export default function InnovationBadge() {
           </motion.span>
         </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -1471,9 +1471,9 @@ function CTA() {
               ))}
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="rounded-2xl bg-black/40 px-4 py-2 text-xs text-white backdrop-blur-md">
+              {/* <div className="rounded-2xl bg-black/40 px-4 py-2 text-xs text-white backdrop-blur-md">
                 Secure portfolio preview
-              </div>
+              </div> */}
             </div>
           </motion.div>
         </Parallax>
@@ -1494,9 +1494,6 @@ export default function LandingPage() {
       .then((data: string[]) => setArtworks(data));
   }, []);
 
-  if (artworks.length === 0) {
-    return <p className="text-center py-20">Loading artworks…</p>;
-  }
   // const artworks = getArtworks();
   const sameAs = compact([
     siteConfig.social.website,

@@ -10,6 +10,7 @@ import { Users, Share2, Cpu, BookOpen, Calendar, GraduationCap, type LucideIcon 
 import { JsonLd } from "@/components/JsonLd";
 import { siteConfig } from "@/lib/site";
 import { compact } from "@/lib/arrays";
+import { getArtworks } from "@/lib/getArtworks";
 
 import type { PanInfo } from "framer-motion";
 import CinematicVideoHeroHLS from "@/components/CinematicVideoHeroHLS";
@@ -1106,16 +1107,12 @@ function scaleFor(offset: number, weight: 0 | 1 | 2 | 3) {
   return 0.7;
 }
 
-function ArtworkSlider() {
-  const artworks = [
-    "/images/artwork1.jpg",
-    "/images/artwork2.jpg",
-    "/images/artwork3.jpg",
-    "/images/artwork4.jpg",
-    "/images/artwork5.jpg",
-  ];
+function ArtworkSlider({ artworks }: { artworks: string[] }) {
   const COUNT = artworks.length;
-  const extended = React.useMemo(() => [artworks[COUNT - 1], ...artworks, artworks[0]], [artworks, COUNT]);
+  const extended = React.useMemo(
+    () => [artworks[COUNT - 1], ...artworks, artworks[0]],
+    [artworks, COUNT]
+  );
 
   const railRef = React.useRef<HTMLDivElement | null>(null);
   const pausedRef = React.useRef(false);
@@ -1435,11 +1432,18 @@ function CTA() {
       <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 px-4 md:grid-cols-2">
         <Parallax speed={0.06}>
           <div>
-            <h3 className="text-pretty text-3xl font-bold sm:text-4xl">Ready to make your next release?</h3>
-            <p className="mt-3 text-black/70 dark:text-white/70">Tell us your vision — we&#39;ll craft the sound and handle publishing & distribution.</p>
+            <h3 className="text-pretty text-3xl font-bold sm:text-4xl">
+              Ready to make your next release?
+            </h3>
+            <p className="mt-3 text-black/70 dark:text-white/70">
+              Tell us your vision — we&#39;ll craft the sound and handle publishing & distribution.
+            </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <MagneticButton href="/client/dashboard">Start My Project</MagneticButton>
-              <Link href="https://wa.me/6282298288188" className="inline-flex items-center gap-2 rounded-2xl border border-black/10 px-5 py-3 text-sm font-semibold hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5">
+              <Link
+                href="https://wa.me/6282298288188"
+                className="inline-flex items-center gap-2 rounded-2xl border border-black/10 px-5 py-3 text-sm font-semibold hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
+              >
                 Talk with us <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -1451,15 +1455,25 @@ function CTA() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="relative aspect-[16/10] w-full overflow-hidden rounded-3xl border border-black/10 bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 shadow-xl dark:border-white/10"
+            className="relative aspect-[16/10] w-full overflow-hidden rounded-3xl border border-black/10 shadow-xl dark:border-white/10"
           >
+            {/* Background image */}
+            <img
+              src="/img/alfath-flemmo-founder-ceo-flemmo-music-global-publishing-fmg-universe.jpeg"
+              alt="Alfath Flemmo - Founder & CEO Flemmo Music Global Publishing (FMG Universe)"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+
+            {/* Overlay grid + text */}
             <div className="absolute inset-0 grid grid-cols-12 grid-rows-6 opacity-20">
               {[...Array(72)].map((_, i) => (
-                <div key={i} className="border border-white/10" />
+                <div key={i} className="border border-white/20" />
               ))}
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="rounded-2xl bg-white/10 px-4 py-2 text-xs text-white backdrop-blur-md">Secure portfolio preview</div>
+              <div className="rounded-2xl bg-black/40 px-4 py-2 text-xs text-white backdrop-blur-md">
+                Secure portfolio preview
+              </div>
             </div>
           </motion.div>
         </Parallax>
@@ -1472,6 +1486,7 @@ function CTA() {
  * Page Component
  *************************/
 export default function LandingPage() {
+  const artworks = getArtworks();
   const sameAs = compact([
     siteConfig.social.website,
     siteConfig.social.instagram,
@@ -1522,7 +1537,7 @@ export default function LandingPage() {
       
       <Testimonials />
       <Pricing />
-      <ArtworkSlider />   {/* <— baru ditambahkan di sini */}
+      return <ArtworkSlider artworks={artworks} />;
       <CTA />
       {/* <Footer /> */}
       <JsonLd id="org" data={org} />

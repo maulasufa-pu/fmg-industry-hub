@@ -34,14 +34,24 @@ export default function Footer(): React.JSX.Element {
         { label: "About", href: "/about" },
         { label: "Careers", href: "/careers" },
         { label: "Contact", href: "/contact" },
+        { label: "Location", href: "/location" },
       ],
     },
     {
       title: "Divisions",
       links: [
         { label: "Creative", href: "/creative" },
-        { label: "Academy", href: "/academy" },
+        { label: "Talent", href: "/talent" },
+        { label: "Labs (AI/tuneXpert)", href: "/labs" },
         { label: "Publishing", href: "/publishing" },
+      ],
+    },
+    {
+      title: "Divisions",
+      links: [
+        { label: "Academy", href: "/academy" },
+        { label: "Media", href: "/media" },
+        { label: "Event & Festival", href: "/event" },
       ],
     },
     {
@@ -88,7 +98,7 @@ export default function Footer(): React.JSX.Element {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         {/* Top row */}
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <BrandMark href="/" />
+          <BrandMark href="/" logoSrc="FMG-Universe-Flemmo-Music-Global.png"/>
           <form
             onSubmit={onSubmit}
             className="flex w-full max-w-md items-center gap-2 sm:w-auto"

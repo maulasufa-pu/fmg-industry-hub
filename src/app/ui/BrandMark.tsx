@@ -123,9 +123,9 @@ export default function BrandMark({
   gapClassName = "gap-1.5",
   title = "FLEMMO MUSIC",
   subtitle = "Global Universe Solution",
-  logoSrc = "/logo/FMG-Universe-Flemmo-Music-Global.png",
+  logoSrc,
   logoAlt = "FMG Universe Logo",
-  logoSize = 40, // 40px ≈ h-10 w-10
+  logoSize = 40,
   logoClassName = "rounded-md object-cover",
   priority = true,
   subtitleBasePx = 10,
@@ -134,14 +134,17 @@ export default function BrandMark({
 }: BrandMarkProps): React.JSX.Element {
   const content = (
     <div className={`flex items-center ${gapClassName} ${className}`}>
-      <Image
-        src={logoSrc}
-        alt={logoAlt}
-        width={logoSize}
-        height={logoSize}
-        className={`block h-[${logoSize}px] w-[${logoSize}px] ${logoClassName}`}
-        priority={priority}
-      />
+      {/* Hanya render <Image> kalau logoSrc valid */}
+      {logoSrc && logoSrc.trim() !== "" && (
+        <Image
+          src={logoSrc}
+          alt={logoAlt}
+          width={logoSize}
+          height={logoSize}
+          className={`block h-[${logoSize}px] w-[${logoSize}px] ${logoClassName}`}
+          priority={priority}
+        />
+      )}
       <BrandLockup
         title={title}
         subtitle={subtitle}

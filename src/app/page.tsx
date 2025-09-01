@@ -10,6 +10,7 @@ import { Users, Share2, Cpu, BookOpen, Calendar, GraduationCap, type LucideIcon 
 import { JsonLd } from "@/components/JsonLd";
 import { siteConfig } from "@/lib/site";
 import { compact } from "@/lib/arrays";
+import BrandMark from "./ui/BrandMark";
 
 import InnovationBadge from "./ui/InnovationBadge";
 import type { PanInfo } from "framer-motion";
@@ -492,7 +493,7 @@ function PricingCard({
       <div className="mt-2 flex flex-col gap-1 min-w-0">
         {/* Harga dalam IDR */}
         <div className="flex items-baseline gap-x-2">
-          <span className="text-[30px] sm:text-4xl lg:text-5xl font-extrabold leading-none">
+          <span className="text-[30px] sm:text-3xl lg:text-5xl font-extrabold leading-none">
             {priceIDR}
           </span>
           <span className="text-sm lg:text-2xl text-black/60 dark:text-white/60 whitespace-nowrap">/{period}</span>
@@ -618,7 +619,7 @@ function Hero() {
               className="mt-10 grid gap-8 text-center"
             >
               <div>
-                <h3 className="text-lg font-bold tracking-widest text-indigo-600 dark:text-indigo-400">
+                <h3 className="text-2x1 font-bold tracking-widest text-indigo-600 dark:text-indigo-400">
                   VISION
                 </h3>
                 <p className="mt-3 max-w-xl mx-auto text-base leading-relaxed text-black/90 dark:text-white/100">
@@ -627,7 +628,7 @@ function Hero() {
                 </p>
               </div>
               <div>
-                <h3 className="text-lg font-bold tracking-widest text-indigo-600 dark:text-indigo-400">
+                <h3 className="text-2x1 font-bold tracking-widest text-indigo-600 dark:text-indigo-400">
                   MISSION
                 </h3>
                 <p className="mt-3 max-w-xl mx-auto text-base leading-relaxed text-black/90 dark:text-white/100">
@@ -810,19 +811,11 @@ function Features() {
 
       {/* MOBILE carousel */}
       <Parallax speed={0.08}>
-        <div
-          className="mt-12 sm:hidden relative"
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
-          onTouchStart={() => setPaused(true)}
-          onTouchEnd={() => { setPaused(false); requestPause(10000); }}  // <-- NEW: setelah lepas sentuh, pause 10s
-        >
+        <div className="mt-12 sm:hidden relative">
           <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-white to-transparent dark:from-black" />
           <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent dark:from-black" />
 
           <div
-            ref={railRef}
-            onScroll={onScroll}
             className="
               flex gap-4 overflow-x-auto overflow-y-visible scroll-smooth
               snap-x snap-mandatory
@@ -832,10 +825,10 @@ function Features() {
             style={{ WebkitOverflowScrolling: "touch", overflowY: "visible" }}
           >
             <style>{`[data-hide-scrollbar]::-webkit-scrollbar{display:none}`}</style>
-            {extended.map((d, i) => {
+            {DIVISIONS.map((d, i) => {
               const href = `/${slugFromDivisionTitle(d.title)}`;
               return (
-                <div key={`${d.title}-${i}`} className="snap-center shrink-0 w-[88%]">
+                <div key={d.title} className="snap-center shrink-0 w-[88%]">
                   <FeatureCard icon={d.icon} title={d.title} desc={d.desc} href={href} />
                 </div>
               );
@@ -1514,13 +1507,13 @@ function CTA() {
               className="absolute bottom-2 left-2/3 
                           translate-x-[-40px]
                           rounded-lg bg-black/50 px-3 py-2 text-center
-                          text-xs sm:text-sm font-medium text-white
+                          text-[10px] sm:text-sm font-medium text-white
                           backdrop-blur-md shadow-md"
             >
               <p>Alfath Flemmo</p>
-              <p className="text-[11px] sm:text-xs font-normal">Founder and CEO</p>
-              <p className="text-[11px] sm:text-xs font-normal">PT. Flemmo Music Global</p>
-              <p className="text-[11px] sm:text-xs font-light opacity-90">(FMG Universe)</p>
+              <p className="text-[9px] sm:text-xs font-normal">Founder and CEO</p>
+              <p className="text-[9px] sm:text-xs font-normal">PT. Flemmo Music Global</p>
+              <p className="text-[9px] sm:text-xs font-light opacity-90">(FMG Universe)</p>
             </div>
           </motion.div>
         </Parallax>
@@ -1597,6 +1590,22 @@ export default function LandingPage() {
       {/* <Footer /> */}
       <JsonLd id="org" data={org} />
       <JsonLd id="website" data={website} />
+      <div className="flex flex-col items-center justify-center gap-y-3 bg-white dark:bg-neutral-950 py-5 mb-10">
+        <BrandMark href="/" logoSrc="" className="scale-200 mb-5" />
+        <BrandMark href="/" title="FMG Universe" subtitle="" logoSrc="/logo/FMG-Universe-Flemmo-Music-Global.png"/>
+        <BrandMark
+          href="/"
+          title="PT. Flemmo Music Global (FMG) Publishing"
+          subtitle=""
+          logoSrc="/logo/Flemmo-Music-Global-FMG-Publishing-logo.jpg"
+        />
+        <BrandMark
+          href="/"
+          title="Flemmo Enterprise Music (FEM)"
+          subtitle=""
+          logoSrc="/logo/Flemmo-Enterprise-Music-FEM-logo.jpg"
+        />
+      </div>
     </main>
   );
 }

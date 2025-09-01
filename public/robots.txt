@@ -1,9 +1,9 @@
 # *
 User-agent: *
-Disallow: /
+Allow: /
 
 # Host
-Host: https://fmg-industry-hub.vercel.app
+Host: https://flemmomusic.com
 
 # Sitemaps
-Sitemap: https://fmg-industry-hub.vercel.app/sitemap.xml
+Sitemap: https://flemmomusic.com/sitemap.xml

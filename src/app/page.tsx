@@ -557,69 +557,118 @@ function Checkmark() { return (
   </svg>
 );} 
 
-/*************************
- * Hero Section
- *************************/
 function Hero() {
   const controls = useAnimation();
-  useEffect(() => { controls.start("visible"); }, [controls]);
+  useEffect(() => {
+    controls.start("visible");
+  }, [controls]);
 
   return (
     <section className="relative overflow-hidden pt-12 sm:pt-12">
-      {/* <Spotlight />  */}
+      {/* Background parallax */}
       <Parallax speed={-0.03}>
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(1200px_500px_at_50%_-100px,rgba(79,70,229,0.15),transparent)]" />
       </Parallax>
 
-      <motion.div initial="hidden" animate={controls} className="mx-auto max-w-6xl px-4">
+      <motion.div
+        initial="hidden"
+        animate={controls}
+        className="mx-auto max-w-6xl px-4"
+      >
         <div className="flex flex-col items-center">
-          {/* <Parallax speed={0.08}>
-            <motion.div variants={fadeUp} className="mb-4 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3 text-xs shadow-sm backdrop-blur dark:border-white/10 dark:bg-black/40">
-              <Sparkles className="h-4 w-4 text-indigo-600" />
-              <span>Build Ecosystem • Spark Innovation • Foster Collaboration</span>
-            </motion.div>
-          </Parallax> */}
-          <InnovationBadge></InnovationBadge>
+          <InnovationBadge />
 
           <Parallax speed={0.12}>
             <SplitHeadline text="Beyond Sound. Built-in Intelligence." />
           </Parallax>
 
+          {/* Deskripsi */}
           <Parallax speed={0.14}>
-            <motion.p variants={fadeUp} custom={4} className="mt-5 max-w-2xl text-center text-balance text-base leading-relaxed text-black/100 dark:text-white/100">
-              <b>FMG Universe</b> is a creative-technology ecosystem and solution born from <b>Flemmo Music Global (FMG) 
-              Publishing</b> since 2018 and evolved into a holding in 2025 that spans music, technology, and digital innovation. <b>Beyond Sound. 
-              Built-in Intelligence</b>. We’re building one integrated operating system for music, rights-first, 
-              advanced technology platform that unites songwriting, composition, end-to-end music production (A-Z: Recording, Studio, Sound Design, Mixing and Mastering), audio-visual content creation (film, video, and sound) talent, distribution & media , artist & repertoire (A&R),  
-              <b> AI research & development (R&D)</b>, publishing, live event, music academy, and musician community development—with worldwide collaboration as the connective layer. 
-              By embedding intelligence into real workflows, <b>we help artists, labels, and brands</b> to scout smarter, produce faster, 
-              own rights, grow royalties, and scale catalogs into lasting equity—ready for shaping positive impact for the next generation in the future.
+            <motion.p
+              variants={fadeUp}
+              custom={4}
+              className="mt-5 max-w-2xl text-center text-balance text-base leading-relaxed text-black/100 dark:text-white/100"
+            >
+              <b>FMG Universe</b> is a creative-technology ecosystem and
+              solution born from{" "}
+              <b>Flemmo Music Global (FMG) Publishing</b> since 2018 and evolved
+              into a holding in 2025 that spans music, technology, and digital
+              innovation. <b>Beyond Sound. Built-in Intelligence</b>. We’re
+              building one integrated operating system for music, rights-first,
+              advanced technology platform that unites songwriting, composition,
+              end-to-end music production (A-Z: Recording, Studio, Sound Design,
+              Mixing and Mastering), audio-visual content creation (film, video,
+              and sound) talent, distribution & media, artist & repertoire
+              (A&R), <b> AI research & development (R&D)</b>, publishing, live
+              event, music academy, and musician community development—with
+              worldwide collaboration as the connective layer. By embedding
+              intelligence into real workflows,{" "}
+              <b>we help artists, labels, and brands</b> to scout smarter,
+              produce faster, own rights, grow royalties, and scale catalogs
+              into lasting equity—ready for shaping positive impact for the next
+              generation in the future.
             </motion.p>
           </Parallax>
 
+          {/* Vision & Mission */}
+          <Parallax speed={0.15}>
+            <motion.div
+              variants={fadeUp}
+              custom={5}
+              className="mt-10 grid gap-8 text-center"
+            >
+              <div>
+                <h3 className="text-lg font-bold tracking-widest text-indigo-600 dark:text-indigo-400">
+                  VISION
+                </h3>
+                <p className="mt-3 max-w-xl mx-auto text-base leading-relaxed text-black/90 dark:text-white/90">
+                  Empowering the future of music through innovation,
+                  technology, and intelligence.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold tracking-widest text-indigo-600 dark:text-indigo-400">
+                  MISSION
+                </h3>
+                <p className="mt-3 max-w-xl mx-auto text-base leading-relaxed text-black/90 dark:text-white/90">
+                  To unite creativity and technology in one ecosystem—helping
+                  artists and brands create, own, and grow lasting value.
+                </p>
+              </div>
+            </motion.div>
+          </Parallax>
+
+          {/* CTA Buttons */}
           <Parallax speed={0.16}>
-            <motion.div variants={fadeUp} custom={5} className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <MagneticButton href="/client/dashboard">Start My Project</MagneticButton>
-              <Link href="#about" className="group inline-flex items-center gap-2 rounded-2xl border border-black/10 bg-white/70 px-5 py-3 text-sm font-semibold shadow-sm backdrop-blur transition hover:bg-white dark:border-white/10 dark:bg-black/40 dark:hover:bg-black">
+            <motion.div
+              variants={fadeUp}
+              custom={6}
+              className="mt-12 flex flex-wrap items-center justify-center gap-3"
+            >
+              <MagneticButton href="/client/dashboard">
+                Start My Project
+              </MagneticButton>
+              <Link
+                href="#about"
+                className="group inline-flex items-center gap-2 rounded-2xl border border-black/10 bg-white/70 px-5 py-3 text-sm font-semibold shadow-sm backdrop-blur transition hover:bg-white dark:border-white/10 dark:bg-black/40 dark:hover:bg-black"
+              >
                 <PlayCircle className="h-5 w-5" /> Learn about FMG
               </Link>
             </motion.div>
           </Parallax>
 
-          {/* <ParallaxRibbon /> */}
+          {/* Video Hero */}
           <CinematicVideoHeroHLS
             shape="rounded"
-            // m3u8="/videos/vaa/index.m3u8"
-            // mp4Fallback="/videos/viokichi-you-are-enough-official-music-video-mv.mp4"
             youtubeUrl="https://youtu.be/3zI-HFaUevg"
-            // poster="/images/hero-poster.jpg"
-            maxWidthClass="max-w-7xl" // opsional: ubah lebar
+            maxWidthClass="max-w-7xl"
           />
         </div>
       </motion.div>
     </section>
   );
 }
+
 
 /*************************
  * Features — mobile 1-row infinite (sentinels) + desktop grid

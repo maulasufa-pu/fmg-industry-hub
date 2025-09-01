@@ -619,8 +619,8 @@ function Hero() {
               className="mt-10 grid gap-8 text-center"
             >
               <div>
-                <h3 className="text-2x1 font-bold tracking-widest text-indigo-600 dark:text-indigo-400">
-                  VISION
+                <h3 className="text-3xl sm:text-4xl font-bold tracking-widest text-black dark:text-white">
+                  OUR VISION
                 </h3>
                 <p className="mt-3 max-w-xl mx-auto text-base leading-relaxed text-black/90 dark:text-white/100">
                   Empowering the future of music through innovation,
@@ -628,8 +628,8 @@ function Hero() {
                 </p>
               </div>
               <div>
-                <h3 className="text-2x1 font-bold tracking-widest text-indigo-600 dark:text-indigo-400">
-                  MISSION
+                <h3 className="text-3xl sm:text-4xl font-bold tracking-widest text-black dark:text-white">
+                  OUR MISSION
                 </h3>
                 <p className="mt-3 max-w-xl mx-auto text-base leading-relaxed text-black/90 dark:text-white/100">
                   To unite creativity and technology in one ecosystem—helping

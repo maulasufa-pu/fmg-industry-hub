@@ -34,7 +34,7 @@ export default function Footer(): React.JSX.Element {
         { label: "About", href: "/about" },
         { label: "Careers", href: "/careers" },
         { label: "Contact", href: "/contact" },
-        { label: "Location", href: "/location" },
+        { label: "Locations", href: "/locations" },
       ],
     },
     {

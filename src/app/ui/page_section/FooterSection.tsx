@@ -69,11 +69,11 @@ export default function Footer(): React.JSX.Element {
   ];
 
   const socials: SocialItem[] = [
-    { Icon: Youtube, href: "https://youtube.com/flemmomusicglobal" },
+    { Icon: Youtube, href: "https://youtube.com/@FlemmoMusicGlobal" },
     { Icon: Facebook, href: "https://facebook.com/flemmomusicglobal" },
     { Icon: Twitter, href: "https://x.com/@flemmomusic" },
     { Icon: Instagram, href: "https://instagram.com/flemmomusicglobal" },
-    { Icon: Linkedin, href: "https://linkedin.com/companyflemmomusicglobal" },
+    { Icon: Linkedin, href: "https://linkedin.com/company/flemmomusicglobal" },
     { Icon: TikTok, href: "https://tiktok.com/@flemmomusicglobal" },
     { Icon: Threads, href: "https://threads.com/@flemmomusicglobal" },
   ];

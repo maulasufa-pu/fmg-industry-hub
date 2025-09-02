@@ -232,7 +232,17 @@ function FounderCard() {
   return (
     <Parallax amount={12}>
       <div className="grid grid-cols-1 gap-6 overflow-hidden rounded-3xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black sm:grid-cols-[220px_1fr]">
-        <div className="aspect-square w-full overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600" />
+        {/* Foto Parallax */}
+        <div className="relative aspect-square w-full overflow-hidden rounded-2xl">
+          <img
+            src="/img/alfath-flemmo-founder-ceo-flemmo-music-global-publishing-fmg-universe.jpeg"
+            alt="Alfath Flemmo - Founder & CEO Flemmo Music Global Publishing (FMG Universe)"
+            className="absolute inset-0 h-full w-full object-cover"
+            loading="lazy"
+          />
+        </div>
+
+        {/* Konten teks */}
         <div>
           <h3 className="text-2xl font-bold">Alfath Flemmo</h3>
           <p className="mt-1 text-sm text-black/60 dark:text-white/60">
@@ -240,25 +250,36 @@ function FounderCard() {
           </p>
           <ul className="mt-4 space-y-2 text-sm text-black/80 dark:text-white/80">
             <li className="flex items-start gap-2">
-              <Star className="mt-0.5 h-4 w-4 text-indigo-600" /> Composer, songwriter, arranger, audio engineer, and digital music producer.
+              <Star className="mt-0.5 h-4 w-4 text-indigo-600" /> Composer,
+              songwriter, arranger, audio engineer, and digital music producer.
             </li>
             <li className="flex items-start gap-2">
-              <Globe2 className="mt-0.5 h-4 w-4 text-indigo-600" /> Leads FMG Universe across publishing, distribution, licensing, and studio operations.
+              <Globe2 className="mt-0.5 h-4 w-4 text-indigo-600" /> Leads FMG
+              Universe across publishing, distribution, licensing, and studio
+              operations.
             </li>
             <li className="flex items-start gap-2">
-              <Users className="mt-0.5 h-4 w-4 text-indigo-600" /> Collaborates with indie artists, labels, and brands across markets.
+              <Users className="mt-0.5 h-4 w-4 text-indigo-600" /> Collaborates
+              with indie artists, labels, and brands across markets.
             </li>
           </ul>
           <div className="mt-5 flex flex-wrap gap-3 text-xs">
-            <span className="rounded-full bg-black/5 px-3 py-1 dark:bg-white/10">Jakarta-based</span>
-            <span className="rounded-full bg-black/5 px-3 py-1 dark:bg-white/10">Pop • K-Pop • Lo-Fi • Piano</span>
-            <span className="rounded-full bg-black/5 px-3 py-1 dark:bg-white/10">Publishing • Distribution • Licensing</span>
+            <span className="rounded-full bg-black/5 px-3 py-1 dark:bg-white/10">
+              Jakarta-based
+            </span>
+            <span className="rounded-full bg-black/5 px-3 py-1 dark:bg-white/10">
+              Pop • K-Pop • Lo-Fi • Piano
+            </span>
+            <span className="rounded-full bg-black/5 px-3 py-1 dark:bg-white/10">
+              Publishing • Distribution • Licensing
+            </span>
           </div>
         </div>
       </div>
     </Parallax>
   );
 }
+
 
 /*************************
  * Timeline

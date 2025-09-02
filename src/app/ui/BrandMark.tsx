@@ -5,17 +5,16 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-/* ---------- BrandLockup (internal, tetap diexport jika perlu) ---------- */
+/* ---------- BrandLockup (internal) ---------- */
 export type BrandLockupProps = {
   title: string;
   subtitle: string;
   className?: string;
-  subtitleBasePx?: number; // default 14
-  subtitleMinPx?: number;  // default 10
-  subtitleMaxPx?: number;  // default 48
+  subtitleBasePx?: number;
+  subtitleMinPx?: number;
+  subtitleMaxPx?: number;
 };
 
-/* ---------- BrandLockup (internal) ---------- */
 export function BrandLockup({
   title,
   subtitle,
@@ -29,12 +28,10 @@ export function BrandLockup({
   const [subSize, setSubSize] = React.useState<number | null>(null);
 
   const recalc = React.useCallback(() => {
-    const t = titleRef.current;
-    const m = measureRef.current;
-    if (!t || !m) return;
-    const target = t.getBoundingClientRect().width;
-    m.style.fontSize = `${subtitleBasePx}px`;
-    const natural = m.getBoundingClientRect().width;
+    if (!titleRef.current || !measureRef.current) return;
+    const target = titleRef.current.getBoundingClientRect().width;
+    measureRef.current.style.fontSize = `${subtitleBasePx}px`;
+    const natural = measureRef.current.getBoundingClientRect().width;
     if (target > 0 && natural > 0) {
       const next = Math.min(
         subtitleMaxPx,
@@ -46,64 +43,36 @@ export function BrandLockup({
 
   React.useLayoutEffect(() => {
     recalc();
-    const ro =
-      typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(() => recalc())
-        : null;
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => recalc()) : null;
     if (ro && titleRef.current) ro.observe(titleRef.current);
-
     (document as any).fonts?.ready?.then?.(() => recalc());
-
-    const onResize = () => recalc();
-    window.addEventListener("resize", onResize);
+    window.addEventListener("resize", recalc);
     return () => {
-      window.removeEventListener("resize", onResize);
+      window.removeEventListener("resize", recalc);
       ro?.disconnect();
     };
   }, [recalc]);
 
-  type VarStyle = React.CSSProperties & { ["--sub-fs"]?: string };
-  const subStyle: VarStyle = {
-    ["--sub-fs"]: subSize ? `${subSize}px` : undefined,
-    opacity: subSize ? 1 : 0,
-  };
-
   return (
     <div className={`relative grid content-center justify-items-center ${className}`}>
-      {/* Title */}
       <div
         ref={titleRef}
-        className={`
-          font-heading-1 font-black leading-[1.05]
-          text-gray-800 dark:text-gray-100
-          max-w-full break-words text-center
-        `}
-        style={{ fontWeight: 700 }}
+        className="font-heading-1 font-black leading-[1.05] text-gray-800 dark:text-gray-100 max-w-full break-words text-center"
       >
         {title}
       </div>
-
-      {/* Hidden measure */}
       <div
         ref={measureRef}
         className="absolute -z-10 invisible pointer-events-none select-none whitespace-nowrap font-body-XS"
       >
         {subtitle}
       </div>
-
-      {/* Subtitle */}
       <div
-        className={`
-          mt-[-2px] font-body-XS leading-[1.2]
-          text-neutral-600 dark:text-neutral-300
-          max-w-full break-words text-center
-          brand-subtitle w-full
-        `}
-        style={subStyle}
+        className="mt-[-2px] font-body-XS leading-[1.2] text-neutral-600 dark:text-neutral-300 max-w-full break-words text-center brand-subtitle w-full"
+        style={{ ["--sub-fs" as any]: subSize ? `${subSize}px` : undefined, opacity: subSize ? 1 : 0 }}
       >
         {subtitle}
       </div>
-
       <style jsx>{`
         .brand-subtitle {
           font-size: var(--sub-fs, 12px) !important;
@@ -115,20 +84,16 @@ export function BrandLockup({
 
 /* ---------- BrandMark (logo + lockup) ---------- */
 export type BrandMarkProps = {
-  href?: string | null;                // kalau diisi -> dibungkus Link
-  className?: string;                  // kelas wrapper luar
-  gapClassName?: string;               // gap antar logo & text (default gap-1.5)
+  href?: string | null;
+  className?: string;
+  gapClassName?: string;
   title?: string;
   subtitle?: string;
-
-  // Logo
   logoSrc?: string;
   logoAlt?: string;
-  logoSize?: number;                   // px (dipakai untuk width/height Image)
+  logoSize?: number;
   logoClassName?: string;
   priority?: boolean;
-
-  // Lockup sizing
   subtitleBasePx?: number;
   subtitleMinPx?: number;
   subtitleMaxPx?: number;
@@ -137,7 +102,7 @@ export type BrandMarkProps = {
 export default function BrandMark({
   href = null,
   className = "",
-  gapClassName = "gap-2", // gap lebih kecil supaya nempel
+  gapClassName = "gap-2",
   title = "FLEMMO MUSIC",
   subtitle = "Global Universe Solution",
   logoSrc,
@@ -150,19 +115,18 @@ export default function BrandMark({
   subtitleMaxPx = 11,
 }: BrandMarkProps): React.JSX.Element {
   const content = (
-    <div className={`inline-flex items-center ${gapClassName} ${className}`}>
-      {/* Hanya render <Image> kalau logoSrc valid */}
+    <div className={`flex items-center ${gapClassName} ${className}`}>
       {logoSrc && logoSrc.trim() !== "" && (
         <Image
           src={logoSrc}
           alt={logoAlt}
           width={logoSize}
           height={logoSize}
-          className={`block h-[${logoSize}px] w-[${logoSize}px] ${logoClassName}`}
+          className={`block h-[${logoSize}px] w-[${logoSize}px] ${logoClassName} flex-shrink-0`}
           priority={priority}
         />
       )}
-      <div className="flex flex-col justify-center">
+      <div className="flex flex-col justify-center break-words">
         <BrandLockup
           title={title}
           subtitle={subtitle}
@@ -174,12 +138,5 @@ export default function BrandMark({
     </div>
   );
 
-  if (href) {
-    return (
-      <Link href={href} className="inline-flex">
-        {content}
-      </Link>
-    );
-  }
-  return content;
+  return href ? <Link href={href} className="inline-flex">{content}</Link> : content;
 }

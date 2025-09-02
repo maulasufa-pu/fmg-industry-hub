@@ -620,7 +620,7 @@ function Hero() {
             >
               <div>
                 <h3 className="text-3xl sm:text-4xl font-bold tracking-widest text-black dark:text-white">
-                  OUR VISION
+                  Our Vision
                 </h3>
                 <p className="mt-3 max-w-xl mx-auto text-base leading-relaxed text-black/90 dark:text-white/100">
                   Empowering the future of music through innovation,
@@ -629,7 +629,7 @@ function Hero() {
               </div>
               <div>
                 <h3 className="text-3xl sm:text-4xl font-bold tracking-widest text-black dark:text-white">
-                  OUR MISSION
+                  Our Mission
                 </h3>
                 <p className="mt-3 max-w-xl mx-auto text-base leading-relaxed text-black/90 dark:text-white/100">
                   To unite creativity and technology in one ecosystem—helping
@@ -1504,16 +1504,15 @@ function CTA() {
               className="absolute inset-0 h-full w-full object-cover" loading="lazy"
             />
             <div
-              className="absolute bottom-2 left-2/3 
-                          translate-x-[-40px]
-                          rounded-lg bg-black/50 px-3 py-2 text-center
-                          text-[10px] sm:text-sm font-medium text-white
-                          backdrop-blur-md shadow-md"
+              className="absolute bottom-2 left-2/3 translate-x-[-40px]
+                        rounded-lg bg-black/50 px-2 py-1 text-center
+                        text-[9px] sm:text-sm font-medium text-white
+                        backdrop-blur-md shadow-md"
             >
               <p>Alfath Flemmo</p>
-              <p className="text-[9px] sm:text-xs font-normal">Founder and CEO</p>
-              <p className="text-[9px] sm:text-xs font-normal">PT. Flemmo Music Global</p>
-              <p className="text-[9px] sm:text-xs font-light opacity-90">(FMG Universe)</p>
+              <p className="text-[8px] sm:text-xs font-normal">Founder and CEO</p>
+              <p className="text-[8px] sm:text-xs font-normal">PT. Flemmo Music Global</p>
+              <p className="text-[8px] sm:text-xs font-light opacity-90">(FMG Universe)</p>
             </div>
           </motion.div>
         </Parallax>
@@ -1590,22 +1589,37 @@ export default function LandingPage() {
       {/* <Footer /> */}
       <JsonLd id="org" data={org} />
       <JsonLd id="website" data={website} />
-      <div className="flex flex-col items-center justify-center gap-y-3 bg-white dark:bg-neutral-950 py-5 mb-10">
-        <BrandMark href="/" logoSrc="" className="scale-200 mb-5" />
-        <BrandMark href="/" title="FMG Universe" subtitle="" logoSrc="/logo/FMG-Universe-Flemmo-Music-Global.png"/>
+      <div
+        className="flex flex-col items-center justify-center gap-y-3 
+                  py-5 mb-10 
+                  px-4 sm:px-6 lg:px-8 
+                  max-w-screen-md mx-auto
+                  text-center"
+      >
+        <BrandMark logoSrc="" className="scale-200 mb-5" />
+
         <BrandMark
-          href="/"
-          title="PT. Flemmo Music Global (FMG) Publishing"
+          title="FMG Universe"
+          subtitle=""
+          logoSrc="/logo/FMG-Universe-Flemmo-Music-Global.png"
+          className="max-w-full break-words"
+        />
+
+        <BrandMark
+          title="PT. Flemmo Music Global FMG Publishing"
           subtitle=""
           logoSrc="/logo/Flemmo-Music-Global-FMG-Publishing-logo.jpg"
+          className="max-w-full break-words"
         />
+
         <BrandMark
-          href="/"
           title="Flemmo Enterprise Music (FEM)"
           subtitle=""
           logoSrc="/logo/Flemmo-Enterprise-Music-FEM-logo.jpg"
+          className="max-w-full break-words"
         />
       </div>
+
     </main>
   );
 }

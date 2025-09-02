@@ -15,6 +15,7 @@ export type BrandLockupProps = {
   subtitleMaxPx?: number;  // default 48
 };
 
+/* ---------- BrandLockup (internal) ---------- */
 export function BrandLockup({
   title,
   subtitle,
@@ -35,17 +36,24 @@ export function BrandLockup({
     m.style.fontSize = `${subtitleBasePx}px`;
     const natural = m.getBoundingClientRect().width;
     if (target > 0 && natural > 0) {
-      const next = Math.min(subtitleMaxPx, Math.max(subtitleMinPx, (target / natural) * subtitleBasePx));
+      const next = Math.min(
+        subtitleMaxPx,
+        Math.max(subtitleMinPx, (target / natural) * subtitleBasePx)
+      );
       setSubSize(next);
     }
   }, [subtitleBasePx, subtitleMinPx, subtitleMaxPx]);
 
   React.useLayoutEffect(() => {
     recalc();
-    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => recalc()) : null;
+    const ro =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => recalc())
+        : null;
     if (ro && titleRef.current) ro.observe(titleRef.current);
-    // font ready
+
     (document as any).fonts?.ready?.then?.(() => recalc());
+
     const onResize = () => recalc();
     window.addEventListener("resize", onResize);
     return () => {
@@ -61,11 +69,15 @@ export function BrandLockup({
   };
 
   return (
-    <div className={`relative grid content-center ${className}`}>
+    <div className={`relative grid content-center justify-items-center ${className}`}>
       {/* Title */}
       <div
         ref={titleRef}
-        className="font-heading-1 font-black leading-[1.05] text-gray-800 dark:text-gray-100 whitespace-nowrap"
+        className={`
+          font-heading-1 font-black leading-[1.05]
+          text-gray-800 dark:text-gray-100
+          max-w-full break-words text-center
+        `}
         style={{ fontWeight: 700 }}
       >
         {title}
@@ -81,7 +93,12 @@ export function BrandLockup({
 
       {/* Subtitle */}
       <div
-        className="mt-[-2px] font-body-XS leading-[1] text-neutral-600 dark:text-neutral-300 whitespace-nowrap brand-subtitle"
+        className={`
+          mt-[-2px] font-body-XS leading-[1.2]
+          text-neutral-600 dark:text-neutral-300
+          max-w-full break-words text-center
+          brand-subtitle w-full
+        `}
         style={subStyle}
       >
         {subtitle}
@@ -120,7 +137,7 @@ export type BrandMarkProps = {
 export default function BrandMark({
   href = null,
   className = "",
-  gapClassName = "gap-1.5",
+  gapClassName = "gap-2", // gap lebih kecil supaya nempel
   title = "FLEMMO MUSIC",
   subtitle = "Global Universe Solution",
   logoSrc,
@@ -133,7 +150,7 @@ export default function BrandMark({
   subtitleMaxPx = 11,
 }: BrandMarkProps): React.JSX.Element {
   const content = (
-    <div className={`flex items-center ${gapClassName} ${className}`}>
+    <div className={`inline-flex items-center ${gapClassName} ${className}`}>
       {/* Hanya render <Image> kalau logoSrc valid */}
       {logoSrc && logoSrc.trim() !== "" && (
         <Image
@@ -145,13 +162,15 @@ export default function BrandMark({
           priority={priority}
         />
       )}
-      <BrandLockup
-        title={title}
-        subtitle={subtitle}
-        subtitleBasePx={subtitleBasePx}
-        subtitleMinPx={subtitleMinPx}
-        subtitleMaxPx={subtitleMaxPx}
-      />
+      <div className="flex flex-col justify-center">
+        <BrandLockup
+          title={title}
+          subtitle={subtitle}
+          subtitleBasePx={subtitleBasePx}
+          subtitleMinPx={subtitleMinPx}
+          subtitleMaxPx={subtitleMaxPx}
+        />
+      </div>
     </div>
   );
 

@@ -38,23 +38,6 @@ export default function Footer(): React.JSX.Element {
       ],
     },
     {
-      title: "Divisions",
-      links: [
-        { label: "Creative", href: "/creative" },
-        { label: "Talent", href: "/talent" },
-        { label: "Labs (AI/tuneXpert)", href: "/labs" },
-        { label: "Publishing", href: "/publishing" },
-      ],
-    },
-    {
-      title: "Divisions",
-      links: [
-        { label: "Academy", href: "/academy" },
-        { label: "Media", href: "/media" },
-        { label: "Event & Festival", href: "/event" },
-      ],
-    },
-    {
       title: "Platform",
       links: [
         { label: "Overview", href: "/#about" },
@@ -69,6 +52,18 @@ export default function Footer(): React.JSX.Element {
         { label: "Privacy", href: "/legal/privacy" },
         { label: "Cookies", href: "/legal/cookies" },
         { label: "DMCA", href: "/legal/dmca" },
+      ],
+    },
+    {
+      title: "Divisions",
+      links: [
+        { label: "Creative", href: "/creative" },
+        { label: "Talent", href: "/talent" },
+        { label: "Labs (AI/tuneXpert)", href: "/labs" },
+        { label: "Publishing", href: "/publishing" },
+        { label: "Academy", href: "/academy" },
+        { label: "Media", href: "/media" },
+        { label: "Event & Festival", href: "/event" },
       ],
     },
   ];
@@ -98,7 +93,7 @@ export default function Footer(): React.JSX.Element {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         {/* Top row */}
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <BrandMark href="/" logoSrc="FMG-Universe-Flemmo-Music-Global.png"/>
+          <BrandMark href="/" logoSrc="/logo/FMG-Universe-Flemmo-Music-Global.png"/>
           <form
             onSubmit={onSubmit}
             className="flex w-full max-w-md items-center gap-2 sm:w-auto"
@@ -120,10 +115,14 @@ export default function Footer(): React.JSX.Element {
             </div>
             <button
               type="submit"
-              className="h-10 shrink-0 rounded-md bg-neutral-900 px-3 text-sm font-medium text-white transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900/30 dark:bg-white dark:text-neutral-900 dark:focus-visible:ring-white/30"
+              className="h-10 shrink-0 rounded-md 
+                        bg-red-600 px-3 text-sm font-medium text-white
+                        transition-opacity hover:opacity-90 
+                        focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600/30"
             >
               Subscribe
             </button>
+
           </form>
         </div>
 

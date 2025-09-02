@@ -33,14 +33,14 @@ const LOCATIONS: ReadonlyArray<Location> = [
   {
     id: "jakarta",
     name: "Jakarta",
-    addressLines: ["Jl. Kebon Jeruk No. 8"],
-    city: "Jakarta",
+    addressLines: ["Jl. Kebon Jeruk No. 8 Palmerah"],
+    city: "Jakarta Barat",
     country: "Indonesia",
     region: "asia",
     timezone: "Asia/Jakarta",
     email: "admin@flemmomusic.com",
     phone: "+62 822 9828 8188",
-    mapsQuery: encodeURIComponent("Jl. Kebon Jeruk No. 8, Jakarta, Indonesia"),
+    mapsQuery: encodeURIComponent("Jl. Kebon Jeruk No. 8 Palmerah, Jakarta Barat, Indonesia"),
   },
   {
     id: "kuala-lumpur",

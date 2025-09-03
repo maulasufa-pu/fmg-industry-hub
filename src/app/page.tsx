@@ -11,7 +11,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { siteConfig } from "@/lib/site";
 import { compact } from "@/lib/arrays";
 import BrandMark from "./ui/BrandMark";
-
+import Image from "next/image";
 import InnovationBadge from "./ui/InnovationBadge";
 import type { PanInfo } from "framer-motion";
 import CinematicVideoHeroHLS from "@/components/CinematicVideoHeroHLS";
@@ -1469,26 +1469,28 @@ function CTA() {
       <Parallax speed={-0.04}>
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(1000px_400px_at_50%_10%,rgba(99,102,241,0.2),transparent)]" />
       </Parallax>
+
       <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 px-4 md:grid-cols-2">
-        <Parallax speed={0.06}>
-          <div>
-            <h3 className="text-pretty text-3xl font-bold sm:text-4xl">
-              Ready to make your next release?
-            </h3>
-            <p className="mt-3 text-black/70 dark:text-white">
-              Tell us your vision — we&#39;ll craft the sound and handle publishing & distribution.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <MagneticButton href="/client/dashboard">Start My Project</MagneticButton>
-              <Link
-                href="https://wa.me/6282298288188"
-                className="inline-flex items-center gap-2 rounded-2xl border border-black/10 px-5 py-3 text-sm font-semibold hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
-              >
-                Talk with us <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
+        {/* Kolom teks CTA */}
+        <div>
+          <h3 className="text-pretty text-3xl font-bold sm:text-4xl">
+            Ready to make your next release?
+          </h3>
+          <p className="mt-3 text-black/70 dark:text-white">
+            Tell us your vision — we&#39;ll craft the sound and handle publishing & distribution.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <MagneticButton href="/client/dashboard">Start My Project</MagneticButton>
+            <Link
+              href="https://wa.me/6282298288188"
+              className="inline-flex items-center gap-2 rounded-2xl border border-black/10 px-5 py-3 text-sm font-semibold hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
+            >
+              Talk with us <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-        </Parallax>
+        </div>
+
+        {/* Kolom gambar */}
         <Parallax speed={0.12}>
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -1497,18 +1499,13 @@ function CTA() {
             transition={{ duration: 0.6 }}
             className="relative aspect-[16/10] w-full overflow-hidden rounded-3xl border border-black/10 shadow-xl dark:border-white/10"
           >
-            {/* Background image */}
             <img
               src="/img/alfath-flemmo-founder-ceo-flemmo-music-global-publishing-fmg-universe.jpeg"
               alt="Alfath Flemmo - Founder & CEO Flemmo Music Global Publishing (FMG Universe)"
-              className="absolute inset-0 h-full w-full object-cover" loading="lazy"
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="lazy"
             />
-            <div
-              className="absolute bottom-2 left-2/3 translate-x-[-40px]
-                        rounded-lg bg-black/50 px-2 py-1 text-center
-                        text-[9px] sm:text-sm font-medium text-white
-                        backdrop-blur-md shadow-md"
-            >
+            <div className="absolute bottom-2 left-2/3 translate-x-[-40px] rounded-lg bg-black/50 px-2 py-1 text-center text-[9px] sm:text-sm font-medium text-white backdrop-blur-md shadow-md">
               <p>Alfath Flemmo</p>
               <p className="text-[8px] sm:text-xs font-normal">Founder and CEO</p>
               <p className="text-[8px] sm:text-xs font-normal">PT. Flemmo Music Global</p>
@@ -1589,35 +1586,79 @@ export default function LandingPage() {
       {/* <Footer /> */}
       <JsonLd id="org" data={org} />
       <JsonLd id="website" data={website} />
-      <div
-        className="flex flex-col items-center justify-center gap-y-3 
-                  py-5 mb-10 
-                  px-4 sm:px-6 lg:px-8 
-                  max-w-screen-md mx-auto
-                  text-center"
-      >
-        <BrandMark logoSrc="" className="scale-200 mb-5" />
+      <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:py-12">
+        <h2 className="mb-6 text-center text-xl font-semibold tracking-tight text-neutral-800 dark:text-neutral-100 sm:mb-10 sm:text-2xl">
+          FMG Universe Brand Lockups
+        </h2>
 
-        <BrandMark
-          title="FMG Universe"
-          subtitle=""
-          logoSrc="/logo/FMG-Universe-Flemmo-Music-Global.png"
-          className="max-w-full break-words"
-        />
+        <div className="grid gap-6 sm:gap-8">
+          {/* 1) FMG Universe */}
+          <div className="grid items-center gap-4 rounded-3xl border border-black/10 bg-gradient-to-br from-white to-neutral-50 p-4 shadow-sm transition hover:shadow-md dark:border-white/10 dark:from-zinc-950 dark:to-black sm:grid-cols-[132px_1fr] sm:gap-6 sm:p-6">
+            <div
+              className="relative mx-auto aspect-square w-28 overflow-hidden rounded-2xl p-2 ring-1 ring-black/10 sm:mx-0 sm:w-32
+                        [background:linear-gradient(135deg,_#0b0b0b_0%_50%,_#ffffff_50%_100%)]
+                        dark:[background:linear-gradient(135deg,_#0b0b0b_0%_50%,_#f5f5f5_50%_100%)]"
+            >
+              <Image
+                src="/logo/FMG-Universe-Flemmo-Music-Global.png"
+                alt="FMG Universe logo"
+                fill
+                className="rounded-2xl object-contain"
+                sizes="(max-width: 640px) 7rem, 8rem"
+                priority
+              />
+            </div>
+            <div className="text-center sm:text-left">
+              <h3 className="text-pretty text-3xl font-bold sm:text-4xl">
+                FMG Universe
+              </h3>
+            </div>
+          </div>
 
-        <BrandMark
-          title="PT. Flemmo Music Global FMG Publishing"
-          subtitle=""
-          logoSrc="/logo/Flemmo-Music-Global-FMG-Publishing-logo.jpg"
-          className="max-w-full break-words"
-        />
+          {/* 2) PT. Flemmo Music Global FMG Publishing */}
+          <div className="grid items-center gap-4 rounded-3xl border border-black/10 bg-gradient-to-br from-white to-neutral-50 p-4 shadow-sm transition hover:shadow-md dark:border-white/10 dark:from-zinc-950 dark:to-black sm:grid-cols-[132px_1fr] sm:gap-6 sm:p-6">
+            <div
+              className="relative mx-auto aspect-square w-28 overflow-hidden rounded-2xl p-2 ring-1 ring-black/10 sm:mx-0 sm:w-32
+                        [background:linear-gradient(135deg,_#0b0b0b_0%_50%,_#ffffff_50%_100%)]
+                        dark:[background:linear-gradient(135deg,_#0b0b0b_0%_50%,_#f5f5f5_50%_100%)]"
+            >
+              <Image
+                src="/logo/Flemmo-Music-Global-FMG-Publishing-logo.jpg"
+                alt="FMG Publishing logo"
+                fill
+                className="rounded-2xl object-contain"
+                sizes="(max-width: 640px) 7rem, 8rem"
+              />
+            </div>
+            <div className="text-center sm:text-left">
+              <h3 className="text-pretty text-3xl font-bold sm:text-4xl">
+                PT. Flemmo Music Global FMG Publishing
+              </h3>
+            </div>
+          </div>
 
-        <BrandMark
-          title="Flemmo Enterprise Music (FEM)"
-          subtitle=""
-          logoSrc="/logo/Flemmo-Enterprise-Music-FEM-logo.jpg"
-          className="max-w-full break-words"
-        />
+          {/* 3) Flemmo Enterprise Music (FEM) */}
+          <div className="grid items-center gap-4 rounded-3xl border border-black/10 bg-gradient-to-br from-white to-neutral-50 p-4 shadow-sm transition hover:shadow-md dark:border-white/10 dark:from-zinc-950 dark:to-black sm:grid-cols-[132px_1fr] sm:gap-6 sm:p-6">
+            <div
+              className="relative mx-auto aspect-square w-28 overflow-hidden rounded-2xl p-2 ring-1 ring-black/10 sm:mx-0 sm:w-32
+                        [background:linear-gradient(135deg,_#0b0b0b_0%_50%,_#ffffff_50%_100%)]
+                        dark:[background:linear-gradient(135deg,_#0b0b0b_0%_50%,_#f5f5f5_50%_100%)]"
+            >
+              <Image
+                src="/logo/Flemmo-Enterprise-Music-FEM-logo.jpg"
+                alt="Flemmo Enterprise Music logo"
+                fill
+                className="rounded-2xl object-contain"
+                sizes="(max-width: 640px) 7rem, 8rem"
+              />
+            </div>
+            <div className="text-center sm:text-left">
+              <h3 className="text-pretty text-3xl font-bold sm:text-4xl">
+                Flemmo Enterprise Music (FEM)
+              </h3>
+            </div>
+          </div>
+        </div>
       </div>
 
     </main>

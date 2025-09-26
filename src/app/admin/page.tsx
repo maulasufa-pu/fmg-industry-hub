@@ -24,6 +24,6 @@ export default async function AdminIndex() {
     case "publisher":
       redirect("/admin/publishing/dashboard");
     default:
-      redirect("/client"); // client/guest diarahkan keluar area admin
+      redirect("/client"); // client/guest redirected out of admin area
   }
 }

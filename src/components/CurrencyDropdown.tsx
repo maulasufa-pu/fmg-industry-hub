@@ -126,7 +126,7 @@ export function CurrencyDropdown({
         block: "nearest",
         inline: "nearest",
       });
-      // fokus ke input search untuk UX cepat
+      // focus on search input for quick UX
       const input = dropdownRef.current?.querySelector<HTMLInputElement>("input[data-cdd-search='1']");
       input?.focus();
     });

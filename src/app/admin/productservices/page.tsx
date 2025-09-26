@@ -274,11 +274,11 @@ const SubtleBtn = forwardRef<HTMLButtonElement, FMGButtonProps>(
 SubtleBtn.displayName = "SubtleBtn";
 
 /** Popover (headless, animated) — fixed + viewport aware **/
-/** Popover simpel: selalu nempel di bawah tombol (right-aligned) */
+/** Simple popover: always attached below button (right-aligned) */
 function Popover({
   open,
   onClose,
-  anchorRef, // tetap diterima agar signature tidak berubah
+  anchorRef, // keep receiving to maintain signature compatibility
   children,
   width = 360,
 }: {
@@ -296,7 +296,7 @@ function Popover({
     const onClick = (e: MouseEvent) => {
       const t = e.target as Node;
       if (popRef.current && popRef.current.contains(t)) return;
-      // jika klik tombol anchor, biarkan handler tombol yang toggle
+      // if clicking anchor button, let button handler toggle
       if (anchorRef?.current && anchorRef.current.contains(t)) return;
       onClose();
     };
@@ -364,7 +364,7 @@ export default function ProductServicesPage(): React.JSX.Element {
           <div className={[glassInner, "p-6"].join(" ")}>
             <h1 className="text-2xl font-semibold">Access restricted</h1>
             <p className="mt-2 text-sm text-white/85">
-              Halaman ini hanya untuk Owner & Admin.
+              This page is only for Owner & Admin.
             </p>
           </div>
         </div>
@@ -390,7 +390,7 @@ export default function ProductServicesPage(): React.JSX.Element {
                 </span>
               </h1>
               <p className="text-sm text-white/85">
-                Kelola layanan, paket (bundles), promo, dan diskon.
+                Manage services, bundles, promotions, and discounts.
               </p>
             </div>
 
@@ -590,7 +590,7 @@ function ServicesPanel(): React.JSX.Element {
     setOpenPop(false);
     setQuick({ label: "", price: 0, group: "core", key: "" });
     await load();
-    // langsung buka editor untuk lengkapi detail
+    // directly open editor to complete details
     const created = (await sb.from("services").select("*").eq("service_key", payload.service_key).single()).data;
     if (created) setEditing(normalizeService(created));
   }
@@ -609,7 +609,7 @@ function ServicesPanel(): React.JSX.Element {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Cari service…"
+                placeholder="Search services…"
                 className={[inputBase, "pl-9 w-[min(70vw,260px)]"].join(" ")}
               />
             </div>
@@ -628,7 +628,7 @@ function ServicesPanel(): React.JSX.Element {
                     </div>
                     <div>
                       <div className="text-sm font-medium">Quick Create Service</div>
-                      <div className="text-xs text-white/70">Buat jasa baru kilat — bisa di-edit detailnya nanti.</div>
+                      <div className="text-xs text-white/70">Create a new service quickly — details can be edited later.</div>
                     </div>
                   </div>
 
@@ -727,7 +727,7 @@ function ServicesPanel(): React.JSX.Element {
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-6 text-center text-white/80">
-                    Tidak ada service. Buat baru dengan tombol <b>New</b>.
+                    No services found. Create a new one with the <b>New</b> button.
                   </td>
                 </tr>
               ) : (
@@ -816,7 +816,7 @@ function ServiceEditor({
 
   const panelRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    // sedikit delay agar sudah ter-render penuh
+    // slight delay to ensure fully rendered
     const t = setTimeout(() => scrollIntoViewSmooth(panelRef.current), 50);
     return () => clearTimeout(t);
   }, []);
@@ -1125,7 +1125,7 @@ function BundlesPanel(): React.JSX.Element {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Cari bundle…"
+                placeholder="Search bundles…"
                 className={[inputBase, "pl-9 w-[min(70vw,260px)]"].join(" ")}
               />
             </div>
@@ -1143,7 +1143,7 @@ function BundlesPanel(): React.JSX.Element {
                   </div>
                   <div>
                     <div className="text-sm font-medium">Quick Create Bundle</div>
-                    <div className="text-xs text-white/70">Buat paket cepat. Tambah services di editor setelahnya.</div>
+                    <div className="text-xs text-white/70">Create a bundle quickly. Add services in the editor afterwards.</div>
                   </div>
                 </div>
 
@@ -1238,7 +1238,7 @@ function BundlesPanel(): React.JSX.Element {
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-6 text-center text-white/80">
-                    Tidak ada bundle. Buat baru dengan tombol <b>New</b>.
+                    No bundles found. Create a new one with the <b>New</b> button.
                   </td>
                 </tr>
               ) : (
@@ -1563,7 +1563,7 @@ function BundleEditor({
                     </span>
                   ))}
                   {services.filter(s => attached.includes(s.id)).length === 0 && (
-                    <span className="text-xs text-white/75">Belum ada service yang ditambahkan.</span>
+                    <span className="text-xs text-white/75">No services have been added yet.</span>
                   )}
                 </div>
 
@@ -1579,7 +1579,7 @@ function BundleEditor({
                       className={inputBase}
                       defaultValue=""
                     >
-                      <option value="" disabled>Tambah service…</option>
+                      <option value="" disabled>Add service…</option>
                       {services.filter(s => s.is_active).map(s => (
                         <option key={s.id} value={s.id}>{s.label}</option>
                       ))}

@@ -457,11 +457,103 @@ export default function ProductServicesPage(): React.JSX.Element {
         </div>
       </header>
 
-      <div className="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
+      {/* Overview/Summary Section */}
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <SummaryCard title="Total Services" value="12" description="Active services available" />
+        <SummaryCard title="Active Bundles" value="4" description="Bundle packages created" />
+        <SummaryCard title="Revenue This Month" value="$24,500" description="From services & bundles" />
+      </div>
+
+      {/* Quick Actions Section */}
+      <div className={[glassWrap, "mb-8"].join(" ")}>
+        <div className={[glassInner, "p-4 sm:p-6"].join(" ")}>
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Sparkles className="h-5 w-5" /> Quick Actions
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <QuickActionCard 
+              icon={Plus} 
+              title="New Service" 
+              description="Add a new service"
+              onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })}
+            />
+            <QuickActionCard 
+              icon={Layers} 
+              title="New Bundle" 
+              description="Create service bundle"
+              onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })}
+            />
+            <QuickActionCard 
+              icon={Percent} 
+              title="Promo Manager" 
+              description="Manage discounts"
+              onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })}
+            />
+            <QuickActionCard 
+              icon={Tag} 
+              title="Pricing Review" 
+              description="Review all pricing"
+              onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Services & Bundles Management - Moved to Bottom */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <ServicesPanel />
         <BundlesPanel />
       </div>
     </main>
+  );
+}
+
+/***************************************
+ * Summary Card Component
+ ***************************************/
+
+function SummaryCard({ title, value, description }: { title: string; value: string; description: string }) {
+  return (
+    <div className={glassWrap}>
+      <div className={[glassInner, "p-4 text-center"].join(" ")}>
+        <div className="text-2xl font-bold text-white mb-1">{value}</div>
+        <div className="text-sm font-medium text-white/90 mb-1">{title}</div>
+        <div className="text-xs text-white/70">{description}</div>
+      </div>
+    </div>
+  );
+}
+
+/***************************************
+ * Quick Action Card Component
+ ***************************************/
+
+function QuickActionCard({ 
+  icon: Icon, 
+  title, 
+  description, 
+  onClick 
+}: { 
+  icon: React.ComponentType<{ className?: string }>; 
+  title: string; 
+  description: string;
+  onClick: () => void;
+}) {
+  return (
+    <motion.button
+      onClick={onClick}
+      whileHover={{ scale: 1.02, y: -2 }}
+      whileTap={{ scale: 0.98 }}
+      className="text-left p-4 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-200 group"
+    >
+      <div className="flex items-center gap-3 mb-2">
+        <div className="p-2 rounded-lg bg-gradient-to-br from-fuchsia-400/20 to-sky-400/20 border border-fuchsia-400/30">
+          <Icon className="h-4 w-4 text-fuchsia-300" />
+        </div>
+      </div>
+      <div className="text-sm font-medium text-white group-hover:text-fuchsia-300 transition-colors">{title}</div>
+      <div className="text-xs text-white/70">{description}</div>
+    </motion.button>
   );
 }
 

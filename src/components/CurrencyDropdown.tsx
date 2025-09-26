@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Currency, CURRENCY_OPTIONS, CurrencyOption } from '@/lib/currency';
 import { useCurrency } from '@/contexts/CurrencyContext';
@@ -19,8 +19,8 @@ export function CurrencyDropdown({
   const { currency, setCurrency, loading, error, lastUpdated } = useCurrency();
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [buttonRect, setButtonRect] = useState<DOMRect | null>(null);
-  const buttonRef = React.useRef<HTMLButtonElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   
   const selectedOption = CURRENCY_OPTIONS.find(opt => opt.code === currency);
   
@@ -36,12 +36,86 @@ export function CurrencyDropdown({
   };
 
   const handleToggle = () => {
-    if (!isOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setButtonRect(rect);
-    }
     setIsOpen(!isOpen);
   };
+
+  // Position dropdown function
+  const positionDropdown = useCallback(() => {
+    const buttonEl = buttonRef.current;
+    const dropdownEl = dropdownRef.current;
+    if (!buttonEl || !dropdownEl) return;
+
+    const buttonRect = buttonEl.getBoundingClientRect();
+    const dropdownWidth = compact ? 200 : 250;
+    const gap = 8;
+
+    // Position below button by default
+    let top = buttonRect.bottom + gap + window.scrollY;
+    let left = buttonRect.left + window.scrollX;
+
+    // Keep dropdown within viewport horizontally
+    const maxLeft = window.scrollX + window.innerWidth - dropdownWidth - 8;
+    const minLeft = window.scrollX + 8;
+    left = Math.max(minLeft, Math.min(left, maxLeft));
+
+    // Check if dropdown would overflow bottom of viewport
+    const dropdownHeight = dropdownEl.offsetHeight || 320;
+    const bottomOverflow = top + dropdownHeight - (window.scrollY + window.innerHeight - 8);
+    
+    if (bottomOverflow > 0) {
+      // Try to position above the button
+      const topPosition = buttonRect.top - gap - dropdownHeight + window.scrollY;
+      if (topPosition >= window.scrollY + 8) {
+        top = topPosition;
+      } else {
+        // If doesn't fit above either, limit height and stay below
+        const maxHeight = window.innerHeight - buttonRect.bottom - gap - 16;
+        dropdownEl.style.maxHeight = `${Math.max(200, maxHeight)}px`;
+        dropdownEl.style.overflowY = 'auto';
+      }
+    } else {
+      dropdownEl.style.maxHeight = '320px';
+      dropdownEl.style.overflowY = 'hidden';
+    }
+
+    dropdownEl.style.top = `${top}px`;
+    dropdownEl.style.left = `${left}px`;
+    dropdownEl.style.width = `${Math.min(dropdownWidth, window.innerWidth - 16)}px`;
+  }, [compact]);
+
+  // Handle positioning and cleanup
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (dropdownRef.current && dropdownRef.current.contains(target)) return;
+      if (buttonRef.current && buttonRef.current.contains(target)) return;
+      setIsOpen(false);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+
+    const handleScrollOrResize = () => positionDropdown();
+
+    // Position dropdown initially
+    requestAnimationFrame(positionDropdown);
+
+    // Add event listeners
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
+  }, [isOpen, positionDropdown]);
 
   return (
     <div className={`relative ${className}`}>
@@ -110,31 +184,15 @@ export function CurrencyDropdown({
       {/* Dropdown Menu */}
       <AnimatePresence>
         {isOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
-              className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
-            />
-            
-            {/* Dropdown Panel */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-              transition={{ duration: 0.2 }}
-              style={{
-                position: 'fixed',
-                top: buttonRect ? Math.min(buttonRect.bottom + 8, window.innerHeight - 320) : 0,
-                left: buttonRect ? Math.max(8, Math.min(buttonRect.left, window.innerWidth - 250)) : 0,
-                width: compact ? 200 : 250,
-                maxWidth: 'calc(100vw - 16px)',
-              }}
-              className="z-50 bg-neutral-950/95 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl max-h-80 overflow-hidden"
-            >
+          <motion.div
+            ref={dropdownRef}
+            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+            transition={{ duration: 0.18 }}
+            className="fixed z-[100] bg-neutral-950/95 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl overflow-hidden"
+            style={{ maxHeight: '320px' }}
+          >
               {/* Search Input */}
               <div className="p-3 border-b border-white/10">
                 <div className="relative">
@@ -187,7 +245,6 @@ export function CurrencyDropdown({
                 )}
               </div>
             </motion.div>
-          </>
         )}
       </AnimatePresence>
     </div>

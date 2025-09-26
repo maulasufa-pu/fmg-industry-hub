@@ -1007,29 +1007,32 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                     
                     {/* Clean Project Summary */}
                     <div className="space-y-6">
-                      {/* Basic Info in Simple Grid */}
-                      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                        <div>
-                          <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Song Title</span>
-                          <div className="text-lg font-semibold text-slate-900 dark:text-white">{songTitle || "-"}</div>
+                      {/* Basic Info in Simple Grid with Soft Backgrounds */}
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="p-4 bg-white/60 dark:bg-slate-800/40 rounded-xl">
+                          <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">Song Title</span>
+                          <div className="text-lg font-semibold text-slate-900 dark:text-white mt-1">{songTitle || "-"}</div>
                         </div>
-                        <div>
-                          <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Artist</span>
-                          <div className="text-lg font-semibold text-slate-900 dark:text-white">{artistName || "-"}</div>
+                        <div className="p-4 bg-white/60 dark:bg-slate-800/40 rounded-xl">
+                          <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">Artist</span>
+                          <div className="text-lg font-semibold text-slate-900 dark:text-white mt-1">{artistName || "-"}</div>
                         </div>
-                        <div>
-                          <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Album</span>
-                          <div className="text-lg font-semibold text-slate-900 dark:text-white">{albumTitle || "-"}</div>
+                        <div className="p-4 bg-white/60 dark:bg-slate-800/40 rounded-xl">
+                          <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">Album</span>
+                          <div className="text-lg font-semibold text-slate-900 dark:text-white mt-1">{albumTitle || "-"}</div>
                         </div>
-                        <div>
-                          <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Genre</span>
-                          <div className="text-lg font-semibold text-slate-900 dark:text-white">{genre || "-"}{subGenre ? ` / ${subGenre}` : ""}</div>
+                        <div className="p-4 bg-white/60 dark:bg-slate-800/40 rounded-xl">
+                          <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">Genre</span>
+                          <div className="text-lg font-semibold text-slate-900 dark:text-white mt-1">{genre || "-"}{subGenre ? ` / ${subGenre}` : ""}</div>
                         </div>
                       </div>
 
                       {/* Streamlined Services Display */}
                       <div>
-                        <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Selected Services</h4>
+                        <h4 className="text-lg font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
+                          <div className="w-2 h-2 bg-slate-500 dark:bg-slate-400 rounded-full"></div>
+                          Selected Services
+                        </h4>
                         {/* Bundle Display - Priority Position */}
                         {selectedBundle && (
                           <div className="mb-4 p-4 bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-900/20 dark:to-indigo-900/20 rounded-lg border border-violet-200 dark:border-violet-700">
@@ -1074,7 +1077,10 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                       {/* Description - Simple Display */}
                       {description?.trim() && (
                         <div>
-                          <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-3">Project Description</h4>
+                          <h4 className="text-lg font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                            <div className="w-2 h-2 bg-slate-500 dark:bg-slate-400 rounded-full"></div>
+                            Project Description
+                          </h4>
                           <div className="p-4 bg-white/60 dark:bg-slate-800/40 rounded-lg">
                             <div className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">{description}</div>
                           </div>

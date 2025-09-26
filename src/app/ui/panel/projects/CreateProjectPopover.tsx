@@ -998,112 +998,89 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
 
               {step === 3 && (
                 <div className="space-y-8">
-                  {/* Enhanced Review Section */}
+                  {/* Simplified Review Section */}
                   <div className="bg-gradient-to-br from-emerald-50/80 to-teal-50/50 dark:from-emerald-900/20 dark:to-teal-900/10 rounded-2xl p-8 border border-emerald-200/40 dark:border-emerald-700/30">
                     <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
                       <div className="w-3 h-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"></div>
                       Project Review
                     </h3>
                     
-                    {/* Project Information */}
-                    <div className="bg-white/80 dark:bg-slate-800/50 rounded-xl p-6 mb-6 border border-emerald-100/60 dark:border-emerald-800/30">
-                      <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                        <svg className="w-5 h-5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Project Details
-                      </h4>
-                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        <div className="bg-slate-50/80 dark:bg-slate-700/50 rounded-lg p-4">
-                          <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Song Title</span>
-                          <div className="text-base font-semibold text-slate-900 dark:text-white mt-1">{songTitle || "-"}</div>
+                    {/* Clean Project Summary */}
+                    <div className="space-y-6">
+                      {/* Basic Info in Simple Grid */}
+                      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                        <div>
+                          <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Song Title</span>
+                          <div className="text-lg font-semibold text-slate-900 dark:text-white">{songTitle || "-"}</div>
                         </div>
-                        <div className="bg-slate-50/80 dark:bg-slate-700/50 rounded-lg p-4">
-                          <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Artist</span>
-                          <div className="text-base font-semibold text-slate-900 dark:text-white mt-1">{artistName || "-"}</div>
+                        <div>
+                          <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Artist</span>
+                          <div className="text-lg font-semibold text-slate-900 dark:text-white">{artistName || "-"}</div>
                         </div>
-                        <div className="bg-slate-50/80 dark:bg-slate-700/50 rounded-lg p-4">
-                          <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Album</span>
-                          <div className="text-base font-semibold text-slate-900 dark:text-white mt-1">{albumTitle || "-"}</div>
+                        <div>
+                          <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Album</span>
+                          <div className="text-lg font-semibold text-slate-900 dark:text-white">{albumTitle || "-"}</div>
                         </div>
-                        <div className="bg-slate-50/80 dark:bg-slate-700/50 rounded-lg p-4 sm:col-span-2 lg:col-span-3">
-                          <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Genre</span>
-                          <div className="text-base font-semibold text-slate-900 dark:text-white mt-1">{genre || "-"}{subGenre ? ` / ${subGenre}` : ""}</div>
+                        <div>
+                          <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Genre</span>
+                          <div className="text-lg font-semibold text-slate-900 dark:text-white">{genre || "-"}{subGenre ? ` / ${subGenre}` : ""}</div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Services Summary */}
-                    <div className="bg-white/80 dark:bg-slate-800/50 rounded-xl p-6 mb-6 border border-emerald-100/60 dark:border-emerald-800/30">
-                      <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                        <svg className="w-5 h-5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/>
-                        </svg>
-                        Selected Services
-                      </h4>
-                      <div className="space-y-3">
-                        {Array.from(selectedServices).map((k) => {
-                          const s = services.find((x) => x.service_key === k);
-                          if (!s) return null;
-                          const inBundle = !!selectedBundle && selectedBundle.items.some(it => it.service_key === k);
-                          const cus = customPrices[k];
-                          const resolved = inBundle ? 0 : resolvedPriceOf(k);
-                          const isCustom = !inBundle && cus != null;
-                          return (
-                            <div key={k} className="flex items-center justify-between bg-slate-50/80 dark:bg-slate-700/50 rounded-lg p-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                                <span className="font-medium text-slate-900 dark:text-white">
-                                  {s.label}{s.is_subscription ? " (Monthly)" : ""}
-                                </span>
-                              </div>
-                              <div className="text-right">
-                                {inBundle ? (
-                                  <span className="px-3 py-1 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded-full text-sm font-medium">
-                                    Bundled
-                                  </span>
-                                ) : (
-                                  <span className={`font-semibold ${isCustom ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
-                                    {isCustom && <span className="text-amber-500 mr-1">★</span>}
-                                    {formatPrice(resolved, currency, rates)}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
+                      {/* Streamlined Services Display */}
+                      <div>
+                        <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Selected Services</h4>
+                        {/* Bundle Display - Priority Position */}
                         {selectedBundle && (
-                          <div className="bg-gradient-to-r from-violet-100 to-indigo-100 dark:from-violet-900/30 dark:to-indigo-900/20 rounded-lg p-4 border-2 border-violet-200 dark:border-violet-700">
+                          <div className="mb-4 p-4 bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-900/20 dark:to-indigo-900/20 rounded-lg border border-violet-200 dark:border-violet-700">
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="w-3 h-3 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full"></div>
-                                <span className="font-bold text-violet-900 dark:text-violet-100">
-                                  Bundle: {selectedBundle.label}
-                                </span>
-                              </div>
+                              <span className="font-bold text-violet-900 dark:text-violet-100 flex items-center gap-2">
+                                🎵 Bundle: {selectedBundle.label}
+                              </span>
                               <span className="font-bold text-violet-900 dark:text-violet-100">
                                 {formatPrice(Number(selectedBundle.bundle_price), currency, rates)}
                               </span>
                             </div>
                           </div>
                         )}
-                      </div>
-                    </div>
-
-                    {/* Project Description */}
-                    {description?.trim() && (
-                      <div className="bg-white/80 dark:bg-slate-800/50 rounded-xl p-6 border border-emerald-100/60 dark:border-emerald-800/30">
-                        <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                          <svg className="w-5 h-5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-1a1 1 0 00-1-1H9a1 1 0 00-1 1v1a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd"/>
-                          </svg>
-                          Project Description
-                        </h4>
-                        <div className="bg-slate-50/80 dark:bg-slate-700/50 rounded-lg p-4">
-                          <div className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">{description}</div>
+                        {/* Individual Services - Clean List */}
+                        <div className="space-y-2">
+                          {Array.from(selectedServices).map((k) => {
+                            const s = services.find((x) => x.service_key === k);
+                            if (!s) return null;
+                            const inBundle = !!selectedBundle && selectedBundle.items.some(it => it.service_key === k);
+                            const cus = customPrices[k];
+                            const resolved = inBundle ? 0 : resolvedPriceOf(k);
+                            const isCustom = !inBundle && cus != null;
+                            return (
+                              <div key={k} className="flex items-center justify-between py-2 px-3 bg-white/40 dark:bg-slate-800/30 rounded">
+                                <span className="text-slate-900 dark:text-white">
+                                  • {s.label}{s.is_subscription ? " (Monthly)" : ""}
+                                </span>
+                                <span className={`font-medium text-sm ${inBundle ? 'text-violet-600 dark:text-violet-400' : isCustom ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                                  {inBundle ? "Included" : (
+                                    <>
+                                      {isCustom && "★ "}
+                                      {formatPrice(resolved, currency, rates)}
+                                    </>
+                                  )}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
-                    )}
+
+                      {/* Description - Simple Display */}
+                      {description?.trim() && (
+                        <div>
+                          <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-3">Project Description</h4>
+                          <div className="p-4 bg-white/60 dark:bg-slate-800/40 rounded-lg">
+                            <div className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">{description}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Enhanced Preferences Section */}

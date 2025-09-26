@@ -17,14 +17,13 @@ export async function middleware(req: NextRequest) {
     pathname,
     isLocalhost,
     nodeEnv: process.env.NODE_ENV,
-    disableFlag: process.env.DISABLE_AUTH_DEBUG
+    disableFlag: process.env.DISABLE_AUTH_DEBUG,
+    port: req.nextUrl.port
   });
   
-  if (isLocalhost && 
-      process.env.NODE_ENV === 'development' && 
-      process.env.DISABLE_AUTH_DEBUG !== 'true') {
-    console.log('🐛 DEBUG MODE: Bypassing middleware auth for localhost:', pathname);
-    console.log('🔧 To disable this, set DISABLE_AUTH_DEBUG=true in .env');
+  // Force bypass for localhost in development - make it more aggressive
+  if (isLocalhost && process.env.NODE_ENV === 'development') {
+    console.log('🐛 FORCE DEBUG MODE: Bypassing ALL middleware auth for localhost:', pathname);
     
     // Handle admin root redirect for localhost
     if (pathname === "/admin") {
@@ -33,7 +32,7 @@ export async function middleware(req: NextRequest) {
     }
     
     // Allow all admin/client paths on localhost
-    console.log('✅ Allowing access to:', pathname);
+    console.log('✅ FORCE Allowing access to:', pathname);
     return NextResponse.next();
   }
 

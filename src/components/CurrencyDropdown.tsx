@@ -16,13 +16,27 @@ export function CurrencyDropdown({
   showStatus = true,
   compact = false 
 }: CurrencyDropdownProps) {
+  console.log('🔍 CurrencyDropdown: Component rendering', { compact, showStatus });
+  
   const { currency, setCurrency, loading, error, lastUpdated } = useCurrency();
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
-  const selectedOption = CURRENCY_OPTIONS.find(opt => opt.code === currency);
+  console.log('🔍 CurrencyDropdown: Context values', { 
+    currency, 
+    loading, 
+    error,
+    selectedOption: CURRENCY_OPTIONS.find(opt => opt.code === currency)
+  });
+  
+  const selectedOption = CURRENCY_OPTIONS.find(opt => opt.code === currency) || {
+    code: currency || 'USD',
+    name: 'Unknown Currency',
+    flag: '💱',
+    symbol: '$'
+  };
   
   const filteredOptions = CURRENCY_OPTIONS.filter(option =>
     option.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -119,43 +133,40 @@ export function CurrencyDropdown({
 
   return (
     <div className={`relative ${className}`}>
-      {/* Trigger Button */}
-      <motion.button
+      {/* Trigger Button - Fixed for dark theme */}
+      <button
         ref={buttonRef}
         type="button"
         onClick={handleToggle}
         disabled={loading}
         className={`
-          flex items-center justify-between gap-2 rounded-xl backdrop-blur-sm border transition-all duration-200 
-          hover:shadow-lg disabled:opacity-50
+          flex items-center justify-between gap-2 rounded-xl border transition-all duration-200 
+          hover:shadow-lg disabled:opacity-50 bg-white/10 border-white/20 text-white 
+          hover:bg-white/20 hover:border-white/30
           ${compact 
-            ? 'px-3 py-2 text-sm min-w-[140px] bg-white/80 dark:bg-gray-900/80 border-black/20 dark:border-white/20 hover:border-black/30 dark:hover:border-white/30' 
-            : 'px-4 py-3 text-sm font-medium min-w-[200px] bg-white/80 dark:bg-gray-900/80 border-black/20 dark:border-white/20 shadow-lg hover:shadow-xl hover:border-black/30 dark:hover:border-white/30'
+            ? 'px-3 py-2 text-sm min-w-[140px]' 
+            : 'px-4 py-3 text-sm font-medium min-w-[200px] shadow-lg hover:shadow-xl'
           }
         `}
-        whileHover={{ scale: compact ? 1.01 : 1.02 }}
-        whileTap={{ scale: 0.98 }}
       >
         <div className="flex items-center gap-2">
-          <span className={compact ? "text-base" : "text-lg"}>{selectedOption?.flag}</span>
-          <span className="text-gray-900 dark:text-white font-medium">{selectedOption?.code}</span>
+          <span className={compact ? "text-base" : "text-lg"}>{selectedOption.flag}</span>
+          <span className="text-white font-medium">{selectedOption.code}</span>
           {!compact && (
-            <span className="text-gray-500 dark:text-gray-400 hidden sm:block">
-              ({selectedOption?.name})
+            <span className="text-white/70 hidden sm:block">
+              ({selectedOption.name})
             </span>
           )}
         </div>
-        <motion.svg
-          className="w-4 h-4 text-gray-500"
-          animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
+        <svg
+          className={`w-4 h-4 text-white/70 transform transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </motion.svg>
-      </motion.button>
+        </svg>
+      </button>
 
       {/* Status Indicators */}
       {showStatus && !compact && (

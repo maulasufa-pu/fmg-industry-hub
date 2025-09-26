@@ -7,24 +7,29 @@ const PRIORITY: UserRole[] = [
 ];
 
 export async function getEffectiveRole(): Promise<UserRole> {
-  // DEBUG MODE: Bypass authentication for localhost only
-  // Set NEXT_PUBLIC_DISABLE_AUTH_DEBUG=true in .env to disable this
+  // SERVER-SIDE DEBUG MODE: Check if we're in development and should bypass
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 SERVER getEffectiveRole: Development mode detected, returning admin for debugging');
+    return "admin";
+  }
+
+  // CLIENT-SIDE DEBUG MODE: Bypass authentication for localhost only
   if (typeof window !== 'undefined') {
-    console.log('🔍 Debug info:', {
+    console.log('🔍 CLIENT getEffectiveRole Debug info:', {
       hostname: window.location.hostname,
+      port: window.location.port,
       nodeEnv: process.env.NODE_ENV,
       disableFlag: process.env.NEXT_PUBLIC_DISABLE_AUTH_DEBUG,
       href: window.location.href
     });
     
-    if (process.env.NODE_ENV === 'development' &&
-        process.env.NEXT_PUBLIC_DISABLE_AUTH_DEBUG !== 'true' &&
-        (window.location.hostname === 'localhost' || 
+    // Force bypass for localhost in development - more aggressive
+    if ((window.location.hostname === 'localhost' || 
          window.location.hostname === '127.0.0.1' ||
          window.location.hostname.startsWith('192.168.') ||
          window.location.hostname.endsWith('.local'))) {
-      console.log('🐛 DEBUG MODE: Bypassing auth for localhost - returning admin role');
-      console.log('🔧 To disable this, set NEXT_PUBLIC_DISABLE_AUTH_DEBUG=true in .env');
+      console.log('🐛 CLIENT FORCE DEBUG MODE: Bypassing auth for localhost - returning admin role');
+      console.log('🔧 Hostname:', window.location.hostname, 'Port:', window.location.port);
       return "admin";
     }
   }

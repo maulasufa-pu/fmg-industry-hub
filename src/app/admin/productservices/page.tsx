@@ -295,38 +295,49 @@ function Popover({
     const popEl = popRef.current as HTMLDivElement | null;
     if (!anchorEl || !popEl) return;
 
+    console.log('🔧 Positioning popover...', { anchorEl, popEl });
+
     const rect = anchorEl.getBoundingClientRect();
     const gap = 8; // jarak dari trigger
     const maxW = Math.min(width, window.innerWidth - 16);
-    popEl.style.width = `${maxW}px`;
+    
+    console.log('📍 Anchor rect:', rect);
+    console.log('📐 Window dimensions:', { width: window.innerWidth, height: window.innerHeight, scrollY: window.scrollY });
 
+    // Set width first
+    popEl.style.width = `${maxW}px`;
+    popEl.style.position = 'fixed'; // Use fixed positioning instead of absolute
+    
     // Posisi default: di bawah & rata kiri
-    let top = rect.bottom + gap + window.scrollY;
-    let left = rect.left + window.scrollX;
+    let top = rect.bottom + gap;
+    let left = rect.left;
 
     // Clamp kiri/kanan agar tidak keluar layar
-    const maxLeft = window.scrollX + window.innerWidth - maxW - 8;
-    const minLeft = window.scrollX + 8;
+    const maxLeft = window.innerWidth - maxW - 8;
+    const minLeft = 8;
     left = Math.max(minLeft, Math.min(left, maxLeft));
 
     // Jika tinggi popover melebihi bawah layar, geser ke atas jika memungkinkan
-    const popH = popEl.offsetHeight || 0;
-    const bottomOverflow = top + popH - (window.scrollY + window.innerHeight - 8);
+    const popH = popEl.offsetHeight || 200; // fallback height
+    const bottomOverflow = top + popH - window.innerHeight + 8;
     if (bottomOverflow > 0) {
-      const flipTop = rect.top - gap - popH + window.scrollY; // coba di atas anchor
-      if (flipTop >= window.scrollY + 8) {
+      const flipTop = rect.top - gap - popH;
+      if (flipTop >= 8) {
         top = flipTop; // flip ke atas
+        console.log('🔄 Flipped to top:', flipTop);
       } else {
         // Jika tetap tidak muat, pakai maxHeight dan tetap di bawah
-        const maxHeight = window.innerHeight - rect.bottom - gap - 12;
-        popEl.style.maxHeight = `${Math.max(160, maxHeight)}px`;
+        const maxHeight = window.innerHeight - rect.bottom - gap - 16;
+        popEl.style.maxHeight = `${Math.max(200, maxHeight)}px`;
         popEl.style.overflow = "auto";
+        console.log('📏 Using maxHeight:', maxHeight);
       }
     } else {
       popEl.style.maxHeight = "";
       popEl.style.overflow = "";
     }
 
+    console.log('📍 Final position:', { top, left });
     popEl.style.top = `${top}px`;
     popEl.style.left = `${left}px`;
   }, [anchorRef, width]);

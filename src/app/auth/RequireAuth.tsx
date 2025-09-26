@@ -43,6 +43,20 @@ export default function RequireAuth({ children, area = "any" }: Props) {
     console.log("🔍 RequireAuth: Checking for debug bypass...");
     
     if (typeof window !== 'undefined') {
+      // AUTOMATIC BYPASS FOR LOCALHOST in development
+      const isLocalhost = window.location.hostname === 'localhost' || 
+                         window.location.hostname === '127.0.0.1' ||
+                         window.location.hostname.startsWith('192.168.') ||
+                         window.location.hostname.endsWith('.local');
+      
+      if (isLocalhost && process.env.NODE_ENV === 'development') {
+        console.log("🐛 RequireAuth: AUTOMATIC LOCALHOST BYPASS ACTIVATED");
+        console.log("🐛 RequireAuth: Hostname:", window.location.hostname);
+        console.log("🐛 RequireAuth: Setting status to 'authed'");
+        setStatus("authed");
+        return true;
+      }
+      
       const urlParams = new URLSearchParams(window.location.search);
       const debugKey = urlParams.get('debug_key');
       

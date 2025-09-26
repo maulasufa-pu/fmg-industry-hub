@@ -379,7 +379,7 @@ function Popover({
           exit={{ opacity: 0, y: 6, scale: 0.98 }}
           transition={{ duration: 0.18 }}
           // gunakan posisi fixed agar tidak kena clip/overflow parent
-          className="fixed z-[80] rounded-2xl border border-white/10 bg-neutral-950/90 p-3 backdrop-blur shadow-2xl"
+          className="fixed z-[1000] rounded-2xl border border-white/10 bg-neutral-950/90 p-3 backdrop-blur shadow-2xl"
           style={{ width }}
         >
           {children}
@@ -454,7 +454,7 @@ export default function ProductServicesPage(): React.JSX.Element {
 
             <div className="flex items-center gap-3">
               {/* Currency Selector */}
-              <div className="flex flex-col gap-1 relative z-[90]">
+              <div className="flex flex-col gap-1">
                 <span className="text-xs text-white/70">Display Currency</span>
                 <CurrencyDropdown compact showStatus={false} />
               </div>
@@ -1383,10 +1383,9 @@ function BundleEditor({
 }): React.JSX.Element {
   const panelRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    const t = setTimeout(() => scrollIntoViewSmooth(panelRef.current), 50);
+    const t = setTimeout(() => scrollIntoViewSmooth(panelRef.current), 0);
     return () => clearTimeout(t);
   }, []);
-
   const sb = getSupabaseClient();
   const [draft, setDraft] = useState<Omit<BundleRow, "id" | "created_at" | "updated_at">>(
     initial ?? {

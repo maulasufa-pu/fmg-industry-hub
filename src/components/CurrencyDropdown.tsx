@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Currency, CURRENCY_OPTIONS, CurrencyOption } from '@/lib/currency';
-import { useCurrency } from '@/contexts/CurrencyContext';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Portal } from "./Portal";
+import { Currency, CURRENCY_OPTIONS, CurrencyOption } from "@/lib/currency";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface CurrencyDropdownProps {
   className?: string;
@@ -11,36 +12,35 @@ interface CurrencyDropdownProps {
   compact?: boolean;
 }
 
-export function CurrencyDropdown({ 
-  className = "", 
+export function CurrencyDropdown({
+  className = "",
   showStatus = true,
-  compact = false 
+  compact = false,
 }: CurrencyDropdownProps) {
-  console.log('🔍 CurrencyDropdown: Component rendering', { compact, showStatus });
-  
   const { currency, setCurrency, loading, error, lastUpdated } = useCurrency();
+
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
-  console.log('🔍 CurrencyDropdown: Context values', { 
-    currency, 
-    loading, 
-    error,
-    selectedOption: CURRENCY_OPTIONS.find(opt => opt.code === currency)
-  });
-  
-  const selectedOption = CURRENCY_OPTIONS.find(opt => opt.code === currency) || {
-    code: currency || 'USD',
-    name: 'Unknown Currency',
-    flag: '💱',
-    symbol: '$'
-  };
-  
-  const filteredOptions = CURRENCY_OPTIONS.filter(option =>
-    option.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    option.code.toLowerCase().includes(searchTerm.toLowerCase())
+
+  const selectedOption =
+    CURRENCY_OPTIONS.find((opt) => opt.code === currency) ?? {
+      code: (currency as Currency) ?? "USD",
+      name: "Unknown Currency",
+      flag: "💱",
+      symbol: "$",
+    };
+
+  const filteredOptions = useMemo(
+    () =>
+      CURRENCY_OPTIONS.filter(
+        (option) =>
+          option.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          option.code.toLowerCase().includes(searchTerm.toLowerCase())
+      ),
+    [searchTerm]
   );
 
   const selectOption = (option: CurrencyOption) => {
@@ -49,214 +49,236 @@ export function CurrencyDropdown({
     setSearchTerm("");
   };
 
-  const handleToggle = () => {
-    setIsOpen(!isOpen);
-  };
+  const handleToggle = () => setIsOpen((v) => !v);
 
-  // Position dropdown function
+  // POSISI: fixed + clamp viewport, TANPA scroll offset
   const positionDropdown = useCallback(() => {
-    const buttonEl = buttonRef.current;
-    const dropdownEl = dropdownRef.current;
-    if (!buttonEl || !dropdownEl) return;
+    const btn = buttonRef.current;
+    const panel = dropdownRef.current;
+    if (!btn || !panel) return;
 
-    const buttonRect = buttonEl.getBoundingClientRect();
-    const dropdownWidth = compact ? 200 : 250;
+    const rect = btn.getBoundingClientRect();
+    const desiredW = compact ? 200 : 250;
     const gap = 8;
 
-    // Position below button by default
-    let top = buttonRect.bottom + gap + window.scrollY;
-    let left = buttonRect.left + window.scrollX;
+    panel.style.position = "fixed";
+    panel.style.zIndex = "1001"; // di atas popover lain
+    const maxW = Math.min(desiredW, window.innerWidth - 16);
+    panel.style.width = `${maxW}px`;
 
-    // Keep dropdown within viewport horizontally
-    const maxLeft = window.scrollX + window.innerWidth - dropdownWidth - 8;
-    const minLeft = window.scrollX + 8;
+    // default di bawah kiri
+    let top = rect.bottom + gap;
+    let left = rect.left;
+
+    // clamp kiri-kanan
+    const minLeft = 8;
+    const maxLeft = window.innerWidth - maxW - 8;
     left = Math.max(minLeft, Math.min(left, maxLeft));
 
-    // Check if dropdown would overflow bottom of viewport
-    const dropdownHeight = dropdownEl.offsetHeight || 320;
-    const bottomOverflow = top + dropdownHeight - (window.scrollY + window.innerHeight - 8);
-    
-    if (bottomOverflow > 0) {
-      // Try to position above the button
-      const topPosition = buttonRect.top - gap - dropdownHeight + window.scrollY;
-      if (topPosition >= window.scrollY + 8) {
-        top = topPosition;
+    // hitung tinggi aktual panel
+    const ph = panel.offsetHeight || 320;
+
+    // kalau tumpah bawah → flip ke atas jika muat
+    if (top + ph > window.innerHeight - 8) {
+      const flipTop = rect.top - gap - ph;
+      if (flipTop >= 8) {
+        top = flipTop;
+        panel.style.maxHeight = "";
+        panel.style.overflowY = "";
       } else {
-        // If doesn't fit above either, limit height and stay below
-        const maxHeight = window.innerHeight - buttonRect.bottom - gap - 16;
-        dropdownEl.style.maxHeight = `${Math.max(200, maxHeight)}px`;
-        dropdownEl.style.overflowY = 'auto';
+        // tidak muat atas/bawah → batasi tinggi, tetap di bawah
+        const maxHeight = Math.max(200, window.innerHeight - rect.bottom - gap - 16);
+        panel.style.maxHeight = `${maxHeight}px`;
+        panel.style.overflowY = "auto";
       }
     } else {
-      dropdownEl.style.maxHeight = '320px';
-      dropdownEl.style.overflowY = 'hidden';
+      panel.style.maxHeight = "320px";
+      panel.style.overflowY = "hidden";
     }
 
-    dropdownEl.style.top = `${top}px`;
-    dropdownEl.style.left = `${left}px`;
-    dropdownEl.style.width = `${Math.min(dropdownWidth, window.innerWidth - 16)}px`;
+    panel.style.top = `${top}px`;
+    panel.style.left = `${left}px`;
   }, [compact]);
 
-  // Handle positioning and cleanup
+  // buka: posisikan, listener, auto-scroll anchor agar terlihat
   useEffect(() => {
     if (!isOpen) return;
 
     const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (dropdownRef.current && dropdownRef.current.contains(target)) return;
-      if (buttonRef.current && buttonRef.current.contains(target)) return;
+      const t = e.target as Node;
+      if (dropdownRef.current && dropdownRef.current.contains(t)) return;
+      if (buttonRef.current && buttonRef.current.contains(t)) return;
       setIsOpen(false);
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsOpen(false);
+      if (e.key === "Escape") setIsOpen(false);
     };
 
     const handleScrollOrResize = () => positionDropdown();
 
-    // Position dropdown initially
-    requestAnimationFrame(positionDropdown);
+    // posisikan setelah render
+    requestAnimationFrame(() => {
+      positionDropdown();
+      // auto-scroll ke tombol agar panel pasti terlihat
+      buttonRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "nearest",
+      });
+      // fokus ke input search untuk UX cepat
+      const input = dropdownRef.current?.querySelector<HTMLInputElement>("input[data-cdd-search='1']");
+      input?.focus();
+    });
 
-    // Add event listeners
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('scroll', handleScrollOrResize, true);
-    window.addEventListener('resize', handleScrollOrResize);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("scroll", handleScrollOrResize, true);
+    window.addEventListener("resize", handleScrollOrResize);
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('scroll', handleScrollOrResize, true);
-      window.removeEventListener('resize', handleScrollOrResize);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
     };
   }, [isOpen, positionDropdown]);
 
   return (
-    <div className={`relative ${className}`}>
-      {/* Trigger Button - Fixed for dark theme */}
+    <div className={className}>
+      {/* Trigger */}
       <button
         ref={buttonRef}
         type="button"
         onClick={handleToggle}
         disabled={loading}
-        className={`
-          flex items-center justify-between gap-2 rounded-xl border transition-all duration-200 
-          hover:shadow-lg disabled:opacity-50 bg-white/10 border-white/20 text-white 
-          hover:bg-white/20 hover:border-white/30
-          ${compact 
-            ? 'px-3 py-2 text-sm min-w-[140px]' 
-            : 'px-4 py-3 text-sm font-medium min-w-[200px] shadow-lg hover:shadow-xl'
-          }
-        `}
+        className={[
+          "flex items-center justify-between gap-2 rounded-xl border transition-all duration-200",
+          "hover:shadow-lg disabled:opacity-50 bg-white/10 border-white/20 text-white",
+          "hover:bg-white/20 hover:border-white/30",
+          compact
+            ? "px-3 py-2 text-sm min-w-[140px]"
+            : "px-4 py-3 text-sm font-medium min-w-[200px] shadow-lg hover:shadow-xl",
+        ].join(" ")}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
       >
         <div className="flex items-center gap-2">
           <span className={compact ? "text-base" : "text-lg"}>{selectedOption.flag}</span>
           <span className="text-white font-medium">{selectedOption.code}</span>
-          {!compact && (
-            <span className="text-white/70 hidden sm:block">
-              ({selectedOption.name})
-            </span>
-          )}
+          {!compact && <span className="text-white/70 hidden sm:block">({selectedOption.name})</span>}
         </div>
         <svg
-          className={`w-4 h-4 text-white/70 transform transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 text-white/70 transform transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
+          aria-hidden="true"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
-      {/* Status Indicators */}
+      {/* Status bawah tombol (opsional) */}
       {showStatus && !compact && (
         <div className="mt-2 flex justify-center">
           {loading && (
-            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-              <div className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500"></div>
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <div className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-fuchsia-400" />
               Updating rates...
             </div>
           )}
-          
           {error && !loading && (
-            <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded-full">
+            <div className="text-xs text-amber-400 bg-amber-900/20 px-2 py-1 rounded-full">
               ⚠️ Using cached rates
             </div>
           )}
-          
           {!loading && !error && lastUpdated && (
-            <div className="text-xs text-green-600 dark:text-green-400">
-              ✅ Live rates ({new Date(lastUpdated).toLocaleTimeString()})
-            </div>
+            <div className="text-xs text-emerald-400">✅ Live rates ({new Date(lastUpdated).toLocaleTimeString()})</div>
           )}
         </div>
       )}
 
-      {/* Dropdown Menu */}
+      {/* Panel di-portal ke body */}
       <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            ref={dropdownRef}
-            initial={{ opacity: 0, scale: 0.95, y: -10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            transition={{ duration: 0.18 }}
-            className="fixed z-[100] bg-neutral-950/95 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl overflow-hidden"
-            style={{ maxHeight: '320px' }}
-          >
-              {/* Search Input */}
+        {isOpen ? (
+          <Portal>
+            <motion.div
+              ref={dropdownRef}
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.18 }}
+              className="fixed z-[1001] bg-neutral-950/95 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl overflow-hidden"
+              role="listbox"
+              aria-label="Select currency"
+              style={{ maxHeight: "320px" }}
+            >
+              {/* Search */}
               <div className="p-3 border-b border-white/10">
                 <div className="relative">
-                  <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                   <input
+                    data-cdd-search="1"
                     type="text"
                     placeholder="Search currency..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-9 pr-3 py-2 bg-neutral-900/60 border border-white/10 rounded-lg text-sm text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/60 focus:border-fuchsia-400/60"
-                    autoFocus
                   />
                 </div>
               </div>
 
-              {/* Options List */}
+              {/* List */}
               <div className="max-h-60 overflow-y-auto">
                 {filteredOptions.length > 0 ? (
-                  filteredOptions.map((option) => (
-                    <motion.button
-                      key={option.code}
-                      type="button"
-                      onClick={() => selectOption(option)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/10 transition-colors ${
-                        option.code === currency ? 'bg-fuchsia-400/10 text-fuchsia-300' : 'text-white'
-                      }`}
-                      whileHover={{ x: 4 }}
-                      transition={{ duration: 0.15 }}
-                    >
-                      <span className="text-xl">{option.flag}</span>
-                      <div className="flex-1">
-                        <div className="font-medium">{option.code}</div>
-                        <div className="text-xs text-white/70">{option.name}</div>
-                      </div>
-                      <span className="text-sm font-mono text-white/60">{option.symbol}</span>
-                      {option.code === currency && (
-                        <svg className="w-4 h-4 text-fuchsia-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </motion.button>
-                  ))
+                  filteredOptions.map((option) => {
+                    const active = option.code === currency;
+                    return (
+                      <motion.button
+                        key={option.code}
+                        type="button"
+                        onClick={() => selectOption(option)}
+                        className={[
+                          "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors",
+                          active ? "bg-fuchsia-400/10 text-fuchsia-300" : "text-white hover:bg-white/10",
+                        ].join(" ")}
+                        whileHover={{ x: 4 }}
+                        transition={{ duration: 0.15 }}
+                        role="option"
+                        aria-selected={active}
+                      >
+                        <span className="text-xl">{option.flag}</span>
+                        <div className="flex-1">
+                          <div className="font-medium">{option.code}</div>
+                          <div className="text-xs text-white/70">{option.name}</div>
+                        </div>
+                        <span className="text-sm font-mono text-white/60">{option.symbol}</span>
+                        {active && (
+                          <svg className="w-4 h-4 text-fuchsia-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </motion.button>
+                    );
+                  })
                 ) : (
-                  <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <div className="px-4 py-8 text-center text-gray-400">
                     <div className="text-2xl mb-2">🔍</div>
                     <div>No currencies found</div>
                   </div>
                 )}
               </div>
             </motion.div>
-        )}
+          </Portal>
+        ) : null}
       </AnimatePresence>
     </div>
   );

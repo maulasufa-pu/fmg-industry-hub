@@ -71,7 +71,10 @@ type FMGButtonProps = Omit<HTMLMotionProps<"button">, "children"> & {
 /***************************************
  * Helpers
  ***************************************/
-
+const scrollIntoViewSmooth = (el: HTMLElement | null) => {
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+};
 // Import currency utilities
 import { formatPrice, Currency } from '@/lib/currency';
 import { useCurrency } from '@/contexts/CurrencyContext';
@@ -270,7 +273,7 @@ const SubtleBtn = forwardRef<HTMLButtonElement, FMGButtonProps>(
 );
 SubtleBtn.displayName = "SubtleBtn";
 
-/** Popover (headless, animated) **/
+/** Popover (headless, animated) — fixed + viewport aware **/
 function Popover({
   open,
   onClose,
@@ -280,11 +283,55 @@ function Popover({
 }: {
   open: boolean;
   onClose: () => void;
-  anchorRef: React.RefObject<HTMLElement | null>; // ⬅️ perbaikan di sini
+  anchorRef: React.RefObject<HTMLElement | null>;
   children: React.ReactNode;
   width?: number;
 }) {
   const popRef = useRef<HTMLDivElement | null>(null);
+
+  // Hitung posisi berdasar bounding rect + jaga tetap di dalam viewport
+  const position = React.useCallback(() => {
+    const anchorEl = anchorRef.current as HTMLElement | null;
+    const popEl = popRef.current as HTMLDivElement | null;
+    if (!anchorEl || !popEl) return;
+
+    const rect = anchorEl.getBoundingClientRect();
+    const gap = 8; // jarak dari trigger
+    const maxW = Math.min(width, window.innerWidth - 16);
+    popEl.style.width = `${maxW}px`;
+
+    // Posisi default: di bawah & rata kiri
+    let top = rect.bottom + gap + window.scrollY;
+    let left = rect.left + window.scrollX;
+
+    // Clamp kiri/kanan agar tidak keluar layar
+    const maxLeft = window.scrollX + window.innerWidth - maxW - 8;
+    const minLeft = window.scrollX + 8;
+    left = Math.max(minLeft, Math.min(left, maxLeft));
+
+    // Jika tinggi popover melebihi bawah layar, geser ke atas jika memungkinkan
+    const popH = popEl.offsetHeight || 0;
+    const bottomOverflow = top + popH - (window.scrollY + window.innerHeight - 8);
+    if (bottomOverflow > 0) {
+      const flipTop = rect.top - gap - popH + window.scrollY; // coba di atas anchor
+      if (flipTop >= window.scrollY + 8) {
+        top = flipTop; // flip ke atas
+      } else {
+        // Jika tetap tidak muat, pakai maxHeight dan tetap di bawah
+        const maxHeight = window.innerHeight - rect.bottom - gap - 12;
+        popEl.style.maxHeight = `${Math.max(160, maxHeight)}px`;
+        popEl.style.overflow = "auto";
+      }
+    } else {
+      popEl.style.maxHeight = "";
+      popEl.style.overflow = "";
+    }
+
+    popEl.style.top = `${top}px`;
+    popEl.style.left = `${left}px`;
+  }, [anchorRef, width]);
+
+  // Tutup saat klik luar / Esc
   useEffect(() => {
     if (!open) return;
     const onClick = (e: MouseEvent) => {
@@ -294,13 +341,22 @@ function Popover({
       onClose();
     };
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const onScrollOrResize = () => position();
+
     window.addEventListener("mousedown", onClick);
     window.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", onScrollOrResize, true);
+    window.addEventListener("resize", onScrollOrResize);
+    // posisikan awal
+    requestAnimationFrame(position);
+
     return () => {
       window.removeEventListener("mousedown", onClick);
       window.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onScrollOrResize, true);
+      window.removeEventListener("resize", onScrollOrResize);
     };
-  }, [open, onClose, anchorRef]);
+  }, [open, onClose, anchorRef, position]);
 
   return (
     <AnimatePresence>
@@ -311,8 +367,9 @@ function Popover({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 6, scale: 0.98 }}
           transition={{ duration: 0.18 }}
+          // gunakan posisi fixed agar tidak kena clip/overflow parent
+          className="fixed z-[80] rounded-2xl border border-white/10 bg-neutral-950/90 p-3 backdrop-blur shadow-2xl"
           style={{ width }}
-          className="absolute z-50 mt-2 rounded-2xl border border-white/10 bg-neutral-950/90 p-3 backdrop-blur shadow-2xl"
         >
           {children}
         </motion.div>
@@ -363,7 +420,7 @@ export default function ProductServicesPage(): React.JSX.Element {
   }
 
   return (
-    <main className="relative min-h-screen bg-neutral-950 text-white overflow-hidden p-4 sm:p-6">
+    <main className="relative min-h-screen bg-neutral-950 text-white p-4 sm:p-6 overflow-x-hidden">
       {/* FMG ambient glows */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-32 -left-28 h-[40rem] w-[40rem] rounded-full bg-gradient-to-br from-indigo-600/20 via-fuchsia-500/15 to-sky-500/10 blur-3xl" />
@@ -386,11 +443,11 @@ export default function ProductServicesPage(): React.JSX.Element {
 
             <div className="flex items-center gap-3">
               {/* Currency Selector */}
-              <div className="flex flex-col gap-1 relative">
+              <div className="flex flex-col gap-1 relative z-[90]">
                 <span className="text-xs text-white/70">Display Currency</span>
                 <CurrencyDropdown compact showStatus={false} />
               </div>
-              
+
               <SubtleBtn onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })}>
                 <Sparkles className="h-4 w-4" />
                 Tips pricing
@@ -711,6 +768,14 @@ function ServiceEditor({
   onClose: () => void;
   onSaved: () => void;
 }): React.JSX.Element {
+
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    // sedikit delay agar sudah ter-render penuh
+    const t = setTimeout(() => scrollIntoViewSmooth(panelRef.current), 50);
+    return () => clearTimeout(t);
+  }, []);
+
   const sb = getSupabaseClient();
   const [draft, setDraft] = useState<Omit<ServiceRow, "id" | "created_at" | "updated_at">>(
     initial ?? {
@@ -753,6 +818,7 @@ function ServiceEditor({
   return (
     <motion.div className={PANEL_BG} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <motion.div
+        ref={panelRef}
         initial={{ y: 18, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 18, opacity: 0 }}
@@ -1212,6 +1278,12 @@ function BundleEditor({
   onClose: () => void;
   onSaved: () => void;
 }): React.JSX.Element {
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const t = setTimeout(() => scrollIntoViewSmooth(panelRef.current), 50);
+    return () => clearTimeout(t);
+  }, []);
+
   const sb = getSupabaseClient();
   const [draft, setDraft] = useState<Omit<BundleRow, "id" | "created_at" | "updated_at">>(
     initial ?? {
@@ -1294,6 +1366,7 @@ function BundleEditor({
   return (
     <motion.div className={PANEL_BG} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <motion.div
+        ref={panelRef}
         initial={{ y: 18, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 18, opacity: 0 }}

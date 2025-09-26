@@ -875,7 +875,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                   <Section title="Preferences">
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div>
-                        <label className="block text-sm text-slate-700 dark:text-slate-200">Project Start</label>
+                        <label className="block text-sm text-slate-700 dark:text-slate-200">Propose Start Date</label>
                         <input
                           type="date"
                           value={startDate}
@@ -884,7 +884,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                         />
                       </div>
                       <div>
-                        <label className="block text-sm text-slate-700 dark:text-slate-200">Project End</label>
+                        <label className="block text-sm text-slate-700 dark:text-slate-200">Propose Finish Date</label>
                         <input
                           type="date"
                           value={deadline}

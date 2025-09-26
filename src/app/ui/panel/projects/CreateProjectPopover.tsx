@@ -560,17 +560,17 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
             open 
               ? "translate-y-0 scale-100 opacity-100" 
               : "translate-y-8 sm:translate-y-0 scale-95 sm:scale-95 opacity-0",
-            // Enhanced container styling
-            "overflow-hidden rounded-t-3xl sm:rounded-3xl",
+            // Enhanced container styling with flex layout
+            "flex flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl",
             "bg-white/98 dark:bg-slate-900/98 backdrop-blur-xl",
             "shadow-2xl shadow-black/25 dark:shadow-black/40",
             "ring-1 ring-black/10 dark:ring-white/10",
-            // Responsive heights and spacing
-            "max-h-[95vh] sm:max-h-[90vh] sm:my-4",
+            // Better height management
+            "h-[95vh] sm:h-auto sm:max-h-[88vh] sm:my-4",
           ].join(" ")}
           style={{
-            // Mobile: almost full height, Desktop: auto with max constraints
-            minHeight: "auto",
+            // Ensure minimum viable height
+            minHeight: "60vh",
           }}
           onPointerDown={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
@@ -668,14 +668,11 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
               overflow-y-auto overscroll-contain
               scroll-smooth scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600
               scrollbar-track-transparent hover:scrollbar-thumb-slate-400 dark:hover:scrollbar-thumb-slate-500
+              flex-1 min-h-0
             "
-            style={{
-              // Responsive heights: mobile vs desktop
-              maxHeight: "calc(95vh - 200px)", // Account for header and footer
-            }}
           >
             {/* Content Container with Better Spacing */}
-            <div className="max-w-none space-y-10">
+            <div className="max-w-none space-y-10 pb-8">
               {step === 1 && (
                 <div className="space-y-8">
                   {/* Primary Information */}
@@ -861,7 +858,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
               )}
 
               {step === 2 && (
-                <div className="space-y-6">
+                <div className="space-y-8">
                   {(["core","additional","business"] as const).map((grp) => (
                     <Section
                       key={grp}
@@ -1000,126 +997,365 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
               )}
 
               {step === 3 && (
-                <div className="space-y-6">
-                  {/* Review */}
-                  <Section title="Review">
-                    <div className="rounded-xl border p-3 text-sm border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-800/40">
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        <div><span className="text-slate-500 dark:text-slate-400">Song</span><div className="font-medium">{songTitle || "-"}</div></div>
-                        <div><span className="text-slate-500 dark:text-slate-400">Artist</span><div className="font-medium">{artistName || "-"}</div></div>
-                        <div><span className="text-slate-500 dark:text-slate-400">Album</span><div className="font-medium">{albumTitle || "-"}</div></div>
-                        <div><span className="text-slate-500 dark:text-slate-400">Genre</span><div className="font-medium">{genre || "-"}{subGenre ? ` / ${subGenre}` : ""}</div></div>
-                      </div>
-                      <div className="mt-3">
-                        <div className="text-slate-500 dark:text-slate-400">Services</div>
-                        <ul className="list-disc pl-5">
-                          {Array.from(selectedServices).map((k) => {
-                            const s = services.find((x) => x.service_key === k);
-                            if (!s) return null;
-                            const inBundle = !!selectedBundle && selectedBundle.items.some(it => it.service_key === k);
-                            const cus = customPrices[k];
-                            const resolved = inBundle ? 0 : resolvedPriceOf(k);
-                            const isCustom = !inBundle && cus != null;
-                            return (
-                              <li key={k}>
-                                {s.label}{s.is_subscription ? " (subscription)" : ""} —{" "}
-                                {inBundle ? (
-                                  <span className="text-violet-600 dark:text-violet-400">Bundled</span>
-                                ) : isCustom ? (
-                                  <strong><span aria-hidden>★ </span>{idr(resolved)}</strong>
-                                ) : (
-                                  idr(resolved)
-                                )}
-                              </li>
-                            );
-                          })}
-                          {selectedBundle && (
-                            <li><strong>Bundle:</strong> {selectedBundle.label} — {idr(Number(selectedBundle.bundle_price))}</li>
-                          )}
-                        </ul>
-                      </div>
-                      {description?.trim() && (
-                        <div className="mt-3">
-                          <div className="text-slate-500 dark:text-slate-400">Description</div>
-                          <div className="whitespace-pre-wrap">{description}</div>
+                <div className="space-y-8">
+                  {/* Enhanced Review Section */}
+                  <div className="bg-gradient-to-br from-emerald-50/80 to-teal-50/50 dark:from-emerald-900/20 dark:to-teal-900/10 rounded-2xl p-8 border border-emerald-200/40 dark:border-emerald-700/30">
+                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                      <div className="w-3 h-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"></div>
+                      Project Review
+                    </h3>
+                    
+                    {/* Project Information */}
+                    <div className="bg-white/80 dark:bg-slate-800/50 rounded-xl p-6 mb-6 border border-emerald-100/60 dark:border-emerald-800/30">
+                      <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Project Details
+                      </h4>
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="bg-slate-50/80 dark:bg-slate-700/50 rounded-lg p-4">
+                          <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Song Title</span>
+                          <div className="text-base font-semibold text-slate-900 dark:text-white mt-1">{songTitle || "-"}</div>
                         </div>
-                      )}
-                    </div>
-                  </Section>
-
-                  {/* Preferences */}
-                  <Section title="Preferences">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <label className="block text-sm text-slate-700 dark:text-slate-200">Propose Start Date</label>
-                        <input
-                          type="date"
-                          value={startDate}
-                          onChange={(e) => setStartWithPreserve(e.target.value)}
-                          className="mt-1 w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500/60"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm text-slate-700 dark:text-slate-200">Propose Finish Date</label>
-                        <input
-                          type="date"
-                          value={deadline}
-                          onChange={(e) => setDeadlineWithPreserve(e.target.value)}
-                          className="mt-1 w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500/60"
-                        />
+                        <div className="bg-slate-50/80 dark:bg-slate-700/50 rounded-lg p-4">
+                          <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Artist</span>
+                          <div className="text-base font-semibold text-slate-900 dark:text-white mt-1">{artistName || "-"}</div>
+                        </div>
+                        <div className="bg-slate-50/80 dark:bg-slate-700/50 rounded-lg p-4">
+                          <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Album</span>
+                          <div className="text-base font-semibold text-slate-900 dark:text-white mt-1">{albumTitle || "-"}</div>
+                        </div>
+                        <div className="bg-slate-50/80 dark:bg-slate-700/50 rounded-lg p-4 sm:col-span-2 lg:col-span-3">
+                          <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Genre</span>
+                          <div className="text-base font-semibold text-slate-900 dark:text-white mt-1">{genre || "-"}{subGenre ? ` / ${subGenre}` : ""}</div>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <label className="block text-sm text-slate-700 dark:text-slate-200">Preferred Engineer</label>
-                        <select
-                          value={preferredEngineerId}
-                          onChange={(e) => setEngineerWithPreserve(e.target.value)}
-                          className="mt-1 w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500/60"
-                        >
-                          <option value="">Alfath Flemmo</option>
-                          {engineers.map((e) => (
-                            <option key={e.id} value={e.id}>{e.name}</option>
-                          ))}
-                        </select>
+                    {/* Services Summary */}
+                    <div className="bg-white/80 dark:bg-slate-800/50 rounded-xl p-6 mb-6 border border-emerald-100/60 dark:border-emerald-800/30">
+                      <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/>
+                        </svg>
+                        Selected Services
+                      </h4>
+                      <div className="space-y-3">
+                        {Array.from(selectedServices).map((k) => {
+                          const s = services.find((x) => x.service_key === k);
+                          if (!s) return null;
+                          const inBundle = !!selectedBundle && selectedBundle.items.some(it => it.service_key === k);
+                          const cus = customPrices[k];
+                          const resolved = inBundle ? 0 : resolvedPriceOf(k);
+                          const isCustom = !inBundle && cus != null;
+                          return (
+                            <div key={k} className="flex items-center justify-between bg-slate-50/80 dark:bg-slate-700/50 rounded-lg p-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                                <span className="font-medium text-slate-900 dark:text-white">
+                                  {s.label}{s.is_subscription ? " (Monthly)" : ""}
+                                </span>
+                              </div>
+                              <div className="text-right">
+                                {inBundle ? (
+                                  <span className="px-3 py-1 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded-full text-sm font-medium">
+                                    Bundled
+                                  </span>
+                                ) : (
+                                  <span className={`font-semibold ${isCustom ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
+                                    {isCustom && <span className="text-amber-500 mr-1">★</span>}
+                                    {formatPrice(resolved, currency, rates)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {selectedBundle && (
+                          <div className="bg-gradient-to-r from-violet-100 to-indigo-100 dark:from-violet-900/30 dark:to-indigo-900/20 rounded-lg p-4 border-2 border-violet-200 dark:border-violet-700">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-3 h-3 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full"></div>
+                                <span className="font-bold text-violet-900 dark:text-violet-100">
+                                  Bundle: {selectedBundle.label}
+                                </span>
+                              </div>
+                              <span className="font-bold text-violet-900 dark:text-violet-100">
+                                {formatPrice(Number(selectedBundle.bundle_price), currency, rates)}
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </Section>
 
-                  {/* Payment */}
-                  <Section title="Payment Plan">
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        { value: "upfront" as const, label: "100% Up-front" },
-                        { value: "half" as const, label: "50% DP / 50% Delivery" },
-                        { value: "milestone" as const, label: "Milestone (25/50/25)" },
-                      ].map((opt) => {
-                        const active = paymentPlan === opt.value;
-                        return (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => setPlanWithPreserve(opt.value)}
-                            className={`rounded-lg border px-3 py-2 text-sm transition-colors
-                              ${active
-                                ? "border-violet-500 bg-violet-500/10 text-violet-900 dark:text-violet-200"
-                                : "border-slate-300 dark:border-slate-700 hover:border-violet-500 hover:bg-violet-500/5"}`}
-                            onMouseDown={(e) => e.preventDefault()}
+                    {/* Project Description */}
+                    {description?.trim() && (
+                      <div className="bg-white/80 dark:bg-slate-800/50 rounded-xl p-6 border border-emerald-100/60 dark:border-emerald-800/30">
+                        <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                          <svg className="w-5 h-5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-1a1 1 0 00-1-1H9a1 1 0 00-1 1v1a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd"/>
+                          </svg>
+                          Project Description
+                        </h4>
+                        <div className="bg-slate-50/80 dark:bg-slate-700/50 rounded-lg p-4">
+                          <div className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">{description}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Enhanced Preferences Section */}
+                  <div className="bg-gradient-to-br from-cyan-50/80 to-blue-50/50 dark:from-cyan-900/20 dark:to-blue-900/10 rounded-2xl p-8 border border-cyan-200/40 dark:border-cyan-700/30">
+                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                      <div className="w-3 h-3 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"></div>
+                      Project Preferences
+                    </h3>
+                    
+                    <div className="space-y-6">
+                      {/* Timeline Section */}
+                      <div className="bg-white/80 dark:bg-slate-800/50 rounded-xl p-6 border border-cyan-100/60 dark:border-cyan-800/30">
+                        <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                          <svg className="w-5 h-5 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
+                          </svg>
+                          Project Timeline
+                        </h4>
+                        <div className="grid gap-6 lg:grid-cols-2">
+                          <div>
+                            <label className="block text-base font-semibold text-slate-700 dark:text-slate-200 mb-3">
+                              Proposed Start Date
+                            </label>
+                            <input
+                              type="date"
+                              value={startDate}
+                              onChange={(e) => setStartWithPreserve(e.target.value)}
+                              className="
+                                w-full px-5 py-4 rounded-xl text-base
+                                border-2 border-slate-200 dark:border-slate-700
+                                bg-white dark:bg-slate-900
+                                focus:border-cyan-500 dark:focus:border-cyan-400
+                                focus:ring-4 focus:ring-cyan-500/20
+                                transition-all duration-200
+                              "
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-base font-semibold text-slate-700 dark:text-slate-200 mb-3">
+                              Proposed Finish Date
+                            </label>
+                            <input
+                              type="date"
+                              value={deadline}
+                              onChange={(e) => setDeadlineWithPreserve(e.target.value)}
+                              className="
+                                w-full px-5 py-4 rounded-xl text-base
+                                border-2 border-slate-200 dark:border-slate-700
+                                bg-white dark:bg-slate-900
+                                focus:border-cyan-500 dark:focus:border-cyan-400
+                                focus:ring-4 focus:ring-cyan-500/20
+                                transition-all duration-200
+                              "
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Team Selection */}
+                      <div className="bg-white/80 dark:bg-slate-800/50 rounded-xl p-6 border border-cyan-100/60 dark:border-cyan-800/30">
+                        <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                          <svg className="w-5 h-5 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
+                          </svg>
+                          Team Preference
+                        </h4>
+                        <div className="max-w-md">
+                          <label className="block text-base font-semibold text-slate-700 dark:text-slate-200 mb-3">
+                            Preferred Engineer
+                          </label>
+                          <select
+                            value={preferredEngineerId}
+                            onChange={(e) => setEngineerWithPreserve(e.target.value)}
+                            className="
+                              w-full px-5 py-4 rounded-xl text-base
+                              border-2 border-slate-200 dark:border-slate-700
+                              bg-white dark:bg-slate-900
+                              focus:border-cyan-500 dark:focus:border-cyan-400
+                              focus:ring-4 focus:ring-cyan-500/20
+                              transition-all duration-200
+                            "
                           >
-                            {opt.label}
-                          </button>
-                        );
-                      })}
+                            <option value="">Alfath Flemmo (Default)</option>
+                            {engineers.map((e) => (
+                              <option key={e.id} value={e.id}>{e.name}</option>
+                            ))}
+                          </select>
+                          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                            Select your preferred engineer or leave default for automatic assignment
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </Section>
+                  </div>
 
-                  {/* Agreement */}
-                  <div className="flex items-start gap-2">
-                    <FancyCheckbox id="agree" checked={agree} onChange={setAgreeWithPreserve} />
-                    <label htmlFor="agree" className="text-sm text-slate-700 dark:text-slate-200 cursor-pointer">
-                      I agree with the deliverables & payment plan above.
-                    </label>
+                  {/* Enhanced Payment Plan Section */}
+                  <div className="bg-gradient-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-900/20 dark:to-orange-900/10 rounded-2xl p-8 border border-amber-200/40 dark:border-amber-700/30">
+                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                      <div className="w-3 h-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full"></div>
+                      Payment Plan
+                    </h3>
+                    
+                    <div className="bg-white/80 dark:bg-slate-800/50 rounded-xl p-6 border border-amber-100/60 dark:border-amber-800/30">
+                      <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"/>
+                        </svg>
+                        Choose Payment Structure
+                      </h4>
+                      
+                      <div className="grid gap-4 lg:grid-cols-3">
+                        {[
+                          { 
+                            value: "upfront" as const, 
+                            label: "100% Up-front", 
+                            description: "Pay full amount before project starts",
+                            icon: "💰",
+                            benefit: "Best rate available"
+                          },
+                          { 
+                            value: "half" as const, 
+                            label: "50% DP / 50% Delivery", 
+                            description: "Split payment in two installments",
+                            icon: "⚖️",
+                            benefit: "Balanced approach"
+                          },
+                          { 
+                            value: "milestone" as const, 
+                            label: "Milestone (25/50/25)", 
+                            description: "Three-stage payment structure",
+                            icon: "📊",
+                            benefit: "Progress-based payments"
+                          },
+                        ].map((opt) => {
+                          const active = paymentPlan === opt.value;
+                          return (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => setPlanWithPreserve(opt.value)}
+                              className={[
+                                "group relative p-6 rounded-2xl border-2 text-left transition-all duration-300",
+                                "hover:scale-[1.02] focus:outline-none focus:ring-4",
+                                active
+                                  ? "border-amber-400 dark:border-amber-500 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/20 shadow-lg shadow-amber-500/20 focus:ring-amber-500/30"
+                                  : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-amber-300 dark:hover:border-amber-600 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 focus:ring-amber-500/20",
+                              ].join(" ")}
+                              onMouseDown={(e) => e.preventDefault()}
+                            >
+                              {/* Selection Indicator */}
+                              <div className="flex items-center justify-between mb-4">
+                                <span className="text-2xl">{opt.icon}</span>
+                                <div className={[
+                                  "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200",
+                                  active 
+                                    ? "border-amber-500 bg-amber-500" 
+                                    : "border-slate-300 dark:border-slate-600 group-hover:border-amber-400"
+                                ].join(" ")}>
+                                  {active && (
+                                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8.25 8.25a1 1 0 01-1.414 0l-4.25-4.25a1 1 0 111.414-1.414L8 12.586l7.543-7.543a1 1 0 011.414 0z" clipRule="evenodd" />
+                                    </svg>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {/* Content */}
+                              <div className="space-y-2">
+                                <h5 className="font-bold text-slate-900 dark:text-white text-lg">
+                                  {opt.label}
+                                </h5>
+                                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                                  {opt.description}
+                                </p>
+                                <div className={[
+                                  "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium",
+                                  active 
+                                    ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300" 
+                                    : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
+                                ].join(" ")}>
+                                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                                  </svg>
+                                  {opt.benefit}
+                                </div>
+                              </div>
+                              
+                              {/* Active Indicator */}
+                              {active && (
+                                <div className="absolute top-4 right-4">
+                                  <div className="w-3 h-8 bg-gradient-to-b from-amber-400 to-orange-500 rounded-full"></div>
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Enhanced Agreement Section */}
+                  <div className="bg-gradient-to-br from-rose-50/80 to-pink-50/50 dark:from-rose-900/20 dark:to-pink-900/10 rounded-2xl p-8 border border-rose-200/40 dark:border-rose-700/30">
+                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                      <div className="w-3 h-3 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full"></div>
+                      Final Agreement
+                    </h3>
+                    
+                    <div className="bg-white/80 dark:bg-slate-800/50 rounded-xl p-6 border border-rose-100/60 dark:border-rose-800/30">
+                      <div className="flex items-start gap-4">
+                        {/* Enhanced Checkbox */}
+                        <div className="relative shrink-0 mt-1">
+                          <button
+                            type="button"
+                            onClick={() => setAgreeWithPreserve(!agree)}
+                            className={[
+                              "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-200",
+                              "focus:outline-none focus:ring-4 focus:ring-rose-500/30",
+                              agree 
+                                ? "border-rose-500 bg-rose-500 shadow-lg shadow-rose-500/30" 
+                                : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 hover:border-rose-400"
+                            ].join(" ")}
+                          >
+                            {agree && (
+                              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8.25 8.25a1 1 0 01-1.414 0l-4.25-4.25a1 1 0 111.414-1.414L8 12.586l7.543-7.543a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </button>
+                          {agree && (
+                            <div className="absolute inset-0 bg-rose-500 rounded-lg opacity-20 animate-ping"></div>
+                          )}
+                        </div>
+                        
+                        {/* Agreement Content */}
+                        <div className="flex-1">
+                          <label 
+                            htmlFor="agree" 
+                            className="block text-base font-medium text-slate-700 dark:text-slate-200 cursor-pointer leading-relaxed"
+                          >
+                            I have reviewed and agree with the project details, selected services, timeline, and payment plan outlined above.
+                          </label>
+                          <div className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                            <p className="flex items-start gap-2">
+                              <svg className="w-4 h-4 mt-0.5 text-rose-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
+                              </svg>
+                              By checking this box, you confirm that all information is accurate and authorize us to begin work on your project according to the specifications above.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

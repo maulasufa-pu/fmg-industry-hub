@@ -274,10 +274,11 @@ const SubtleBtn = forwardRef<HTMLButtonElement, FMGButtonProps>(
 SubtleBtn.displayName = "SubtleBtn";
 
 /** Popover (headless, animated) — fixed + viewport aware **/
+/** Popover simpel: selalu nempel di bawah tombol (right-aligned) */
 function Popover({
   open,
   onClose,
-  anchorRef,
+  anchorRef, // tetap diterima agar signature tidak berubah
   children,
   width = 360,
 }: {
@@ -287,89 +288,27 @@ function Popover({
   children: React.ReactNode;
   width?: number;
 }) {
-  const popRef = useRef<HTMLDivElement | null>(null);
-
-  // Hitung posisi berdasar bounding rect + jaga tetap di dalam viewport
-  const position = React.useCallback(() => {
-    const anchorEl = anchorRef.current as HTMLElement | null;
-    const popEl = popRef.current as HTMLDivElement | null;
-    if (!anchorEl || !popEl) return;
-
-    console.log('🔧 Positioning popover...', { anchorEl, popEl });
-
-    const rect = anchorEl.getBoundingClientRect();
-    const gap = 8; // jarak dari trigger
-    const maxW = Math.min(width, window.innerWidth - 16);
-    
-    console.log('📍 Anchor rect:', rect);
-    console.log('📐 Window dimensions:', { width: window.innerWidth, height: window.innerHeight, scrollY: window.scrollY });
-
-    // Set width first
-    popEl.style.width = `${maxW}px`;
-    popEl.style.position = 'fixed'; // Use fixed positioning instead of absolute
-    
-    // Posisi default: di bawah & rata kiri
-    let top = rect.bottom + gap;
-    // rata tengah ke tombol
-    let left = rect.left + rect.width / 2 - maxW / 2;
-
-    // clamp biar gak keluar layar
-    const maxLeft = window.innerWidth - maxW - 8;
-    const minLeft = 8;
-    left = Math.max(minLeft, Math.min(left, maxLeft));
-
-
-    // Jika tinggi popover melebihi bawah layar, geser ke atas jika memungkinkan
-    const popH = popEl.offsetHeight || 200; // fallback height
-    const bottomOverflow = top + popH - window.innerHeight + 8;
-    if (bottomOverflow > 0) {
-      const flipTop = rect.top - gap - popH;
-      if (flipTop >= 8) {
-        top = flipTop; // flip ke atas
-        console.log('🔄 Flipped to top:', flipTop);
-      } else {
-        // Jika tetap tidak muat, pakai maxHeight dan tetap di bawah
-        const maxHeight = window.innerHeight - rect.bottom - gap - 16;
-        popEl.style.maxHeight = `${Math.max(200, maxHeight)}px`;
-        popEl.style.overflow = "auto";
-        console.log('📏 Using maxHeight:', maxHeight);
-      }
-    } else {
-      popEl.style.maxHeight = "";
-      popEl.style.overflow = "";
-    }
-
-    console.log('📍 Final position:', { top, left });
-    popEl.style.top = `${top}px`;
-    popEl.style.left = `${left}px`;
-  }, [anchorRef, width]);
+  const popRef = React.useRef<HTMLDivElement | null>(null);
 
   // Tutup saat klik luar / Esc
-  useEffect(() => {
+  React.useEffect(() => {
     if (!open) return;
     const onClick = (e: MouseEvent) => {
       const t = e.target as Node;
       if (popRef.current && popRef.current.contains(t)) return;
-      if (anchorRef.current && anchorRef.current.contains(t)) return;
+      // jika klik tombol anchor, biarkan handler tombol yang toggle
+      if (anchorRef?.current && anchorRef.current.contains(t)) return;
       onClose();
     };
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    const onScrollOrResize = () => position();
 
     window.addEventListener("mousedown", onClick);
     window.addEventListener("keydown", onKey);
-    window.addEventListener("scroll", onScrollOrResize, true);
-    window.addEventListener("resize", onScrollOrResize);
-    // posisikan awal
-    requestAnimationFrame(position);
-
     return () => {
       window.removeEventListener("mousedown", onClick);
       window.removeEventListener("keydown", onKey);
-      window.removeEventListener("scroll", onScrollOrResize, true);
-      window.removeEventListener("resize", onScrollOrResize);
     };
-  }, [open, onClose, anchorRef, position]);
+  }, [open, onClose, anchorRef]);
 
   return (
     <AnimatePresence>
@@ -379,9 +318,9 @@ function Popover({
           initial={{ opacity: 0, y: 6, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 6, scale: 0.98 }}
-          transition={{ duration: 0.18 }}
-          // gunakan posisi fixed agar tidak kena clip/overflow parent
-          className="fixed z-[1000] rounded-2xl border border-white/10 bg-neutral-950/90 p-3 backdrop-blur shadow-2xl"
+          transition={{ duration: 0.16 }}
+          // NOTE: parent pembungkus tombol HARUS className="relative"
+          className="absolute z-[1000] right-0 top-[calc(100%+8px)] rounded-2xl border border-white/10 bg-neutral-950/90 p-3 backdrop-blur shadow-2xl max-w-[calc(100vw-32px)]"
           style={{ width }}
         >
           {children}
@@ -390,6 +329,7 @@ function Popover({
     </AnimatePresence>
   );
 }
+
 
 /***************************************
  * Main Page
@@ -1191,7 +1131,7 @@ function BundlesPanel(): React.JSX.Element {
             </div>
 
             <div className="relative">
-              <PrimaryBtn ref={btnRef} onClick={() => setOpenPop((v) => !v)}>
+              <PrimaryBtn ref={btnRef} onClick={() => setOpenPop(v => !v)}>
                 <Plus className="h-4 w-4" /> New <ChevronDown className="h-4 w-4 opacity-80" />
               </PrimaryBtn>
 

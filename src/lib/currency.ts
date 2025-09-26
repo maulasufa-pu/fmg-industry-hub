@@ -4,7 +4,7 @@
  * Users can select display currency
  */
 
-export type Currency = "USD" | "IDR" | "EUR" | "JPY" | "GBP" | "AUD" | "CAD" | "SGD" | "KRW" | "VND" | "INR" | "PHP" | "THB" | "MYR";
+export type Currency = "USD" | "EUR" | "JPY" | "GBP" | "AUD" | "CAD" | "SGD" | "KRW" | "VND" | "INR" | "PHP" | "THB" | "MYR" | "IDR";
 
 export interface CurrencyOption {
   code: Currency;
@@ -15,13 +15,13 @@ export interface CurrencyOption {
 
 export const CURRENCY_OPTIONS: CurrencyOption[] = [
   { code: "USD", name: "US Dollar", flag: "🇺🇸", symbol: "$" },
-  { code: "IDR", name: "Indonesian Rupiah", flag: "🇮🇩", symbol: "Rp" },
   { code: "EUR", name: "Euro", flag: "🇪🇺", symbol: "€" },
   { code: "JPY", name: "Japanese Yen", flag: "🇯🇵", symbol: "¥" },
   { code: "GBP", name: "British Pound", flag: "🇬🇧", symbol: "£" },
   { code: "AUD", name: "Australian Dollar", flag: "🇦🇺", symbol: "A$" },
   { code: "CAD", name: "Canadian Dollar", flag: "🇨🇦", symbol: "C$" },
   { code: "SGD", name: "Singapore Dollar", flag: "🇸🇬", symbol: "S$" },
+  { code: "IDR", name: "Indonesian Rupiah", flag: "🇮🇩", symbol: "Rp" },
 ];
 
 export const DEFAULT_CURRENCY: Currency = "USD";

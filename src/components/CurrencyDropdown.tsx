@@ -19,6 +19,8 @@ export function CurrencyDropdown({
   const { currency, setCurrency, loading, error, lastUpdated } = useCurrency();
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [buttonRect, setButtonRect] = useState<DOMRect | null>(null);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
   
   const selectedOption = CURRENCY_OPTIONS.find(opt => opt.code === currency);
   
@@ -33,12 +35,20 @@ export function CurrencyDropdown({
     setSearchTerm("");
   };
 
+  const handleToggle = () => {
+    if (!isOpen && buttonRef.current) {
+      setButtonRect(buttonRef.current.getBoundingClientRect());
+    }
+    setIsOpen(!isOpen);
+  };
+
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative z-[100000] ${className}`}>
       {/* Trigger Button */}
       <motion.button
+        ref={buttonRef}
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         disabled={loading}
         className={`
           flex items-center justify-between gap-2 rounded-xl backdrop-blur-sm border transition-all duration-200 
@@ -106,7 +116,7 @@ export function CurrencyDropdown({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 z-[9998] bg-black/20 backdrop-blur-sm"
+              className="fixed inset-0 z-[99998] bg-black/20 backdrop-blur-sm"
             />
             
             {/* Dropdown Panel */}
@@ -115,7 +125,14 @@ export function CurrencyDropdown({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="absolute top-full mt-2 left-0 right-0 z-[9999] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border border-black/20 dark:border-white/20 rounded-xl shadow-2xl max-h-80 overflow-hidden"
+              style={{
+                position: 'fixed',
+                top: buttonRect ? buttonRect.bottom + 8 : 0,
+                left: buttonRect ? buttonRect.left : 0,
+                width: buttonRect ? buttonRect.width : 200,
+                minWidth: compact ? 140 : 200,
+              }}
+              className="z-[99999] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border border-black/20 dark:border-white/20 rounded-xl shadow-2xl max-h-80 overflow-hidden"
             >
               {/* Search Input */}
               <div className="p-3 border-b border-black/10 dark:border-white/10">

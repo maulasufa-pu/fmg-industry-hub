@@ -81,15 +81,6 @@ function formatCurrencyPrice(usdPrice: number, currency: Currency, rates: Record
   return formatPrice(usdPrice, currency, rates);
 }
 
-function currencyIDR(value: number): string {
-  if (!Number.isFinite(value)) return "Rp 0";
-  try {
-    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value);
-  } catch {
-    return `Rp ${Math.round(value).toLocaleString("id-ID")}`;
-  }
-}
-
 function toLocalDT(iso: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
@@ -395,7 +386,7 @@ export default function ProductServicesPage(): React.JSX.Element {
 
             <div className="flex items-center gap-3">
               {/* Currency Selector */}
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 relative z-[100000]">
                 <span className="text-xs text-white/70">Display Currency</span>
                 <CurrencyDropdown compact showStatus={false} />
               </div>
@@ -571,7 +562,7 @@ function ServicesPanel(): React.JSX.Element {
                       />
                     </div>
                     <div className="col-span-2">
-                      <label className={labelBase}>Harga (IDR)</label>
+                      <label className={labelBase}>Price (USD)</label>
                       <input
                         type="number"
                         min={0}
@@ -816,7 +807,7 @@ function ServiceEditor({
                 </select>
               </div>
               <div>
-                <label className={labelBase}>Harga (IDR)</label>
+                <label className={labelBase}>Price (USD)</label>
                 <input
                   type="number"
                   min={0}
@@ -1075,7 +1066,7 @@ function BundlesPanel(): React.JSX.Element {
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className={labelBase}>Harga Bundle (IDR)</label>
+                    <label className={labelBase}>Bundle Price (USD)</label>
                     <input
                       type="number"
                       min={0}
@@ -1355,7 +1346,7 @@ function BundleEditor({
                 />
               </div>
               <div>
-                <label className={labelBase}>Harga Bundle (IDR)</label>
+                <label className={labelBase}>Bundle Price (USD)</label>
                 <input
                   type="number"
                   min={0}

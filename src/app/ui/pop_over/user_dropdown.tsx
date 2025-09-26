@@ -148,7 +148,7 @@ export default function UserDropdown({ isOpen, onClose, className = "" }: UserDr
         </div>
       ) : isGuest ? (
         <div className="p-4 space-y-2">
-          {/* ⬅️ Tombol Home untuk Guest */}
+          {/* ⬅️ Home Button for Guest */}
           <Link
             href="/"
             onClick={onClose}
@@ -174,7 +174,7 @@ export default function UserDropdown({ isOpen, onClose, className = "" }: UserDr
                 Client Hub
               </div>
               <div className="grid grid-cols-2 gap-2">
-                {/* ⬅️ Tile Home untuk user yang login */}
+                {/* ⬅️ Home Tile for logged in user */}
                 <Link
                   href="/"
                   onClick={onClose}

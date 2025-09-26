@@ -25,7 +25,7 @@ import {
  * - Parallax gradient art (mobile moves DOWN so it never covers text)
  * - Reduced-motion aware
  * - Right-side nav rail (desktop), bottom rail (mobile, thin colored)
- * - Palette selaras dengan /creative (namun konten Publishing)
+ * - Palette aligned with /creative (but Publishing content)
  *************************************************/
 
 /* ---------- Utils ---------- */
@@ -124,7 +124,7 @@ function GradientArt({
   // Parallax: desktop naik (-y), mobile turun (+y) agar tidak menutup teks
   const y = useTransform(scrollYProgress, [0, 1], isMobile ? [0, 36 * depth] : [0, -72 * depth]);
 
-  // Palette sama formatnya dengan /creative (beda dari /academy)
+  // Palette same format as /creative (different from /academy)
   const map: Record<Palette, { a: string; b: string }> = {
     indigo: {
       a: "from-indigo-300/55 via-cyan-300/45 to-violet-300/45",

@@ -77,7 +77,7 @@ const statusTone = (status?: string | null) => {
 
 export default function OverviewTab({ project }: OverviewTabProps) {
   const lastUpdated =
-    project.updated_at ? new Date(project.updated_at).toLocaleString("id-ID") : "N/A";
+    project.updated_at ? new Date(project.updated_at).toLocaleString("en-US") : "N/A";
 
   return (
     <motion.div
@@ -88,7 +88,7 @@ export default function OverviewTab({ project }: OverviewTabProps) {
     >
       {/* MAIN INFO */}
       <AnimatedCard title="📝 Main Info (Read-only)" gradient>
-        {/* Status & Stage — formatted, not input */}
+        {/* Status & Stage - formatted, not input */}
         <motion.div
           className="mb-6 space-y-3"
           initial={{ opacity: 0, y: 6 }}
@@ -119,7 +119,7 @@ export default function OverviewTab({ project }: OverviewTabProps) {
           </p>
         </motion.div>
 
-        {/* Other details — keep as read-only inputs for neatness */}
+        {/* Other details - keep as read-only inputs for neatness */}
         <motion.div
           className="grid grid-cols-2 gap-4 text-sm"
           initial={{ opacity: 0 }}
@@ -132,7 +132,7 @@ export default function OverviewTab({ project }: OverviewTabProps) {
             { label: "🎼 Genre", value: project.genre || "N/A" },
             { label: "👤 Client ID", value: project.client_id || "N/A" },
             { label: "📅 Last Updated", value: lastUpdated },
-            // ⛔️ Progress REMOVED as requested
+            // Progress removed as requested
             // { label: "📈 Progress", value: `${project.progress_percent || 0}%` },
           ].map((field, index) => (
             <motion.div

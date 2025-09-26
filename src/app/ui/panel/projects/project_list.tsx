@@ -101,7 +101,7 @@ const formatStage = (stage: string | null): { text: string; color: string; icon:
   }
 };
 
-// Dinamis dari DB, tapi selalu sediakan sentinel "any"
+// Dynamic from DB; always include sentinel "any"
 export type PicOption = "any" | string;
 export type StageOption = "any" | string;
 export type StatusOption = "any" | string;
@@ -160,7 +160,7 @@ type Props = {
   onBulkMarkFinished: (ids: string[]) => Promise<void>;
 };
 
-/** ===== Helpers terkait role ===== */
+/** ===== Role-aware table headers ===== */
 const buildHeaders = (
   mode: "client" | "admin"
 ): Array<{ key: keyof ProjectRow | "client" | "song" | "album" | "assignments"; label: string; sortable?: boolean }> => {
@@ -214,7 +214,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
     onOpen, onBulkAssignPIC, onBulkMarkFinished,
   } = props;
 
-  /** ====== Dapatkan role efektif (client-side) ====== */
+  /** ===== Get effective role (client-side) ===== */
   const [role, setRole] = useState<UserRole>("guest");
   const [roleLoaded, setRoleLoaded] = useState(false);
 
@@ -245,7 +245,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
     [isClient]
   );
 
-  // === underline indicator untuk tabs ===
+  // === underline indicator for tabs ===
   const listRef = useRef<HTMLDivElement>(null);
 
   // === tab scroll navigation ===
@@ -261,22 +261,22 @@ export default function ProjectList(props: Props): React.JSX.Element {
       setCanScrollRight(scrollLeft < (maxScrollLeft - threshold));
     }
   };
-  const scrollLeftFn = () => listRef.current?.scrollBy({ left: -200, behavior: 'smooth' });
-  const scrollRightFn = () => listRef.current?.scrollBy({ left: 200, behavior: 'smooth' });
+  const scrollLeftFn = () => listRef.current?.scrollBy({ left: -200, behavior: "smooth" });
+  const scrollRightFn = () => listRef.current?.scrollBy({ left: 200, behavior: "smooth" });
 
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
     const initial = () => setTimeout(checkScrollPosition, 100);
     initial();
-    el.addEventListener('scroll', checkScrollPosition, { passive: true });
+    el.addEventListener("scroll", checkScrollPosition, { passive: true });
     const handleResize = () => setTimeout(checkScrollPosition, 150);
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
     const ro = new ResizeObserver(() => setTimeout(checkScrollPosition, 100));
     ro.observe(el);
     return () => {
-      el.removeEventListener('scroll', checkScrollPosition);
-      window.removeEventListener('resize', handleResize);
+      el.removeEventListener("scroll", checkScrollPosition);
+      window.removeEventListener("resize", handleResize);
       ro.disconnect();
     };
   }, []);
@@ -356,7 +356,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2, duration: 0.6 }}
-            style={{ wordBreak: 'keep-all' }}
+            style={{ wordBreak: "keep-all" }}
           >
             Project Management
           </motion.h1>
@@ -412,7 +412,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
           </AnimatePresence>
 
           <div
-            className={`relative flex items-center gap-1 sm:gap-2 overflow-x-auto scrollbar-hide pb-1 transition-all duration-200 ${canScrollLeft ? 'pl-8 sm:pl-10' : ''} ${canScrollRight ? 'pr-8 sm:pr-10' : ''}`}
+            className={`relative flex items-center gap-1 sm:gap-2 overflow-x-auto scrollbar-hide pb-1 transition-all duration-200 ${canScrollLeft ? "pl-8 sm:pl-10" : ""} ${canScrollRight ? "pr-8 sm:pr-10" : ""}`}
             ref={listRef}
             onScroll={checkScrollPosition}
           >
@@ -586,7 +586,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
                   Loading…
                 </motion.span>
               ) : (
-                `${totalCount.toLocaleString("id-ID")} total projects`
+                `${totalCount.toLocaleString("en-US")} total projects`
               )}
             </motion.div>
           </motion.div>
@@ -738,7 +738,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
                               <Calendar className="w-4 h-4 text-slate-400" />
                               <span className="text-sm text-slate-300 font-medium">Last Updated</span>
                               <span className="ml-auto text-sm text-slate-200">
-                                {new Date(r.updated_at).toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' })}
+                                {new Date(r.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                               </span>
                             </div>
                           </div>
@@ -759,7 +759,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
                       <div className="flex justify-center">
                         <div
                           onClick={toggleAll}
-                          className={`w-5 h-5 rounded cursor-pointer border-2 flex items-center justify-center transition-all ${selectAll ? 'bg-green-500 border-green-500 shadow-lg shadow-green-500/25' : 'bg-slate-700/50 border-slate-400/50 hover:border-slate-400/70'}`}
+                          className={`w-5 h-5 rounded cursor-pointer border-2 flex items-center justify-center transition-all ${selectAll ? "bg-green-500 border-green-500 shadow-lg shadow-green-500/25" : "bg-slate-700/50 border-slate-400/50 hover:border-slate-400/70"}`}
                           aria-label="Select all rows"
                         >
                           {selectAll && <Check className="w-3 h-3 text-white stroke-[3]" />}
@@ -784,10 +784,11 @@ export default function ProjectList(props: Props): React.JSX.Element {
                     return (
                       <React.Fragment key={r.project_id}>
                         <motion.tr
-                          className={`group cursor-pointer border-t transition-all duration-200 ${selected.has(r.project_id) 
-                              ? 'bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800/30 hover:bg-green-100/70 dark:hover:bg-green-900/20' 
-                              : 'hover:bg-slate-100/80 dark:hover:bg-slate-700/40 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-800/50 border-gray-100 dark:border-gray-600 hover:border-slate-300 dark:hover:border-slate-500'
-                            }`}
+                          className={`group cursor-pointer border-t transition-all duration-200 ${
+                            selected.has(r.project_id)
+                              ? "bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800/30 hover:bg-green-100/70 dark:hover:bg-green-900/20"
+                              : "hover:bg-slate-100/80 dark:hover:bg-slate-700/40 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-800/50 border-gray-100 dark:border-gray-600 hover:border-slate-300 dark:hover:border-slate-500"
+                          }`}
                           onClick={() => toggleExpand(r.project_id)}
                           aria-expanded={isExpanded}
                           variants={tableRowVariants}
@@ -801,7 +802,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
                             <div className="flex justify-center">
                               <div
                                 onClick={(e) => { e.stopPropagation(); toggleRow(r.project_id); }}
-                                className={`w-5 h-5 rounded cursor-pointer border-2 flex items-center justify-center transition-all ${selected.has(r.project_id) ? 'bg-green-500 border-green-500 shadow-lg shadow-green-500/25' : 'bg-slate-800/50 border-slate-500/50 hover:border-slate-400/70'}`}
+                                className={`w-5 h-5 rounded cursor-pointer border-2 flex items-center justify-center transition-all ${selected.has(r.project_id) ? "bg-green-500 border-green-500 shadow-lg shadow-green-500/25" : "bg-slate-800/50 border-slate-500/50 hover:border-slate-400/70"}`}
                                 aria-label={`Select ${r.title}`}
                               >
                                 {selected.has(r.project_id) && <Check className="w-3 h-3 text-white stroke-[3]" />}
@@ -889,9 +890,9 @@ export default function ProjectList(props: Props): React.JSX.Element {
                             animate="visible"
                             exit="exit"
                             layout
-                            style={{ overflow: 'hidden' }}
+                            style={{ overflow: "hidden" }}
                           >
-                            <td colSpan={expandedColSpan} className="p-0" style={{ overflow: 'hidden' }}>
+                            <td colSpan={expandedColSpan} className="p-0" style={{ overflow: "hidden" }}>
                               <motion.div className="p-6" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
                                 <div className="space-y-4">
                                   {/* Header with Open Project Button */}
@@ -917,7 +918,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
                                   </div>
 
                                   <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                                    {/* Status/Stage/Progress/Info re-used from your original */}
+                                    {/* Status/Stage/Progress/Info */}
                                     <div className="xl:col-span-2 space-y-4">
                                       <div className="grid grid-cols-2 gap-4">
                                         <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/50 dark:to-slate-800/30 p-4 shadow-sm">
@@ -961,14 +962,14 @@ export default function ProjectList(props: Props): React.JSX.Element {
                                             <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">Last Updated</div>
                                             <div className="flex items-center gap-2 mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
                                               <Calendar className="h-3.5 w-3.5 text-slate-500" />
-                                              {new Date(r.updated_at).toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' })}
+                                              {new Date(r.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                                             </div>
                                           </div>
                                         </div>
                                       </div>
                                     </div>
 
-                                    {/* Team Assignments (unchanged) */}
+                                    {/* Team Assignments */}
                                     <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/50 dark:to-slate-800/30 p-5 shadow-sm">
                                       <div className="flex items-center gap-3 mb-5">
                                         <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500/10 to-indigo-500/10">

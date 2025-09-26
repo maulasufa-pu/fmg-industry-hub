@@ -466,44 +466,83 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
         type="button"
         onClick={() => toggleService(s.service_key)}
         className={[
-          "group relative flex items-start gap-3 rounded-xl border px-3 py-3 text-left transition",
+          "group relative flex items-center gap-5 p-6 rounded-2xl border-2 text-left",
+          "transition-all duration-300 ease-out hover:scale-[1.02]",
           active
-            ? "border-violet-500/70 bg-violet-500/5 shadow-[0_6px_24px_rgba(139,92,246,0.15)]"
-            : "border-slate-200 dark:border-slate-700 hover:bg-slate-50/60 dark:hover:bg-slate-800/60",
+            ? "border-violet-400 dark:border-violet-500 bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-900/30 dark:to-indigo-900/20 shadow-lg shadow-violet-500/20"
+            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-violet-300 dark:hover:border-violet-600 hover:bg-violet-50/50 dark:hover:bg-violet-900/10",
         ].join(" ")}
         onMouseDown={(e) => e.preventDefault()}
       >
-        <div className={["mt-0.5 h-4 w-4 rounded border", active ? "bg-violet-500 border-violet-500" : "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600"].join(" ")} />
-        <div className="min-w-0">
-          <div className="text-sm font-medium text-slate-900 dark:text-white">
-            {s.label}{s.is_subscription ? " • /mo" : ""}
+        {/* Enhanced Checkbox */}
+        <div className="relative shrink-0">
+          <div className={[
+            "w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all duration-200",
+            active 
+              ? "border-violet-500 bg-violet-500 shadow-lg shadow-violet-500/30" 
+              : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 group-hover:border-violet-400"
+          ].join(" ")}>
+            {active && (
+              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8.25 8.25a1 1 0 01-1.414 0l-4.25-4.25a1 1 0 111.414-1.414L8 12.586l7.543-7.543a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            )}
           </div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">
-            {formatPrice(Number(s.price), currency, rates)}
+          {active && (
+            <div className="absolute inset-0 bg-violet-500 rounded-lg opacity-20 animate-ping"></div>
+          )}
+        </div>
+        
+        {/* Service Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 mb-2">
+            <h4 className="font-semibold text-slate-900 dark:text-white text-base">
+              {s.label}
+            </h4>
+            {s.is_subscription && (
+              <span className="px-3 py-1 text-sm font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full">
+                Monthly
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="font-bold text-slate-900 dark:text-white text-lg">
+              {formatPrice(Number(s.price), currency, rates)}
+            </span>
             {currency !== 'USD' && (
-              <span className="ml-1 opacity-60">(${Number(s.price)})</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                ${Number(s.price)}
+              </span>
             )}
           </div>
         </div>
+        
+        {/* Selection Indicator */}
+        {active && (
+          <div className="shrink-0">
+            <div className="w-2 h-8 bg-gradient-to-b from-violet-400 to-indigo-500 rounded-full"></div>
+          </div>
+        )}
       </button>
     );
   }
 
   const progress = (step / 3) * 100;
 
-  // NOTE: komponen selalu mounted; visibilitas pakai class + animasi
+  // Enhanced modal with improved responsiveness and animations
   return (
     <div
       className={[
-        "fixed inset-0 z-[80] flex bg-black/50 backdrop-blur-sm transition-opacity",
+        "fixed inset-0 z-[80] flex transition-all duration-300",
+        "bg-gradient-to-br from-black/60 via-black/50 to-black/40 backdrop-blur-lg",
         open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
-        // mobile bottom sheet, desktop centered
-        "items-end md:items-start justify-center",
+        // Responsive positioning: mobile bottom sheet, desktop centered
+        "items-end sm:items-center justify-center p-2 sm:p-6 md:p-8",
       ].join(" ")}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       aria-hidden={!open}
       onKeyDown={(e) => {
-        // tahan Enter agar tidak submit form induk jika ada
+        // Prevent Enter key from submitting parent forms
         if (e.key === "Enter") {
           const target = e.target as HTMLElement;
           if (target && target.tagName.toLowerCase() !== "textarea") {
@@ -514,180 +553,308 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
       role="dialog"
       aria-modal="true"
     >
-      <div className="mx-0 md:mx-4 w-full md:max-w-5xl">
+      <div className="w-full max-w-none sm:max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-2 sm:mx-0">
         <div
           className={[
-            "transform transition-all duration-300 ease-out",
-            open ? "translate-y-0 opacity-100" : "translate-y-6 md:translate-y-0 opacity-0",
-            // container
-            "overflow-hidden md:rounded-2xl rounded-t-2xl",
-            "bg-white/95 dark:bg-slate-900/95 ring-1 ring-black/5",
-            // height: mobile sheet vs desktop modal
-            "md:my-8",
+            "transform transition-all duration-500 ease-out",
+            open 
+              ? "translate-y-0 scale-100 opacity-100" 
+              : "translate-y-8 sm:translate-y-0 scale-95 sm:scale-95 opacity-0",
+            // Enhanced container styling
+            "overflow-hidden rounded-t-3xl sm:rounded-3xl",
+            "bg-white/98 dark:bg-slate-900/98 backdrop-blur-xl",
+            "shadow-2xl shadow-black/25 dark:shadow-black/40",
+            "ring-1 ring-black/10 dark:ring-white/10",
+            // Responsive heights and spacing
+            "max-h-[95vh] sm:max-h-[90vh] sm:my-4",
           ].join(" ")}
           style={{
-            // high on mobile: 92dvh sheet
-            height: "auto",
+            // Mobile: almost full height, Desktop: auto with max constraints
+            minHeight: "auto",
           }}
           onPointerDown={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* MOBILE drag handle */}
-          <div className="md:hidden pt-[max(env(safe-area-inset-top),0px)]">
-            <div className="h-1.5 w-12 bg-slate-300/80 dark:bg-slate-600/70 rounded-full mx-auto mt-2 mb-1.5" />
+          {/* Enhanced Mobile Drag Handle */}
+          <div className="sm:hidden pt-[max(env(safe-area-inset-top),8px)]">
+            <div className="flex justify-center py-3">
+              <div className="h-1.5 w-16 bg-gradient-to-r from-slate-300 via-slate-400 to-slate-300 dark:from-slate-600 dark:via-slate-500 dark:to-slate-600 rounded-full opacity-60" />
+            </div>
           </div>
 
-          {/* header */}
+          {/* Enhanced Header */}
           <div
             className="
               sticky top-0 z-10
-              bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600
-              text-white px-5 py-3
-              shadow-sm
+              bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600
+              text-white px-6 sm:px-8 py-6
+              shadow-lg backdrop-blur-md
+              border-b border-white/10
             "
-            style={{ paddingTop: "max(env(safe-area-inset-top),0px)" }}
+            style={{ paddingTop: "max(env(safe-area-inset-top),20px)" }}
           >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 sm:gap-3">
-                {/* BRAND — tanpa mengubah BrandMark.tsx */}
-                <div className="-translate-y-[1px]">
-                  <BrandMark
-                    href="/"
-                    logoSize={24}
-                    gapClassName="gap-1.5"
-                    className="select-none [&_*]:!text-white"
-                    subtitle="Client Portal"
-                    // clamp kecil agar subtitle tidak 'lompat'
-                    subtitleBasePx={9}
-                    subtitleMinPx={8}
-                    subtitleMaxPx={11}
-                    priority
-                  />
+            <div className="flex items-center justify-between gap-4 sm:gap-6">
+              <div className="flex items-center gap-4 sm:gap-6 flex-1 min-w-0">
+                {/* Enhanced BRAND Section */}
+                <div className="flex items-center gap-4 sm:gap-5 shrink-0">
+                  <div className="p-3 bg-white/15 rounded-xl backdrop-blur-sm">
+                    <BrandMark
+                      href="/"
+                      logoSize={32}
+                      gapClassName="gap-2"
+                      className="select-none [&_*]:!text-white hover:scale-105 transition-transform"
+                      subtitle="Client Portal"
+                      subtitleBasePx={11}
+                      subtitleMinPx={10}
+                      subtitleMaxPx={13}
+                      priority
+                    />
+                  </div>
+                  <div className="hidden sm:block h-10 w-px bg-white/25" />
                 </div>
 
-                <div className="hidden h-6 w-px bg-white/30 sm:block" />
-
-                <h2 className="text-base md:text-lg font-bold leading-none tracking-tight">Request New Project</h2>
-                <div className="text-[11px] md:text-xs text-white/80 leading-none">Step {step} of 3</div>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 min-w-0">
+                  <h2 className="text-xl sm:text-2xl font-bold leading-tight tracking-tight">
+                    Request New Project
+                  </h2>
+                  <div className="flex items-center gap-3">
+                    <div className="px-3 py-1.5 bg-white/15 rounded-full text-sm font-medium backdrop-blur-sm">
+                      Step {step} of 3
+                    </div>
+                    <div className="text-sm text-white/70 hidden md:block">
+                      {step === 1 ? "Project Details" : step === 2 ? "Services & Pricing" : "Review & Submit"}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <button
                 type="button"
                 onClick={onClose}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                className="
+                  shrink-0 inline-flex h-10 w-10 items-center justify-center 
+                  rounded-xl bg-white/15 hover:bg-white/25 active:bg-white/30
+                  transition-all duration-200 ease-out
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60
+                  hover:scale-105 active:scale-95
+                "
                 aria-label="Close"
               >
                 <Close className="h-5 w-5 text-white" />
               </button>
             </div>
 
-            {/* progress bar */}
-            <div className="mt-3 h-1.5 w-full rounded-full bg-white/20 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-white"
-                style={{ width: `${progress}%` }}
-              />
+            {/* Enhanced Progress Bar */}
+            <div className="mt-6 space-y-3">
+              <div className="flex justify-between text-sm text-white/80">
+                <span>Progress</span>
+                <span>{Math.round(progress)}% Complete</span>
+              </div>
+              <div className="h-2.5 w-full rounded-full bg-white/20 overflow-hidden shadow-inner">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-white via-white/90 to-white shadow-sm transition-all duration-500 ease-out"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
             </div>
           </div>
 
-          {/* content scrollable */}
+          {/* Enhanced Content Scrollable Area */}
           <div
             ref={scrollRef}
-            className="px-5 py-4 overflow-y-auto overscroll-contain"
+            className="
+              px-6 sm:px-8 md:px-10 py-8
+              overflow-y-auto overscroll-contain
+              scroll-smooth scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600
+              scrollbar-track-transparent hover:scrollbar-thumb-slate-400 dark:hover:scrollbar-thumb-slate-500
+            "
             style={{
-              // mobile: sheet height 92dvh minus header(64) minus footer(72) approx
-              maxHeight: "calc(92dvh - 64px - 72px)",
+              // Responsive heights: mobile vs desktop
+              maxHeight: "calc(95vh - 200px)", // Account for header and footer
             }}
           >
-            {/* DESKTOP max-height fallback */}
-            <div className="md:max-h-[75vh] md:overflow-y-auto">
+            {/* Content Container with Better Spacing */}
+            <div className="max-w-none space-y-10">
               {step === 1 && (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-slate-800 dark:text-slate-100">Song Title</label>
-                    <input
-                      value={songTitle}
-                      onChange={(e) => setSongTitle(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500/60"
-                      placeholder="e.g., 'Aurora'"
-                    />
-                  </div>
+                <div className="space-y-8">
+                  {/* Primary Information */}
+                  <div className="bg-gradient-to-br from-slate-50/80 to-slate-100/50 dark:from-slate-800/50 dark:to-slate-900/30 rounded-2xl p-8 border border-slate-200/60 dark:border-slate-700/60">
+                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                      <div className="w-3 h-3 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full"></div>
+                      Project Information
+                    </h3>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      <div className="lg:col-span-2">
+                        <label className="block text-base font-semibold text-slate-700 dark:text-slate-200 mb-3">
+                          Song Title *
+                        </label>
+                        <input
+                          value={songTitle}
+                          onChange={(e) => setSongTitle(e.target.value)}
+                          className="
+                            w-full px-5 py-4 rounded-xl text-base
+                            border-2 border-slate-200 dark:border-slate-700
+                            bg-white dark:bg-slate-900
+                            focus:border-violet-500 dark:focus:border-violet-400
+                            focus:ring-4 focus:ring-violet-500/20
+                            transition-all duration-200
+                            placeholder:text-slate-400 dark:placeholder:text-slate-500
+                          "
+                          placeholder="e.g., 'Aurora', 'Midnight Dreams'"
+                        />
+                      </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-slate-800 dark:text-slate-100">Album Title</label>
-                    <input
-                      value={albumTitle}
-                      onChange={(e) => setAlbumTitle(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500/60"
-                      placeholder="Optional"
-                    />
-                  </div>
+                      <div>
+                        <label className="block text-base font-semibold text-slate-700 dark:text-slate-200 mb-3">
+                          Album Title
+                        </label>
+                        <input
+                          value={albumTitle}
+                          onChange={(e) => setAlbumTitle(e.target.value)}
+                          className="
+                            w-full px-5 py-4 rounded-xl text-base
+                            border-2 border-slate-200 dark:border-slate-700
+                            bg-white dark:bg-slate-900
+                            focus:border-violet-500 dark:focus:border-violet-400
+                            focus:ring-4 focus:ring-violet-500/20
+                            transition-all duration-200
+                            placeholder:text-slate-400 dark:placeholder:text-slate-500
+                          "
+                          placeholder="Optional album name"
+                        />
+                      </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-slate-800 dark:text-slate-100">Artist Name</label>
-                    <input
-                      value={artistName}
-                      onChange={(e) => setArtistName(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500/60"
-                      placeholder="Artist"
-                    />
-                  </div>
+                      <div>
+                        <label className="block text-base font-semibold text-slate-700 dark:text-slate-200 mb-3">
+                          Artist Name *
+                        </label>
+                        <input
+                          value={artistName}
+                          onChange={(e) => setArtistName(e.target.value)}
+                          className="
+                            w-full px-5 py-4 rounded-xl text-base
+                            border-2 border-slate-200 dark:border-slate-700
+                            bg-white dark:bg-slate-900
+                            focus:border-violet-500 dark:focus:border-violet-400
+                            focus:ring-4 focus:ring-violet-500/20
+                            transition-all duration-200
+                            placeholder:text-slate-400 dark:placeholder:text-slate-500
+                          "
+                          placeholder="Your artist name"
+                        />
+                      </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-slate-800 dark:text-slate-100">Genre</label>
-                    <select
-                      value={genre}
-                      onChange={(e) => setGenre(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500/60"
-                    >
-                      <option value="" disabled>Choose genre</option>
-                      {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
-                    </select>
-                  </div>
+                      <div>
+                        <label className="block text-base font-semibold text-slate-700 dark:text-slate-200 mb-3">
+                          Primary Genre
+                        </label>
+                        <select
+                          value={genre}
+                          onChange={(e) => setGenre(e.target.value)}
+                          className="
+                            w-full px-5 py-4 rounded-xl text-base
+                            border-2 border-slate-200 dark:border-slate-700
+                            bg-white dark:bg-slate-900
+                            focus:border-violet-500 dark:focus:border-violet-400
+                            focus:ring-4 focus:ring-violet-500/20
+                            transition-all duration-200
+                          "
+                        >
+                          <option value="" disabled>Select primary genre</option>
+                          {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
+                        </select>
+                      </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-slate-800 dark:text-slate-100">Sub-genre</label>
-                    <select
-                      value={subGenre}
-                      onChange={(e) => setSubGenre(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500/60"
-                    >
-                      <option value="" disabled>Choose sub-genre</option>
-                      {SUBGENRES.map((sg) => <option key={sg} value={sg}>{sg}</option>)}
-                    </select>
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-slate-800 dark:text-slate-100">Display Currency</label>
-                    <div className="mt-1">
-                      <CurrencyDropdown showStatus={false} />
+                      <div>
+                        <label className="block text-base font-semibold text-slate-700 dark:text-slate-200 mb-3">
+                          Sub-genre
+                        </label>
+                        <select
+                          value={subGenre}
+                          onChange={(e) => setSubGenre(e.target.value)}
+                          className="
+                            w-full px-5 py-4 rounded-xl text-base
+                            border-2 border-slate-200 dark:border-slate-700
+                            bg-white dark:bg-slate-900
+                            focus:border-violet-500 dark:focus:border-violet-400
+                            focus:ring-4 focus:ring-violet-500/20
+                            transition-all duration-200
+                          "
+                        >
+                          <option value="" disabled>Select sub-genre (optional)</option>
+                          {SUBGENRES.map((sg) => <option key={sg} value={sg}>{sg}</option>)}
+                        </select>
+                      </div>
                     </div>
-                    <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                      All prices are calculated from USD base rates • Select your preferred display currency
+                  </div>
+
+                  {/* Currency Selection */}
+                  <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/50 dark:from-blue-900/20 dark:to-indigo-900/10 rounded-2xl p-8 border border-blue-200/40 dark:border-blue-700/30">
+                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                      <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"></div>
+                      Currency Preference
+                    </h3>
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-base font-semibold text-slate-700 dark:text-slate-200 mb-3">
+                          Display Currency
+                        </label>
+                        <div className="bg-white dark:bg-slate-900 rounded-xl p-3 border-2 border-slate-200 dark:border-slate-700">
+                          <CurrencyDropdown showStatus={false} />
+                        </div>
+                        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                          All prices are calculated from USD base rates • Select your preferred display currency
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-slate-800 dark:text-slate-100">Song Synopsis / Description</label>
-                    <textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      rows={4}
-                      className={`mt-1 w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 ${
-                        description.trim().length < MIN_DESC
-                          ? "border-rose-300 focus:ring-rose-400/60"
-                          : "border-slate-300 dark:border-slate-700 focus:ring-violet-500/60"
-                      }`}
-                      placeholder={`Write a synopsis / description (min ${MIN_DESC} chars)`}
-                    />
-                    <div className="mt-1 flex items-center justify-between text-xs">
-                      <span className={description.trim().length < MIN_DESC ? "text-rose-600 dark:text-rose-300" : "text-slate-500 dark:text-slate-400"}>
-                        {description.trim().length}/{MIN_DESC} characters
-                      </span>
-                      {description.trim().length < MIN_DESC && (
-                        <span className="text-rose-600 dark:text-rose-300">Add more details to reach the minimum.</span>
-                      )}
+                  {/* Project Description */}
+                  <div className="bg-gradient-to-br from-violet-50/80 to-purple-50/50 dark:from-violet-900/20 dark:to-purple-900/10 rounded-2xl p-8 border border-violet-200/40 dark:border-violet-700/30">
+                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                      <div className="w-3 h-3 bg-gradient-to-r from-violet-500 to-purple-500 rounded-full"></div>
+                      Project Description
+                    </h3>
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-base font-semibold text-slate-700 dark:text-slate-200 mb-3">
+                          Song Synopsis / Description *
+                        </label>
+                        <textarea
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                          rows={6}
+                          className={`
+                            w-full px-5 py-4 rounded-xl text-base
+                            border-2 transition-all duration-200
+                            ${description.trim().length < MIN_DESC
+                              ? "border-rose-300 dark:border-rose-600 focus:border-rose-500 dark:focus:border-rose-400 focus:ring-4 focus:ring-rose-500/20"
+                              : "border-slate-200 dark:border-slate-700 focus:border-violet-500 dark:focus:border-violet-400 focus:ring-4 focus:ring-violet-500/20"
+                            }
+                            bg-white dark:bg-slate-900
+                            placeholder:text-slate-400 dark:placeholder:text-slate-500
+                            resize-none
+                          `}
+                          placeholder={`Describe your project vision, style, mood, and any specific requirements (minimum ${MIN_DESC} characters)`}
+                        />
+                        <div className="mt-4 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${description.trim().length < MIN_DESC ? 'bg-rose-400' : 'bg-green-400'}`}></div>
+                            <span className={`text-base font-medium ${description.trim().length < MIN_DESC ? "text-rose-600 dark:text-rose-300" : "text-green-600 dark:text-green-400"}`}>
+                              {description.trim().length}/{MIN_DESC} characters
+                            </span>
+                          </div>
+                          {description.trim().length < MIN_DESC && (
+                            <span className="text-sm text-rose-600 dark:text-rose-300 bg-rose-100 dark:bg-rose-900/30 px-3 py-1.5 rounded-full">
+                              {MIN_DESC - description.trim().length} more needed
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -737,8 +904,17 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                                 </div>
                               </div>
                               <div className="text-right">
-                                <div className="text-sm font-semibold text-slate-900 dark:text-white">{idr(Number(b.bundle_price))}</div>
-                                <div className="text-xs text-emerald-600 dark:text-emerald-300">Save {idr(saved)}</div>
+                                <div className="text-sm font-semibold text-slate-900 dark:text-white">
+                                  {formatPrice(Number(b.bundle_price), currency, rates)}
+                                </div>
+                                {currency !== 'USD' && (
+                                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                    (${Number(b.bundle_price)})
+                                  </div>
+                                )}
+                                <div className="text-xs text-emerald-600 dark:text-emerald-300 mt-1">
+                                  Save {formatPrice(saved, currency, rates)}
+                                </div>
                               </div>
                             </div>
                           </button>
@@ -950,35 +1126,59 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
             </div>
           </div>
 
-          {/* footer */}
+          {/* Enhanced Footer */}
           <div
             className="
-              sticky bottom-0
-              border-t border-white/10 bg-white/90 dark:bg-slate-900/90
-              px-5 py-3
-              backdrop-blur
+              sticky bottom-0 z-10
+              border-t border-slate-200/60 dark:border-slate-700/60
+              bg-white/98 dark:bg-slate-900/98
+              backdrop-blur-xl
+              px-6 sm:px-8 md:px-10 py-6
+              shadow-lg shadow-black/5 dark:shadow-black/20
             "
-            style={{ paddingBottom: "max(env(safe-area-inset-bottom),0px)" }}
+            style={{ paddingBottom: "max(env(safe-area-inset-bottom),24px)" }}
           >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-sm text-slate-700 dark:text-slate-200">
-                <span className="font-medium">Total:</span>{" "}
-                <span className="font-semibold text-slate-900 dark:text-white">
-                  {formatPrice(total, currency, rates)}
-                </span>
-                {currency !== 'USD' && (
-                  <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">
-                    (${total.toFixed(total < 100 ? 2 : 0)})
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              {/* Price Summary */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="text-sm text-slate-700 dark:text-slate-200">
+                  <span className="font-medium">Project Total:</span>{" "}
+                  <span className="text-xl font-bold text-slate-900 dark:text-white bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+                    {formatPrice(total, currency, rates)}
                   </span>
-                )}
-                {selectedBundle && <span className="ml-2 text-xs text-violet-600 dark:text-violet-400">(Bundle Applied)</span>}
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  {currency !== 'USD' && (
+                    <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-600 dark:text-slate-400">
+                      ${total.toFixed(total < 100 ? 2 : 0)} USD
+                    </span>
+                  )}
+                  {selectedBundle && (
+                    <span className="px-2 py-1 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded-full font-medium">
+                      Bundle Discount Applied
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
+              
+              {/* Action Buttons */}
+              <div className="flex items-center gap-4 flex-wrap">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="
+                    inline-flex items-center gap-2 px-4 py-2.5 
+                    text-sm font-medium text-slate-700 dark:text-slate-200
+                    border-2 border-slate-200 dark:border-slate-700
+                    rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800
+                    hover:border-slate-300 dark:hover:border-slate-600
+                    transition-all duration-200
+                    focus:outline-none focus:ring-4 focus:ring-slate-500/20
+                  "
                 >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                   Close
                 </button>
 
@@ -986,8 +1186,19 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                   <button
                     type="button"
                     onClick={() => goStep(step === 3 ? 2 : 1)}
-                    className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="
+                      inline-flex items-center gap-2 px-4 py-2.5
+                      text-sm font-medium text-slate-700 dark:text-slate-200
+                      border-2 border-slate-200 dark:border-slate-700
+                      rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800
+                      hover:border-slate-300 dark:hover:border-slate-600
+                      transition-all duration-200
+                      focus:outline-none focus:ring-4 focus:ring-slate-500/20
+                    "
                   >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
                     Back
                   </button>
                 )}
@@ -1001,23 +1212,69 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                         ? !(songTitle.trim() && description.trim().length >= MIN_DESC)
                         : (selectedServices.size === 0 && !selectedBundleId)
                     }
-                    className="inline-flex items-center rounded-lg bg-gradient-to-r from-indigo-600 to-fuchsia-600 px-4 py-2 text-sm font-semibold text-white shadow hover:opacity-95 disabled:opacity-50"
+                    className="
+                      inline-flex items-center gap-2 px-6 py-2.5
+                      text-sm font-semibold text-white
+                      bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600
+                      rounded-xl shadow-lg hover:shadow-xl
+                      hover:scale-105 active:scale-95
+                      transition-all duration-200
+                      focus:outline-none focus:ring-4 focus:ring-violet-500/30
+                      disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
+                    "
                   >
-                    Next
+                    <span>Continue</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={handleSubmit}
                     disabled={saving || !agree || !songTitle.trim()}
-                    className="inline-flex items-center rounded-lg bg-gradient-to-r from-indigo-600 to-fuchsia-600 px-4 py-2 text-sm font-semibold text-white shadow hover:opacity-95 disabled:opacity-60"
+                    className="
+                      inline-flex items-center gap-2 px-6 py-2.5
+                      text-sm font-semibold text-white
+                      bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600
+                      rounded-xl shadow-lg hover:shadow-xl
+                      hover:scale-105 active:scale-95
+                      transition-all duration-200
+                      focus:outline-none focus:ring-4 focus:ring-violet-500/30
+                      disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100
+                    "
                   >
-                    {saving ? "Sending Request..." : "Send Request"}
+                    {saving ? (
+                      <>
+                        <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        <span>Sending Request...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Send Request</span>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                      </>
+                    )}
                   </button>
                 )}
               </div>
             </div>
-            {error && <p className="mt-2 text-sm text-rose-600 dark:text-rose-300">{error}</p>}
+            
+            {/* Enhanced Error Display */}
+            {error && (
+              <div className="mt-4 p-3 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-xl">
+                <div className="flex items-start gap-2">
+                  <svg className="w-5 h-5 text-rose-500 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-sm text-rose-700 dark:text-rose-300 font-medium">{error}</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

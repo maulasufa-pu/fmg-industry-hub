@@ -16,7 +16,7 @@ import InnovationBadge from "./ui/InnovationBadge";
 import type { PanInfo } from "framer-motion";
 import CinematicVideoHeroHLS from "@/components/CinematicVideoHeroHLS";
 // import Hero from "./ui/main_container/hero";
-/** urutan & “berat” ukuran: basic kecil, pro sedang, ultimate besar, custom terbesar */
+/** urutan & “berat” ukuran: basic small, pro medium, ultimate large, custom largest */
 type Currency = "USD" | "IDR" | "EUR" | "JPY" | "GBP" | "AUD" | "CAD" | "SGD" | "KRW" | "VND" | "INR" | "PHP" | "THB" | "MYR";
 
 interface CurrencyOption {

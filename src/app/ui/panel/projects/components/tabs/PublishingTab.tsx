@@ -18,7 +18,7 @@ import { getSupabaseClient } from "@/lib/supabase/client";
  * ------------------------------------------------------------------ */
 interface PublishingTabProps {
   project: ProjectSummary;
-  /** dikirim otomatis dari ProjectControlsSection via cloneElement */
+  /** sent automatically from ProjectControlsSection via cloneElement */
   roleStatus?: UserRole;
   /** legacy fallback (optional) */
   isClient?: boolean;
@@ -26,8 +26,8 @@ interface PublishingTabProps {
 
 type Split = { party: string; percentage: number };
 
-// ✅ Tambahkan/cek tipe & default (letakkan di atas file, sebelum component). 
-// Jika sudah ada, biarkan — jangan duplikasi.
+// ✅ Add/check type & default (place at top of file, before component). 
+// If already exists, leave it — don't duplicate.
 
 type DSP = "spotify" | "appleMusic" | "youtubeMusic" | "deezer" | "tiktok" | "instagram";
 type DSPStatus = "pending" | "submitted" | "live" | "rejected" | "takedown";
@@ -43,7 +43,7 @@ const DEFAULT_PLATFORMS: PlatformStatuses = {
   instagram: { status: "pending", url: null },
 };
 
-/** Row DB utk kolom publishing di tabel `projects` (nullable di DB) */
+/** DB Row for publishing columns in `projects` table (nullable in DB) */
 type ProjectPublishingDB = {
   project_id: string;
   isrc: string | null;
@@ -59,14 +59,14 @@ type ProjectPublishingDB = {
   artwork_path: string | null;
   artwork_url: string | null;
   royalty_splits: Split[] | null;
-  /** JSONB (disarankan tambahkan kolom ini di projects): platform_statuses JSONB */
+  /** JSONB (recommended to add this column in projects): platform_statuses JSONB */
   platform_statuses: PlatformStatuses | null;
 };
 
-/** Tipe payload update ke Supabase (boleh null/undefined) */
+/** Update payload type to Supabase (can be null/undefined) */
 type ProjectPublishingUpdate = Partial<ProjectPublishingDB>;
 
-/** Tipe form (selalu string utk input terkontrol) */
+/** Form type (always string for controlled input) */
 type PublishingFields = {
   isrc: string;
   upc: string;
@@ -84,7 +84,7 @@ type PublishingFields = {
   platform_statuses: PlatformStatuses;
 };
 
-/** Roles yang boleh edit. Fallback: jika roleStatus tidak ada => UI editable (RLS server-side tetap melindungi write). */
+/** Roles allowed to edit. Fallback: if roleStatus not available => UI editable (RLS server-side still protects writes). */
 const STAFF_ROLES: ReadonlyArray<UserRole> = [
   "owner",
   "admin",
@@ -281,12 +281,12 @@ export default function PublishingTab({
       if (!alive) return;
 
       if (error || !data) {
-        setErr(error?.message ?? "Gagal memuat data publishing.");
+        setErr(error?.message ?? "Failed to load publishing data.");
         setLoading(false);
         return;
       }
 
-      // ⬇️ Hindari cast langsung ke tipe target (TS2352). Cast via unknown setelah guard.
+      // ⬇️ Avoid direct cast to target type (TS2352). Cast via unknown after guard.
       const row = data as unknown as ProjectPublishingDB;
 
       setForm({
@@ -304,8 +304,8 @@ export default function PublishingTab({
         artwork_url: row.artwork_url ?? null,
         royalty_splits: Array.isArray(row.royalty_splits) ? row.royalty_splits : [],
         platform_statuses: row.platform_statuses
-          ? { ...DEFAULT_PLATFORMS, ...row.platform_statuses } // merge aman
-          : DEFAULT_PLATFORMS, // fallback bila kolom belum ada/masih null
+          ? { ...DEFAULT_PLATFORMS, ...row.platform_statuses } // safe merge
+          : DEFAULT_PLATFORMS, // fallback if column doesn't exist yet/still null
       });
 
       setLoading(false);
@@ -382,7 +382,7 @@ export default function PublishingTab({
           upsert: true,
         });
       if (upErr) {
-        setErr(upErr.message ?? "Gagal upload artwork.");
+        setErr(upErr.message ?? "Failed to upload artwork.");
         return;
       }
 
@@ -394,7 +394,7 @@ export default function PublishingTab({
         artwork_path: path,
         artwork_url: url,
       }));
-      setOk("Artwork ter-upload.");
+      setOk("Artwork uploaded.");
     },
     [project.project_id]
   );
@@ -425,12 +425,12 @@ export default function PublishingTab({
 
   /** Validasi & Save */
   const validate = useCallback((): string | null => {
-    if (!form.isrc.trim()) return "ISRC wajib diisi.";
-    if (!form.release_date.trim()) return "Release Date wajib diisi.";
+    if (!form.isrc.trim()) return "ISRC is required.";
+    if (!form.release_date.trim()) return "Release Date is required.";
     if (totalSplit > 100.0001)
-      return "Total Royalty Share tidak boleh melebihi 100%.";
+      return "Total Royalty Share cannot exceed 100%.";
     if (form.royalty_splits.some((s) => s.percentage < 0))
-      return "Persentase tidak boleh negatif.";
+      return "Percentage cannot be negative.";
     return null;
   }, [form.isrc, form.release_date, form.royalty_splits, totalSplit]);
 
@@ -459,7 +459,7 @@ export default function PublishingTab({
       artwork_path: form.artwork_path,
       artwork_url: form.artwork_url,
       royalty_splits: form.royalty_splits,
-      platform_statuses: form.platform_statuses, // ⬅️ simpan status platform (JSONB)
+      platform_statuses: form.platform_statuses, // ⬅️ save platform status (JSONB)
     };
 
     const { error } = await supabase
@@ -471,10 +471,10 @@ export default function PublishingTab({
     if (error) {
       setErr(
         error.message ??
-          "Gagal menyimpan. (Jika error kolom 'platform_statuses', tambahkan kolom JSONB itu di tabel projects.)"
+          "Failed to save. (If error column 'platform_statuses', add that JSONB column to projects table.)"
       );
     } else {
-      setOk("Tersimpan.");
+      setOk("Saved.");
     }
   }, [form, project.project_id, validate]);
 
@@ -492,7 +492,7 @@ export default function PublishingTab({
       {/* LEFT: Publishing Form */}
       <AnimatedCard title="📑 Publishing Data" gradient className="lg:col-span-5">
         {loading ? (
-          <div className="text-sm text-gray-500 dark:text-gray-400">Memuat…</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">Loading…</div>
         ) : (
           <div className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -643,7 +643,7 @@ export default function PublishingTab({
                     <div key={`split-${i}`} className="flex items-center gap-2">
                       <input
                         type="text"
-                        placeholder="Nama pihak / akun"
+                        placeholder="Party name / account"
                         className={inputCls}
                         value={s.party}
                         onChange={(e) => updateSplit(i, { party: e.target.value })}
@@ -672,7 +672,7 @@ export default function PublishingTab({
                           type="button"
                           onClick={() => removeSplit(i)}
                           className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                          aria-label="hapus split"
+                          aria-label="remove split"
                         >
                           ✕
                         </button>
@@ -685,7 +685,7 @@ export default function PublishingTab({
                       onClick={addSplit}
                       className="mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm transition-colors"
                     >
-                      + Tambah split
+                      + Add split
                     </button>
                   )}
 
@@ -727,7 +727,7 @@ export default function PublishingTab({
                     <span className="text-emerald-600">{ok}</span>
                   ) : (
                     <span className="text-gray-500 dark:text-gray-400">
-                      Pastikan semua field valid.
+                      Ensure all fields are valid.
                     </span>
                   )}
                 </div>
@@ -736,14 +736,14 @@ export default function PublishingTab({
                   disabled={saving}
                   className="px-4 py-2 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-60"
                 >
-                  {saving ? "Menyimpan…" : "Simpan"}
+                  {saving ? "Saving…" : "Save"}
                 </button>
               </div>
             )}
 
             {isClientView && (
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                Hanya staff yang diizinkan yang dapat mengubah data publishing.
+                Only authorized staff can modify publishing data.
               </div>
             )}
           </div>
@@ -806,7 +806,7 @@ export default function PublishingTab({
 
                     <input
                       type="url"
-                      placeholder="URL rilis (opsional)"
+                      placeholder="Release URL (optional)"
                       className={inputCls}
                       value={st.url ?? ""}
                       onChange={(e) => setDSPUrl(key, e.target.value)}
@@ -820,7 +820,7 @@ export default function PublishingTab({
                         rel="noreferrer"
                         className="text-xs text-blue-600 hover:underline"
                       >
-                        Buka tautan →
+                        Open link →
                       </a>
                     ) : null}
                   </div>
@@ -842,7 +842,7 @@ export default function PublishingTab({
             />
           ) : (
             <div className="w-64 h-64 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 grid place-items-center text-sm text-gray-500">
-              Artwork belum diupload
+              Artwork not uploaded yet
             </div>
           )}
         </div>
@@ -886,9 +886,9 @@ export default function PublishingTab({
       <AnimatedCard title="📈 Analytics & Performance" gradient className="lg:col-span-12">
         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           <div className="text-4xl mb-4">📊</div>
-          <p>Performance analytics akan muncul setelah track dipublikasikan.</p>
+          <p>Performance analytics will appear after track is published.</p>
           <p className="text-xs mt-2">
-            Termasuk streaming numbers, revenue tracking, dan platform performance.
+            Including streaming numbers, revenue tracking, and platform performance.
           </p>
         </div>
       </AnimatedCard>

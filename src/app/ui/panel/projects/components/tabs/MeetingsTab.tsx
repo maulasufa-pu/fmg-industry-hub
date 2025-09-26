@@ -378,9 +378,9 @@ export default function MeetingsTab({ project, meetings, setMeetings }: Meetings
         </div>
       ) : meetings.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-10 text-center">
-          <div className="mb-2 text-lg font-semibold text-gray-800 dark:text-gray-100">Belum ada meeting</div>
+          <div className="mb-2 text-lg font-semibold text-gray-800 dark:text-gray-100">No meetings yet</div>
           <p className="mb-4 max-w-md text-sm text-gray-500 dark:text-gray-400">
-            Buat meeting pertama untuk project ini. Jadwalkan Google Meet atau Zoom, simpan link, dan tambahkan catatan.
+            Create the first meeting for this project. Schedule a Google Meet or Zoom, save the link, and add notes.
           </p>
           <NewMeetingButton show={false} toggle={() => setShowMeetingForm(true)} />
         </div>

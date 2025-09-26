@@ -132,12 +132,12 @@ const ReferenceItem = memo(function ReferenceItem({
   const [saving, setSaving] = useState(false);
   const textRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // Sinkronkan dari server hanya saat tidak mengedit
+  // Sync from server only when not editing
   useEffect(() => {
     if (!isEditing) setLocalNote(row.note ?? "");
   }, [row.note, isEditing]);
 
-  // Fokus ketika masuk mode edit (sekali)
+  // Focus when entering edit mode once
   useEffect(() => {
     if (isEditing) {
       const t = setTimeout(() => {
@@ -156,18 +156,18 @@ const ReferenceItem = memo(function ReferenceItem({
 
   return (
     <li className="rounded-xl">
-      {/* Tanggal */}
+      {/* Date */}
       <div className="mb-2 text-xs text-gray-500 dark:text-gray-400">
         <span className="bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-lg">
-          {row.created_at ? new Date(row.created_at).toLocaleString("id-ID") : ""}
+          {row.created_at ? new Date(row.created_at).toLocaleString("en-US") : ""}
         </span>
       </div>
 
-      {/* Embed + overlay aksi */}
+      {/* Embed plus action overlay */}
       <div className="group relative">
         <div className="absolute top-2 right-2 z-10 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition">
           {deleting ? (
-            <span className="text-[11px] px-2 py-1 rounded-full bg-white/80 dark:bg-gray-900/70 shadow">Menghapus…</span>
+            <span className="text-[11px] px-2 py-1 rounded-full bg-white/80 dark:bg-gray-900/70 shadow">Deleting…</span>
           ) : (
             <>
               <button
@@ -207,7 +207,7 @@ const ReferenceItem = memo(function ReferenceItem({
         </div>
       </div>
 
-      {/* Note viewer / editor */}
+      {/* Note viewer or editor */}
       <div className="mt-3">
         {isEditing ? (
           <div className="space-y-2">
@@ -217,7 +217,7 @@ const ReferenceItem = memo(function ReferenceItem({
               value={localNote}
               onChange={(e) => setLocalNote(e.target.value)}
               className="w-full resize-y rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Tulis keterangan di sini…"
+              placeholder="Write a note here…"
             />
             <div className="flex items-center gap-2">
               <button
@@ -226,14 +226,14 @@ const ReferenceItem = memo(function ReferenceItem({
                 disabled={saving}
                 className="rounded-lg bg-blue-600 text-white px-3 py-1.5 disabled:opacity-60"
               >
-                {saving ? "Menyimpan…" : "Simpan"}
+                {saving ? "Saving…" : "Save"}
               </button>
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
                 className="rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-3 py-1.5"
               >
-                Batal
+                Cancel
               </button>
             </div>
           </div>
@@ -256,7 +256,7 @@ export default function ReferencesTab(
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState<Record<string, boolean>>({});
 
-  // Fetch + realtime
+  // Fetch plus realtime
   useEffect(() => {
     let cancelled = false;
     const fetchLinks = async () => {
@@ -326,12 +326,12 @@ export default function ReferencesTab(
   // Add
   const addReference = useCallback(async (url: string, note: string) => {
     const normalized = normalizeUrl(url);
-    if (!isValidHttpUrl(normalized)) { alert("URL tidak valid."); return; }
+    if (!isValidHttpUrl(normalized)) { alert("Invalid URL."); return; }
     try {
       const { data: userData, error: userErr } = await supabase.auth.getUser();
       if (userErr) throw userErr;
       const userId = userData.user?.id;
-      if (!userId) throw new Error("Belum login.");
+      if (!userId) throw new Error("Not signed in.");
 
       const { data, error } = await supabase
         .from("reference_links")
@@ -348,7 +348,7 @@ export default function ReferencesTab(
       setLinks((prev) => [data as ReferenceLinkRow, ...(prev ?? [])]);
     } catch (err) {
       console.error("[ReferencesTab] add error:", err);
-      alert("Gagal menambahkan link (cek RLS/policy).");
+      alert("Failed to add link. Check RLS or policies.");
     }
   }, [project.project_id, setLinks, supabase]);
 
@@ -363,7 +363,7 @@ export default function ReferencesTab(
     } catch (err) {
       setLinks(backup);
       console.error("[ReferencesTab] delete error:", err);
-      alert("Gagal menghapus link (cek RLS/policy).");
+      alert("Failed to delete link. Check RLS or policies.");
     } finally {
       setDeleting((d) => { const { [id]: _removed, ...rest } = d; return rest; });
     }
@@ -382,7 +382,7 @@ export default function ReferencesTab(
     setLinks((prev) => (prev ? prev.map((r) => (r.id === id ? (data as ReferenceLinkRow) : r)) : prev));
   }, [project.project_id, setLinks, supabase]);
 
-  // Add tile (state lokal → fokus aman)
+  // Add tile state local with safe focus
   const AddReferenceTile = React.memo(function AddReferenceTile({
     onAdd,
   }: { onAdd: (url: string, note: string) => Promise<void> | void; }) {
@@ -424,7 +424,7 @@ export default function ReferencesTab(
             </div>
           </button>
         ) : (
-          <div className="rounded-3xl border-2 border-blue-400/60 p-4 bg-gradient-to-b from-transparent to-blue-500/5 min-h-[260px]">
+          <div className="rounded-3xl border-2 border-blue-400/60 p-4 bg-gradient-to-b from-transparent to-blue-500/5 min-h[260px] md:min-h-[260px]">
             <div className="text-sm text-gray-600 dark:text-gray-300 space-y-3">
               <div className="font-semibold text-gray-800 dark:text-gray-100">➕ Add Reference</div>
 
@@ -439,10 +439,10 @@ export default function ReferencesTab(
                 className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
 
-              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Keterangan (opsional)</label>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Notes (optional)</label>
               <textarea
                 rows={3}
-                placeholder="Tuliskan catatan singkat…"
+                placeholder="Write a short note…"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 className="w-full resize-y rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -455,14 +455,14 @@ export default function ReferencesTab(
                   className="rounded-xl px-3 py-2 bg-blue-600 text-white disabled:opacity-60"
                   disabled={adding || url.trim().length === 0}
                 >
-                  {adding ? "Menambahkan…" : "Add Link"}
+                  {adding ? "Adding…" : "Add Link"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
                   className="rounded-xl px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100"
                 >
-                  Batal
+                  Cancel
                 </button>
               </div>
             </div>
@@ -472,7 +472,7 @@ export default function ReferencesTab(
     );
   });
 
-  // >>>>>>>>>>>>>>>>>>>> RETURN JSX (INI YANG KURANG) <<<<<<<<<<<<<<<<<<<<
+  // >>>>>>>>>>>>>>>>>>>> RETURN JSX <<<<<<<<<<<<<<<<<<<<
   return (
     <div className="relative grid grid-cols-1 gap-6 lg:grid-cols-2">
       <section className="relative overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl dark:shadow-gray-800/25 bg-white dark:bg-gray-900 col-span-1 lg:col-span-2">

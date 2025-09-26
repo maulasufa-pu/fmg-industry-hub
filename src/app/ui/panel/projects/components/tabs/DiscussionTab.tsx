@@ -30,7 +30,7 @@ type ProfileRow = {
 const isUuid = (v: string): boolean =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 
-/* ---------- UI bits (tidak diubah) ---------- */
+/* ---------- UI bits (unchanged) ---------- */
 const AnimatedCard = ({
   title,
   children,
@@ -179,13 +179,13 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
   const userIdRef = useRef<string | null>(null);
   const mountedRef = useRef(false);
   const listRef = useRef<HTMLDivElement | null>(null);
-  const bottomRef = useRef<HTMLDivElement | null>(null);              // ⬅️ NEW: anchor di bawah
+  const bottomRef = useRef<HTMLDivElement | null>(null);              // ⬅️ NEW: anchor at bottom
 
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const atBottomRef = useRef(true);
   const justLoadedRef = useRef(true);
-  const suppressAutoScrollRef = useRef(false);                        // ⬅️ NEW: blok auto-scroll saat prepend
+  const suppressAutoScrollRef = useRef(false);                        // ⬅️ NEW: block auto-scroll during prepend
 
   const PAGE_SIZE = 50;
   const [loadingOlder, setLoadingOlder] = useState(false);
@@ -218,7 +218,7 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
     return () => el.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
-  // ⬇️ REWORK: scroll bottom hanya area chat menggunakan anchor (tidak memengaruhi halaman)
+  // ⬇️ REWORK: scroll bottom only chat area using anchor (doesn't affect page)
   const scrollToBottom = useCallback((smooth = true) => {
     const el = listRef.current;
     if (!el) return;
@@ -227,7 +227,7 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
     });
   }, []);
 
-  // initial auto-scroll setelah data & auth siap
+  // initial auto-scroll after data & auth ready
   useEffect(() => {
     if (!uiLoading && justLoadedRef.current) {
       justLoadedRef.current = false;
@@ -243,7 +243,7 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
   useEffect(() => {
     let active = true;
     (async () => {
-      // seed realtime token (kalau sudah login)
+      // seed realtime token (if already logged in)
       const { data: sess } = await supabase.auth.getSession();
       if (sess?.session?.access_token) supabase.realtime.setAuth(sess.session.access_token);
 
@@ -335,7 +335,7 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
       return;
     }
 
-    // hanya jika tail berubah (pesan baru di-append)
+    // only if tail changes (new message appended)
     if (tailId && tailId !== lastTailIdRef.current) {
       requestAnimationFrame(() => scrollToBottom(true));
       lastTailIdRef.current = tailId;
@@ -347,7 +347,7 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
   useEffect(() => {
     const count = messages?.length ?? 0;
     if (count > lastCountRef.current) {
-      scrollToBottom(true); // selalu auto-scroll tiap ada item baru
+      scrollToBottom(true); // always auto-scroll when new item added
     }
     lastCountRef.current = count;
   }, [messages?.length, scrollToBottom]);
@@ -376,7 +376,7 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
     const prepend = rows.slice().reverse().filter((r) => !(messages ?? []).some((m) => m.id === r.id));
     if (!prepend.length) return;
 
-    // ⬇️ JANGAN auto-scroll saat prepend
+    // ⬇️ DON'T auto-scroll during prepend
     suppressAutoScrollRef.current = true;
     preserveScrollDuring(() => setMessages((prev) => [...prepend, ...(prev ?? [])]));
   }, [loading, loadingOlder, hasMore, messages, project.project_id, supabase, setMessages]);
@@ -447,7 +447,7 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
               return [...arr, current];
             });
 
-            // ⬇️ SELALU scroll ke bawah saat ada pesan baru
+            // ⬇️ ALWAYS scroll to bottom when new message arrives
             requestAnimationFrame(() => scrollToBottom(true));
           } else if (payload.eventType === "UPDATE") {
             const nextRec = payload.new as ChatMessage;
@@ -535,7 +535,7 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
     };
     setMessages((prev) => [...(prev ?? []), optimisticMessage]);
 
-    // ⬇️ langsung scroll saat user kirim
+    // ⬇️ immediately scroll when user sends
     requestAnimationFrame(() => scrollToBottom(true));
 
     const { error } = await supabase
@@ -677,7 +677,7 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
               })
             )}
 
-            {/* ⬇️ ANCHOR untuk auto-scroll chat only */}
+            {/* ⬇️ ANCHOR for auto-scroll chat only */}
             <div ref={bottomRef} aria-hidden />
           </motion.div>
         </div>

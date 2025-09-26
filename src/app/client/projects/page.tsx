@@ -140,8 +140,8 @@ export default function ClientProjectsPage(): React.ReactElement {
   const [rows, setRows] = useState<ProjectRow[]>([]);
   const [tabCounts, setTabCounts] = useState<Record<TabKey, number | null>>({
     All: null, Active: null, Finished: null, Pending: null,
-    // keys yg tidak dipakai tetap disediakan untuk tipe:
-    Unassigned: 0, // disembunyikan di ProjectList untuk client
+    // keys not used but kept available for type compatibility:
+    Unassigned: 0, // hidden in ProjectList for client
     Requested: 0,
   });
 

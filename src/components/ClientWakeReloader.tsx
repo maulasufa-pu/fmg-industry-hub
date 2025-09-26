@@ -3,17 +3,17 @@ import { useEffect, useCallback, useRef } from "react";
 import { CLIENT_WAKE_EVENT } from "@/lib/wakeRefetch";
 
 /**
- * Component untuk memicu re-fetch data ketika tab/window mendapat fokus,
- * dengan debounce untuk mencegah reload berulang.
+ * Component to trigger data re-fetch when tab/window gets focus,
+ * with debounce to prevent repeated reloads.
  */
 export default function ClientWakeReloader() {
   const lastReloadTime = useRef(0);
-  const DEBOUNCE_MS = 2000; // Minimal jarak antar reload
+  const DEBOUNCE_MS = 2000; // Minimum interval between reloads
 
   const handleWake = useCallback(() => {
     const now = Date.now();
     if (now - lastReloadTime.current < DEBOUNCE_MS) {
-      return; // Skip jika terlalu dekat dengan reload sebelumnya
+      return; // Skip if too close to previous reload
     }
     
     let retryCount = 0;

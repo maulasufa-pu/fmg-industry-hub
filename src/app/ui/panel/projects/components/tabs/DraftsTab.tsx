@@ -536,7 +536,7 @@ export default function DraftsTab({
                         <textarea
                           className="mt-2 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-sm"
                           rows={3}
-                          placeholder={effectiveRole === "anr" ? "Tulis catatan / instruksi revisi untuk draft ini…" : "Tulis permintaan revisi untuk draft ini…"}
+                          placeholder={effectiveRole === "anr" ? "Write notes / revision instructions for this draft…" : "Write revision request for this draft…"}
                           value={revTextByDraft[d.draft_id] ?? ""}
                           onChange={(e) => setRevTextByDraft((m) => ({ ...m, [d.draft_id]: e.target.value }))}
                         />

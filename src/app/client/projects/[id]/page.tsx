@@ -60,7 +60,7 @@ export default function ClientProjectDetailPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [assignmentsLoading, setAssignmentsLoading] = useState<boolean>(true);
 
-  // ✅ flags supaya gak flicker Not Found
+  // ✅ flags to prevent Not Found flicker
   const [accessChecked, setAccessChecked] = useState(false);
   const [projectChecked, setProjectChecked] = useState(false);
 

@@ -76,7 +76,7 @@ export default function UserMenu() {
       return found ?? "client";
     };
 
-    /** Ambil profile dari DB (tabel `profiles`) untuk user saat ini */
+    /** Get profile from DB (table `profiles`) for current user */
     const refreshProfileFromDB = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -291,7 +291,7 @@ export default function UserMenu() {
                   </button>
                 )}
 
-                {/* Tautan Admin Panel muncul hanya untuk admin/owner */}
+                {/* Admin Panel link appears only for admin/owner */}
                 {(profile.role === "admin" || profile.role === "owner") && (
                   <>
                     <Link

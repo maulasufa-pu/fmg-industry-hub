@@ -112,7 +112,7 @@ export default function AdminPublishingPage(): React.JSX.Element {
               <tr key={r.id} className="border-t">
                 <td className="p-3 font-medium">{r.title}</td>
                 <td className="p-3">{r.artist_name ?? "-"}</td>
-                <td className="p-3">{r.planned_release_date ? new Date(r.planned_release_date).toLocaleDateString("id-ID") : "-"}</td>
+                <td className="p-3">{r.planned_release_date ? new Date(r.planned_release_date).toLocaleDateString("en-US") : "-"}</td>
                 <td className="p-3">{r.status}</td>
                 <td className="p-3">{r.distributor_ref ?? "-"}</td>
                 <td className="p-3">{r.notes ?? "-"}</td>

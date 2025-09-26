@@ -1,6 +1,6 @@
 // src/app/client/projects/CreateProjectPopover.tsx
 "use client";
-import React, { useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
+import React, { useEffect, useMemo, useRef, useState, useLayoutEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { Close } from "@/icons";
@@ -25,7 +25,7 @@ const MIN_DESC = 150;
 
 type ProjectStatus =
   | "requested" | "pending" | "in_progress" | "revision"
-  | "approved" | "published" | "archived" | "cancelled";
+  | "approved" | "published" | "archived" | "cancelled" | "draft";
 
 // Import currency utilities
 import { formatPrice, Currency } from '@/lib/currency';
@@ -62,6 +62,59 @@ type SubmitPayload = {
   status?: ProjectStatus;
 };
 
+/** ---------- COOKIE UTILITIES ---------- */
+const DRAFT_COOKIE_KEY = 'fmg_project_draft';
+
+interface ProjectDraftData {
+  songTitle: string;
+  artistName: string;
+  albumTitle: string;
+  genre: string;
+  subGenre: string;
+  description: string;
+  startDate: string;
+  deadline: string;
+  deliveryFormat: string[];
+  referenceLinks: string;
+  selectedServices: string[];
+  selectedBundle: string | null;
+  customPrices: Partial<Record<string, number>>;
+  paymentPlan: "upfront" | "half" | "milestone";
+  ndaRequired: boolean;
+  preferredEngineerId: string | null;
+  currentStep: number;
+  currency: string;
+}
+
+function saveToCookie(data: Partial<ProjectDraftData>) {
+  try {
+    const existing = loadFromCookie();
+    const updated = { ...existing, ...data };
+    const expires = new Date();
+    expires.setDate(expires.getDate() + 7); // 7 days
+    document.cookie = `${DRAFT_COOKIE_KEY}=${encodeURIComponent(JSON.stringify(updated))}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+  } catch (err) {
+    console.warn('Failed to save draft to cookie:', err);
+  }
+}
+
+function loadFromCookie(): Partial<ProjectDraftData> {
+  try {
+    const cookies = document.cookie.split(';');
+    const draftCookie = cookies.find(c => c.trim().startsWith(`${DRAFT_COOKIE_KEY}=`));
+    if (!draftCookie) return {};
+    const value = draftCookie.split('=')[1];
+    return JSON.parse(decodeURIComponent(value));
+  } catch (err) {
+    console.warn('Failed to load draft from cookie:', err);
+    return {};
+  }
+}
+
+function clearCookie() {
+  document.cookie = `${DRAFT_COOKIE_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+}
+
 export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitted }: Props): React.JSX.Element {
   const supabase = useMemo(() => getSupabaseClient(), []);
   const router = useRouter();
@@ -95,6 +148,10 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   const [referenceLinks, setReferenceLinks] = useState<string>("");
   const [refLinksDraft, setRefLinksDraft] = useState<string>("");
   const [paymentPlan, setPaymentPlan] = useState<"upfront" | "half" | "milestone">("half");
+
+  // Draft management
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [isLoadingDraft, setIsLoadingDraft] = useState(false);
   const [agree, setAgree] = useState(false);
   const [ndaRequired, setNdaRequired] = useState(false);
   const [preferredEngineerId, setPreferredEngineerId] = useState<string>("");
@@ -111,6 +168,35 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   const setDeadlineWithPreserve = withPreservedScroll((v: string) => setDeadline(v));
   const setEngineerWithPreserve = withPreservedScroll((v: string) => setPreferredEngineerId(v));
   const setAgreeWithPreserve = withPreservedScroll((v: boolean) => setAgree(v));
+
+  // Debounced auto-save
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debouncedSave = useCallback(() => {
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      const draftData: ProjectDraftData = {
+        songTitle,
+        artistName,
+        albumTitle,
+        genre,
+        subGenre,
+        description,
+        startDate,
+        deadline,
+        deliveryFormat,
+        referenceLinks,
+        selectedServices: Array.from(selectedServices),
+        selectedBundle: selectedBundleId,
+        customPrices,
+        paymentPlan,
+        ndaRequired,
+        preferredEngineerId,
+        currentStep: step,
+        currency
+      };
+      saveToCookie(draftData);
+    }, 1000); // Save after 1 second of inactivity
+  }, [songTitle, artistName, albumTitle, genre, subGenre, description, startDate, deadline, deliveryFormat, referenceLinks, selectedServices, selectedBundleId, customPrices, paymentPlan, ndaRequired, preferredEngineerId, step, currency]);
 
   const selectedBundle = useMemo(
     () => bundles.find(b => b.id === selectedBundleId) ?? null,
@@ -266,6 +352,53 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     return () => ac.abort();
   }, [open, supabase]);
 
+  /** ---------- DRAFT MANAGEMENT ---------- */
+  // Load draft when popover opens
+  useEffect(() => {
+    if (!open) return;
+    setIsLoadingDraft(true);
+    
+    try {
+      const draft = loadFromCookie();
+      if (Object.keys(draft).length > 0) {
+        // Load form data from cookie
+        if (draft.songTitle) setSongTitle(draft.songTitle);
+        if (draft.artistName) setArtistName(draft.artistName);
+        if (draft.albumTitle) setAlbumTitle(draft.albumTitle);
+        if (draft.genre) setGenre(draft.genre);
+        if (draft.subGenre) setSubGenre(draft.subGenre);
+        if (draft.description) setDescription(draft.description);
+        if (draft.startDate) setStartDate(draft.startDate);
+        if (draft.deadline) setDeadline(draft.deadline);
+        if (draft.deliveryFormat) setDeliveryFormat(draft.deliveryFormat);
+        if (draft.referenceLinks) setReferenceLinks(draft.referenceLinks);
+        if (draft.selectedServices) setSelectedServices(new Set(draft.selectedServices));
+        if (draft.selectedBundle) setSelectedBundleId(draft.selectedBundle);
+        if (draft.customPrices) setCustomPrices(draft.customPrices);
+        if (draft.paymentPlan) setPaymentPlan(draft.paymentPlan);
+        if (draft.ndaRequired !== undefined) setNdaRequired(draft.ndaRequired);
+        if (draft.preferredEngineerId) setPreferredEngineerId(draft.preferredEngineerId);
+        if (draft.currentStep) setStep(draft.currentStep as 1 | 2 | 3);
+      }
+    } catch (err) {
+      console.warn('Failed to load draft:', err);
+    } finally {
+      setIsLoadingDraft(false);
+    }
+  }, [open]);
+
+  // Auto-save to cookie when data changes
+  useEffect(() => {
+    if (!open || isLoadingDraft) return;
+    debouncedSave();
+  }, [open, isLoadingDraft, debouncedSave]);
+
+  // Clear draft on successful submit
+  const clearDraft = useCallback(() => {
+    clearCookie();
+    setDraftId(null);
+  }, []);
+
   // Close on ESC
   useEffect(() => {
     if (!open) return;
@@ -374,6 +507,46 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
 
   const setRefsWithPreserve = withPreservedScroll((v: string) => setReferenceLinks(v));
 
+  /** ---------- DRAFT SAVE ---------- */
+  const saveDraftToDatabase = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return null;
+
+      const payload: SubmitPayload = { ...buildPayload(), status: "draft" };
+      
+      if (draftId) {
+        // Update existing draft
+        const response = await fetch("/api/projects/submit", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...payload, project_id: draftId }),
+        });
+        
+        if (response.ok) {
+          const json = await response.json();
+          return json.project_id;
+        }
+      } else {
+        // Create new draft
+        const response = await fetch("/api/projects/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        
+        if (response.ok) {
+          const json = await response.json();
+          setDraftId(json.project_id);
+          return json.project_id;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to save draft to database:', err);
+    }
+    return null;
+  };
+
   /** ---------- SUBMIT ---------- */
   const handleSubmit = async () => {
     try {
@@ -414,6 +587,10 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
       }
       onSaved?.();
       onSubmitted?.({ projectId: newProjectId, paymentPlan });
+      
+      // Clear draft on successful submission
+      clearDraft();
+      
       onClose();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to submit project");
@@ -1399,6 +1576,28 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                   Close
+                </button>
+
+                {/* Save Draft Button */}
+                <button
+                  type="button"
+                  onClick={saveDraftToDatabase}
+                  disabled={saving || !songTitle.trim()}
+                  className="
+                    inline-flex items-center gap-2 px-4 py-2.5
+                    text-sm font-medium text-emerald-700 dark:text-emerald-300
+                    bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-200 dark:border-emerald-700
+                    rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/30
+                    hover:border-emerald-300 dark:hover:border-emerald-600
+                    transition-all duration-200
+                    focus:outline-none focus:ring-4 focus:ring-emerald-500/20
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                  "
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                  </svg>
+                  {draftId ? "Update Draft" : "Save Draft"}
                 </button>
 
                 {step > 1 && (

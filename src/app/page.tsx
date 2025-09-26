@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion, useAnimation, useInView, useMotionValue, useSpring, useTransform, useScroll, Variants } from "framer-motion";
+import { motion, useAnimation, useInView, useMotionValue, useSpring, useTransform, useScroll, Variants, AnimatePresence } from "framer-motion";
 import type { MotionValue } from "framer-motion";
 // di baris import icon lucide, tambahkan MessageCircle
 import { ArrowRight, Star, Check, CheckCircle2, Rocket, Music, ShieldCheck, Zap, Sparkles, PlayCircle, LineChart, Mic2, MessageCircle } from "lucide-react";
@@ -17,6 +17,165 @@ import type { PanInfo } from "framer-motion";
 import CinematicVideoHeroHLS from "@/components/CinematicVideoHeroHLS";
 // import Hero from "./ui/main_container/hero";
 /** urutan & “berat” ukuran: basic kecil, pro sedang, ultimate besar, custom terbesar */
+type Currency = "USD" | "IDR" | "EUR" | "JPY" | "GBP" | "AUD" | "CAD" | "SGD" | "KRW" | "VND" | "INR" | "PHP" | "THB" | "MYR";
+
+interface CurrencyOption {
+  code: Currency;
+  name: string;
+  flag: string;
+  symbol: string;
+}
+
+const CURRENCY_OPTIONS: CurrencyOption[] = [
+  { code: "USD", name: "US Dollar", flag: "🇺🇸", symbol: "$" },
+  { code: "IDR", name: "Indonesian Rupiah", flag: "🇮🇩", symbol: "Rp" },
+  { code: "EUR", name: "Euro", flag: "🇪🇺", symbol: "€" },
+  { code: "JPY", name: "Japanese Yen", flag: "🇯🇵", symbol: "¥" },
+  { code: "GBP", name: "British Pound", flag: "🇬🇧", symbol: "£" },
+  { code: "AUD", name: "Australian Dollar", flag: "🇦🇺", symbol: "A$" },
+  { code: "CAD", name: "Canadian Dollar", flag: "🇨🇦", symbol: "C$" },
+  { code: "SGD", name: "Singapore Dollar", flag: "🇸🇬", symbol: "S$" },
+];
+
+/*************************
+ * Enhanced Currency Dropdown Component
+ *************************/
+function CurrencyDropdown({
+  value,
+  onChange,
+  loading,
+  className = "",
+}: {
+  value: Currency;
+  onChange: (currency: Currency) => void;
+  loading?: boolean;
+  className?: string;
+}) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const selectedOption = CURRENCY_OPTIONS.find(opt => opt.code === value);
+  
+  const filteredOptions = CURRENCY_OPTIONS.filter(option =>
+    option.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    option.code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const selectOption = (option: CurrencyOption) => {
+    onChange(option.code);
+    setIsOpen(false);
+    setSearchTerm("");
+  };
+
+  return (
+    <div className={`relative ${className}`}>
+      {/* Trigger Button */}
+      <motion.button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        disabled={loading}
+        className="flex items-center justify-between gap-3 rounded-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-black/20 dark:border-white/20 px-4 py-3 text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:border-black/30 dark:hover:border-white/30 disabled:opacity-50 min-w-[200px]"
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-lg">{selectedOption?.flag}</span>
+          <span className="text-gray-900 dark:text-white">{selectedOption?.code}</span>
+          <span className="text-gray-500 dark:text-gray-400 hidden sm:block">
+            ({selectedOption?.name})
+          </span>
+        </div>
+        <motion.svg
+          className="w-4 h-4 text-gray-500"
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </motion.svg>
+      </motion.button>
+
+      {/* Dropdown Menu */}
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOpen(false)}
+              className="fixed inset-0 z-[9998] bg-black/20 backdrop-blur-sm"
+            />
+            
+            {/* Dropdown Panel */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="absolute top-full mt-2 left-0 right-0 z-[9999] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border border-black/20 dark:border-white/20 rounded-xl shadow-2xl max-h-80 overflow-hidden"
+            >
+              {/* Search Input */}
+              <div className="p-3 border-b border-black/10 dark:border-white/10">
+                <div className="relative">
+                  <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Search currency..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              {/* Options List */}
+              <div className="max-h-60 overflow-y-auto">
+                {filteredOptions.length > 0 ? (
+                  filteredOptions.map((option) => (
+                    <motion.button
+                      key={option.code}
+                      type="button"
+                      onClick={() => selectOption(option)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${
+                        option.code === value ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'
+                      }`}
+                      whileHover={{ x: 4 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <span className="text-xl">{option.flag}</span>
+                      <div className="flex-1">
+                        <div className="font-medium">{option.code}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{option.name}</div>
+                      </div>
+                      <span className="text-sm font-mono text-gray-400">{option.symbol}</span>
+                      {option.code === value && (
+                        <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </motion.button>
+                  ))
+                ) : (
+                  <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                    <div className="text-2xl mb-2">🔍</div>
+                    <div>No currencies found</div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 type PlanKey = "basic" | "pro" | "ultimate" | "custom";
 type Weight = 0 | 1 | 2 | 3;
 
@@ -26,14 +185,27 @@ type Plan = {
   props: PricingCardProps;
 };
 
+type PricingCardProps = {
+  name: string;
+  priceUSDNumber: number;  // angka asli USD
+  features: readonly string[];
+  cta: string;
+  period?: string;
+  accent?: "indigo" | "violet" | "gold" | "spotify";
+  badge?: string;
+  ctaHref?: string;
+  ctaTarget?: string;
+  ctaRel?: string;
+  loading?: boolean;
+};
+
 const PLANS: readonly Plan[] = [
   {
     key: "basic",
     weight: 0,
     props: {
       name: "Basic (Single)",
-      priceIDR: "IDR 11.500.000",
-      priceUSD: "$700 USD",  // ⬅️ baru
+      priceUSDNumber: 700,
       cta: "Start My Project",
       ctaHref: "/client/dashboard",
       features: [
@@ -50,8 +222,7 @@ const PLANS: readonly Plan[] = [
     weight: 1,
     props: {
       name: "Pro (Single)",
-      priceIDR: "IDR 16.500.000",
-      priceUSD: "$1000 USD",  // ⬅️ baru
+      priceUSDNumber: 1000,
       cta: "Start My Project",
       ctaHref: "/client/dashboard",
       features: [
@@ -70,8 +241,7 @@ const PLANS: readonly Plan[] = [
     weight: 2,
     props: {
       name: "Ultimate (Single)",
-      priceIDR: "IDR 33.000.000",
-      priceUSD: "$2000 USD",  // ⬅️ baru
+      priceUSDNumber: 2000,
       cta: "Start My Project",
       ctaHref: "/client/dashboard",
       features: [
@@ -90,8 +260,7 @@ const PLANS: readonly Plan[] = [
     weight: 3,
     props: {
       name: "Custom Plan",
-      priceIDR: "Custom",
-      priceUSD: "", // ⬅️ baru
+      priceUSDNumber: 0, // ditampilkan sebagai "Custom"
       period: "project",
       cta: "Start My Project",
       ctaHref: "/client/dashboard",
@@ -151,21 +320,6 @@ const slugFromDivisionTitle = (title: string): string =>
     .replace(/[^a-z0-9]+/g, "-")       // selain alnum -> -
     .replace(/^-+|-+$/g, "");          // trim hyphen
 
-type PricingCardProps = {
-  name: string;
-  priceIDR: string;   // contoh: "10.000.000"
-  priceUSD: string;   // contoh: "2000"
-  features: readonly string[];
-  cta: string;
-  period?: string;
-  accent?: "indigo" | "violet" | "gold" | "spotify";
-  badge?: string;
-  ctaHref?: string;
-  ctaTarget?: string;
-  ctaRel?: string;
-};
-
-
 /*************************
  * Tiny util
  *************************/
@@ -185,30 +339,39 @@ const fadeUp: Variants = {
  type Axis = "y" | "x";
 function Parallax({
   children,
-  speed,            // legacy: 0..1 (tetap didukung)
-  amount = 24,      // jarak maksimum (px)
+  speed,            // legacy 0..1 (opsional)
+  amount = 24,      // max jarak (px)
   axis = "y",
   className = "",
 }: {
   children: React.ReactNode;
-  speed?: number;   // kalau diisi (0..1) => dikonversi ke px dan di-clamp
-  amount?: number;  // jarak maksimum (px)
+  speed?: number;
+  amount?: number;
   axis?: Axis;
   className?: string;
 }) {
   const ref = React.useRef<HTMLDivElement | null>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
 
-  // Back-compat: speed (0..1) -> px, di-clamp agar aman
+  // konversi speed (0..1) ke px jika diberikan
   const px = typeof speed === "number" ? Math.min(24, Math.max(6, speed * 120)) : amount;
 
-  // 0 -> 0.5 -> 1  ==>  +px -> 0 -> -px (tengah layar netral)
-  const mvRaw = useTransform(scrollYProgress, [0, 0.5, 1], [px, 0, -px]);
-  const mv = useSpring(mvRaw, { stiffness: 300, damping: 30, mass: 0.28 });
-  const style: { y?: MotionValue<number>; x?: MotionValue<number> } = axis === "y" ? { y: mv } : { x: mv };
+  // 0 -> 0.5 -> 1  ==>  +px -> 0 -> -px
+  const raw = useTransform(scrollYProgress, [0, 0.5, 1], [px, 0, -px]);
+  const mv = useSpring(raw, { stiffness: 300, damping: 30, mass: 0.28 });
+  const style: { y?: MotionValue<number>; x?: MotionValue<number> } =
+    axis === "y" ? { y: mv } : { x: mv };
 
   return (
-    <motion.div ref={ref} style={style} className={cn("transform-gpu will-change-transform", className)}>
+    <motion.div
+      ref={ref}
+      initial={false}
+      style={style}                         // SSR: style ada tapi nilainya stabil → aman
+      className={cn("transform-gpu will-change-transform", className)}
+    >
       {children}
     </motion.div>
   );
@@ -297,13 +460,32 @@ function MagneticButton({
 /*************************
  * Split text for hero headline
  *************************/
+
+const wordVariants: Variants = {
+  hidden: { opacity: 0, y: 24 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: 0.06 * i, duration: 0.6, ease: "easeOut" },
+  }),
+};
+
 function SplitHeadline({ text }: { text: string }) {
+  const words = React.useMemo(() => text.split(" "), [text]);
   return (
     <h1 className="mx-auto max-w-5xl text-balance text-center text-5xl font-bold leading-tight tracking-tight sm:text-6xl">
-      {text.split(" ").map((word, i) => (
-        <motion.span key={`w-${i}`} className="inline-block" variants={fadeUp} custom={i}>
+      {words.map((w, i) => (
+        <motion.span
+          key={i}
+          className="inline-block"
+          variants={wordVariants}
+          custom={i}
+          initial={false}            // <— penting agar SSR & client snapshot sama
+          whileInView="visible"
+          viewport={{ once: true, margin: "-10%" }}
+        >
           <span className="mr-2 inline-block bg-gradient-to-br from-black via-indigo-700 to-indigo-400 bg-clip-text text-transparent dark:from-white dark:via-indigo-300 dark:to-indigo-500">
-            {word}
+            {w}
           </span>
         </motion.span>
       ))}
@@ -342,7 +524,7 @@ function MarqueeRow({ items, speed = 50 }: { items: ReadonlyArray<React.ReactNod
         <motion.div className="flex min-w-max gap-12 pr-12" animate={{ x: ["0%", "-50%"] }} transition={transition}>
           {[...items, ...items].map((it, i) => (
             <div key={i} className="flex items-center gap-3 text-black/60 dark:text-white/100">
-              <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/5 ring-1 ring-black/10 dark:bg-white/10 dark:ring-white/10">
+              <div className="inline-flex h-9 w-9 items:center justify-center rounded-full bg-black/5 ring-1 ring-black/10 dark:bg-white/10 dark:ring-white/10">
                 <Star className="h-4 w-4" />
               </div>
               <div className="text-sm font-medium tracking-wide">{it}</div>
@@ -440,10 +622,11 @@ function Testimonial({ quote, name, role }: { quote: string; name: string; role:
  * Pricing (service packages)
  *************************/
 function PricingCard({
-  name, priceIDR, priceUSD, features, cta, period = "single",
+  name, priceUSDNumber, features, cta, period = "single",
   accent = "indigo", badge,
-  ctaHref, ctaTarget, ctaRel,
-}: PricingCardProps): React.JSX.Element {
+  ctaHref, ctaTarget, ctaRel, loading,
+  currency, rates,
+}: PricingCardProps & { currency: Currency; rates: Record<string, number> }): React.JSX.Element {
   const tint =
     accent === "gold"
       ? "before:from-amber-400/45 before:to-yellow-500/90"
@@ -466,6 +649,40 @@ function PricingCard({
     ? "bg-red-600"
     : "bg-indigo-600";
 
+  const priceLabel =
+    Number.isFinite(priceUSDNumber) && priceUSDNumber > 0
+      ? formatPrice(priceUSDNumber, currency, rates)
+      : "Custom";
+
+  // Auto-resize font based on price length to keep it on single line
+  const getPriceFontSize = (price: string) => {
+    const totalLength = price.length; // Total character count including symbols
+    const digitCount = price.replace(/[^\d]/g, '').length; // Count only digits
+    
+    // Mobile-first approach with aggressive scaling for very long prices
+    if (digitCount <= 2) {
+      // Very short prices (like $9, €5) - extra large fonts
+      return "text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl";
+    } else if (digitCount <= 3) {
+      // Short prices (like $29, €250) - large fonts
+      return "text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl";
+    } else if (digitCount <= 5) {
+      // Medium prices (like $1,234, €9,999) - medium fonts  
+      return "text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl";
+    } else if (digitCount <= 7) {
+      // Long prices (like $123,456, IDR 4,567,890) - smaller fonts
+      return "text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl";
+    } else if (digitCount <= 9) {
+      // Very long prices (like IDR 15,750,000) - compact fonts
+      return "text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl";
+    } else {
+      // Extra long prices - minimum readable but still prominent
+      return "text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl";
+    }
+  };
+
+  const priceFontClass = getPriceFontSize(priceLabel);
+
   return (
     <div
       className={[
@@ -475,8 +692,8 @@ function PricingCard({
         "before:absolute before:inset-0 before:-z-10 before:bg-gradient-to-br",
         "before:mix-blend-multiply dark:before:mix-blend-screen before:opacity-30 dark:before:opacity-80",
         tint,
-        "p-6 sm:p-7 lg:p-8",
-        "h-full flex flex-col min-w-0 shadow-sm",
+        "p-5 sm:p-6 lg:p-8",
+        "h-full flex flex-col min-w-0 max-w-full shadow-sm",
       ].join(" ")}
     >
       {badge && (
@@ -485,26 +702,31 @@ function PricingCard({
         </span>
       )}
 
-      <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold leading-tight break-words">
+      <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold leading-tight break-words overflow-hidden text-ellipsis min-w-0">
         {name}
       </h3>
 
-      {/* harga: bisa wrap saat sempit */}
+      {/* harga */}
       <div className="mt-2 flex flex-col gap-1 min-w-0">
-        {/* Harga dalam IDR */}
-        <div className="flex items-baseline gap-x-2">
-          <span className="text-[30px] sm:text-3xl lg:text-5xl font-extrabold leading-none">
-            {priceIDR}
-          </span>
-          <span className="text-sm lg:text-2xl text-black/60 dark:text-white/60 whitespace-nowrap">/{period}</span>
-        </div>
-
-        {/* Harga dalam USD */}
-        <div className="flex items-baseline gap-x-2 mt-1">
-          <span className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-none text-black/80 dark:text-white/90">
-            {priceUSD}
-          </span>
-          <span className="text-sm text-black/50 dark:text-white/50 whitespace-nowrap"></span>
+        <div className="flex items-baseline gap-x-1 min-w-0 overflow-hidden">
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <div className="h-8 w-32 sm:h-10 sm:w-40 lg:h-12 lg:w-48 xl:h-14 xl:w-56 animate-pulse rounded-md bg-gray-300 dark:bg-gray-600"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_1.5s_ease-in-out_infinite] rounded-md"></div>
+              </div>
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500"></div>
+            </div>
+          ) : (
+            <div className="flex items-baseline gap-x-1 min-w-0 flex-1 overflow-hidden">
+              <span className={`${priceFontClass} font-extrabold leading-none whitespace-nowrap flex-shrink-0 max-w-full overflow-hidden text-ellipsis`}>
+                {priceLabel}
+              </span>
+              <span className="text-base sm:text-lg lg:text-xl text-black/60 dark:text-white/60 whitespace-nowrap flex-shrink-0">
+                /{period}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -539,7 +761,7 @@ function PricingCard({
           rel="noopener noreferrer"
           className="inline-flex h-11 w-11 items-center justify-center rounded-full
                      bg-emerald-500 text-white shadow-[0_8px_30px_rgba(0,0,0,0.12)]
-                     ring-1 ring-white/20 transition-transform hover:scale-[1.03]
+                     ring-1 ring:white/20 transition-transform hover:scale-[1.03]
                      dark:bg-emerald-600"
           aria-label="Chat via WhatsApp"
           title="Chat via WhatsApp"
@@ -559,23 +781,13 @@ function Checkmark() { return (
 );} 
 
 function Hero() {
-  const controls = useAnimation();
-  useEffect(() => {
-    controls.start("visible");
-  }, [controls]);
-
   return (
     <section className="relative overflow-hidden pt-12 sm:pt-12">
-      {/* Background parallax */}
       <Parallax speed={-0.03}>
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(1200px_500px_at_50%_-100px,rgba(79,70,229,0.15),transparent)]" />
       </Parallax>
 
-      <motion.div
-        initial="hidden"
-        animate={controls}
-        className="mx-auto max-w-6xl px-4"
-      >
+      <motion.div initial={false} className="mx-auto max-w-6xl px-4">
         <div className="flex flex-col items-center">
           <InnovationBadge />
 
@@ -588,7 +800,10 @@ function Hero() {
             <motion.p
               variants={fadeUp}
               custom={4}
-              className="mt-5 max-w-2xl text-center text-balance text-base leading-relaxed text-black/100 dark:text-white/100"
+              initial={false}
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="mt-5 max-w-2xl text-center text-balance text-base leading-relaxed text-black dark:text-white"
             >
               <b>FMG Universe</b> is a creative-technology ecosystem and
               solution, born from{" "}
@@ -616,6 +831,9 @@ function Hero() {
             <motion.div
               variants={fadeUp}
               custom={5}
+              initial={false}
+              whileInView="visible" 
+              viewport={{ once: true }}
               className="mt-10 grid gap-8 text-center"
             >
               <div>
@@ -644,6 +862,9 @@ function Hero() {
             <motion.div
               variants={fadeUp}
               custom={6}
+              initial={false}
+              whileInView="visible"
+              viewport={{ once: true }}
               className="mt-12 flex flex-wrap items-center justify-center gap-3"
             >
               <MagneticButton href="/client/dashboard">
@@ -658,12 +879,12 @@ function Hero() {
             </motion.div>
           </Parallax>
 
-          {/* Video Hero */}
-          <CinematicVideoHeroHLS
+          {/* Video Hero - temporarily disabled to fix hydration */}
+          {/* <CinematicVideoHeroHLS
             shape="rounded"
             youtubeUrl="https://youtu.be/3zI-HFaUevg"
             maxWidthClass="max-w-7xl"
-          />
+          /> */}
         </div>
       </motion.div>
     </section>
@@ -853,7 +1074,7 @@ function Features() {
             const centerLastClass = centerLast ? "lg:col-start-2" : "";
             const href = `/${slugFromDivisionTitle(d.title)}`;
             return (
-              <div key={d.title} className={`transform-gpu will-change-transform ${wingShift} ${centerLastClass}`}>
+              <div key={d.title} className={cn("transform-gpu will-change-transform", wingShift, centerLastClass)}>
                 <FeatureCard icon={d.icon} title={d.title} desc={d.desc} href={href} />
               </div>
             );
@@ -1111,8 +1332,8 @@ function Testimonials() {
           onTouchStart={() => setPaused(true)}
           onTouchEnd={() => { setPaused(false); requestPause(10000); }}  // <-- NEW
         >
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-white to-transparent dark:from-black" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent dark:from-black" />
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from:white to-transparent dark:from-black" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from:white to-transparent dark:from-black" />
 
           <div
             ref={railRef}
@@ -1250,8 +1471,8 @@ function ArtworkSlider({ artworks }: { artworks: string[] }) {
           requestPause(10000);
         }}
       >
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-white to-transparent dark:from-black" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent dark:from-black" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from:white to-transparent dark:from-black" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from:white to-transparent dark:from-black" />
 
         <div
           ref={railRef}
@@ -1284,7 +1505,15 @@ function ArtworkSlider({ artworks }: { artworks: string[] }) {
   );
 }
 
-function Pricing3DCarousel(): React.JSX.Element {
+function Pricing3DCarousel({
+  currency,
+  rates,
+  loading,
+}: {
+  currency: Currency;
+  rates: Record<string, number>;
+  loading?: boolean;
+}): React.JSX.Element {
   const [active, setActive] = React.useState<number>(1); // mulai dari "Pro"
   const wrapNext = React.useCallback(() => setActive(i => ((i + 1) % PLANS.length + PLANS.length) % PLANS.length), []);
   const wrapPrev = React.useCallback(() => setActive(i => ((i - 1) % PLANS.length + PLANS.length) % PLANS.length), []);
@@ -1334,8 +1563,11 @@ function Pricing3DCarousel(): React.JSX.Element {
   const [ariaMsg, setAriaMsg] = React.useState("");
   React.useEffect(() => {
     const plan = PLANS[active]?.props;
-    if (plan) setAriaMsg(`${plan.name} — ${plan.priceIDR}`);
-  }, [active]);
+    // Safety check: ensure rates object is valid before using
+    if (plan && rates && typeof rates === 'object') {
+      setAriaMsg(`${plan.name} — ${Number.isFinite(plan.priceUSDNumber) && plan.priceUSDNumber > 0 ? formatPrice(plan.priceUSDNumber, currency, rates) : "Custom"}`);
+    }
+  }, [active, currency, rates]);
 
   return (
     <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6" onWheel={onWheel}>
@@ -1356,7 +1588,7 @@ function Pricing3DCarousel(): React.JSX.Element {
 
       <div
         ref={ref}
-        className="relative h-[560px] sm:h-[580px] md:h-[600px] lg:h-[620px] select-none"
+        className="relative h:[560px] sm:h-[580px] md:h-[600px] lg:h-[620px] select-none"
         style={{ perspective: "1200px" }}
       >
         <motion.div drag="x" dragConstraints={{ left: 0, right: 0 }} onDragEnd={onDragEnd} className="absolute inset-0">
@@ -1406,7 +1638,7 @@ function Pricing3DCarousel(): React.JSX.Element {
 
                   {/* kartu di atas semuanya */}
                   <div className={isActive ? "relative z-10" : undefined}>
-                    <PricingCard {...p.props} />
+                    <PricingCard {...p.props} currency={currency} rates={rates} loading={loading} />
                   </div>
                 </div>
               </motion.div>
@@ -1439,7 +1671,21 @@ function Pricing3DCarousel(): React.JSX.Element {
 /* =========================
  * Section wrapper
  * ========================= */
-function Pricing(): React.JSX.Element {
+function Pricing({
+  currency,
+  rates,
+  onCurrencyChange,
+  loading,
+  error,
+  lastUpdated,
+}: {
+  currency: Currency;
+  rates: Record<string, number>;
+  onCurrencyChange: (c: Currency) => void;
+  loading?: boolean;
+  error?: string | null;
+  lastUpdated?: string | null;
+}): React.JSX.Element {
   return (
     <section id="pricing" className="relative mx-auto w-full max-w-none py-8">
       <Parallax speed={0.06}>
@@ -1453,8 +1699,50 @@ function Pricing(): React.JSX.Element {
         </motion.div>
       </Parallax>
 
+      {/* Currency selector - moved outside Parallax to avoid stacking context issues */}
+      <motion.div 
+        initial="hidden" 
+        whileInView="visible" 
+        viewport={{ once: true }} 
+        variants={fadeUp} 
+        custom={2} 
+        className="mt-6 space-y-3 mx-auto max-w-3xl px-4 text-center"
+      >
+        <div className="flex flex-col items-center gap-3">
+          <label className="text-sm font-medium text-black/70 dark:text-white/70">
+            Select Currency:
+          </label>
+          <CurrencyDropdown
+            value={currency}
+            onChange={onCurrencyChange}
+            loading={loading}
+            className="mx-auto"
+          />
+        </div>
+        
+        {/* Status indicators */}
+        {loading && (
+          <div className="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <div className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500"></div>
+            Updating exchange rates...
+          </div>
+        )}
+        
+        {error && (
+          <div className="rounded-full bg-amber-50 px-3 py-1 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+            ⚠️ Using cached rates: {error}
+          </div>
+        )}
+        
+        {!loading && !error && lastUpdated && (
+          <div className="text-xs text-green-600 dark:text-green-400">
+            ✅ Live rates (updated {new Date(lastUpdated).toLocaleTimeString()})
+          </div>
+        )}
+      </motion.div>
+
       <Parallax speed={0.1}>
-        <Pricing3DCarousel />
+        <Pricing3DCarousel currency={currency} rates={rates} loading={loading} />
       </Parallax>
     </section>
   );
@@ -1522,6 +1810,79 @@ function CTA() {
  * Page Component
  *************************/
 export default function LandingPage() {
+  const [currency, setCurrency] = React.useState<Currency>("USD");
+  const [rates, setRates] = React.useState<Record<string, number>>({ USD: 1 });
+  const [ratesLoading, setRatesLoading] = React.useState(true);
+  const [ratesError, setRatesError] = React.useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const fetchRates = async () => {
+      setRatesLoading(true);
+      setRatesError(null);
+      
+      try {
+        const res = await fetch("/api/exchange", {
+          headers: {
+            'Cache-Control': 'no-cache',
+          },
+        });
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: Failed to fetch exchange rates`);
+        }
+        
+        const data = await res.json();
+        
+        // Validate response structure
+        if (!data?.rates || typeof data.rates !== 'object' || !data.rates.USD) {
+          throw new Error('Invalid exchange rate data structure');
+        }
+        
+        // Ensure we have essential currencies
+        const requiredCurrencies = ['USD', 'IDR', 'EUR', 'JPY'];
+        const missingCurrencies = requiredCurrencies.filter(curr => !data.rates[curr]);
+        
+        if (missingCurrencies.length > 0) {
+          console.warn('Missing currencies:', missingCurrencies);
+        }
+        
+        setRates(data.rates);
+        setLastUpdated(data.lastUpdated || new Date().toISOString());
+        
+        console.log('Exchange rates updated:', {
+          date: data.date,
+          currencyCount: Object.keys(data.rates).length,
+          sample: {
+            USD: data.rates.USD,
+            IDR: data.rates.IDR,
+            EUR: data.rates.EUR,
+            JPY: data.rates.JPY
+          }
+        });
+        
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+        setRatesError(errorMessage);
+        console.error('Exchange rate fetch failed:', errorMessage);
+        
+        // Only set fallback if we don't have any rates yet
+        if (Object.keys(rates).length <= 1) {
+          console.warn('Using emergency fallback rates');
+          setRates({ USD: 1 }); // Minimal fallback - will show "Custom" for other currencies
+        }
+      } finally {
+        setRatesLoading(false);
+      }
+    };
+
+    fetchRates();
+
+    // Auto-refresh rates every hour
+    const interval = setInterval(fetchRates, 60 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const [artworks, setArtworks] = React.useState<string[]>([]);
 
   React.useEffect(() => {
@@ -1580,7 +1941,14 @@ export default function LandingPage() {
       <Numbers />
       
       <Testimonials />
-      <Pricing />
+      <Pricing 
+        currency={currency} 
+        rates={rates} 
+        onCurrencyChange={setCurrency}
+        loading={ratesLoading}
+        error={ratesError}
+        lastUpdated={lastUpdated}
+      />
       <ArtworkSlider artworks={artworks} />;
       <CTA />
       {/* <Footer /> */}
@@ -1618,7 +1986,7 @@ export default function LandingPage() {
           {/* 2) PT. Flemmo Music Global FMG Publishing */}
           <div className="grid items-center gap-4 rounded-3xl border border-black/10 bg-gradient-to-br from-white to-neutral-50 p-4 shadow-sm transition hover:shadow-md dark:border-white/10 dark:from-zinc-950 dark:to-black sm:grid-cols-[132px_1fr] sm:gap-6 sm:p-6">
             <div
-              className="relative mx-auto aspect-square w-28 overflow-hidden rounded-2xl p-2 ring-1 ring-black/10 sm:mx-0 sm:w-32
+              className="relative mx-auto aspect-square w-28 overflow-hidden rounded-2xl p-2 ring-1 ring:black/10 sm:mx-0 sm:w-32
                         [background:linear-gradient(135deg,_#0b0b0b_0%_50%,_#ffffff_50%_100%)]
                         dark:[background:linear-gradient(135deg,_#0b0b0b_0%_50%,_#f5f5f5_50%_100%)]"
             >
@@ -1638,7 +2006,7 @@ export default function LandingPage() {
           </div>
 
           {/* 3) Flemmo Enterprise Music (FEM) */}
-          <div className="grid items-center gap-4 rounded-3xl border border-black/10 bg-gradient-to-br from-white to-neutral-50 p-4 shadow-sm transition hover:shadow-md dark:border-white/10 dark:from-zinc-950 dark:to-black sm:grid-cols-[132px_1fr] sm:gap-6 sm:p-6">
+          <div className="grid items-center gap-4 rounded-3xl border border-black/10 bg-gradient-to-br from:white to-neutral-50 p-4 shadow-sm transition hover:shadow-md dark:border-white/10 dark:from-zinc-950 dark:to-black sm:grid-cols-[132px_1fr] sm:gap-6 sm:p-6">
             <div
               className="relative mx-auto aspect-square w-28 overflow-hidden rounded-2xl p-2 ring-1 ring-black/10 sm:mx-0 sm:w-32
                         [background:linear-gradient(135deg,_#0b0b0b_0%_50%,_#ffffff_50%_100%)]
@@ -1664,3 +2032,76 @@ export default function LandingPage() {
     </main>
   );
 }
+
+function formatPrice(usd: number, currency: Currency, rates: Record<string, number>) {
+  // Safety check: ensure rates object exists and has the currency
+  if (!rates || typeof rates !== 'object') {
+    console.warn("Invalid rates object, using fallback");
+    return "Custom"; // Return custom for invalid rates
+  }
+  
+  const rate = rates[currency];
+  if (!rate || typeof rate !== 'number') {
+    console.warn(`Rate not found for currency: ${currency}`);
+    return "Custom";
+  }
+  
+  const value = usd * rate;
+  
+  // Determine appropriate decimal places based on currency and value
+  let maximumFractionDigits = 0;
+  let minimumFractionDigits = 0;
+  
+  switch (currency) {
+    case 'USD':
+    case 'EUR':
+    case 'GBP':
+    case 'AUD':
+    case 'CAD':
+    case 'SGD':
+      // Major currencies: show decimals for values under 10, none for larger values
+      if (value < 10) {
+        maximumFractionDigits = 2;
+        minimumFractionDigits = 2;
+      }
+      break;
+    case 'JPY':
+    case 'KRW':
+    case 'IDR':
+    case 'VND':
+      // Currencies typically without decimals
+      maximumFractionDigits = 0;
+      minimumFractionDigits = 0;
+      break;
+    case 'INR':
+    case 'PHP':
+    case 'THB':
+    case 'MYR':
+      // Asian currencies: show decimals for smaller values
+      if (value < 100) {
+        maximumFractionDigits = 2;
+        minimumFractionDigits = 0;
+      }
+      break;
+    default:
+      // Default: no decimals for large numbers, 2 decimals for small numbers
+      if (value < 10) {
+        maximumFractionDigits = 2;
+        minimumFractionDigits = 2;
+      }
+  }
+  
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      maximumFractionDigits,
+      minimumFractionDigits,
+    }).format(value);
+  } catch (error) {
+    console.error(`Error formatting price for ${currency}:`, error);
+    return `${value.toFixed(maximumFractionDigits)} ${currency}`;
+  }
+}
+
+

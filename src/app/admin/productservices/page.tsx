@@ -72,6 +72,15 @@ type FMGButtonProps = Omit<HTMLMotionProps<"button">, "children"> & {
  * Helpers
  ***************************************/
 
+// Import currency utilities
+import { formatPrice, Currency } from '@/lib/currency';
+import { useCurrency } from '@/contexts/CurrencyContext';
+import { CurrencyDropdown } from '@/components/CurrencyDropdown';
+
+function formatCurrencyPrice(usdPrice: number, currency: Currency, rates: Record<string, number>): string {
+  return formatPrice(usdPrice, currency, rates);
+}
+
 function currencyIDR(value: number): string {
   if (!Number.isFinite(value)) return "Rp 0";
   try {
@@ -208,11 +217,14 @@ function GroupChip({ g }: { g: ServiceGroup }) {
 
 /** Promo badge **/
 function PromoBadge({ type, value }: { type: PromoType; value: number }) {
+  const { currency, rates } = useCurrency();
+  
   if (type === "none") return <span className="text-xs text-white/70">—</span>;
+  
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-400/30 bg-fuchsia-400/10 px-2.5 py-0.5 text-xs text-fuchsia-200">
       {type === "percentage" ? <Percent className="h-3.5 w-3.5" /> : <Tag className="h-3.5 w-3.5" />}
-      {type === "percentage" ? `${value}% OFF` : `-${currencyIDR(value)}`}
+      {type === "percentage" ? `${value}% OFF` : `-${formatCurrencyPrice(value, currency, rates)}`}
     </span>
   );
 }
@@ -324,6 +336,7 @@ function Popover({
 
 export default function ProductServicesPage(): React.JSX.Element {
   const [role, setRole] = useState<UserRole | null>(null);
+  const { currency, rates, loading: ratesLoading } = useCurrency();
 
   useEffect(() => {
     let alive = true;
@@ -380,7 +393,13 @@ export default function ProductServicesPage(): React.JSX.Element {
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              {/* Currency Selector */}
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-white/70">Display Currency</span>
+                <CurrencyDropdown compact showStatus={false} />
+              </div>
+              
               <SubtleBtn onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })}>
                 <Sparkles className="h-4 w-4" />
                 Tips pricing
@@ -404,6 +423,7 @@ export default function ProductServicesPage(): React.JSX.Element {
 
 function ServicesPanel(): React.JSX.Element {
   const sb = getSupabaseClient();
+  const { currency, rates } = useCurrency();
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<ServiceRow[]>([]);
@@ -638,9 +658,18 @@ function ServicesPanel(): React.JSX.Element {
                         </td>
                         <td className="p-3"><GroupChip g={r.group_name} /></td>
                         <td className="p-3">
-                          <div className="font-semibold text-white">{currencyIDR(eff)}</div>
+                          <div className="font-semibold text-white">
+                            {formatCurrencyPrice(eff, currency, rates)}
+                          </div>
                           {hasPromo && (
-                            <div className="text-xs text-white/70 line-through">{currencyIDR(r.price)}</div>
+                            <div className="text-xs text-white/70 line-through">
+                              {formatCurrencyPrice(r.price, currency, rates)}
+                            </div>
+                          )}
+                          {currency !== 'USD' && (
+                            <div className="text-xs text-white/50">
+                              Base: ${eff.toFixed(eff < 100 ? 2 : 0)}
+                            </div>
                           )}
                         </td>
                         <td className="p-3">
@@ -902,6 +931,7 @@ function ServiceEditor({
 
 function BundlesPanel(): React.JSX.Element {
   const sb = getSupabaseClient();
+  const { currency, rates } = useCurrency();
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [bundles, setBundles] = useState<BundleRow[]>([]);
@@ -1129,9 +1159,18 @@ function BundlesPanel(): React.JSX.Element {
                           <div className="text-[11px] text-white/70">{r.bundle_key} • {count} item</div>
                         </td>
                         <td className="p-3">
-                          <div className="font-semibold text-white">{currencyIDR(eff)}</div>
+                          <div className="font-semibold text-white">
+                            {formatCurrencyPrice(eff, currency, rates)}
+                          </div>
                           {hasPromo && (
-                            <div className="text-xs text-white/70 line-through">{currencyIDR(r.bundle_price)}</div>
+                            <div className="text-xs text-white/70 line-through">
+                              {formatCurrencyPrice(r.bundle_price, currency, rates)}
+                            </div>
+                          )}
+                          {currency !== 'USD' && (
+                            <div className="text-xs text-white/50">
+                              Base: ${eff.toFixed(eff < 100 ? 2 : 0)}
+                            </div>
                           )}
                         </td>
                         <td className="p-3">

@@ -55,15 +55,40 @@ const CSP_VALUE = cspParts.join("; ");
 
 const nextConfig: NextConfig = {
   images: {
-    domains: [
-      "source.unsplash.com",
-      "images.unsplash.com",
-      "i.ytimg.com",
-      "img.youtube.com",
-      "i.vimeocdn.com",
-      "i.scdn.co",
-      "cdn.sndcdn.com",
-      ...(supabaseHost ? [supabaseHost] : []),
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'source.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.ytimg.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.vimeocdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.scdn.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.sndcdn.com',
+      },
+      ...(supabaseHost ? [{
+        protocol: 'https' as const,
+        hostname: supabaseHost.replace('*.', ''),
+        pathname: '**',
+      }] : []),
     ],
   },
   experimental: {

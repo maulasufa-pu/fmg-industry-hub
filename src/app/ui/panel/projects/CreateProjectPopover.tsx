@@ -27,6 +27,11 @@ type ProjectStatus =
   | "requested" | "pending" | "in_progress" | "revision"
   | "approved" | "published" | "archived" | "cancelled";
 
+// Import currency utilities
+import { formatPrice, Currency } from '@/lib/currency';
+import { useCurrency } from '@/contexts/CurrencyContext';
+import { CurrencyDropdown } from '@/components/CurrencyDropdown';
+
 const idr = (n: number) => `IDR ${Math.round(n).toLocaleString("id-ID")}`;
 
 type Props = {
@@ -61,6 +66,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   const supabase = useMemo(() => getSupabaseClient(), []);
   const router = useRouter();
   const mountedRef = useRef<boolean>(true);
+  const { currency, rates, loading: ratesLoading } = useCurrency();
 
   const [services, setServices] = useState<ServiceRow[]>([]);
   const [bundles, setBundles] = useState<BundleWithItems[]>([]);
@@ -472,7 +478,12 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
           <div className="text-sm font-medium text-slate-900 dark:text-white">
             {s.label}{s.is_subscription ? " • /mo" : ""}
           </div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">{idr(Number(s.price))}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">
+            {formatPrice(Number(s.price), currency, rates)}
+            {currency !== 'USD' && (
+              <span className="ml-1 opacity-60">(${Number(s.price)})</span>
+            )}
+          </div>
         </div>
       </button>
     );
@@ -645,6 +656,16 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                       <option value="" disabled>Choose sub-genre</option>
                       {SUBGENRES.map((sg) => <option key={sg} value={sg}>{sg}</option>)}
                     </select>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-slate-800 dark:text-slate-100">Display Currency</label>
+                    <div className="mt-1">
+                      <CurrencyDropdown showStatus={false} />
+                    </div>
+                    <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      All prices are calculated from USD base rates • Select your preferred display currency
+                    </div>
                   </div>
 
                   <div className="sm:col-span-2">
@@ -942,7 +963,14 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-slate-700 dark:text-slate-200">
                 <span className="font-medium">Total:</span>{" "}
-                <span className="font-semibold text-slate-900 dark:text-white">{idr(total)}</span>
+                <span className="font-semibold text-slate-900 dark:text-white">
+                  {formatPrice(total, currency, rates)}
+                </span>
+                {currency !== 'USD' && (
+                  <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">
+                    (${total.toFixed(total < 100 ? 2 : 0)})
+                  </span>
+                )}
                 {selectedBundle && <span className="ml-2 text-xs text-violet-600 dark:text-violet-400">(Bundle Applied)</span>}
               </div>
               <div className="flex items-center gap-2">

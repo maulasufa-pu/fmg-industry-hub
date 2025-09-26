@@ -4,6 +4,8 @@ import "./globals.css";
 import AppShell from "./AppShell";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
+import { ThemeProvider } from "next-themes";
+import { ClientCurrencyProvider } from "@/components/ClientCurrencyProvider";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -75,10 +77,6 @@ export const metadata: Metadata = {
     other: { "msvalidate.01": "GANTI_DENGAN_TOKEN_ASLI" },
   },
   manifest: "/site.webmanifest",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#000000" },
-  ],
 };
 
 export const viewport: Viewport = {
@@ -89,9 +87,19 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="bg-background text-foreground transition-colors duration-300">
-          <AppShell>{children}</AppShell>
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          disableTransitionOnChange
+          storageKey="fmg-theme"
+        >
+          <ClientCurrencyProvider defaultCurrency="USD">
+            <AppShell>{children}</AppShell>
+          </ClientCurrencyProvider>
+        </ThemeProvider>
         <SpeedInsights />
         <Analytics />
       </body>

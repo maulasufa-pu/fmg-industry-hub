@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { usePathname } from "next/navigation";
 import GlobalSpotlight from "@/app/ui/GlobalSpotlight";
@@ -61,17 +60,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       {/* <GlobalSpotlight /> */}
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="dark"
-        enableSystem={false}
-        disableTransitionOnChange
-      >
-        <Header />
-        {/* <ThemeToggleWrapper />  // aktifkan kalau mau tombolnya muncul */}
-        <MainContainer>{children}</MainContainer>
-        <FooterWrapper />
-      </ThemeProvider>
+      <Header />
+      {/* <ThemeToggleWrapper />  // aktifkan kalau mau tombolnya muncul */}
+      <MainContainer>{children}</MainContainer>
+      <FooterWrapper />
     </>
   );
 }

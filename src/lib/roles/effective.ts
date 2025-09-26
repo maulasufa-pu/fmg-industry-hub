@@ -7,6 +7,28 @@ const PRIORITY: UserRole[] = [
 ];
 
 export async function getEffectiveRole(): Promise<UserRole> {
+  // DEBUG MODE: Bypass authentication for localhost only
+  // Set NEXT_PUBLIC_DISABLE_AUTH_DEBUG=true in .env to disable this
+  if (typeof window !== 'undefined') {
+    console.log('🔍 Debug info:', {
+      hostname: window.location.hostname,
+      nodeEnv: process.env.NODE_ENV,
+      disableFlag: process.env.NEXT_PUBLIC_DISABLE_AUTH_DEBUG,
+      href: window.location.href
+    });
+    
+    if (process.env.NODE_ENV === 'development' &&
+        process.env.NEXT_PUBLIC_DISABLE_AUTH_DEBUG !== 'true' &&
+        (window.location.hostname === 'localhost' || 
+         window.location.hostname === '127.0.0.1' ||
+         window.location.hostname.startsWith('192.168.') ||
+         window.location.hostname.endsWith('.local'))) {
+      console.log('🐛 DEBUG MODE: Bypassing auth for localhost - returning admin role');
+      console.log('🔧 To disable this, set NEXT_PUBLIC_DISABLE_AUTH_DEBUG=true in .env');
+      return "admin";
+    }
+  }
+
   const supabase = getSupabaseClient();
 
   // optional tapi bagus: pastikan token masih fresh sebelum hit DB penting

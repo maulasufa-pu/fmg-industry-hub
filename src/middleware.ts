@@ -5,6 +5,38 @@ import { createServerClient } from "@supabase/ssr";
 export async function middleware(req: NextRequest) {
   const { pathname, origin, search } = req.nextUrl;
 
+  // DEBUG MODE: Bypass auth for localhost
+  // Set DISABLE_AUTH_DEBUG=true in .env to disable this
+  const isLocalhost = req.nextUrl.hostname === 'localhost' || 
+                     req.nextUrl.hostname === '127.0.0.1' ||
+                     req.nextUrl.hostname.startsWith('192.168.') ||
+                     req.nextUrl.hostname.endsWith('.local');
+  
+  console.log('🔍 Middleware Debug:', {
+    hostname: req.nextUrl.hostname,
+    pathname,
+    isLocalhost,
+    nodeEnv: process.env.NODE_ENV,
+    disableFlag: process.env.DISABLE_AUTH_DEBUG
+  });
+  
+  if (isLocalhost && 
+      process.env.NODE_ENV === 'development' && 
+      process.env.DISABLE_AUTH_DEBUG !== 'true') {
+    console.log('🐛 DEBUG MODE: Bypassing middleware auth for localhost:', pathname);
+    console.log('🔧 To disable this, set DISABLE_AUTH_DEBUG=true in .env');
+    
+    // Handle admin root redirect for localhost
+    if (pathname === "/admin") {
+      console.log('🔄 Redirecting /admin to /admin/dashboard');
+      return NextResponse.redirect(new URL("/admin/dashboard", origin));
+    }
+    
+    // Allow all admin/client paths on localhost
+    console.log('✅ Allowing access to:', pathname);
+    return NextResponse.next();
+  }
+
   // Allow callback & static
   if (
     pathname.startsWith("/auth") ||

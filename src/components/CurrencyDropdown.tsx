@@ -37,13 +37,14 @@ export function CurrencyDropdown({
 
   const handleToggle = () => {
     if (!isOpen && buttonRef.current) {
-      setButtonRect(buttonRef.current.getBoundingClientRect());
+      const rect = buttonRef.current.getBoundingClientRect();
+      setButtonRect(rect);
     }
     setIsOpen(!isOpen);
   };
 
   return (
-    <div className={`relative z-[100000] ${className}`}>
+    <div className={`relative ${className}`}>
       {/* Trigger Button */}
       <motion.button
         ref={buttonRef}
@@ -116,7 +117,7 @@ export function CurrencyDropdown({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 z-[99998] bg-black/20 backdrop-blur-sm"
+              className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
             />
             
             {/* Dropdown Panel */}
@@ -127,17 +128,17 @@ export function CurrencyDropdown({
               transition={{ duration: 0.2 }}
               style={{
                 position: 'fixed',
-                top: buttonRect ? buttonRect.bottom + 8 : 0,
-                left: buttonRect ? buttonRect.left : 0,
-                width: buttonRect ? buttonRect.width : 200,
-                minWidth: compact ? 140 : 200,
+                top: buttonRect ? Math.min(buttonRect.bottom + 8, window.innerHeight - 320) : 0,
+                left: buttonRect ? Math.max(8, Math.min(buttonRect.left, window.innerWidth - 250)) : 0,
+                width: compact ? 200 : 250,
+                maxWidth: 'calc(100vw - 16px)',
               }}
-              className="z-[99999] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border border-black/20 dark:border-white/20 rounded-xl shadow-2xl max-h-80 overflow-hidden"
+              className="z-50 bg-neutral-950/95 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl max-h-80 overflow-hidden"
             >
               {/* Search Input */}
-              <div className="p-3 border-b border-black/10 dark:border-white/10">
+              <div className="p-3 border-b border-white/10">
                 <div className="relative">
-                  <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                   <input
@@ -145,7 +146,7 @@ export function CurrencyDropdown({
                     placeholder="Search currency..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                    className="w-full pl-9 pr-3 py-2 bg-neutral-900/60 border border-white/10 rounded-lg text-sm text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/60 focus:border-fuchsia-400/60"
                     autoFocus
                   />
                 </div>
@@ -159,8 +160,8 @@ export function CurrencyDropdown({
                       key={option.code}
                       type="button"
                       onClick={() => selectOption(option)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${
-                        option.code === currency ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/10 transition-colors ${
+                        option.code === currency ? 'bg-fuchsia-400/10 text-fuchsia-300' : 'text-white'
                       }`}
                       whileHover={{ x: 4 }}
                       transition={{ duration: 0.15 }}
@@ -168,11 +169,11 @@ export function CurrencyDropdown({
                       <span className="text-xl">{option.flag}</span>
                       <div className="flex-1">
                         <div className="font-medium">{option.code}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{option.name}</div>
+                        <div className="text-xs text-white/70">{option.name}</div>
                       </div>
-                      <span className="text-sm font-mono text-gray-400">{option.symbol}</span>
+                      <span className="text-sm font-mono text-white/60">{option.symbol}</span>
                       {option.code === currency && (
-                        <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-4 h-4 text-fuchsia-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                       )}

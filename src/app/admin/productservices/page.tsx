@@ -386,7 +386,7 @@ export default function ProductServicesPage(): React.JSX.Element {
 
             <div className="flex items-center gap-3">
               {/* Currency Selector */}
-              <div className="flex flex-col gap-1 relative z-[100000]">
+              <div className="flex flex-col gap-1 relative">
                 <span className="text-xs text-white/70">Display Currency</span>
                 <CurrencyDropdown compact showStatus={false} />
               </div>

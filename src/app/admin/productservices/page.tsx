@@ -310,12 +310,14 @@ function Popover({
     
     // Posisi default: di bawah & rata kiri
     let top = rect.bottom + gap;
-    let left = rect.left;
+    // rata tengah ke tombol
+    let left = rect.left + rect.width / 2 - maxW / 2;
 
-    // Clamp kiri/kanan agar tidak keluar layar
+    // clamp biar gak keluar layar
     const maxLeft = window.innerWidth - maxW - 8;
     const minLeft = 8;
     left = Math.max(minLeft, Math.min(left, maxLeft));
+
 
     // Jika tinggi popover melebihi bawah layar, geser ke atas jika memungkinkan
     const popH = popEl.offsetHeight || 200; // fallback height

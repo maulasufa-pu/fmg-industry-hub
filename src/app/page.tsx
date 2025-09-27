@@ -879,12 +879,11 @@ function Hero() {
             </motion.div>
           </Parallax>
 
-          {/* Video Hero - temporarily disabled to fix hydration */}
-          {/* <CinematicVideoHeroHLS
+          <CinematicVideoHeroHLS
             shape="rounded"
             youtubeUrl="https://youtu.be/3zI-HFaUevg"
             maxWidthClass="max-w-7xl"
-          /> */}
+          />
         </div>
       </motion.div>
     </section>
@@ -1167,7 +1166,7 @@ function Numbers() {
           className="flex select-none gap-6 py-1"
           role="list"
         >
-          {/* render 2x untuk loop mulus */}
+          {/* render 2x */}
           {[...STATS, ...STATS].map((s, i) => (
             <li key={`${s.label}-${i}`} className="min-w-[220px] sm:min-w-[240px] lg:min-w-[260px]">
               <Stat label={s.label} value={s.value} />
@@ -1206,15 +1205,6 @@ function AboutFMG() {
   );
 }
 
-/*************************
- * Testimonials
- *************************/
-/*************************
- * Testimonials — infinite loop (2 sentinels), 1-row mobile
- * - Swipe-able
- * - Auto step tiap 3s (pause saat interaksi)
- * - Tanpa "balik ke tengah" yang kelihatan
- *************************/
 function Testimonials() {
   const items = [
     { quote:"The team quickly grasped the song’s direction. Communication was clear, and the final result still feels like me.", name:"Viokichi", role:"Artist — Pop/R&B" },
@@ -1559,7 +1549,6 @@ function Pricing3DCarousel({
 
   const g = slotGap(width);
 
-  /* ===== ARIA live: umumkan paket aktif ===== */
   const [ariaMsg, setAriaMsg] = React.useState("");
   React.useEffect(() => {
     const plan = PLANS[active]?.props;
@@ -1617,13 +1606,10 @@ function Pricing3DCarousel({
                 animate={{ x, scale, rotateY, opacity }}
                 transition={SPRING}
               >
-                {/* ===== layer solid + glow untuk kartu aktif ===== */}
                 <div className="relative">
                   {isActive && (
                     <>
-                      {/* solid filler supaya benar2 tidak tembus */}
                       <div className="pointer-events-none absolute inset-0 z-0 rounded-3xl bg-white dark:bg-black" />
-                      {/* glow halus (ring gradient) */}
                       <motion.div
                         className="pointer-events-none absolute -inset-3 z-[1] rounded-[28px]
                                    bg-gradient-to-r from-indigo-500/35 via-violet-500/25 to-fuchsia-500/35 blur-xl"
@@ -1631,12 +1617,10 @@ function Pricing3DCarousel({
                         animate={{ opacity: 0.2, scale: 1.0 }}
                         transition={{ type: "spring", stiffness: 220, damping: 24, mass: 0.55 }}
                       />
-                      {/* ring tipis agar crisp */}
                       <div className="pointer-events-none absolute inset-0 z-[2] rounded-3xl ring-1 ring-black/10 dark:ring-white/10" />
                     </>
                   )}
 
-                  {/* kartu di atas semuanya */}
                   <div className={isActive ? "relative z-10" : undefined}>
                     <PricingCard {...p.props} currency={currency} rates={rates} loading={loading} />
                   </div>

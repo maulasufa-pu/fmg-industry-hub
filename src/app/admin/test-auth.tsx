@@ -23,7 +23,6 @@ export default function TestAuth() {
     
     const checkAuth = async () => {
       try {
-        // Check session
         const { data: { session }, error: sessionError } = await sb.auth.getSession();
         console.log("Session:", session);
         console.log("Session error:", sessionError);
@@ -31,7 +30,6 @@ export default function TestAuth() {
         setSession(session);
         
         if (session?.user) {
-          // Check profile
           const { data: profile, error: profileError } = await sb
             .from("profiles")
             .select("*")

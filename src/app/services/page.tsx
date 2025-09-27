@@ -7,7 +7,6 @@ export const metadata: Metadata = seoFromDB("/services");
 export default function PageName() {
   return (
     <div>
-      {/* isi halaman */}
     </div>
   );
 }

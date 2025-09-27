@@ -61,7 +61,6 @@ export default function AdminMeetingsPage(): React.JSX.Element {
     if (!error) void load();
   };
 
-  // Simple quick-create form
   const [title, setTitle] = useState("");
   const [start, setStart] = useState<string>("");
   const [duration, setDuration] = useState<number>(30);

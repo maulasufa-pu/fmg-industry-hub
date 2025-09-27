@@ -10,15 +10,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-/*************************************************
- * FMG Universe — /legal (Light + Dark friendly)
- * - Not a slide page. Professional single-page layout
- * - Hero with gradient art, then policy cards
- * - Parallax gradient background (reduced‑motion aware)
- * - Modern, clean, accessible
- *************************************************/
-
-/* ---------- Utils ---------- */
 function useIsMobile(breakpoint = 768): boolean {
   const [isMobile, setIsMobile] = React.useState(false);
   React.useEffect(() => {
@@ -34,7 +25,6 @@ function useIsMobile(breakpoint = 768): boolean {
 
 type Palette = "indigo" | "violet" | "emerald" | "amber";
 
-/* ---------- Global floating parallax background ---------- */
 function ParallaxField({ container }: { container: React.RefObject<HTMLDivElement | null> }) {
   const reduce = useReducedMotion();
   const isMobile = useIsMobile();
@@ -59,7 +49,6 @@ function ParallaxField({ container }: { container: React.RefObject<HTMLDivElemen
   );
 }
 
-/* ---------- Gradient artwork (compact) ---------- */
 function GradientArt({ palette = "indigo" as Palette }): React.JSX.Element {
   const reduce = useReducedMotion();
   const isMobile = useIsMobile();
@@ -109,7 +98,6 @@ function GradientArt({ palette = "indigo" as Palette }): React.JSX.Element {
   );
 }
 
-/* ---------- Policy Card ---------- */
 function PolicyCard({
   label,
   href,
@@ -143,7 +131,6 @@ function PolicyCard({
   );
 }
 
-/* ---------- Page ---------- */
 export default function LegalPage(): React.JSX.Element {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -176,15 +163,11 @@ export default function LegalPage(): React.JSX.Element {
 
   return (
     <main ref={containerRef} className="relative min-h-screen overflow-hidden bg-white text-neutral-900 dark:bg-neutral-950 dark:text-white">
-      {/* Background */}
       <ParallaxField container={containerRef} />
 
-      {/* Top edge fade */}
       <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 h-16 bg-gradient-to-b from-white to-transparent dark:from-neutral-950" />
 
-      {/* Content */}
       <div className="relative z-10">
-        {/* Hero */}
         <section className="px-4 pt-16 pb-10 sm:px-8 sm:pt-20 md:pt-24">
           <div className="mx-auto grid max-w-6xl items-center gap-8 md:grid-cols-12">
             <div className="md:col-span-7">
@@ -218,7 +201,6 @@ export default function LegalPage(): React.JSX.Element {
           </div>
         </section>
 
-        {/* Principles */}
         <section className="px-4 py-4 sm:px-8">
           <div className="mx-auto max-w-6xl">
             <div className="flex flex-wrap gap-2">
@@ -234,7 +216,6 @@ export default function LegalPage(): React.JSX.Element {
           </div>
         </section>
 
-        {/* Policies Grid */}
         <section className="px-4 pb-20 sm:px-8">
           <div className="mx-auto max-w-6xl">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -243,7 +224,6 @@ export default function LegalPage(): React.JSX.Element {
               ))}
             </div>
 
-            {/* Footer callout */}
             <div className="mt-8 rounded-2xl border border-neutral-900/10 bg-white/70 p-5 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5 sm:p-6">
               <p className="text-sm text-neutral-700 dark:text-white/80">
                 Looking for specific clauses or obligations? Start with <a href="/legal/terms" className="underline underline-offset-4">Terms</a>,
@@ -258,7 +238,6 @@ export default function LegalPage(): React.JSX.Element {
         </section>
       </div>
 
-      {/* Bottom edge fade */}
       <div aria-hidden className="pointer-events-none fixed inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent dark:from-neutral-950" />
     </main>
   );

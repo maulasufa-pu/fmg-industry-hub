@@ -12,13 +12,12 @@ export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
 export default async function ClientLayout({ children }: { children: React.ReactNode }) {
-  const role = await getEffectiveRole();  // role sudah akurat di server
+  const role = await getEffectiveRole();  
 
   return (
     <RequireAuth area="client">
       <ClientShell role={role}>
         {children}
-        {/* Cukup mount TANPA prop. Tidak ada hooks di server, tidak kirim function */}
         <GlobalChatPopover />
       </ClientShell>
     </RequireAuth>

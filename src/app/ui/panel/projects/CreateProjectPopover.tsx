@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState, useLayoutEffect, useCallba
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { Close } from "@/icons";
-import BrandMark from "@/app/ui/BrandMark"; // ← pakai BrandMark yang ada, TANPA mengubah file aslinya
+import BrandMark from "@/app/ui/BrandMark"; 
 import type {
   ServiceRow,
   BundleRow,
@@ -12,7 +12,6 @@ import type {
   BundleWithItems,
 } from "@/components/catalog";
 
-/** ---------- CONFIG ---------- */
 const GENRES = [
   "Pop","R&B","Hip-Hop","Jazz","Rock","Indie","Electronic","EDM","House","Techno",
   "Folk","Country","Gospel","Classical","Lo-fi","Ambient","Reggae","Latin","K-Pop","J-Pop",
@@ -27,7 +26,6 @@ type ProjectStatus =
   | "requested" | "pending" | "in_progress" | "revision"
   | "approved" | "published" | "archived" | "cancelled" | "draft";
 
-// Import currency utilities
 import { formatPrice, Currency } from '@/lib/currency';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { CurrencyDropdown } from '@/components/CurrencyDropdown';
@@ -62,7 +60,6 @@ type SubmitPayload = {
   status?: ProjectStatus;
 };
 
-/** ---------- COOKIE UTILITIES ---------- */
 const DRAFT_COOKIE_KEY = 'fmg_project_draft';
 
 interface ProjectDraftData {
@@ -91,7 +88,7 @@ function saveToCookie(data: Partial<ProjectDraftData>) {
     const existing = loadFromCookie();
     const updated = { ...existing, ...data };
     const expires = new Date();
-    expires.setDate(expires.getDate() + 7); // 7 days
+    expires.setDate(expires.getDate() + 7); 
     document.cookie = `${DRAFT_COOKIE_KEY}=${encodeURIComponent(JSON.stringify(updated))}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
   } catch (err) {
     console.warn('Failed to save draft to cookie:', err);
@@ -156,7 +153,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   const [ndaRequired, setNdaRequired] = useState(false);
   const [preferredEngineerId, setPreferredEngineerId] = useState<string>("");
 
-  /** ---------- HELPERS ---------- */
   function withPreservedScroll<A extends unknown[]>(fn: (...args: A) => void) {
     return (...args: A) => {
       if (scrollRef.current) savedScrollTopRef.current = scrollRef.current.scrollTop;
@@ -195,7 +191,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
         currency
       };
       saveToCookie(draftData);
-    }, 1000); // Save after 1 second of inactivity
+    }, 1000); 
   }, [songTitle, artistName, albumTitle, genre, subGenre, description, startDate, deadline, deliveryFormat, referenceLinks, selectedServices, selectedBundleId, customPrices, paymentPlan, ndaRequired, preferredEngineerId, step, currency]);
 
   const selectedBundle = useMemo(

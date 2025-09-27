@@ -4,21 +4,11 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Cookie, ShieldCheck, Globe, Settings2, ExternalLink, Info, Languages, Clock, Lock, Network, FileText, Undo2, CircleCheck } from "lucide-react";
 
-/*************************************************
- * FMG Universe — /legal/cookies
- * Modern, professional single-page policy (no slides)
- * - Light/Dark friendly, glass panels, gradient accents
- * - Reduced-motion aware
- * - Sticky Table of Contents with scroll‑spy
- * - "Manage Cookie Preferences" CMP hooks
- *************************************************/
-
-/* ---------- Helpers ---------- */
 function classNames(...xs: Array<string | false | null | undefined>): string {
   return xs.filter(Boolean).join(" ");
 }
 
-const LAST_UPDATED = "August 24, 2025"; // update when you revise the policy
+const LAST_UPDATED = "August 24, 2025"; 
 const SECTIONS = [
   { id: "overview", label: "Overview" },
   { id: "what-are-cookies", label: "What Are Cookies & Similar Tech" },
@@ -36,7 +26,6 @@ const SECTIONS = [
   { id: "contact", label: "Contact" },
 ] as const;
 
-/* ---------- Sticky TOC with scroll‑spy ---------- */
 function useScrollSpy(ids: readonly string[], offset = 120) {
   const [active, setActive] = useState<string>(ids[0]);
   useEffect(() => {
@@ -90,7 +79,6 @@ function TableOfContents(): React.JSX.Element {
   );
 }
 
-/* ---------- Reusable UI ---------- */
 function SectionCard({ id, title, icon: Icon, children }: { id: string; title: string; icon: React.ComponentType<any>; children: React.ReactNode; }) {
   const reduce = useReducedMotion();
   return (
@@ -102,7 +90,6 @@ function SectionCard({ id, title, icon: Icon, children }: { id: string; title: s
         transition={{ duration: 0.45 }}
         className="relative overflow-hidden rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-white/5 sm:p-8"
       >
-        {/* soft halo */}
         <div aria-hidden className="pointer-events-none absolute -inset-px rounded-2xl ring-1 ring-transparent [background:radial-gradient(60%_60%_at_50%_0%,rgba(99,102,241,0.08),rgba(236,72,153,0.06),rgba(251,191,36,0.05),transparent_70%)]" />
         <div className="relative">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-neutral-900/10 bg-neutral-900/5 px-3 py-1 text-xs text-neutral-800 dark:border-white/10 dark:bg-white/10 dark:text-white/80">
@@ -126,10 +113,8 @@ function Pill({ children }: { children: React.ReactNode }) {
   );
 }
 
-/* ---------- CMP hooks ---------- */
 function manageCookiePreferences() {
   if (typeof window === "undefined") return;
-  // Popular CMPs — call whichever exists in your stack
   (window as any).OneTrust?.ToggleInfoDisplay?.();
   (window as any).Cookiebot?.show?.();
   (window as any).__cmp?.("showConsentTool");
@@ -142,7 +127,6 @@ function setConsentCookie(value: "accept_all" | "reject_non_essential") {
   document.cookie = `fmg_cookie_consent=${value}; Path=/; SameSite=Lax; Expires=${expires}`;
 }
 
-/* ---------- Page ---------- */
 export default function CookiesPolicyPage(): React.JSX.Element {
   const reduce = useReducedMotion();
   const headerAnim = useMemo(() => ({
@@ -152,7 +136,6 @@ export default function CookiesPolicyPage(): React.JSX.Element {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-white text-neutral-900 dark:bg-neutral-950 dark:text-white">
-      {/* background washes */}
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
         <motion.div
           initial={reduce ? undefined : { opacity: 0 }}
@@ -166,7 +149,6 @@ export default function CookiesPolicyPage(): React.JSX.Element {
           className="absolute -bottom-24 -right-20 h-[26rem] w-[26rem] rounded-full bg-gradient-to-tr from-emerald-500/16 via-teal-400/12 to-cyan-400/10 blur-2xl"/>
       </div>
 
-      {/* header */}
       <header className="relative">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <motion.div {...headerAnim} transition={{ duration: 0.45 }} className="pt-16 sm:pt-20">
@@ -339,7 +321,6 @@ export default function CookiesPolicyPage(): React.JSX.Element {
         <TableOfContents />
       </div>
 
-      {/* footer note */}
       <footer className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
         <div className="rounded-2xl border border-neutral-900/10 bg-white/60 p-4 text-[12px] text-neutral-600 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:text-white/60">
           This page is provided for transparency and does not constitute legal advice. Your specific implementation (vendors, CMP, retention) may vary based on region and product. Ensure your Cookie Preferences Center reflects your current stack.

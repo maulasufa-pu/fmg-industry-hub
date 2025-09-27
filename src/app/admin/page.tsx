@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { getEffectiveRole } from "@/lib/roles/effective";
 import type { Metadata } from "next";
 import { seoFromDB } from "@/lib/seo-loader";
-// @seo-injected
 export const metadata: Metadata = seoFromDB("/admin");
 
 
@@ -24,6 +23,6 @@ export default async function AdminIndex() {
     case "publisher":
       redirect("/admin/publishing/dashboard");
     default:
-      redirect("/client"); // client/guest redirected out of admin area
+      redirect("/client");
   }
 }

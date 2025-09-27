@@ -9,8 +9,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-/* ---------------------------- Profile Header ---------------------------- */
-
 const ProfileHeader = () => {
   const router = useRouter();
   const headerRef = useRef<HTMLDivElement>(null);
@@ -35,7 +33,6 @@ const ProfileHeader = () => {
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="flex h-16 items-center justify-between">
-          {/* Back */}
           <motion.button
             onClick={() => router.back()}
             className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm border border-black/10 dark:border-white/10 bg-white text-neutral-800 hover:bg-neutral-50 dark:bg-neutral-900 dark:text-white/90 dark:hover:bg-neutral-800 transition"
@@ -47,7 +44,6 @@ const ProfileHeader = () => {
             Back
           </motion.button>
 
-          {/* Title */}
           <motion.h1
             className="pointer-events-none text-base font-semibold text-neutral-900 dark:text-white"
             animate={{ y: [0, -2, 0] }}
@@ -56,7 +52,6 @@ const ProfileHeader = () => {
             Profile Settings
           </motion.h1>
 
-          {/* Home */}
           <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
             <Link
               href="/"
@@ -79,7 +74,6 @@ const ProfileHeader = () => {
   );
 };
 
-/* ------------------------------- Types ---------------------------------- */
 
 type UserProfile = {
   id: string;
@@ -111,7 +105,6 @@ type FormData = {
 const BUCKET = "avatars";
 const USE_PUBLIC_BUCKET = true;
 
-/* ----------------------------- Main Page -------------------------------- */
 
 export default function ProfileSettingsPage() {
   const supabase = getSupabaseClient();
@@ -139,13 +132,11 @@ export default function ProfileSettingsPage() {
   const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Email management
   const [isEmailEditing, setIsEmailEditing] = useState(false);
   const [emailConfirming, setEmailConfirming] = useState(false);
   const [loginProvider, setLoginProvider] = useState<string | null>(null);
   const [emailVerificationSent, setEmailVerificationSent] = useState(false);
 
-  // Entrance animation
   useEffect(() => {
     if (!loading && cardRef.current) {
       gsap.fromTo(
@@ -156,7 +147,6 @@ export default function ProfileSettingsPage() {
     }
   }, [loading]);
 
-  // Avatar hover micro-interactions
   useEffect(() => {
     if (!avatarRef.current) return;
     const el = avatarRef.current;
@@ -170,7 +160,6 @@ export default function ProfileSettingsPage() {
     };
   }, [avatarUrl]);
 
-  // Load profile
   useEffect(() => {
     (async () => {
       try {
@@ -193,12 +182,10 @@ export default function ProfileSettingsPage() {
           phone_number: data.phone_number || "",
         });
 
-        // Provider
         if (user.app_metadata?.provider) setLoginProvider(user.app_metadata.provider);
         else if (user.identities?.length) setLoginProvider(user.identities[0].provider);
         else setLoginProvider("email");
 
-        // Avatar
         if (data.avatar_path) await refreshAvatarUrl(data.avatar_path);
         else if (data.avatar_url) setAvatarUrl(data.avatar_url);
       } catch (e) {
@@ -228,7 +215,6 @@ export default function ProfileSettingsPage() {
     try {
       setSaving(true);
 
-      // ensure unique username by RPC
       let finalUsername = formData.username?.trim() || null;
       if (finalUsername) {
         const { data: gen, error: genErr } = await supabase.rpc("gen_unique_username", {
@@ -351,18 +337,14 @@ export default function ProfileSettingsPage() {
 
   return (
     <div className="relative min-h-screen overflow-auto bg-gradient-to-br from-white to-indigo-50 dark:from-neutral-950 dark:to-neutral-900 text-neutral-900 dark:text-white">
-      {/* luminous FMG background */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-28 -left-20 h-[44rem] w-[44rem] rounded-full bg-gradient-to-br from-indigo-500/15 via-fuchsia-500/10 to-cyan-400/10 blur-3xl" />
         <div className="absolute -bottom-44 -right-24 h-[40rem] w-[40rem] rounded-full bg-gradient-to-tr from-emerald-400/15 via-teal-400/10 to-sky-400/10 blur-3xl" />
       </div>
 
-      {/* Header */}
       <ProfileHeader />
 
-      {/* Content */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 pb-10 pt-6">
-        {/* tagline */}
         <motion.p
           className="mx-auto mb-6 max-w-2xl text-center text-neutral-600 dark:text-neutral-300"
           initial={{ opacity: 0, y: 10 }}
@@ -372,14 +354,12 @@ export default function ProfileSettingsPage() {
           ✨ Manage your personal information and preferences ✨
         </motion.p>
 
-        {/* Card */}
         <motion.div
           ref={cardRef}
           layout
           className="rounded-3xl p-[1px] bg-[linear-gradient(180deg,rgba(0,0,0,.08),transparent_40%)] dark:bg-[linear-gradient(180deg,rgba(255,255,255,.12),transparent_40%)] shadow-[0_1px_0_rgba(255,255,255,.15)] dark:shadow-[0_1px_0_rgba(255,255,255,.06)]"
         >
           <div className="overflow-hidden rounded-[calc(theme(borderRadius.3xl)-1px)] bg-white dark:bg-neutral-950">
-            {/* Hero strip */}
             <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-fuchsia-600 to-cyan-500 p-6 sm:p-8 text-white">
               <motion.div
                 className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/10"
@@ -387,7 +367,6 @@ export default function ProfileSettingsPage() {
                 transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
               />
               <div className="relative z-10 flex flex-col items-center gap-6 sm:flex-row sm:items-center">
-                {/* Avatar */}
                 <div className="relative">
                   <motion.div
                     ref={avatarRef}
@@ -419,7 +398,6 @@ export default function ProfileSettingsPage() {
                   )}
                 </div>
 
-                {/* Name + role */}
                 <div className="text-center sm:text-left">
                   <motion.h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight" layout>
                     {profile?.first_name} {profile?.last_name}
@@ -448,9 +426,7 @@ export default function ProfileSettingsPage() {
               />
             </div>
 
-            {/* Form area */}
             <div className="p-5 sm:p-8">
-              {/* Header row */}
               <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h3 className="text-xl font-semibold">Personal Information</h3>
                 <motion.button
@@ -491,7 +467,6 @@ export default function ProfileSettingsPage() {
                 </motion.button>
               </div>
 
-              {/* Success */}
               <AnimatePresence>
                 {success && (
                   <motion.div
@@ -508,7 +483,6 @@ export default function ProfileSettingsPage() {
                 )}
               </AnimatePresence>
 
-              {/* Email notice */}
               <AnimatePresence>
                 {emailVerificationSent && (
                   <motion.div
@@ -525,9 +499,7 @@ export default function ProfileSettingsPage() {
                 )}
               </AnimatePresence>
 
-              {/* Form */}
               <motion.form ref={formRef} className="grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2" layout>
-                {/* Display Name */}
                 <Field
                   label="Display Name"
                   value={formData.name}
@@ -535,7 +507,6 @@ export default function ProfileSettingsPage() {
                   isEditing={isEditing}
                 />
 
-                {/* Username */}
                 <Field
                   label="Username"
                   value={formData.username}
@@ -544,17 +515,12 @@ export default function ProfileSettingsPage() {
                   isEditing={isEditing}
                 />
 
-
-                {/* First Name */}
                 <Field label="First Name" icon={<User />} value={formData.first_name} onChange={(v) => handleInputChange("first_name", v)} isEditing={isEditing} />
 
-                {/* Last Name */}
                 <Field label="Last Name" icon={<User />} value={formData.last_name} onChange={(v) => handleInputChange("last_name", v)} isEditing={isEditing} />
 
-                {/* Artist Name */}
                 <Field label="Artist Name" icon={<File />} value={formData.artist_name} onChange={(v) => handleInputChange("artist_name", v)} isEditing={isEditing} placeholder="Your stage/artist name" />
 
-                {/* Email */}
                 <div className="space-y-2">
                   <Label>
                     <span className="inline-flex items-center gap-2">
@@ -604,7 +570,6 @@ export default function ProfileSettingsPage() {
                   </p>
                 </div>
 
-                {/* Location */}
                 <Field
                   label="Location"
                   icon={<MapMarker />}
@@ -614,7 +579,6 @@ export default function ProfileSettingsPage() {
                   placeholder="Your city, country"
                 />
 
-                {/* Phone */}
                 <Field
                   label="Phone Number"
                   icon={<Phone />}
@@ -631,8 +595,6 @@ export default function ProfileSettingsPage() {
     </div>
   );
 }
-
-/* ------------------------------ UI Bits --------------------------------- */
 
 const Label = ({ children }: { children: React.ReactNode }) => (
   <label className="text-sm font-medium text-neutral-800 dark:text-neutral-200">{children}</label>
@@ -673,7 +635,7 @@ const Field = ({
   onChange,
   isEditing,
   placeholder,
-  hint, // ✅ baru
+  hint, 
 }: {
   label: string;
   icon?: React.ReactNode;
@@ -681,7 +643,7 @@ const Field = ({
   onChange: (v: string) => void;
   isEditing: boolean;
   placeholder?: string;
-  hint?: React.ReactNode; // ✅ baru
+  hint?: React.ReactNode; 
 }) => (
   <div className="space-y-2">
     <Label>

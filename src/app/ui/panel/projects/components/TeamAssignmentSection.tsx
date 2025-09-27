@@ -24,7 +24,6 @@ interface TeamAssignmentSectionProps {
   project: ProjectSummary;
   currentAssignments: CurrentAssignments;
   teamRoleOptions: TeamRoleOptions;
-  /** 🔄 sekarang menerima draft input agar page.tsx bisa jalankan algoritma */
   onSaveAssignments: (draft: CurrentAssignments) => Promise<void>;
   onRemoveAssignment: (role: StaffRole) => Promise<void>;
 }
@@ -38,7 +37,7 @@ interface TeamAssignmentFieldProps {
   index: number;
   role: StaffRole;
   onRemove: (role: StaffRole) => Promise<void>;
-  disabled?: boolean; // <— NEW
+  disabled?: boolean; 
 }
 
 
@@ -100,7 +99,7 @@ function TeamAssignmentField({
   index,
   role,
   onRemove,
-  disabled = false, // <— NEW
+  disabled = false, 
 }: TeamAssignmentFieldProps) {
 
   const [open, setOpen] = useState<boolean>(false);
@@ -148,7 +147,7 @@ function TeamAssignmentField({
         }}
         onKeyDown={(e) => { if (e.key === "Escape") setOpen(false); }}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        disabled={disabled}                                  // <— NEW
+        disabled={disabled} 
         className={
           "w-full rounded-xl border px-4 py-3 text-sm font-medium transition-all shadow-sm " +
           "border-blue-200 dark:border-blue-700 bg-white/80 dark:bg-gray-800/80 " +
@@ -211,7 +210,6 @@ export default function TeamAssignmentSection({
   const getAvailableTeamOptions = useCallback(
     (role: keyof TeamRoleOptions): TeamMember[] => {
       const all = teamRoleOptions[role] ?? [];
-      // biarkan pilihan penuh (filter & uniq ditangani algoritma saat save)
       return all;
     },
     [teamRoleOptions]
@@ -235,7 +233,6 @@ export default function TeamAssignmentSection({
   return (
     <motion.div className="grid grid-cols-1 gap-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
       <AnimatedCard title="👥 Team Assignment" className="w-full" gradient>
-        {/* Current Assignments */}
         <motion.div
           className="mb-6 p-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl border border-blue-200 dark:border-blue-700/50 shadow-lg"
           initial={{ opacity: 0, y: -10 }}
@@ -265,9 +262,6 @@ export default function TeamAssignmentSection({
                 transition={{ delay: 0.4 + index * 0.1 }}
                 whileHover={assignment.value ? { scale: 1.03 } : {}}
               >
-                {/* <span className="inline-block w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 dark:from-blue-900 dark:to-purple-900 flex items-center justify-center text-base font-bold text-white shadow-md">
-                  {assignment.value ? assignment.value.split(" ").map((n) => n[0]).join("") : "?"}
-                </span> */}
                 <div className="flex-1">
                   <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1 flex items-center gap-1">
                     <span className="inline-block px-2 py-1 rounded-lg bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 text-xs font-bold text-blue-700 dark:text-blue-300 shadow-sm">
@@ -293,7 +287,6 @@ export default function TeamAssignmentSection({
           </div>
         </motion.div>
 
-        {/* Assignment Form */}
         <motion.div className="grid grid-cols-2 gap-4 text-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
           <div className="col-span-2 mb-2">
             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-2">✏️ Assign New Team Members</h4>

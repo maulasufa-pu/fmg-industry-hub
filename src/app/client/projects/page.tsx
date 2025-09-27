@@ -18,7 +18,6 @@ const VIEW = "project_summary";
 const QUERY_COLS =
   "project_id,title,status,stage,updated_at,client_id,artist_name,genre,progress_percent,composer_id,producer_id,anr_id,engineer_id,publisher_id,client_first_name,client_last_name";
 
-// Function to fetch assignment names for projects
 const fetchAssignmentNames = async (supabase: any, projectIds: string[]) => {
   if (projectIds.length === 0) return {};
 
@@ -112,48 +111,39 @@ export default function ClientProjectsPage(): React.ReactElement {
     };
   }, [supabase]);
 
-  // ---------- tabs (client-only) ----------
   const validTabs: TabKey[] = ["All", "Active", "Finished", "Pending"]; // client tidak punya Unassigned/Requested
   const initialTabRaw = (params.get("tab") as TabKey) || "All";
   const initialTab: TabKey = validTabs.includes(initialTabRaw) ? initialTabRaw : "All";
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
 
-  // ---------- filters ----------
   const [search, setSearch] = useState("");
   const [filterPIC, setFilterPIC] = useState<PicOption>("any");
   const [filterStage, setFilterStage] = useState<StageOption>("any");
   const [filterStatus, setFilterStatus] = useState<StatusOption>("any");
 
-  // debounce search
   const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
     return () => window.clearTimeout(t);
   }, [search]);
 
-  // ---------- paging ----------
   const [pageSize] = useState(20);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
-  // ---------- data ----------
   const [rows, setRows] = useState<ProjectRow[]>([]);
   const [tabCounts, setTabCounts] = useState<Record<TabKey, number | null>>({
     All: null, Active: null, Finished: null, Pending: null,
-    // keys not used but kept available for type compatibility:
-    Unassigned: 0, // hidden in ProjectList for client
+    Unassigned: 0, 
     Requested: 0,
   });
 
-  // filter options
   const [picOptions, setPicOptions] = useState<PicOption[]>(["any"]);
   const [stageOptions, setStageOptions] = useState<StageOption[]>(["any"]);
   const [statusOptions, setStatusOptions] = useState<StatusOption[]>(["any"]);
 
-  // ui state
   const [loadingInitial, setLoadingInitial] = useState(true);
 
-  // SIMPLE COUNTS - client scope
   const fetchCounts = useCallback(async () => {
     if (!myId) {
       return { All: 0, Active: 0, Finished: 0, Pending: 0, Unassigned: 0, Requested: 0 };
@@ -180,7 +170,6 @@ export default function ClientProjectsPage(): React.ReactElement {
     }
   }, [supabase, myId]);
 
-  // SIMPLE DATA FETCH - client scope
   const fetchPage = useCallback(async (tab: TabKey, pageNum: number) => {
     try {
       if (!myId) {
@@ -194,18 +183,15 @@ export default function ClientProjectsPage(): React.ReactElement {
 
       let query = supabase.from(VIEW).select(QUERY_COLS, { count: "estimated" }).eq("client_id", myId);
 
-      // Apply tab filter (client doesn't use Unassigned/Requested)
       if (tab === "Active") query = query.eq("status", "in_progress");
       else if (tab === "Finished") query = query.in("status", ["completed", "finished"]);
       else if (tab === "Pending") query = query.in("status", ["pending", "on_hold"]);
 
-      // Apply search
       if (debouncedSearch) {
         const like = `%${debouncedSearch}%`;
         query = query.or(`title.ilike.${like},artist_name.ilike.${like}`);
       }
 
-      // Apply filters
       if (filterStage !== "any") query = query.eq("stage", filterStage);
       if (filterStatus !== "any") query = query.eq("status", filterStatus);
 
@@ -217,7 +203,6 @@ export default function ClientProjectsPage(): React.ReactElement {
 
       const projectIds = (data ?? []).map(r => r.project_id);
 
-      // Fetch assignment names for these projects
       const assignmentNames = await fetchAssignmentNames(supabase, projectIds);
 
       const mapped: ProjectRow[] = (data ?? []).map((r: DbProjectSummary) => {
@@ -257,19 +242,16 @@ export default function ClientProjectsPage(): React.ReactElement {
     }
   }, [supabase, pageSize, debouncedSearch, filterStage, filterStatus, myId]);
 
-  // Load counts when ready
   useEffect(() => {
     if (!roleReady) return;
     fetchCounts().then(setTabCounts);
   }, [fetchCounts, roleReady]);
 
-  // Load data when ready / filters change
   useEffect(() => {
     if (!roleReady) return;
     fetchPage(activeTab, page);
   }, [fetchPage, activeTab, page, roleReady]);
 
-  // Load filter options (client scope)
   useEffect(() => {
     const loadOptions = async () => {
       try {
@@ -281,7 +263,7 @@ export default function ClientProjectsPage(): React.ReactElement {
         const { data } = await supabase.from(VIEW).select("stage,status").eq("client_id", myId);
         const stages = [...new Set((data || []).map(r => r.stage).filter(Boolean))];
         const statuses = [...new Set((data || []).map(r => r.status).filter(Boolean))];
-        setPicOptions(["any"]); // PIC filtering still off
+        setPicOptions(["any"]); 
         setStageOptions(["any", ...stages]);
         setStatusOptions(["any", ...statuses]);
       } catch (err) {
@@ -291,7 +273,6 @@ export default function ClientProjectsPage(): React.ReactElement {
     loadOptions();
   }, [supabase, myId]);
 
-  // Tab change -> client route
   const handleTabChange = (tab: TabKey) => {
     setActiveTab(tab);
     setPage(1);
@@ -307,25 +288,15 @@ export default function ClientProjectsPage(): React.ReactElement {
   };
 
   const handleBulkAssignPIC = async (ids: string[], pic: string | null) => {
-    // Client biasanya tidak assign PIC — biarkan no-op/log
     console.log("Client bulk assign PIC (ignored):", ids, pic);
   };
 
   const handleBulkMarkFinished = async (ids: string[]) => {
-    // Client biasanya tidak mark finished — biarkan no-op/log
     console.log("Client bulk mark finished (ignored):", ids);
   };
 
-  // (Opsional) Jika mau hard-guard: non-client diarahkan ke admin
-  // useEffect(() => {
-  //   if (roleReady && role !== "client") {
-  //     router.replace("/admin/projects");
-  //   }
-  // }, [role, roleReady, router]);
-
   return (
     <div className="flex flex-col gap-6">
-      {/* POPUP Request New Project */}
       <ProjectList
         rows={rows}
         counts={tabCounts}

@@ -13,7 +13,6 @@ import {
   Link2, RefreshCw, ExternalLink, Wallet, AlertTriangle
 } from "lucide-react";
 
-/** ---------- Types ---------- **/
 type InvoiceStatus = "draft" | "unpaid" | "paid" | "cancelled";
 
 type InvoiceRow = {
@@ -52,7 +51,6 @@ declare global {
   interface Window { snap?: { pay: (token: string, options?: Record<string, unknown>) => void }; }
 }
 
-/** ---------- Midtrans Snap loader ---------- **/
 function useSnapLoader(clientKey: string | undefined, isProduction: boolean) {
   useEffect(() => {
     if (!clientKey) return;
@@ -73,7 +71,6 @@ function useSnapLoader(clientKey: string | undefined, isProduction: boolean) {
   }, [clientKey, isProduction]);
 }
 
-/** ---------- FMG-styled primitives ---------- **/
 const PillTab = ({ children, active=false, onClick }:{
   children: React.ReactNode; active?: boolean; onClick?: () => void;
 }) => (
@@ -173,7 +170,6 @@ const EmptyState = ({ isAdmin, onNew }: { isAdmin: boolean; onNew: () => void })
   </div>
 );
 
-/** ---------- Mobile components ---------- **/
 const StatusPill: React.FC<{ status: InvoiceStatus; overdue: boolean }> = ({ status, overdue }) => {
   const label = overdue && status === "unpaid" ? "overdue" : status;
   const className =
@@ -202,7 +198,6 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
 
   return (
     <li className="rounded-2xl border border-white/10 bg-neutral-900/60 backdrop-blur p-4 shadow">
-      {/* Baris 1: Invoice & Amount */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <Link
@@ -221,7 +216,6 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
         </div>
       </div>
 
-      {/* Baris 2: Status & tanggal */}
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-white/80">
         <StatusPill status={r.status} overdue={overdue} />
         <span className="opacity-60">•</span>
@@ -230,7 +224,6 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
         <span>Due: {r.due_date ? new Date(r.due_date).toLocaleDateString("id-ID") : "-"}</span>
       </div>
 
-      {/* Baris 3: Items ringkas */}
       <div className="mt-3 text-xs">
         {items.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
@@ -250,7 +243,6 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
         )}
       </div>
 
-      {/* Baris 4: Actions mobile-friendly */}
       <div className="mt-4 flex flex-wrap justify-end gap-2">
         {r.payment_url ? (
           <a
@@ -298,7 +290,6 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
   );
 };
 
-/** ---------- Page ---------- **/
 export default function InvoicesPage(): React.JSX.Element {
   const sb = useMemo(() => getSupabaseClient(), []);
   const [loading, setLoading] = useState(true);
@@ -321,7 +312,6 @@ export default function InvoicesPage(): React.JSX.Element {
   const MIDTRANS_IS_PRODUCTION = (process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION ?? "false") === "true";
   useSnapLoader(MIDTRANS_CLIENT_KEY, MIDTRANS_IS_PRODUCTION);
 
-  /** auth & role **/
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -343,7 +333,6 @@ export default function InvoicesPage(): React.JSX.Element {
     return () => { cancelled = true; };
   }, [sb]);
 
-  /** load data **/
   const load = async (): Promise<void> => {
     if (!authReady) return;
     setLoading(true);
@@ -388,7 +377,6 @@ export default function InvoicesPage(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sb, authReady, isAdmin, me?.id, tab, q]);
 
-  /** actions **/
   const markPaid = async (id: string): Promise<void> => {
     if (!isAdmin) return;
     setBusy({ id, type: "mark" });
@@ -476,16 +464,12 @@ export default function InvoicesPage(): React.JSX.Element {
 
   return (
     <div className="relative min-h-screen p-4 sm:p-6 bg-neutral-950 text-white overflow-hidden">
-      {/* luminous background */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-32 -left-28 h-[40rem] w-[40rem] rounded-full bg-gradient-to-br from-indigo-600/20 via-fuchsia-500/15 to-sky-500/10 blur-3xl" />
         <div className="absolute -bottom-40 -right-32 h-[36rem] w-[36rem] rounded-full bg-gradient-to-tr from-emerald-500/20 via-teal-400/15 to-cyan-400/10 blur-3xl" />
       </div>
 
-      {/* ⬅️ Rata kiri & full width */}
-      {/* ⬅️ Left align & full width */}
       <div className="w-full max-w-none space-y-6">
-        {/* Header / Stats */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -507,7 +491,6 @@ export default function InvoicesPage(): React.JSX.Element {
                   </p>
                 </div>
 
-                {/* Quick stats */}
                 <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full sm:w-auto">
                   {[
                     {
@@ -540,7 +523,6 @@ export default function InvoicesPage(): React.JSX.Element {
               </div>
             </div>
 
-            {/* sticky toolbar */}
             <div className="sticky top-0 z-10 border-t border-white/10 bg-neutral-900/60 backdrop-blur rounded-b-[27px]">
               <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-wrap gap-2">
@@ -581,14 +563,12 @@ export default function InvoicesPage(): React.JSX.Element {
           </div>
         </motion.div>
 
-        {/* Table / Empty / Loading */}
         {loading ? (
           <SkeletonTable />
         ) : rows.length === 0 ? (
           <EmptyState isAdmin={isAdmin} onNew={() => setOpenNew(true)} />
         ) : (
           <>
-            {/* Desktop & large tablets: TABLE */}
             <motion.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
@@ -715,7 +695,6 @@ export default function InvoicesPage(): React.JSX.Element {
               </div>
             </motion.div>
 
-            {/* Mobile & small tablets: CARD LIST */}
             <motion.ul
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
@@ -739,7 +718,6 @@ export default function InvoicesPage(): React.JSX.Element {
           </>
         )}
 
-        {/* New Invoice Dialog */}
         {isAdmin && openNew && (
           <NewInvoiceDialog
             onClose={() => setOpenNew(false)}
@@ -748,7 +726,6 @@ export default function InvoicesPage(): React.JSX.Element {
         )}
       </div>
 
-      {/* FAB admin (mobile) */}
       {isAdmin && (
         <button
           onClick={() => setOpenNew(true)}

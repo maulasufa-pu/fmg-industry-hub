@@ -16,11 +16,9 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Use service role untuk bypass RLS
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     if (roleType === 'main_role') {
-      // Update global role
       const { error } = await supabase
         .from("profiles")
         .update({ main_role: role })
@@ -36,7 +34,6 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ success: true });
     } else if (roleType === 'staff_role') {
-      // Update staff role array
       const { data: currentProfile, error: fetchError } = await supabase
         .from("profiles")
         .select("staff_role")
@@ -58,12 +55,10 @@ export async function POST(request: Request) {
 
       let updatedRoles;
       if (isAdd) {
-        // Add role if not already present
         updatedRoles = currentRoles.includes(role) 
           ? currentRoles 
           : [...currentRoles, role];
       } else {
-        // Remove role
         updatedRoles = currentRoles.filter((r: string) => r !== role);
       }
 

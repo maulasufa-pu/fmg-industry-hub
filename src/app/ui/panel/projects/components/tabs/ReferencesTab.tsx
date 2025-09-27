@@ -11,7 +11,6 @@ interface ReferencesTabProps {
   setLinks: React.Dispatch<React.SetStateAction<ReferenceLinkRow[] | null>>;
 }
 
-/* ---------------- Utilities ---------------- */
 const normalizeUrl = (raw: string): string => {
   const trimmed = raw.trim();
   if (!trimmed) return trimmed;
@@ -66,7 +65,6 @@ const renderEmbed = (rawUrl: string): React.JSX.Element | null => {
       </div>
     );
   }
-  // Spotify
   if (host.endsWith("spotify.com") || host.endsWith("open.spotify.com")) {
     const parts = u.pathname.split("/").filter(Boolean);
     const candidate = (parts[0] ?? "") as SpotifyType;
@@ -79,12 +77,10 @@ const renderEmbed = (rawUrl: string): React.JSX.Element | null => {
       return <iframe src={src} className="w-full rounded-xl border border-gray-200 dark:border-gray-700" height={height} loading="lazy" title="Spotify embed" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" />;
     }
   }
-  // SoundCloud
   if (host.endsWith("soundcloud.com")) {
     const src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(u.toString())}&auto_play=false`;
     return <iframe src={src} className="w-full rounded-xl" height={166} loading="lazy" title="SoundCloud embed" allow="autoplay" />;
   }
-  // Vimeo
   if (host === "vimeo.com" || host === "player.vimeo.com") {
     const seg = u.pathname.split("/").filter(Boolean);
     const id = seg.find((s) => /^\d+$/.test(s));
@@ -97,7 +93,6 @@ const renderEmbed = (rawUrl: string): React.JSX.Element | null => {
       );
     }
   }
-  // Apple Music
   if (host.endsWith("music.apple.com")) {
     const src = `https://embed.music.apple.com${u.pathname}${u.search}`;
     return (
@@ -115,7 +110,6 @@ const renderEmbed = (rawUrl: string): React.JSX.Element | null => {
   return null;
 };
 
-/* ---------------- Child: ReferenceItem (simple, no motion) ---------------- */
 const ReferenceItem = memo(function ReferenceItem({
   row,
   onDelete,
@@ -132,12 +126,10 @@ const ReferenceItem = memo(function ReferenceItem({
   const [saving, setSaving] = useState(false);
   const textRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // Sync from server only when not editing
   useEffect(() => {
     if (!isEditing) setLocalNote(row.note ?? "");
   }, [row.note, isEditing]);
 
-  // Focus when entering edit mode once
   useEffect(() => {
     if (isEditing) {
       const t = setTimeout(() => {
@@ -156,14 +148,12 @@ const ReferenceItem = memo(function ReferenceItem({
 
   return (
     <li className="rounded-xl">
-      {/* Date */}
       <div className="mb-2 text-xs text-gray-500 dark:text-gray-400">
         <span className="bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-lg">
           {row.created_at ? new Date(row.created_at).toLocaleString("en-US") : ""}
         </span>
       </div>
 
-      {/* Embed plus action overlay */}
       <div className="group relative">
         <div className="absolute top-2 right-2 z-10 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition">
           {deleting ? (
@@ -207,7 +197,6 @@ const ReferenceItem = memo(function ReferenceItem({
         </div>
       </div>
 
-      {/* Note viewer or editor */}
       <div className="mt-3">
         {isEditing ? (
           <div className="space-y-2">
@@ -247,7 +236,6 @@ const ReferenceItem = memo(function ReferenceItem({
   );
 });
 
-/* ---------------- Parent ---------------- */
 export default function ReferencesTab(
   { project, links, setLinks }: ReferencesTabProps
 ): React.JSX.Element {
@@ -256,7 +244,6 @@ export default function ReferencesTab(
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState<Record<string, boolean>>({});
 
-  // Fetch plus realtime
   useEffect(() => {
     let cancelled = false;
     const fetchLinks = async () => {
@@ -311,7 +298,6 @@ export default function ReferencesTab(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.project_id, supabase]);
 
-  // Sorted
   const renderLinks = useMemo<ReferenceLinkRow[]>(() => {
     if (links === null) return [];
     const arr = links.slice();
@@ -323,7 +309,6 @@ export default function ReferencesTab(
     return arr;
   }, [links]);
 
-  // Add
   const addReference = useCallback(async (url: string, note: string) => {
     const normalized = normalizeUrl(url);
     if (!isValidHttpUrl(normalized)) { alert("Invalid URL."); return; }
@@ -352,7 +337,6 @@ export default function ReferencesTab(
     }
   }, [project.project_id, setLinks, supabase]);
 
-  // Delete
   const handleDeleteReference = useCallback(async (id: string) => {
     setDeleting((d) => ({ ...d, [id]: true }));
     let backup: ReferenceLinkRow[] | null = null;
@@ -369,7 +353,6 @@ export default function ReferencesTab(
     }
   }, [project.project_id, setLinks, supabase]);
 
-  // Save note
   const handleSaveNote = useCallback(async (id: string, value: string) => {
     const { data, error } = await supabase
       .from("reference_links")
@@ -382,7 +365,6 @@ export default function ReferencesTab(
     setLinks((prev) => (prev ? prev.map((r) => (r.id === id ? (data as ReferenceLinkRow) : r)) : prev));
   }, [project.project_id, setLinks, supabase]);
 
-  // Add tile state local with safe focus
   const AddReferenceTile = React.memo(function AddReferenceTile({
     onAdd,
   }: { onAdd: (url: string, note: string) => Promise<void> | void; }) {
@@ -472,7 +454,6 @@ export default function ReferencesTab(
     );
   });
 
-  // >>>>>>>>>>>>>>>>>>>> RETURN JSX <<<<<<<<<<<<<<<<<<<<
   return (
     <div className="relative grid grid-cols-1 gap-6 lg:grid-cols-2">
       <section className="relative overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl dark:shadow-gray-800/25 bg-white dark:bg-gray-900 col-span-1 lg:col-span-2">

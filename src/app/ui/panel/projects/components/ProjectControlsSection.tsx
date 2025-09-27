@@ -12,7 +12,7 @@ interface Tab {
   key: TabKey;
   label: string;
   icon: string;
-  color: string;              // tailwind gradient stops, e.g. "from-blue-500 to-indigo-600"
+  color: string;              
   accessRule: readonly string[];
 }
 
@@ -45,7 +45,6 @@ export default function ProjectControlsSection({
   setActiveTab,
   children,
 }: ProjectControlsSectionProps) {
-  // role efektif dari user (client/admin/anr/..)
   const [roleStatus, setRoleStatus] = useState<UserRole>("guest");
 
   useEffect(() => {
@@ -61,7 +60,6 @@ export default function ProjectControlsSection({
     return () => { mounted = false; };
   }, []);
 
-  // Refs untuk kontrol scroll
   const contentRef = useRef<HTMLDivElement | null>(null);
   const shouldScrollRef = useRef(false);
   const tabBtnRefs = useRef<Record<TabKey, HTMLButtonElement | null>>({
@@ -73,7 +71,6 @@ export default function ProjectControlsSection({
     publishing: null,
   });
 
-  // Scroll hanya saat flag diset oleh user click
   useEffect(() => {
     if (!shouldScrollRef.current) return;
     shouldScrollRef.current = false;
@@ -91,7 +88,6 @@ export default function ProjectControlsSection({
     btn?.scrollIntoView?.({ behavior: "smooth", inline: "center", block: "nearest" });
   }, [activeTab]);
 
-  // Client: tampilkan SEMUA tab. Admin/Staff: filter pakai ACCESS_RULES.
   const availableTabs = useMemo(() => {
     if (!userAccess) return [];
     const isClient = userAccess.main_role === "client";
@@ -100,12 +96,10 @@ export default function ProjectControlsSection({
 
   if (availableTabs.length === 0) return null;
 
-  // Validasi activeTab terhadap akses
   const validActiveTab =
     availableTabs.find((t) => t.key === activeTab)?.key ?? availableTabs[0].key;
 
   if (validActiveTab !== activeTab) {
-    // perubahan ini bukan dari user click, jangan autoscroll
     setActiveTab(validActiveTab);
   }
 
@@ -113,17 +107,15 @@ export default function ProjectControlsSection({
     if (key === activeTab) return;
     shouldScrollRef.current = true;
 
-    // broadcast event dengan role efektif
     try {
       window.dispatchEvent(new CustomEvent("project:tab_click", {
         detail: { tab: key, role: roleStatus },
       }));
-    } catch { /* no-op */ }
+    } catch { }
 
     setActiveTab(key);
   };
 
-  // inject roleStatus ke konten tab aktif
   const content =
     React.isValidElement(children)
       ? React.cloneElement(children as React.ReactElement<any>, {
@@ -140,7 +132,6 @@ export default function ProjectControlsSection({
       transition={{ delay: 0.4 }}
     >
       <div className="backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 rounded-t-2xl border border-white/30 dark:border-slate-700/30 shadow-xl p-4">
-        {/* Tab Navigation */}
         <div className="relative">
           <div className="pointer-events-none absolute left-0 top-0 h-full w-8 z-20 bg-gradient-to-r from-white/80 dark:from-slate-900/80 to-transparent" />
           <div className="pointer-events-none absolute right-0 top-0 h-full w-8 z-20 bg-gradient-to-l from-white/80 dark:from-slate-900/80 to-transparent" />
@@ -201,7 +192,6 @@ export default function ProjectControlsSection({
                         animate={{ opacity: 1, scaleX: 1 }}
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                       />
-                      {/* subtle glow */}
                       <motion.div
                         className="absolute inset-0 rounded-2xl opacity-30"
                         style={{
@@ -230,7 +220,6 @@ export default function ProjectControlsSection({
           </motion.div>
         </div>
 
-        {/* Area konten tab */}
         <motion.div
           ref={contentRef}
           className="mt-6 min-h-[400px]"

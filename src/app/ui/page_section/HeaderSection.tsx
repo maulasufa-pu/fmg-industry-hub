@@ -28,9 +28,6 @@ import { useProfile } from "@/hooks/useProfile";
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
 import Portal from "@/components/ui/Portal";
 
-/*********************************
- * Types & Menu Data
- *********************************/
 type MenuItem = {
   label: string;
   href: string;
@@ -54,7 +51,6 @@ const MENU: readonly MenuItem[] = [
   { label: "Event & Festival", href: "/event", desc: "Showcases, tours, venue & brand collabs.", Icon: PartyPopper },
 ];
 
-// FMG UNIVERSE quick links (tombol ringkas)
 const UNIVERSE: readonly UniverseItem[] = [
   { label: "Overview", href: "/about", Icon: LayoutDashboard },
   { label: "About", href: "/about", Icon: Info },
@@ -63,10 +59,6 @@ const UNIVERSE: readonly UniverseItem[] = [
   { label: "Contact", href: "/contact", Icon: Mail },
 ];
 
-/*********************************
- * Animations
- *********************************/
-// Desktop mega panel
 const panel: Variants = {
   hidden: { opacity: 0, y: -10, scale: 0.985 },
   show: {
@@ -100,7 +92,6 @@ const item: Variants = {
   },
 };
 
-// Mobile overlay & sheet
 const overlayVariants: Variants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] } },
@@ -125,9 +116,9 @@ type BrandLockupProps = {
   title: string;
   subtitle: string;
   className?: string;
-  subtitleBasePx?: number; // default 14
-  subtitleMinPx?: number; // default 10
-  subtitleMaxPx?: number; // default 48
+  subtitleBasePx?: number; 
+  subtitleMinPx?: number; 
+  subtitleMaxPx?: number; 
 };
 
 export function BrandLockup({
@@ -207,9 +198,6 @@ export function BrandLockup({
   );
 }
 
-/*********************************
- * Component
- *********************************/
 export const HeaderSection = (): React.JSX.Element => {
   const [open, setOpen] = React.useState(false); // desktop mega menu
   const [focusIndex, setFocusIndex] = React.useState<number>(-1);
@@ -414,9 +402,7 @@ export const HeaderSection = (): React.JSX.Element => {
       "
       >
         <div className="relative mx-auto h-16 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* ===== MOBILE HEADER (≤ sm) ===== */}
           <div className="relative flex h-16 items-center min-[1028px]:hidden">
-            {/* LEFT: Menu + ThemeToggle */}
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -435,7 +421,6 @@ export const HeaderSection = (): React.JSX.Element => {
               />
             </div>
 
-            {/* CENTER: Brand */}
             <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1">
               <Image
                 src="/logo/FMG-Universe-Flemmo-Music-Global.png"
@@ -447,7 +432,6 @@ export const HeaderSection = (): React.JSX.Element => {
               />
             </Link>
 
-            {/* RIGHT: Avatar */}
             <button
               ref={mobileProfileButtonRef}
               onClick={handleProfileClick}
@@ -464,9 +448,7 @@ export const HeaderSection = (): React.JSX.Element => {
             </button>
           </div>
 
-          {/* ===== DESKTOP HEADER (≥ sm) ===== */}
           <div className="hidden h-16 items-center min-[1028px]:flex">
-            {/* Left: Brand */}
             <Link href="/" className="flex items-center gap-1.5 font-semibold">
               <Image
                 src="/logo/FMG-Universe-Flemmo-Music-Global.png"
@@ -485,7 +467,6 @@ export const HeaderSection = (): React.JSX.Element => {
               />
             </Link>
 
-            {/* Center: Nav (desktop only) */}
             <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 min-[1028px]:flex items-center gap-6 text-sm z-10">
               <Link href="/#about" className="opacity-80 hover:opacity-100">
                 About
@@ -497,7 +478,6 @@ export const HeaderSection = (): React.JSX.Element => {
                 Packages
               </Link>
 
-              {/* Desktop Mega Menu */}
               <div className="relative" ref={menuRef}>
                 <button
                   ref={triggerRef}
@@ -543,9 +523,7 @@ export const HeaderSection = (): React.JSX.Element => {
                       transform-gpu frost-solid w-[520px] max-w-[calc(100vw-1rem)]
                     "
                     >
-                      {/* CONTENT */}
                       <div className="relative z-10 p-2">
-                        {/* === FMG UNIVERSE: Quick Links (simetris & ringkas) === */}
                         <div className="mb-2 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-950 p-3">
                           <div className="mb-2 flex items-center justify-between">
                             <span className="text-[12px] uppercase tracking-wide text-neutral-600 dark:text-neutral-300">
@@ -582,7 +560,6 @@ export const HeaderSection = (): React.JSX.Element => {
                           </div>
                         </div>
 
-                        {/* === Sections (kartu berdeskripsi) === */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                           {MENU.map((m, idx) => (
                             <motion.div key={m.label} variants={item} style={{ willChange: "transform, opacity" }}>
@@ -659,7 +636,6 @@ export const HeaderSection = (): React.JSX.Element => {
               </div>
             </div>
 
-            {/* Right: CTA + Theme + Profile */}
             <div className="ml-auto hidden items-center gap-4 min-[1028px]:flex">
               <Link
                 href="/client/dashboard"
@@ -701,7 +677,6 @@ export const HeaderSection = (): React.JSX.Element => {
             </div>
           </div>
 
-          {/* Shared Portal for UserDropdown */}
           {showUserMenu && (
             <Portal>
               <div
@@ -719,7 +694,6 @@ export const HeaderSection = (): React.JSX.Element => {
           )}
         </div>
 
-        {/* Mobile overlay + sheet */}
         <AnimatePresence>
           {mobileOpen && (
             <>
@@ -752,7 +726,6 @@ export const HeaderSection = (): React.JSX.Element => {
                 bg-white dark:bg-black backdrop-blur-xl transform-gpu frost-solid w-[520px] max-w-[calc(100vw-1rem)]
               "
               >
-                {/* TOP CAP */}
                 <div className="sticky top-0 inset-x-0 z-10 bg-white dark:bg-black">
                   <div
                     className="flex items-center justify-start px-2 pb-2 "
@@ -773,9 +746,7 @@ export const HeaderSection = (): React.JSX.Element => {
                   </div>
                 </div>
 
-                {/* KONTEN MENU */}
                 <div className="px-4 pt-2 pb-6">
-                  {/* === FMG UNIVERSE (mobile) === */}
                   <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-950 p-3">
                     <div className="mb-2 text-xs uppercase tracking-wide text-neutral-600 dark:text-neutral-300">
                       FMG Universe
@@ -799,7 +770,6 @@ export const HeaderSection = (): React.JSX.Element => {
                     </div>
                   </div>
 
-                  {/* Top quick links */}
                   <div className="grid grid-cols-3 gap-2 text-sm mt-3">
                     <Link
                       href="/#about"
@@ -824,7 +794,6 @@ export const HeaderSection = (): React.JSX.Element => {
                     </Link>
                   </div>
 
-                  {/* Sections */}
                   <div className="mt-4 divide-y divide-black/5 dark:divide-white/10">
                     <div className="pb-3">
                       <div className="text-xs uppercase tracking-wide text-neutral-600 dark:text-neutral-300 mb-2">
@@ -873,7 +842,6 @@ export const HeaderSection = (): React.JSX.Element => {
                     </div>
                   </div>
 
-                  {/* Tagline */}
                   <div className="mt-4 text-center text-[12.5px] text-neutral-700 dark:text-neutral-300">
                     “Beyond Sound. Built-in Intelligence.”
                   </div>

@@ -10,9 +10,9 @@ import { motion, AnimatePresence } from "framer-motion";
 type CSSVarEq = CSSProperties & { ["--i"]?: number | string };
 
 type Props = {
-  src: string;            // storage path: "projectId/category/file.wav"
+  src: string;           
   title?: string;
-  initialVolume?: number; // 0..1
+  initialVolume?: number; 
 };
 
 const fmt = (s: number) => {
@@ -22,7 +22,6 @@ const fmt = (s: number) => {
   return `${m}:${ss}`;
 };
 
-// ganti type CSSVarStyle
 type CSSVarStyle = CSSProperties & {
   ['--val']?: number | string;
   ['--track-fill']?: string;
@@ -39,7 +38,6 @@ function WaveLoader({ label }: { label?: string }) {
       transition={{ duration: 0.18 }}
     >
       <div className="flex flex-col items-center">
-        {/* equalizer */}
         <div className="flex items-end gap-1.5">
           {Array.from({ length: 5 }).map((_, i) => {
             const st: CSSVarEq = { ["--i"]: i };
@@ -47,7 +45,6 @@ function WaveLoader({ label }: { label?: string }) {
           })}
         </div>
 
-        {/* shimmer line */}
         <div className="mt-3 h-2 w-64 max-w-[80vw] rounded-full loader-track" />
 
         <div className="mt-3 text-[11px] font-medium text-slate-200/90">
@@ -73,7 +70,6 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(initialVolume);
   
-    // state baru
   const [loadingAudio, setLoadingAudio] = useState(false);
   const [loadingPeaks, setLoadingPeaks] = useState(false);
 
@@ -84,8 +80,6 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
     return i === -1 ? { dir: "", name: p } : { dir: p.slice(0, i), name: p.slice(i + 1) };
   };
 
-  
-  // ...di dalam component
   const progress = useMemo(() => (duration > 0 ? time / duration : 0), [time, duration]);
   
   const colors = useMemo(() => ({
@@ -95,17 +89,12 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
     trackBg: "rgba(124,58,237,0.18)",
     trackFill: "rgba(168,85,247,0.95)",
   }), []);
-  
 
-  // 1) Signed URL untuk audio + (jika ada) peaks.json (server-side precompute)
-  // 1) Ganti efek pengambilan URL & peaks: hilangkan .list(), langsung fetch peaks
     useEffect(() => {
     if (!src) return;
     let cancelled = false;
-    // sebelum createSignedUrl audio
     setLoadingAudio(true);
 
-    // 1) AUDIO: langsung sign → play bisa segera
     (async () => {
         const a = await supabase.storage.from("drafts").createSignedUrl(src, 3600);
         if (cancelled) return;
@@ -122,10 +111,8 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
             setLoadingAudio(false);
         return;
         }
-
     })();
 
-    // 2) PEAKS: JANGAN sign dulu. cek exist pakai list + polling ringan
     const { dir, name } = splitPath(src);
     const peaksName = `${name}.peaks.json`;
     let tries = 0;
@@ -154,7 +141,7 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
                 if (arr && arr.length > 32) {
                 setPeaks(arr);
                 setLoadingPeaks(false);
-                return; // stop polling
+                return; 
                 }
             }
             } catch (e) {
@@ -164,15 +151,12 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
         }
 
         if (!cancelled && tries < 8) {
-        // backoff: 1s, 2s, 3s, ... max 4s
         peaksTimerRef.current = window.setTimeout(poll, Math.min(1000 * tries, 4000));
         } else {
         setLoadingPeaks(false);
         }
     };
-
     poll();
-
     return () => {
         cancelled = true;
         if (peaksTimerRef.current) {
@@ -182,10 +166,8 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
     };
     }, [src, supabase]);
 
-
-    // 2) Saat membuat WaveSurfer, pasang handler error & matikan normalize
     useEffect(() => {
-        if (!containerRef.current || wsRef.current) return; // ← guard cukup pakai wsRef
+        if (!containerRef.current || wsRef.current) return; 
 
         const ws = WaveSurfer.create({
             container: containerRef.current!,
@@ -209,7 +191,6 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
             ws.setVolume(volume);
         });
 
-        // kalau decode sukses tapi 'ready' telat, tetap update duration
         ws.on("decode", (d?: number) => {
             const dur = typeof d === "number" ? d : ws.getDuration() || 0;
             if (dur > 0) setDuration(dur);
@@ -228,12 +209,9 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
 
         return () => {
             ws.destroy();
-            wsRef.current = null; // ← penting, agar bisa dibuat lagi setelah remount
+            wsRef.current = null; 
         };
         }, [colors.cursor, colors.progress, colors.wave, volume]);
-
-
-    // 3) Loading audio (tetap sama, tapi sekarang peaks sudah datang tanpa .list())
     useEffect(() => {
     const ws = wsRef.current;
     if (!audioUrl || !ws) return;
@@ -247,7 +225,6 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
     const hasPeaks = Array.isArray(peaks) && peaks.length > 32;
 
     if (hasPeaks) {
-        // ✅ bungkus dalam array
         ws.load(audioUrl, [Float32Array.from(peaks as number[])])
         .catch((e: unknown) => {
             console.error("[WaveSurfer] load error:", e, { audioUrl });
@@ -262,7 +239,6 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
     }
     }, [audioUrl, peaks]);
 
-  // 4) Volume
   useEffect(() => {
     wsRef.current?.setVolume(volume);
   }, [volume]);
@@ -273,7 +249,6 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
     ws.isPlaying() ? ws.pause() : ws.play();
   };
 
-  // sebelum return(...)
     const volumeStyle: CSSVarStyle = {
     '--val': volume,
     '--track-fill': colors.trackFill,
@@ -326,7 +301,6 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
                 )}
                 </AnimatePresence>
 
-                {/* badge kecil saat peaks masih diproses, tapi audio sudah siap */}
                 {ready && loadingPeaks && (
                 <motion.div
                     className="pointer-events-none absolute -top-1.5 right-0 rounded-full border border-violet-400/30 bg-violet-600/20 px-2 py-0.5 text-[10px] text-violet-100 shadow"
@@ -341,7 +315,6 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
             </div>
         </div>
 
-        {/* Volume (dengan bekas ungu) */}
         <div className="flex w-28 items-center gap-2">
             <svg width="18" height="18" viewBox="0 0 24 24" className="text-slate-400" aria-hidden="true">
                 <path fill="currentColor" d="M5 10v4h3l4 4V6l-4 4H5zm9.5 2a4.5 4.5 0 0 0-2.5-4.03v8.06A4.5 4.5 0 0 0 14.5 12zm0-7.5v3a7.5 7.5 0 0 1 0 9v3a10.5 10.5 0 0 0 0-15z"/>

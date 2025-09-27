@@ -1,4 +1,3 @@
-// Simple layout wrapper - page.tsx handles the main project content
 export default function AdminProjectDetailLayout({
   children,
 }: {

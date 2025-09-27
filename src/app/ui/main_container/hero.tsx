@@ -7,7 +7,6 @@ import { motion, useAnimation, Variants, useMotionValue, useSpring, useTransform
 import { Sparkles, PlayCircle } from "lucide-react";
 import CinematicVideoHeroHLS from "@/components/CinematicVideoHeroHLS";
 
-// ----- Animations -----
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 24 },
   visible: (i: number = 0) => ({
@@ -17,7 +16,6 @@ const fadeUp: Variants = {
   }),
 };
 
-// Garis bawah dinamis di bawah headline
 function KineticUnderline(): React.JSX.Element {
   return (
     <span className="relative mt-3 block h-[3px] w-[220px] max-w-[60vw] overflow-hidden rounded-full bg-black/10 dark:bg-white/15">
@@ -33,7 +31,6 @@ function KineticUnderline(): React.JSX.Element {
   );
 }
 
-// Layer art sinematik di belakang judul (ring & flare monokrom)
 function TitleArtLayer(): React.JSX.Element {
   const mx = useMotionValue(0.5);
   const my = useMotionValue(0.5);
@@ -56,18 +53,15 @@ function TitleArtLayer(): React.JSX.Element {
       className="pointer-events-none relative -z-10 mx-auto mt-2 h-28 w-full max-w-3xl"
       aria-hidden="true"
     >
-      {/* Soft rings */}
       <div className="absolute left-1/2 top-1/2 h-24 w-[85%] -translate-x-1/2 -translate-y-1/2 rounded-full ring-1 ring-black/10 dark:ring-white/10" />
       <div className="absolute left-1/2 top-1/2 h-[88px] w-[65%] -translate-x-1/2 -translate-y-1/2 rounded-full ring-1 ring-black/10 dark:ring-white/10" />
       <div className="absolute left-1/2 top-1/2 h-16 w-[45%] -translate-x-1/2 -translate-y-1/2 rounded-full ring-1 ring-black/10 dark:ring-white/10" />
 
-      {/* Subtle flare */}
       <div className="absolute inset-0 rounded-[20px] bg-[radial-gradient(500px_120px_at_50%_60%,rgba(255,255,255,0.12),transparent)] dark:bg-[radial-gradient(500px_120px_at_50%_60%,rgba(255,255,255,0.10),transparent)]" />
     </motion.div>
   );
 }
 
-// NOTE: Ganti komponen ini sesuai path util kamu jika sudah ada.
 function SplitHeadline({ text }: { text: string }): React.JSX.Element {
   return (
     <h1 className="text-center text-3xl font-extrabold leading-tight tracking-tight text-black dark:text-white sm:text-4xl md:text-5xl">
@@ -76,7 +70,6 @@ function SplitHeadline({ text }: { text: string }): React.JSX.Element {
   );
 }
 
-// NOTE: Ganti dengan komponen button milikmu (MagneticButton) bila ada.
 function PrimaryButton({ href, children }: { href: string; children: React.ReactNode }): React.JSX.Element {
   return (
     <Link
@@ -94,12 +87,10 @@ export default function Hero(): React.JSX.Element {
 
   return (
     <section className="relative overflow-hidden pt-12 sm:pt-14">
-      {/* Background halus (no purple glow) */}
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(900px_400px_at_50%_-120px,rgba(0,0,0,0.06),transparent)] dark:bg-[radial-gradient(900px_400px_at_50%_-120px,rgba(255,255,255,0.06),transparent)]" />
 
       <motion.div initial="hidden" animate={controls} className="mx-auto max-w-6xl px-4">
         <div className="flex flex-col items-center">
-          {/* Badge kecil */}
           <motion.div
             variants={fadeUp}
             className="mb-4 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3 py-1 text-xs shadow-sm backdrop-blur dark:border-white/10 dark:bg-black/40"
@@ -108,7 +99,6 @@ export default function Hero(): React.JSX.Element {
             <span>Build Ecosystem • Spark Innovation • Foster Collaboration</span>
           </motion.div>
 
-          {/* Headline + Underline + Art */}
           <motion.div variants={fadeUp} custom={1} className="w-full">
             <SplitHeadline text="Beyond Sound. Built-in Intelligence." />
             <div className="flex justify-center">
@@ -117,7 +107,6 @@ export default function Hero(): React.JSX.Element {
             <TitleArtLayer />
           </motion.div>
 
-          {/* Deskripsi */}
           <motion.p
             variants={fadeUp}
             custom={2}
@@ -129,9 +118,7 @@ export default function Hero(): React.JSX.Element {
             faster, own rights, grow royalties, and scale catalogs into lasting equity.
           </motion.p>
 
-          {/* CTA */}
           <motion.div variants={fadeUp} custom={3} className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            {/* Ganti dengan <MagneticButton> kalau kamu sudah punya */}
             <PrimaryButton href="/client/dashboard">Start My Project</PrimaryButton>
             <Link
               href="#about"
@@ -141,7 +128,6 @@ export default function Hero(): React.JSX.Element {
             </Link>
           </motion.div>
 
-          {/* Cinematic Video (HLS) */}
           <div className="mt-10 w-full">
             <CinematicVideoHeroHLS
                 shape="rounded"
@@ -155,7 +141,7 @@ export default function Hero(): React.JSX.Element {
                 ctaPrimary={{ label: "Start My Project", href: "/client/dashboard" }}
                 ctaSecondary={{ label: "Free Consultation", href: "https://wa.me/6282298288188" }}
                 credit="Viokichi — You Are Enough"
-                revealDelayMs={3000}  // text appears after 3s
+                revealDelayMs={3000}  
                 />
           </div>
         </div>

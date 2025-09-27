@@ -18,16 +18,6 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-/*************************************************
- * FMG Universe — /legal/dmca
- * Modern, professional legal page with:
- * - Gradient parallax background (reduced‑motion aware)
- * - Sticky Table of Contents with scroll‑spy
- * - Glass cards + subtle borders/shadows
- * - Copyable DMCA notice & counter‑notice templates
- *************************************************/
-
-/* ---------- Theme helpers ---------- */
 function SectionCard({ children, id, title, icon: Icon }: { children: React.ReactNode; id: string; title: string; icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>; }): React.JSX.Element {
   return (
     <section id={id} aria-label={title} className="scroll-mt-24">
@@ -43,7 +33,6 @@ function SectionCard({ children, id, title, icon: Icon }: { children: React.Reac
         <div className="prose prose-neutral max-w-none text-[15px] leading-relaxed dark:prose-invert">
           {children}
         </div>
-        {/* Glow border */}
         <div aria-hidden className="pointer-events-none absolute -inset-[1px] rounded-2xl ring-1 ring-neutral-900/10 dark:ring-white/15" />
       </div>
     </section>
@@ -79,7 +68,6 @@ function GradientBG(): React.JSX.Element {
   );
 }
 
-/* ---------- Scroll spy ---------- */
 function useScrollSpy(ids: string[]): string | null {
   const [active, setActive] = useState<string | null>(null);
   useEffect(() => {
@@ -104,7 +92,6 @@ function useScrollSpy(ids: string[]): string | null {
   return active;
 }
 
-/* ---------- Copy helpers ---------- */
 async function copyText(text: string): Promise<void> {
   try {
     await navigator.clipboard.writeText(text);
@@ -116,12 +103,10 @@ async function copyText(text: string): Promise<void> {
   }
 }
 
-/* ---------- DMCA templates ---------- */
 const NOTICE_TEMPLATE = `Subject: DMCA Takedown Notice\n\nTo FMG Universe Legal Team,\n\nI am the copyright owner or authorized to act on behalf of the owner. I request the removal or disabling of access to the material identified below that is infringing my copyright.\n\n1. Work claimed to be infringed: [Describe the copyrighted work or attach a list.]\n2. Infringing material and its location on FMG services: [Provide URLs and/or detailed description sufficient to locate the material.]\n3. Contact information: [Full name, address, telephone, and email.]\n4. Statements:\n   • I have a good‑faith belief that the use of the material in the manner complained of is not authorized by the copyright owner, its agent, or the law.\n   • The information in this notice is accurate, and under penalty of perjury, I am the owner or authorized to act on behalf of the owner of an exclusive right that is allegedly infringed.\n\n5. Signature: [Type your full name as a digital signature]\n\nDate: [YYYY‑MM‑DD]`;
 
 const COUNTER_TEMPLATE = `Subject: DMCA Counter‑Notification\n\nTo FMG Universe Legal Team,\n\nI am the user who uploaded the material removed or disabled by FMG as a result of a DMCA notice. I believe the material was removed or disabled due to mistake or misidentification. Please restore access to the material identified below.\n\n1. Material removed or to which access has been disabled and its location before removal: [Provide URLs and/or detailed description sufficient to identify the material.]\n2. Contact information: [Full name, address, telephone, and email.]\n3. Statements:\n   • Under penalty of perjury, I have a good‑faith belief that the material was removed or disabled as a result of mistake or misidentification.\n   • I consent to the jurisdiction of the Federal District Court for the judicial district in which my address is located, or if outside the United States, the judicial district in which FMG may be found, and I will accept service of process from the person who provided the original notice or their agent.\n\n4. Signature: [Type your full name as a digital signature]\n\nDate: [YYYY‑MM‑DD]`;
 
-/* ---------- Page ---------- */
 export default function DMCAPage(): React.JSX.Element {
   const toc = useMemo(
     () => [
@@ -143,7 +128,6 @@ export default function DMCAPage(): React.JSX.Element {
     <main className="relative min-h-screen overflow-hidden bg-white text-neutral-900 dark:bg-neutral-950 dark:text-white">
       <GradientBG />
 
-      {/* Hero */}
       <header className="relative z-10 mx-auto max-w-6xl px-4 pt-16 sm:px-6 sm:pt-24">
         <div className="relative overflow-hidden rounded-2xl border border-neutral-900/10 bg-white/70 p-6 text-center shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-white/5 sm:p-8">
           <div className="mx-auto max-w-3xl">
@@ -160,9 +144,7 @@ export default function DMCAPage(): React.JSX.Element {
         </div>
       </header>
 
-      {/* Body */}
       <div className="relative z-10 mx-auto grid max-w-6xl grid-cols-12 gap-6 px-4 py-10 sm:px-6 sm:py-12">
-        {/* TOC */}
         <aside className="sticky top-20 hidden h-max select-none md:col-span-3 md:block">
           <nav aria-label="On this page" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-3 text-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide opacity-70">
@@ -185,7 +167,6 @@ export default function DMCAPage(): React.JSX.Element {
           </nav>
         </aside>
 
-        {/* Main column */}
         <div className="col-span-12 space-y-6 md:col-span-9">
           <SectionCard id="overview" title="Overview" icon={ShieldAlert}>
             <p>
@@ -204,8 +185,6 @@ export default function DMCAPage(): React.JSX.Element {
               <div className="flex items-center gap-2"><MapPin className="h-4 w-4 opacity-70" />
                 <span>
                   Attn: DMCA Agent<br />
-                  {/* FMG Universe, Legal Department<br /> */}
-                  {/* 123 Example Street, Suite 500<br /> */}
                   West Jakarta 11480, Indonesia
                 </span>
               </div>
@@ -300,7 +279,6 @@ export default function DMCAPage(): React.JSX.Element {
         </div>
       </div>
 
-      {/* Edge fades */}
       <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 h-16 bg-gradient-to-b from-white to-transparent dark:from-neutral-950" />
       <div aria-hidden className="pointer-events-none fixed inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent dark:from-neutral-950" />
     </main>

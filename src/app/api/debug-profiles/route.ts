@@ -1,4 +1,4 @@
-// API route untuk debug profiles
+// API route for debug profiles
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -8,7 +8,6 @@ export async function GET(request: NextRequest) {
     
     console.log('🔍 [API] Fetching profiles...');
     
-    // Simple query tanpa filter kompleks
     const { data, error } = await supabase
       .from('profiles')
       .select('id, first_name, last_name, email, staff_role, main_role')
@@ -24,7 +23,6 @@ export async function GET(request: NextRequest) {
     
     console.log(`✅ [API] Found ${data?.length || 0} profiles`);
     
-    // Process dan hitung role
     const roleCount: { [key: string]: number } = { anr: 0, composer: 0, producer: 0, engineer: 0 };
     const processedProfiles = data?.map((profile: any) => {
       let staffRoles: string[] = [];
@@ -34,7 +32,6 @@ export async function GET(request: NextRequest) {
         staffRoles = [profile.staff_role];
       }
       
-      // Count roles
       staffRoles.forEach((role: string) => {
         if (roleCount[role] !== undefined) {
           roleCount[role]++;

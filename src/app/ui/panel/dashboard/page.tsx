@@ -22,9 +22,6 @@ import {
   Settings
 } from "lucide-react";
 
-/** ------------------------------------------------------------------
- * Main Component (Client)
- * ------------------------------------------------------------------ */
 export default function AdminDashboard(): React.JSX.Element {
   useFocusWarmAuth();
 
@@ -37,7 +34,6 @@ export default function AdminDashboard(): React.JSX.Element {
 
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Ambil userId dari sesi Supabase (client-side, RLS aktif)
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -52,17 +48,15 @@ export default function AdminDashboard(): React.JSX.Element {
     return () => { mounted = false; };
   }, [supabase]);
 
-  // ⬇️ rename & sesuaikan KPI
   const [kpi, setKpi] = useState({
     newRequests: 0,
-    unpaidProjects: 0, // was awaitingPayment
+    unpaidProjects: 0, 
     unassigned: 0,
     activeProjects: 0,
     upcomingMeetings: 0,
     unpaidInvoices: 0,
   });
 
-  // Ambil role secara client-side
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -76,7 +70,6 @@ export default function AdminDashboard(): React.JSX.Element {
     return () => { mounted = false; };
   }, []);
 
-  // Helper: count dengan timeout & error handling
   const getCountSafe = useCallback(async (
     tableName: string,
     queryFn: () => Promise<{ count: number | null; error: Error | null }>
@@ -100,20 +93,17 @@ export default function AdminDashboard(): React.JSX.Element {
     }
   }, []);
 
-  // Load KPI
   const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const nowIso = new Date().toISOString();
 
-      // ⛔ Jangan jalan kalau client tapi belum tahu userId (hindari query tanpa filter)
       if (role === "client" && !userId) {
         setKpi({ newRequests: 0, unpaidProjects: 0, unassigned: 0, activeProjects: 0, upcomingMeetings: 0, unpaidInvoices: 0 });
         return;
       }
 
-      // ---------------- ADMIN / OWNER: agregat global (seperti sebelumnya) ----------------
       if (role === "admin" || role === "owner") {
         const newRequests = await getCountSafe("project_summary (new requests)", async () => {
           const { count, error } = await supabase
@@ -171,7 +161,6 @@ export default function AdminDashboard(): React.JSX.Element {
         return;
       }
 
-      // ---------------- CLIENT: hanya milik sendiri, tidak ada data orang lain ----------------
       const activeProjects = await getCountSafe("project_summary (active projects - client)", async () => {
         const { count, error } = await supabase
           .from("project_summary")
@@ -183,12 +172,11 @@ export default function AdminDashboard(): React.JSX.Element {
 
 
       const upcomingMeetings = await getCountSafe("meetings (upcoming - client)", async () => {
-        // Asumsi ada kolom client_id pada meetings; jika modelmu pakai attendees, buat view/RPC (lihat bagian RLS di bawah).
         const { count, error } = await supabase
           .from("meetings")
           .select("id", { count: "exact", head: true })
           .gte("start_at", nowIso)
-          .eq("client_id", userId!); // <-- filter milik sendiri
+          .eq("client_id", userId!); 
         return { count, error };
       });
 
@@ -197,11 +185,10 @@ export default function AdminDashboard(): React.JSX.Element {
           .from("invoices")
           .select("id", { count: "exact", head: true })
           .eq("status", "unpaid")
-          .eq("client_id", userId!); // <-- filter milik sendiri
+          .eq("client_id", userId!); 
         return { count, error };
       });
 
-      // KPI lain (newRequests, unpaidProjects, unassigned) tidak relevan untuk client => 0
       setKpi({
         newRequests: 0,
         unpaidProjects: 0,
@@ -223,8 +210,6 @@ export default function AdminDashboard(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadDashboardData]);
 
-
-  // GSAP anim
   useEffect(() => {
     if (!loading && containerRef.current) {
       const ctx = gsap.context(() => {
@@ -247,7 +232,6 @@ export default function AdminDashboard(): React.JSX.Element {
     }
   }, [loading]);
 
-  // Animator angka (dipakai di Stat)
   const animateValue = (start: number, end: number, duration: number = 800): Promise<number> => {
     return new Promise((resolve) => {
       if (end === 0) {
@@ -270,19 +254,16 @@ export default function AdminDashboard(): React.JSX.Element {
     });
   };
 
-  /** -------------------- UI Pieces -------------------- */
   const Stat = ({
     label,
     value,
     color = "gray",
     icon: Icon,
-    // trend?: { value: number; isPositive: boolean };
   }: {
     label: string;
     value: number;
     color?: "gray" | "blue" | "green" | "orange" | "red" | "purple" | "crimson";
     icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-    // trend?: { value: number; isPositive: boolean };
   }) => {
     const [displayValue, setDisplayValue] = useState(0);
     const [hasAnimated, setHasAnimated] = useState(false);
@@ -385,23 +366,6 @@ export default function AdminDashboard(): React.JSX.Element {
             >
               {displayValue.toLocaleString()}
             </motion.div>
-
-            {/* ⬇️ Komentar trend % sesuai permintaan */}
-            {/*
-            {trend && (
-              <motion.div
-                className={`flex items-center text-xs font-medium ${
-                  trend.isPositive ? "text-green-600 dark:text-green-100" : "text-red-600 dark:text-red-100"
-                }`}
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6, duration: 0.3 }}
-              >
-                <TrendingUp width={12} height={12} className={trend.isPositive ? "" : "rotate-180"} />
-                <span className="ml-1">{Math.abs(trend.value)}%</span>
-              </motion.div>
-            )}
-            */}
           </div>
         </div>
 
@@ -410,14 +374,12 @@ export default function AdminDashboard(): React.JSX.Element {
     );
   };
 
-  /** -------------------- Views -------------------- */
   const AdminView = () => (
     <div
       className="min-h-screen bg-gradient-to-br from-neutral-50 via-blue-25 to-sky-100 dark:from-neutral-950 dark:via-blue-950 dark:to-sky-900"
       ref={containerRef}
     >
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 px-4 sm:px-6 md:px-8 lg:px-12 py-6 sm:py-8">
-        {/* Header */}
         <motion.div
           className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
           initial={{ opacity: 0, y: -15 }}
@@ -466,7 +428,6 @@ export default function AdminDashboard(): React.JSX.Element {
           </motion.button>
         </motion.div>
 
-        {/* Error */}
         <AnimatePresence mode="wait">
           {error && (
             <motion.div
@@ -493,7 +454,6 @@ export default function AdminDashboard(): React.JSX.Element {
           )}
         </AnimatePresence>
 
-        {/* Stats */}
         <div ref={statsRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
           <Stat label="New Requests" value={kpi.newRequests} color="blue" icon={FileText} />
           <Stat label="Unpaid Projects" value={kpi.unpaidProjects} color="orange" icon={Clock} />
@@ -503,7 +463,6 @@ export default function AdminDashboard(): React.JSX.Element {
           <Stat label="Unpaid Invoices" value={kpi.unpaidInvoices} color="crimson" icon={DollarSign} />
         </div>
 
-        {/* Quick Actions */}
         <motion.div
           className="bg-white/90 dark:bg-slate-800/90 rounded-2xl shadow-xl border border-slate-200/50 dark:border-slate-600/30 p-6 sm:p-8"
           initial={{ opacity: 0, y: 30 }}
@@ -574,7 +533,6 @@ export default function AdminDashboard(): React.JSX.Element {
       ref={containerRef}
     >
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 px-4 sm:px-6 md:px-8 lg:px-12 py-6 sm:py-8">
-        {/* Header */}
         <motion.div
           className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
           initial={{ opacity: 0, y: -15 }}
@@ -623,7 +581,6 @@ export default function AdminDashboard(): React.JSX.Element {
           </motion.button>
         </motion.div>
 
-        {/* Error */}
         <AnimatePresence mode="wait">
           {error && (
             <motion.div
@@ -650,14 +607,12 @@ export default function AdminDashboard(): React.JSX.Element {
           )}
         </AnimatePresence>
 
-        {/* Stats (subset untuk client) */}
         <div ref={statsRef} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
           <Stat label="Active Projects" value={kpi.activeProjects} color="green" icon={CheckCircle} />
           <Stat label="Upcoming Meetings" value={kpi.upcomingMeetings} color="purple" icon={Calendar} />
           <Stat label="Unpaid Invoices" value={kpi.unpaidInvoices} color="crimson" icon={DollarSign} />
         </div>
 
-        {/* Quick tips / actions untuk client */}
         <motion.div
           className="bg-white/90 dark:bg-slate-800/90 rounded-2xl shadow-xl border border-slate-200/50 dark:border-slate-600/30 p-6 sm:p-8"
           initial={{ opacity: 0, y: 30 }}
@@ -721,7 +676,6 @@ export default function AdminDashboard(): React.JSX.Element {
     </div>
   );
 
-  /** -------------------- Loading Skeleton -------------------- */
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-cyan-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 p-4 sm:p-6">
@@ -757,11 +711,9 @@ export default function AdminDashboard(): React.JSX.Element {
     );
   }
 
-  /** -------------------- Role-based Rendering -------------------- */
   if (role === "admin" || role === "owner") return <AdminView />;
   if (role === "client") return <ClientView />;
 
-  // Fallback (guest/other roles)
   return (
     <div className="min-h-screen grid place-items-center p-8">
       <div className="text-center">

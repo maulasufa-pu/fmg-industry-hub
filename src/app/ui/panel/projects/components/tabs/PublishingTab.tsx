@@ -13,21 +13,13 @@ import type { ProjectSummary } from "../../types";
 import type { UserRole } from "@/lib/roles";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
-/** ------------------------------------------------------------------
- * Types
- * ------------------------------------------------------------------ */
 interface PublishingTabProps {
   project: ProjectSummary;
-  /** sent automatically from ProjectControlsSection via cloneElement */
   roleStatus?: UserRole;
-  /** legacy fallback (optional) */
   isClient?: boolean;
 }
 
 type Split = { party: string; percentage: number };
-
-// ✅ Add/check type & default (place at top of file, before component). 
-// If already exists, leave it — don't duplicate.
 
 type DSP = "spotify" | "appleMusic" | "youtubeMusic" | "deezer" | "tiktok" | "instagram";
 type DSPStatus = "pending" | "submitted" | "live" | "rejected" | "takedown";
@@ -43,7 +35,6 @@ const DEFAULT_PLATFORMS: PlatformStatuses = {
   instagram: { status: "pending", url: null },
 };
 
-/** DB Row for publishing columns in `projects` table (nullable in DB) */
 type ProjectPublishingDB = {
   project_id: string;
   isrc: string | null;
@@ -59,18 +50,15 @@ type ProjectPublishingDB = {
   artwork_path: string | null;
   artwork_url: string | null;
   royalty_splits: Split[] | null;
-  /** JSONB (recommended to add this column in projects): platform_statuses JSONB */
   platform_statuses: PlatformStatuses | null;
 };
 
-/** Update payload type to Supabase (can be null/undefined) */
 type ProjectPublishingUpdate = Partial<ProjectPublishingDB>;
 
-/** Form type (always string for controlled input) */
 type PublishingFields = {
   isrc: string;
   upc: string;
-  release_date: string; // YYYY-MM-DD
+  release_date: string; 
   explicit: boolean;
   label_name: string;
   copyright_c: string;
@@ -84,7 +72,6 @@ type PublishingFields = {
   platform_statuses: PlatformStatuses;
 };
 
-/** Roles allowed to edit. Fallback: if roleStatus not available => UI editable (RLS server-side still protects writes). */
 const STAFF_ROLES: ReadonlyArray<UserRole> = [
   "owner",
   "admin",
@@ -95,9 +82,6 @@ const STAFF_ROLES: ReadonlyArray<UserRole> = [
   "publisher",
 ] as const;
 
-/** ------------------------------------------------------------------
- * UI helpers (tema ala desain kamu sebelumnya)
- * ------------------------------------------------------------------ */
 const inputCls =
   "w-full rounded-xl border border-gray-300/80 dark:border-gray-700/70 " +
   "bg-white/70 dark:bg-gray-800/70 px-3 py-2 outline-none " +
@@ -169,10 +153,6 @@ const AnimatedCard = ({
   );
 };
 
-/** ------------------------------------------------------------------
- * Constants
- * ------------------------------------------------------------------ */
-
 const DSPS: Array<{ key: DSP; label: string; emoji: string }> = [
   { key: "spotify", label: "Spotify", emoji: "🎵" },
   { key: "appleMusic", label: "Apple Music", emoji: "🍎" },
@@ -208,15 +188,11 @@ const STATUS_BADGE: Record<
   },
 };
 
-/** ------------------------------------------------------------------
- * Component
- * ------------------------------------------------------------------ */
 export default function PublishingTab({
   project,
   roleStatus,
   isClient = false,
 }: PublishingTabProps) {
-  // Fallback: bila roleStatus tidak ada => editable
   const canEdit = useMemo(
     () => (roleStatus ? STAFF_ROLES.includes(roleStatus) : true),
     [roleStatus]
@@ -242,10 +218,9 @@ export default function PublishingTab({
     artwork_path: null,
     artwork_url: null,
     royalty_splits: [],
-    platform_statuses: DEFAULT_PLATFORMS, // ⬅️ penting
+    platform_statuses: DEFAULT_PLATFORMS,
   });
 
-  /** Load existing publishing fields from DB */
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -271,7 +246,6 @@ export default function PublishingTab({
         "platform_statuses",
       ].join(",");
 
-      // di dalam useEffect load data, ganti blok fetch-nya:
       const { data, error } = await supabase
         .from("projects")
         .select(cols)
@@ -286,7 +260,6 @@ export default function PublishingTab({
         return;
       }
 
-      // ⬇️ Avoid direct cast to target type (TS2352). Cast via unknown after guard.
       const row = data as unknown as ProjectPublishingDB;
 
       setForm({
@@ -304,8 +277,8 @@ export default function PublishingTab({
         artwork_url: row.artwork_url ?? null,
         royalty_splits: Array.isArray(row.royalty_splits) ? row.royalty_splits : [],
         platform_statuses: row.platform_statuses
-          ? { ...DEFAULT_PLATFORMS, ...row.platform_statuses } // safe merge
-          : DEFAULT_PLATFORMS, // fallback if column doesn't exist yet/still null
+          ? { ...DEFAULT_PLATFORMS, ...row.platform_statuses } 
+          : DEFAULT_PLATFORMS, 
       });
 
       setLoading(false);
@@ -317,7 +290,6 @@ export default function PublishingTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.project_id]);
 
-  /** Handlers: form umum */
   const onChangeText =
     (key: keyof PublishingFields) =>
     (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -330,7 +302,6 @@ export default function PublishingTab({
       setForm((prev) => ({ ...prev, [key]: e.target.checked }));
     };
 
-  /** Royalty Splits */
   const totalSplit = useMemo(
     () =>
       form.royalty_splits.reduce(
@@ -363,7 +334,6 @@ export default function PublishingTab({
     });
   }, []);
 
-  /** Artwork upload */
   const onUploadArtwork = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -399,7 +369,6 @@ export default function PublishingTab({
     [project.project_id]
   );
 
-  /** Platform status handlers */
   const setDSPStatus = useCallback(
     (key: DSP, status: DSPStatus) => {
       setForm((prev) => ({
@@ -423,7 +392,6 @@ export default function PublishingTab({
     }));
   }, []);
 
-  /** Validasi & Save */
   const validate = useCallback((): string | null => {
     if (!form.isrc.trim()) return "ISRC is required.";
     if (!form.release_date.trim()) return "Release Date is required.";
@@ -459,7 +427,7 @@ export default function PublishingTab({
       artwork_path: form.artwork_path,
       artwork_url: form.artwork_url,
       royalty_splits: form.royalty_splits,
-      platform_statuses: form.platform_statuses, // ⬅️ save platform status (JSONB)
+      platform_statuses: form.platform_statuses,
     };
 
     const { error } = await supabase
@@ -478,9 +446,6 @@ export default function PublishingTab({
     }
   }, [form, project.project_id, validate]);
 
-  /** ------------------------------------------------------------------
-   * Render
-   * ------------------------------------------------------------------ */
   return (
     <motion.div
       data-role={roleStatus || (isClientView ? "client" : "staff")}
@@ -489,7 +454,6 @@ export default function PublishingTab({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      {/* LEFT: Publishing Form */}
       <AnimatedCard title="📑 Publishing Data" gradient className="lg:col-span-5">
         {loading ? (
           <div className="text-sm text-gray-500 dark:text-gray-400">Loading…</div>
@@ -689,7 +653,6 @@ export default function PublishingTab({
                     </button>
                   )}
 
-                  {/* Progress total split */}
                   <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-800 overflow-hidden">
                     <div
                       className={`h-2 ${
@@ -712,7 +675,6 @@ export default function PublishingTab({
               </Field>
             </div>
 
-            {/* Sticky save bar */}
             {!isClientView && (
               <div
                 className="sticky bottom-0 -mx-6 md:-mx-8 mt-4 border-t border-gray-200/80 dark:border-gray-700/70
@@ -750,10 +712,8 @@ export default function PublishingTab({
         )}
       </AnimatedCard>
 
-      {/* MIDDLE: Status Platform */}
       <AnimatedCard title="📚 Publishing Status" gradient className="lg:col-span-4">
         <div className="space-y-4">
-          {/* Status ringkas project */}
           <div className="p-4 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl border border-green-200 dark:border-green-700/50">
             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
               📊 Current Status
@@ -766,7 +726,6 @@ export default function PublishingTab({
             </p>
           </div>
 
-          {/* Grid per-platform */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {DSPS.map(({ key, label, emoji }, idx) => {
               const st = form.platform_statuses[key];
@@ -831,7 +790,6 @@ export default function PublishingTab({
         </div>
       </AnimatedCard>
 
-      {/* RIGHT: Artwork Preview */}
       <AnimatedCard title="🖼️ Artwork Preview" gradient className="lg:col-span-3">
         <div className="grid place-items-center">
           {form.artwork_url ? (
@@ -848,7 +806,6 @@ export default function PublishingTab({
         </div>
       </AnimatedCard>
 
-      {/* BOTTOM: Distribution Actions (staff only) */}
       {!isClientView && (
         <AnimatedCard
           title="🔄 Distribution Actions"
@@ -882,7 +839,6 @@ export default function PublishingTab({
         </AnimatedCard>
       )}
 
-      {/* Analytics (selalu tampil) */}
       <AnimatedCard title="📈 Analytics & Performance" gradient className="lg:col-span-12">
         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           <div className="text-4xl mb-4">📊</div>

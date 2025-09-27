@@ -18,7 +18,6 @@ import {
   Coins,
 } from "lucide-react";
 
-/* -------------------- Types -------------------- */
 type Props = { onClose: () => void; onCreated: () => void };
 
 type LineItem = {
@@ -41,7 +40,6 @@ type ServiceRow = {
 
 type ClientOption = { id: string; name: string; email: string | null; is_active: boolean };
 
-/* -------------------- Small UI helpers -------------------- */
 function ChipToggle({
   options,
   value,
@@ -101,7 +99,6 @@ function Field({
   );
 }
 
-/* -------------------- Dialog -------------------- */
 export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Element {
   const sb = useMemo(() => getSupabaseClient(), []);
 
@@ -110,23 +107,19 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
   const [dueDays, setDueDays] = useState<number>(14);
   const [ppnPercent, setPpnPercent] = useState<number>(11);
 
-  // Clients (from view public.clients)
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [clientsLoading, setClientsLoading] = useState(true);
   const [selectedClientId, setSelectedClientId] = useState<string>("");
 
-  // Services
   const [services, setServices] = useState<ServiceRow[]>([]);
   const [servicesLoading, setServicesLoading] = useState(true);
   const [quickServiceId, setQuickServiceId] = useState<string>("");
 
-  // Items form
   const [items, setItems] = useState<LineItem[]>([]);
   const [saving, setSaving] = useState(false);
 
   const totals = calcTotals(items, ppnPercent);
 
-  /* --------- Load clients --------- */
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -146,7 +139,6 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
     };
   }, [sb]);
 
-  /* --------- Load services --------- */
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -168,7 +160,6 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
     };
   }, [sb]);
 
-  /* --------- Items handlers --------- */
   const addItem = (): void =>
     setItems((prev) => [...prev, { service_id: null, description: "", qty: 1, unit_price: 0 }]);
 
@@ -191,7 +182,6 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
     }
   };
 
-  /* --------- Submit --------- */
   const submit = async (): Promise<void> => {
     if (!selectedClientId) return;
     if (items.length === 0) return;
@@ -251,10 +241,8 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
     }
   };
 
-  /* -------------------- UI -------------------- */
   return (
     <div className="fixed inset-0 z-50 grid place-items-center p-4">
-      {/* Backdrop with FMG glow */}
       <div
         className="absolute inset-0 bg-black/60"
         onClick={onClose}
@@ -265,7 +253,6 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
         <div className="absolute -bottom-20 -right-24 h-80 w-80 rounded-full bg-gradient-to-tr from-emerald-500/25 via-teal-400/20 to-cyan-400/15 blur-3xl" />
       </div>
 
-      {/* Dialog */}
       <motion.div
         initial={{ opacity: 0, y: 18, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -275,7 +262,6 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
         aria-modal="true"
         aria-label="Create a new invoice"
       >
-        {/* Header */}
         <div className="relative px-5 py-4 sm:px-6">
           <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-gradient-to-br from-indigo-500/20 via-fuchsia-400/15 to-amber-300/15 blur-2xl" />
           <div className="flex items-start justify-between gap-3">
@@ -296,11 +282,8 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
           </div>
         </div>
 
-        {/* Body */}
         <div className="px-5 pb-5 sm:px-6 sm:pb-6">
-          {/* Top controls */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {/* Client */}
             <Field label="Client">
               <div className="relative">
                 <select
@@ -321,7 +304,6 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
               </div>
             </Field>
 
-            {/* Currency */}
             <Field label="Currency" icon={<Coins className="h-4 w-4 opacity-70" />}>
               <ChipToggle
                 ariaLabel="Currency"
@@ -334,7 +316,6 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
               />
             </Field>
 
-            {/* Status */}
             <Field label="Status" icon={<BadgeCheck className="h-4 w-4 opacity-70" />}>
               <ChipToggle
                 ariaLabel="Status"
@@ -347,7 +328,6 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
               />
             </Field>
 
-            {/* Due days */}
             <Field label="Due in (days)" icon={<CalendarDays className="h-4 w-4 opacity-70" />}>
               <input
                 type="number"
@@ -359,7 +339,6 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
               />
             </Field>
 
-            {/* PPN */}
             <Field label="PPN (%)" icon={<Percent className="h-4 w-4 opacity-70" />}>
               <input
                 type="number"
@@ -372,7 +351,6 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
               />
             </Field>
 
-            {/* Quick add services */}
             <Field label="Quick add from Services">
               <div className="flex items-end gap-2">
                 <div className="relative flex-1">
@@ -426,7 +404,6 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
             </Field>
           </div>
 
-          {/* Line items */}
           <div className="mt-6 rounded-2xl border bg-card/70 p-4 ring-1 ring-black/5">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold tracking-wide">Line Items</h3>
@@ -493,7 +470,6 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
             </div>
           </div>
 
-          {/* Totals */}
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="rounded-2xl border bg-card/80 p-4 shadow-sm ring-1 ring-black/5">
               <div className="text-xs uppercase text-muted-foreground">Subtotal</div>
@@ -518,7 +494,6 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex flex-col-reverse gap-2 border-t bg-background/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6">
           <button
             onClick={onClose}

@@ -3,35 +3,26 @@
 import * as React from "react";
 import { type RefObject, useEffect, useMemo, useRef } from "react";
 
-/**
- * Floating music/geometry background with:
- * - subtle opacity
- * - continuous random float/rotate animations (CSS keyframes)
- * - parallax by scroll + mouse
- */
 type BackgroundFieldProps = {
-  /** Optional scroll container (e.g., your fullpage scroller).
-   *  If tidak diberikan, fallback ke window. */
+
   container?: RefObject<HTMLElement | null>;
-  /** Banyaknya objek (10–40) */
   count?: number;
-  /** Intensitas parallax (0.2–1) */
   intensity?: number;
 };
 
 type Item = {
   id: string;
-  x: number; // 0..1
-  y: number; // 0..1
-  size: number; // px
-  depth: number; // 0..1 (semakin besar => lebih lambat & lebih jauh)
+  x: number; 
+  y: number; 
+  size: number; 
+  depth: number; 
   kind: "circle" | "triangle" | "square" | "hex" | "note" | "play" | "wave";
-  rot: number; // initial rotation
-  dur: number; // float duration
-  delay: number; // float delay
-  hue: number; // 0..360
-  sat: number; // %
-  light: number; // %
+  rot: number; 
+  dur: number; 
+  delay: number; 
+  hue: number; 
+  sat: number; 
+  light: number; 
 };
 
 export function BackgroundField({
@@ -39,7 +30,6 @@ export function BackgroundField({
   count = 18,
   intensity = 0.6,
 }: BackgroundFieldProps) {
-  // generate once
   const items = useMemo<Item[]>(() => {
     const kinds: Item["kind"][] = [
       "circle",
@@ -52,40 +42,36 @@ export function BackgroundField({
     ];
     return Array.from({ length: count }).map((_, i) => {
       const k = kinds[Math.floor(Math.random() * kinds.length)];
-      const size = Math.round(28 + Math.random() * 72); // 28..100
+      const size = Math.round(28 + Math.random() * 72); 
       return {
         id: `fx-${i}`,
         x: Math.random(),
         y: Math.random(),
         size,
-        depth: 0.25 + Math.random() * 0.75, // 0.25..1
+        depth: 0.25 + Math.random() * 0.75, 
         kind: k,
         rot: Math.random() * 360,
-        dur: 7 + Math.random() * 10, // 7..17s
-        delay: Math.random() * 6, // 0..6s
+        dur: 7 + Math.random() * 10, 
+        delay: Math.random() * 6, 
         hue: Math.floor(Math.random() * 360),
-        sat: 68 + Math.random() * 20, // 68..88
-        light: 52 + Math.random() * 14, // 52..66
+        sat: 68 + Math.random() * 20, 
+        light: 52 + Math.random() * 14, 
       };
     });
   }, [count]);
 
-  // refs utk DOM node masing2 item (biar transform update tanpa re-render)
   const nodeRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // mouse & scroll trackers
-  const mouse = useRef({ x: 0, y: 0 }); // -0.5..0.5
+  const mouse = useRef({ x: 0, y: 0 }); 
   const scrollTopRef = useRef(0);
   const rafRef = useRef<number | null>(null);
 
-  // attach listeners
   useEffect(() => {
     const target = container?.current ?? (document.scrollingElement as HTMLElement | null) ?? document.documentElement;
 
     const onPointer = (e: PointerEvent) => {
       const vw = window.innerWidth || 1;
       const vh = window.innerHeight || 1;
-      // normalize to -0.5..0.5
       mouse.current.x = e.clientX / vw - 0.5;
       mouse.current.y = e.clientY / vh - 0.5;
     };
@@ -98,13 +84,11 @@ export function BackgroundField({
     };
 
     window.addEventListener("pointermove", onPointer, { passive: true });
-    // scroll listener di container bila ada, jika tidak di window
     (container?.current ?? window).addEventListener("scroll", onScroll, { passive: true });
 
-    onScroll(); // seed nilai awal
+    onScroll(); 
 
     const tick = () => {
-      // derive parallax offset dari mouse + scroll
       const mx = mouse.current.x;
       const my = mouse.current.y;
       const st = scrollTopRef.current;
@@ -113,7 +97,6 @@ export function BackgroundField({
         const node = nodeRefs.current[it.id];
         if (!node) return;
 
-        // offset parallax (semakin besar depth => lebih jauh dan bergerak lebih pelan)
         const px = (mx * 60 + (st * 0.02)) * (it.depth * intensity);
         const py = (my * 60 + (st * 0.06)) * (it.depth * intensity);
 
@@ -133,7 +116,6 @@ export function BackgroundField({
 
   return (
     <>
-      {/* keyframes once */}
       <style>{`
         @keyframes bg-float {
           0% { transform: translateY(0px); }
@@ -149,10 +131,8 @@ export function BackgroundField({
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-0"
-        // tipis banget biar tidak ganggu
         style={{ opacity: 0.22 }}
       >
-        {/* container absolute utk posisi tiap item */}
         <div className="absolute inset-0">
           {items.map((it) => (
             <div
@@ -165,7 +145,6 @@ export function BackgroundField({
                 filter: "blur(0px)",
               }}
             >
-              {/* wrapper agar bisa float tanpa ganggu parallax transform (pakai inner div) */}
               <div
                 className="w-full h-full"
                 style={{
@@ -182,7 +161,6 @@ export function BackgroundField({
   );
 }
 
-/** Render satu shape dengan gradien HSL -> HSL yang lembut */
 function renderShape(it: Item) {
   const c1 = `hsl(${it.hue} ${it.sat}% ${it.light}%)`;
   const c2 = `hsl(${(it.hue + 40) % 360} ${Math.min(95, it.sat + 6)}% ${Math.max(
@@ -190,7 +168,6 @@ function renderShape(it: Item) {
     it.light - 6
   )}%)`;
 
-  // common gradient id per item
   const gid = `g-${it.id}`;
 
   switch (it.kind) {
@@ -246,7 +223,6 @@ function renderShape(it: Item) {
         </svg>
       );
     case "note":
-      // not balok musik sederhana
       return (
         <svg viewBox="0 0 100 100" className="w-full h-full">
           <defs>

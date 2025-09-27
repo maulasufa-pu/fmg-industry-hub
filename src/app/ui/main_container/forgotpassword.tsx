@@ -24,15 +24,12 @@ export default function ForgotPasswordPage(): React.JSX.Element {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  // hCaptcha
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaKey, setCaptchaKey] = useState(0);
   const siteKey: string = process.env.NEXT_PUBLIC_HCAPTCHA_SITEKEY ?? "";
 
   const valid = useMemo(() => emailRe.test(email), [email]);
 
-  // (Opsional) verifikasi ke server kamu sendiri.
-  // Boleh dihapus kalau kamu mau rely 100% ke verifikasi Supabase.
   const verifyCaptchaLocally = async (token: string): Promise<boolean> => {
     const res = await fetch("/api/verify-hcaptcha", {
       method: "POST",
@@ -46,7 +43,7 @@ export default function ForgotPasswordPage(): React.JSX.Element {
 
   const resetCaptcha = () => {
     setCaptchaToken(null);
-    setCaptchaKey((k) => k + 1); // re-mount widget
+    setCaptchaKey((k) => k + 1); 
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -65,21 +62,18 @@ export default function ForgotPasswordPage(): React.JSX.Element {
 
     setLoading(true);
     try {
-      // (Opsional) cek juga ke backend kamu sendiri:
-      // kalau mau, biarkan; kalau tidak perlu, hapus blok ini.
       const localOk = await verifyCaptchaLocally(captchaToken);
       if (!localOk) {
         resetCaptcha();
         throw new Error("Captcha verification failed. Please try again.");
       }
 
-      // Wajib: kirim captchaToken ke Supabase jika Captcha ON untuk reset password
       const supabase = getSupabaseClient();
       const redirectTo = `${getPublicOrigin()}/auth/callback`;
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo,
-        captchaToken: captchaToken ?? undefined, // <-- INI KUNCI-NYA
+        captchaToken: captchaToken ?? undefined, 
       });
       if (error) throw error;
 
@@ -144,7 +138,6 @@ export default function ForgotPasswordPage(): React.JSX.Element {
               />
             </div>
 
-            {/* hCaptcha */}
             <div className="mt-4 flex justify-center">
               <HCaptcha
                 key={captchaKey}

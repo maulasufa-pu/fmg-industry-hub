@@ -22,19 +22,14 @@ interface MeetingsTabProps {
   setMeetings: React.Dispatch<React.SetStateAction<MeetingRow[] | null>>;
 }
 
-// Di atas component
 const normalizeLink = (raw: string | null | undefined): string | null => {
   if (!raw) return null;
   const s = raw.trim();
-  // anggap ini "tidak ada link"
   if (s === "" || /^(dummy|null|undefined|#|-)$/i.test(s)) return null;
 
-  // auto-tambah protokol kalau user simpan 'meet.google.com/abc'
   const withProto = /^https?:\/\//i.test(s) ? s : `https://${s}`;
 
   try {
-    // valid URL?
-    // (kalau mau dibatasi ke domain tertentu, cek host di sini)
     // eslint-disable-next-line no-new
     new URL(withProto);
     return withProto;
@@ -59,7 +54,6 @@ const CardShell = ({
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.5, ease: "easeOut" }}
   >
-    {/* Subtle gradient header */}
     <div className="relative">
       <div className="absolute inset-0 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/30 dark:via-indigo-950/20 dark:to-purple-950/30" />
       <div className="relative flex items-center justify-between gap-3 px-6 py-4">
@@ -168,7 +162,6 @@ function NewMeetingButton({
 export default function MeetingsTab({ project, meetings, setMeetings }: MeetingsTabProps) {
   const supabase = getSupabaseClient();
 
-  // --- Form state
   const [showMeetingForm, setShowMeetingForm] = useState(false);
   const [isCreatingMeeting, setIsCreatingMeeting] = useState(false);
   const [meetingForm, setMeetingForm] = useState({
@@ -248,7 +241,6 @@ export default function MeetingsTab({ project, meetings, setMeetings }: Meetings
       title="Meetings (Admin)"
       right={<NewMeetingButton show={showMeetingForm} toggle={() => setShowMeetingForm((s) => !s)} />}
     >
-      {/* Form */}
       {showMeetingForm && (
         <motion.div
           initial={{ opacity: 0, y: 6 }}
@@ -366,7 +358,6 @@ export default function MeetingsTab({ project, meetings, setMeetings }: Meetings
         </motion.div>
       )}
 
-      {/* List */}
       {meetings === null ? (
         <div className="grid gap-3">
           {Array.from({ length: 3 }).map((_, i) => (

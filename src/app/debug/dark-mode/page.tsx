@@ -9,7 +9,6 @@ export default function DarkModeDemo() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
-  // Prevent hydration mismatch
   if (typeof window !== 'undefined' && !mounted) {
     setMounted(true)
   }
@@ -21,7 +20,6 @@ export default function DarkModeDemo() {
   return (
     <div className="min-h-screen bg-background text-foreground p-8">
       <div className="max-w-4xl mx-auto space-y-8">
-        {/* Header */}
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
             🌙 Dark Mode Demo
@@ -39,7 +37,6 @@ export default function DarkModeDemo() {
           </div>
         </div>
 
-        {/* Demo Cards */}
         <div className="grid md:grid-cols-2 gap-6">
           <Card className="p-6 bg-white dark:bg-gray-900 dark:bg-gray-800 border-gray-200 dark:border-gray-700 dark:border-gray-700">
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
@@ -71,7 +68,6 @@ export default function DarkModeDemo() {
           </Card>
         </div>
 
-        {/* Color Palette Demo */}
         <Card className="p-6 bg-white dark:bg-gray-900 dark:bg-gray-800 border-gray-200 dark:border-gray-700 dark:border-gray-700">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
             Color Palette
@@ -96,7 +92,6 @@ export default function DarkModeDemo() {
           </div>
         </Card>
 
-        {/* Status Info */}
         <Card className="p-6 bg-green-50 dark:bg-green-900/20 dark:bg-green-900/20 border-green-200 dark:border-green-800">
           <h3 className="text-xl font-semibold text-green-900 dark:text-green-100 mb-4">
             ✅ Implementation Status

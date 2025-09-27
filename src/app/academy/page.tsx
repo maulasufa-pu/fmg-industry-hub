@@ -14,15 +14,6 @@ import {
   Rocket,
 } from "lucide-react";
 
-/*************************************************
- * FMG Universe — /academy (Light + Dark friendly)
- * - Fullpage vertical slides (scroll-snap, per-section paging)
- * - Parallax gradient art (mobile moves DOWN so it never covers text)
- * - Lighter animations; reduced-motion aware
- * - Mobile bottom rail matches desktop style (thin, colored)
- *************************************************/
-
-/* ---------- Utils ---------- */
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -36,7 +27,6 @@ function useIsMobile(breakpoint = 768) {
   return isMobile;
 }
 
-/* ---------- (Optional) Top bar ---------- */
 function TopBar(): React.JSX.Element {
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex h-14 items-center justify-between px-4 sm:px-8">
@@ -54,7 +44,6 @@ function TopBar(): React.JSX.Element {
   );
 }
 
-/* ---------- Global floating parallax background ---------- */
 function ParallaxField({ container }: { container: React.RefObject<HTMLDivElement | null> }) {
   const reduce = useReducedMotion();
   const isMobile = useIsMobile();
@@ -99,7 +88,6 @@ function ParallaxField({ container }: { container: React.RefObject<HTMLDivElemen
 
 type Palette = "indigo" | "violet" | "emerald" | "amber";
 
-/* ---------- Gradient artwork for each slide ---------- */
 function GradientArt({
   palette = "indigo",
   container,
@@ -143,12 +131,10 @@ function GradientArt({
       style={reduce ? undefined : { y, contain: "paint" }}
       className="relative z-0 mx-auto w-full max-w-[18rem] sm:max-w-xs will-change-transform"
     >
-      {/* Card */}
       <div className="relative aspect-square overflow-hidden rounded-2xl border border-neutral-900/10 bg-white/70 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
-        {/* Soft highlight */}
+
         <div className="absolute inset-0 -z-10 rounded-2xl bg-gradient-to-br from-black/0 to-black/0 dark:from-white/10 dark:to-transparent" />
 
-        {/* Animated blobs (2 only) */}
         <motion.div
           aria-hidden
           animate={{ x: [0, 14, -14, 0], y: [0, -10, 10, 0], rotate: [0, 6, -6, 0] }}
@@ -162,13 +148,11 @@ function GradientArt({
           className={`absolute -bottom-14 -right-12 h-64 w-64 rounded-full bg-gradient-to-br ${col.b} blur-2xl`}
         />
 
-        {/* Center radial (light uses dark ink, dark uses white) */}
         <div
           aria-hidden
           className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_60%,rgba(0,0,0,0.06)_0%,rgba(0,0,0,0.02)_35%,transparent_60%)] dark:bg-[radial-gradient(circle_at_50%_60%,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0.06)_35%,transparent_60%)]"
         />
 
-        {/* Big center icon */}
         {OverlayIcon && (
           <div className="absolute inset-0 grid place-items-center">
             <div className="rounded-2xl bg-neutral-900/10 p-3 backdrop-blur-md dark:bg-black/25">
@@ -177,14 +161,12 @@ function GradientArt({
           </div>
         )}
 
-        {/* Border glow */}
         <div className="pointer-events-none absolute -inset-[1px] rounded-2xl ring-1 ring-neutral-900/10 dark:ring-white/15" />
       </div>
     </motion.div>
   );
 }
 
-/* ---------- Slide ---------- */
 type SlideProps = {
   index: number;
   title: string;
@@ -218,7 +200,6 @@ const Slide = forwardRef<HTMLDivElement, SlideProps>(function Slide(
         className="mx-auto w-full max-w-5xl"
       >
         <div className="relative mx-auto grid items-center gap-8 sm:gap-10 md:grid-cols-12">
-          {/* TEXT */}
           <div className="relative z-10 md:col-span-7">
             {kicker && (
               <div className="inline-flex items-center gap-2 rounded-full bg-neutral-900/70 px-3 py-1 text-[11px] uppercase tracking-wider text-white backdrop-blur dark:bg-white/10 dark:text-white">
@@ -253,7 +234,6 @@ const Slide = forwardRef<HTMLDivElement, SlideProps>(function Slide(
             )}
           </div>
 
-          {/* ART – below text on mobile */}
           <div className="md:col-span-5 md:mt-0 mt-1 relative z-0">
             <GradientArt palette={tint} container={scrollContainer} depth={artDepth} overlayIcon={HeadIcon} />
           </div>
@@ -263,7 +243,6 @@ const Slide = forwardRef<HTMLDivElement, SlideProps>(function Slide(
   );
 });
 
-/* ---------- Mobile bottom rail (matches desktop style) ---------- */
 function MobileRail({
   total,
   activeIndex,
@@ -311,7 +290,6 @@ function MobileRail({
   );
 }
 
-/* ---------- Right-side vertical nav (rail — desktop only) ---------- */
 function NavRail({
   total,
   activeIndex,
@@ -350,7 +328,6 @@ function NavRail({
   );
 }
 
-/* ---------- Arrows (desktop) ---------- */
 function FloatArrows({ onPrev, onNext }: { onPrev: () => void; onNext: () => void }) {
   return (
     <div className="fixed right-3 sm:right-4 md:right-6 bottom-6 z-[70] hidden sm:flex flex-col gap-2">
@@ -372,7 +349,6 @@ function FloatArrows({ onPrev, onNext }: { onPrev: () => void; onNext: () => voi
   );
 }
 
-/* ---------- Track chips (optional visual aid) ---------- */
 function TrackChips(): React.JSX.Element {
   const tracks: ReadonlyArray<{ label: string }> = [
     { label: "Songwriting" },
@@ -396,7 +372,6 @@ function TrackChips(): React.JSX.Element {
   );
 }
 
-/* ---------- Page ---------- */
 export default function AcademyPage(): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const sectionRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -521,7 +496,6 @@ export default function AcademyPage(): React.JSX.Element {
     []
   );
 
-  /* Track active slide */
   useEffect(() => {
     const nodes = sectionRefs.current.filter(Boolean) as HTMLElement[];
     if (!nodes.length) return;
@@ -539,7 +513,6 @@ export default function AcademyPage(): React.JSX.Element {
     return () => obs.disconnect();
   }, []);
 
-  /* Keyboard ↑/↓ (desktop) */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowDown") {
@@ -563,12 +536,11 @@ export default function AcademyPage(): React.JSX.Element {
     [slides.length]
   );
 
-  /* Desktop wheel → page-by-page */
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-    if (isTouch) return; // mobile uses native snap
+    if (isTouch) return;
 
     let locked = false;
     let accum = 0;
@@ -595,18 +567,13 @@ export default function AcademyPage(): React.JSX.Element {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-white text-neutral-900 dark:bg-neutral-950 dark:text-white">
-      {/* <TopBar /> */}
 
-      {/* Global parallax & floating objects */}
       <ParallaxField container={containerRef} />
 
-      {/* Right-side vertical nav (desktop) */}
       <NavRail total={slides.length + 1} activeIndex={active} onGo={jump} />
 
-      {/* Bottom rail (mobile) — thin, colored, like desktop but horizontal */}
       <MobileRail total={slides.length + 1} activeIndex={active} onGo={jump} />
 
-      {/* Scroll container */}
       <div
         ref={containerRef}
         className="relative z-10 h-[100dvh] overflow-y-auto overscroll-y-contain scroll-smooth snap-y snap-mandatory pb-[84px] md:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -628,7 +595,6 @@ export default function AcademyPage(): React.JSX.Element {
           />
         ))}
 
-        {/* CTA / Closing slide */}
         <section
           ref={registerRef(slides.length)}
           className="relative grid min-h-[100dvh] snap-start place-items-center px-4 pt-12 pb-28 sm:pt-16 sm:pb-24 sm:px-8"
@@ -676,10 +642,8 @@ export default function AcademyPage(): React.JSX.Element {
         </section>
       </div>
 
-      {/* Arrow helpers (desktop only) */}
       <FloatArrows onPrev={() => jump(active - 1)} onNext={() => jump(active + 1)} />
 
-      {/* Edge fades (light & dark) */}
       <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 h-16 bg-gradient-to-b from-white to-transparent dark:from-neutral-950" />
       <div aria-hidden className="pointer-events-none fixed inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent dark:from-neutral-950" />
     </main>

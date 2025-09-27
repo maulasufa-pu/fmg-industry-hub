@@ -18,7 +18,6 @@ export default function RedirectIfAuthenticated() {
     if (ranRef.current) return;
     ranRef.current = true;
 
-    // Jangan berjalan di /auth/*
     if (path.startsWith("/auth")) return;
 
     const supabase = getSupabaseClient();
@@ -39,10 +38,10 @@ export default function RedirectIfAuthenticated() {
           const u = new URL(nextParam, window.location.origin);
           if (!isAdminLike && u.pathname.startsWith("/client")) dest = u.pathname + u.search + u.hash;
           if (isAdminLike && u.pathname.startsWith("/admin"))  dest = u.pathname + u.search + u.hash;
-        } catch { /* ignore */ }
+        } catch {  }
       }
 
-      router.replace(dest, { scroll: false }); // ❌ no prefetch → lebih cepat, minim flicker
+      router.replace(dest, { scroll: false }); 
     })();
   }, [router, sp, path]);
 

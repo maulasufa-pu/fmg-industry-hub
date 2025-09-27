@@ -5,7 +5,6 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
-/** ---------- utils ---------- */
 const idr = (n: number) => `IDR ${n.toLocaleString("id-ID")}`;
 const toDateStr = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
 const clampInt = (n: number) => Math.max(0, Math.round(n));
@@ -26,7 +25,6 @@ const fallbackInvoiceNo = (): string => {
   return `INV-${y}${m}${dd}-${hh}${mm}${ss}`;
 };
 
-/** ---------- schema ---------- */
 const ServiceSchema = z.object({
   key: z.string().min(1),
   price: z.number().finite().nonnegative(),
@@ -59,7 +57,6 @@ const PayloadSchema = z.object({
   ]).optional(),
 });
 
-/** ---------- handler ---------- */
 export async function GET(req: Request) {
   const h = req.headers.get("Authorization");
   return NextResponse.json({ hasAuth: !!h, authPrefix: h?.slice(0, 10) ?? null });
@@ -67,7 +64,6 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    // env guard
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -78,7 +74,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // auth (session user via cookies atau Bearer)
     const cookieStore = cookies();
     const supabaseCookie = createRouteHandlerClient({ cookies: () => cookieStore });
     await supabaseCookie.auth.getUser(); // keep cookie session warm
@@ -86,18 +81,15 @@ export async function POST(req: Request) {
     const authHeader = req.headers.get("Authorization");
     const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
-    // Klien service-role (srv) untuk semua write (bypass RLS)
     const srv = createClient(url, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    // Klien anon (svcBearer) buat verifikasi Bearer kalau ada
     const svcBearer = createClient(url, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
       global: bearer ? { headers: { Authorization: `Bearer ${bearer}` } } : undefined,
     });
 
-    // Resolve uid
     let uid: string | null = null;
     if (bearer) {
       const { data: u } = await svcBearer.auth.getUser();
@@ -111,18 +103,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
     }
 
-    // validate body
     const raw = await req.json().catch(() => null);
     if (!raw) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     const body = PayloadSchema.parse(raw);
 
-    // sanitize dates
     const startDate = isYmd(body.startDate ?? undefined) ? body.startDate : null;
     const deadline = isYmd(body.deadline ?? undefined) ? body.deadline : null;
 
     const rawDescription = body.description?.trim() || null;
 
-    /** 1) projects */
     type ProjectInsertResult = { project_id: string };
     const { data: proj, error: projErr } = await srv
       .from("projects")
@@ -148,7 +137,6 @@ export async function POST(req: Request) {
     if (projErr) throw projErr;
     const projectId = proj.project_id;
 
-    /** 2) milestones */
     const start = startDate ? new Date(startDate) : new Date();
     const end = deadline ? new Date(deadline) : null;
     const mid = end
@@ -177,7 +165,6 @@ export async function POST(req: Request) {
       (msData ?? []).map((m) => [m.title, m.id])
     );
 
-    /** 3) reference links */
     const lines = (body.referenceLinks || "")
       .split(/\r?\n/)
       .map((s: string) => s.trim())
@@ -188,7 +175,6 @@ export async function POST(req: Request) {
       if (refErr) throw refErr;
     }
 
-    /** 4) payment schedules */
     const addSched = (
       label: string,
       percent: number,
@@ -232,7 +218,6 @@ export async function POST(req: Request) {
       createdSchedules = schData ?? [];
     }
 
-    /** 5) siapkan info client (nama & email) */
     type ClientRow = { id: string; name: string | null; email: string | null };
     const { data: clientRow } = await srv
       .from("clients")
@@ -244,7 +229,6 @@ export async function POST(req: Request) {
     let clientEmail: string | null = clientRow?.email ?? null;
 
     if (!clientName || !clientEmail) {
-      // fallback ke auth admin (email & full_name)
       const { data: adminUser } = await srv.auth.admin.getUserById(uid);
       const meta = (adminUser?.user?.user_metadata ?? {}) as Record<string, unknown>;
       const maybeFullName = typeof meta.full_name === "string" ? meta.full_name : null;
@@ -252,20 +236,16 @@ export async function POST(req: Request) {
       clientEmail = clientEmail ?? (adminUser?.user?.email ?? null);
     }
 
-    /** 6) AUTO-CREATE INVOICE */
-    // 6a) nomor invoice
     let invoiceNo = fallbackInvoiceNo();
     const rpc = await srv.rpc("next_invoice_no");
     if (!rpc.error && typeof rpc.data === "string" && rpc.data.trim()) {
       invoiceNo = rpc.data;
     }
 
-    // 6b) tanggal issue + due (default 14 hari)
     const today = new Date();
     const issueDate = toDateStr(today);
     const dueDate = toDateStr(addDays(today, 14));
 
-    // 6c) insert invoice (coba dengan project_id dulu; jika gagal, retry tanpa)
     type InvoiceInsertResult = { id: string };
     const baseInvoice = {
       invoice_no: invoiceNo,
@@ -279,7 +259,6 @@ export async function POST(req: Request) {
     };
     let invoiceId: string | null = null;
 
-    // attempt with project_id
     {
       const { data: inv1, error: invErr1 } = await srv
         .from("invoices")
@@ -289,7 +268,6 @@ export async function POST(req: Request) {
       if (!invErr1 && inv1?.id) {
         invoiceId = inv1.id;
       } else {
-        // retry without project_id (kolom mungkin belum ada)
         const { data: inv2, error: invErr2 } = await srv
           .from("invoices")
           .insert(baseInvoice)
@@ -302,7 +280,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // 6d) mapping service_key -> service_id
     type ServiceMapRow = { id: string; service_key: string };
     const uniqueKeys = Array.from(new Set(body.selectedServices.map((s) => s.key)));
     const { data: svcRows, error: svcErr } = await srv
@@ -311,13 +288,11 @@ export async function POST(req: Request) {
       .in("service_key", uniqueKeys)
       .returns<ServiceMapRow[]>();
     if (svcErr) {
-      // bersihkan invoice agar tidak orphan
       await srv.from("invoices").delete().eq("id", invoiceId);
       throw svcErr;
     }
     const keyToId = new Map<string, string>((svcRows ?? []).map((r) => [r.service_key, r.id]));
 
-    // 6e) susun invoice_items
     type InvoiceItemInsert = {
       invoice_id: string;
       service_id: string | null;
@@ -359,7 +334,6 @@ export async function POST(req: Request) {
       }
     }
 
-    /** 7) backlink (opsional) — abaikan error jika kolom tidak ada */
     await srv.from("projects").update({ invoice_id: invoiceId }).eq("project_id", projectId);
 
     return NextResponse.json(

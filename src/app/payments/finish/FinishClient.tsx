@@ -12,7 +12,6 @@ export default function FinishClient({ orderId }: { orderId: string | null }) {
         router.replace("/admin/invoices");
         return;
       }
-      // lazy import supaya gak kepanggil saat prerender
       const { getSupabaseClient } = await import("@/lib/supabase/client");
       const sb = getSupabaseClient();
       const { data } = await sb

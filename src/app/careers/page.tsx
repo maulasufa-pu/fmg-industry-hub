@@ -30,17 +30,7 @@ import {
   Zap,
 } from "lucide-react";
 
-/*************************************************
- * FMG Universe — /careers (Light + Dark friendly)
- * - Fullpage vertical slides (scroll-snap, per-section paging)
- * - Parallax gradient art (mobile moves DOWN so it never covers text)
- * - Reduced-motion aware
- * - Right nav rail (desktop) + thin bottom rail (mobile)
- * - Open Roles split into two slides: Filters (S1) + Listings (S2)
- * - No `any`
- *************************************************/
 
-/* ---------- Utils ---------- */
 function useIsMobile(breakpoint = 768): boolean {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -61,7 +51,6 @@ function slugify(input: string): string {
     .replace(/(^-|-$)+/g, "");
 }
 
-/* ---------- (Optional) Top bar ---------- */
 function TopBar(): React.JSX.Element {
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex h-14 items-center justify-between px-4 sm:px-8">
@@ -79,7 +68,6 @@ function TopBar(): React.JSX.Element {
   );
 }
 
-/* ---------- Global floating parallax background ---------- */
 function ParallaxField({ container }: { container: React.RefObject<HTMLDivElement | null> }) {
   const reduce = useReducedMotion();
   const isMobile = useIsMobile();
@@ -91,7 +79,6 @@ function ParallaxField({ container }: { container: React.RefObject<HTMLDivElemen
 
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-      {/* use plain <div> on mobile/reduced-motion; motion.div otherwise */}
       {reduce || isMobile ? (
         <div className="absolute -top-32 -left-24 h-[28rem] w-[28rem] rounded-full bg-gradient-to-br from-indigo-500/16 via-fuchsia-500/14 to-sky-500/10 sm:h-[36rem] sm:w-[36rem] sm:-top-40 sm:-left-32 blur-xl sm:blur-2xl" />
       ) : (
@@ -110,7 +97,6 @@ function ParallaxField({ container }: { container: React.RefObject<HTMLDivElemen
         />
       )}
 
-      {/* Gentle moving blobs only on desktop + non-reduced motion */}
       {!reduce && !isMobile && (
         <>
           <motion.div
@@ -133,7 +119,6 @@ function ParallaxField({ container }: { container: React.RefObject<HTMLDivElemen
 
 type Palette = "indigo" | "violet" | "emerald" | "amber";
 
-/* ---------- Gradient artwork for each slide ---------- */
 function GradientArt({
   palette = "indigo",
   container,
@@ -177,12 +162,9 @@ function GradientArt({
       style={reduce ? undefined : { y, contain: "paint" as const }}
       className="relative z-0 mx-auto w-full max-w-[18rem] sm:max-w-xs will-change-transform"
     >
-      {/* Card */}
       <div className="relative aspect-square overflow-hidden rounded-2xl border border-neutral-900/10 bg-white/70 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
-        {/* Soft highlight */}
         <div className="absolute inset-0 -z-10 rounded-2xl bg-gradient-to-br from-black/0 to-black/0 dark:from-white/10 dark:to-transparent" />
 
-        {/* Animated blobs (respect reduced motion) */}
         <motion.div
           aria-hidden
           animate={reduce ? undefined : { x: [0, 14, -14, 0], y: [0, -10, 10, 0], rotate: [0, 6, -6, 0] }}
@@ -196,13 +178,11 @@ function GradientArt({
           className={`absolute -bottom-14 -right-12 h-64 w-64 rounded-full bg-gradient-to-br ${col.b} blur-2xl`}
         />
 
-        {/* Center radial */}
         <div
           aria-hidden
           className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_60%,rgba(0,0,0,0.06)_0%,rgba(0,0,0,0.02)_35%,transparent_60%)] dark:bg-[radial-gradient(circle_at_50%_60%,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0.06)_35%,transparent_60%)]"
         />
 
-        {/* Big center icon */}
         {OverlayIcon && (
           <div className="absolute inset-0 grid place-items-center">
             <div className="rounded-2xl bg-neutral-900/10 p-3 backdrop-blur-md dark:bg-black/25">
@@ -211,14 +191,12 @@ function GradientArt({
           </div>
         )}
 
-        {/* Border glow */}
         <div className="pointer-events-none absolute -inset-[1px] rounded-2xl ring-1 ring-neutral-900/10 dark:ring-white/15" />
       </div>
     </motion.div>
   );
 }
 
-/* ---------- Types for roles ---------- */
 type Team =
   | "Creative"
   | "Engineering"
@@ -244,7 +222,6 @@ type Role = {
   tags: readonly string[];
 };
 
-/* ---------- Seed roles (static; hook up to Supabase if needed) ---------- */
 const OPEN_ROLES: ReadonlyArray<Role> = [
   {
     id: "r1",
@@ -336,7 +313,6 @@ const OPEN_ROLES: ReadonlyArray<Role> = [
   },
 ] as const;
 
-/* ---------- RoleCard ---------- */
 function RoleCard({ role }: { role: Role }): React.JSX.Element {
   const href = `/careers/apply?role=${encodeURIComponent(slugify(role.title))}`;
   return (
@@ -376,13 +352,11 @@ function RoleCard({ role }: { role: Role }): React.JSX.Element {
         ))}
       </div>
 
-      {/* Subtle glow */}
       <div className="pointer-events-none absolute -inset-[1px] rounded-2xl ring-1 ring-neutral-900/10 group-hover:ring-neutral-900/20 dark:ring-white/15" />
     </div>
   );
 }
 
-/* ---------- RolesFilter ---------- */
 type FilterState = {
   team: Team | "All";
   location: Location | "All";
@@ -428,7 +402,6 @@ function RolesFilter({
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-neutral-900/10 bg-white/70 p-3 backdrop-blur-xl dark:border-white/10 dark:bg-white/5 sm:flex-row sm:items-center sm:gap-4 sm:p-4">
-      {/* Search */}
       <label className="flex flex-1 items-center gap-2 rounded-xl border border-neutral-900/10 bg-white px-3 py-2 text-sm text-neutral-900 shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-white">
         <Search className="h-4 w-4 opacity-70" />
         <input
@@ -461,7 +434,6 @@ function RolesFilter({
         })}
       </div>
 
-      {/* Location */}
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter by location">
         {ALL_LOCATIONS.map((l) => {
           const active = value.location === l;
@@ -482,7 +454,6 @@ function RolesFilter({
         })}
       </div>
 
-      {/* Type */}
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter by employment type">
         {ALL_TYPES.map((t) => {
           const active = value.type === t;
@@ -506,7 +477,6 @@ function RolesFilter({
   );
 }
 
-/* ---------- Slide ---------- */
 type SlideProps = {
   index: number;
   title: string;
@@ -518,7 +488,7 @@ type SlideProps = {
   headIcon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   artDepth?: number;
   scrollContainer: React.RefObject<HTMLDivElement | null>;
-  isActive: boolean; // reduced-motion aware animations will respect this
+  isActive: boolean; 
 };
 
 const Slide = forwardRef<HTMLDivElement, SlideProps>(function Slide(
@@ -541,7 +511,6 @@ const Slide = forwardRef<HTMLDivElement, SlideProps>(function Slide(
         className="mx-auto w-full max-w-5xl"
       >
         <div className="relative mx-auto grid items-center gap-8 sm:gap-10 md:grid-cols-12">
-          {/* TEXT */}
           <div className="relative z-10 md:col-span-7">
             {kicker && (
               <div className="inline-flex items-center gap-2 rounded-full bg-neutral-900/70 px-3 py-1 text-[11px] uppercase tracking-wider text-white backdrop-blur dark:bg-white/10 dark:text-white">
@@ -576,7 +545,6 @@ const Slide = forwardRef<HTMLDivElement, SlideProps>(function Slide(
             )}
           </div>
 
-          {/* ART */}
           <div className="md:col-span-5 md:mt-0 mt-1 relative z-0">
             <GradientArt
               palette={tint}
@@ -591,7 +559,6 @@ const Slide = forwardRef<HTMLDivElement, SlideProps>(function Slide(
   );
 });
 
-/* ---------- Right-side vertical nav (rail — desktop only) ---------- */
 function NavRail({
   total,
   activeIndex,
@@ -630,7 +597,6 @@ function NavRail({
   );
 }
 
-/* ---------- Bottom rail (mobile) ---------- */
 function MobileRail({
   total,
   activeIndex,
@@ -679,7 +645,6 @@ function MobileRail({
   );
 }
 
-/* ---------- Arrows (desktop) ---------- */
 function FloatArrows({ onPrev, onNext }: { onPrev: () => void; onNext: () => void }) {
   return (
     <div className="fixed right-3 sm:right-4 md:right-6 bottom-6 z-[70] hidden sm:flex flex-col gap-2">
@@ -701,7 +666,6 @@ function FloatArrows({ onPrev, onNext }: { onPrev: () => void; onNext: () => voi
   );
 }
 
-/* ---------- Page ---------- */
 export default function CareersPage(): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const sectionRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -711,7 +675,6 @@ export default function CareersPage(): React.JSX.Element {
     sectionRefs.current[i] = el;
   };
 
-  // Slides config (now includes a separate entry for Listings)
   const slides = useMemo(
     () => [
       {
@@ -791,7 +754,6 @@ export default function CareersPage(): React.JSX.Element {
     []
   );
 
-  /* Track active slide */
   useEffect(() => {
     const nodes = sectionRefs.current.filter(Boolean) as HTMLElement[];
     if (!nodes.length) return;
@@ -811,7 +773,6 @@ export default function CareersPage(): React.JSX.Element {
     return () => obs.disconnect();
   }, []);
 
-  /* Keyboard ↑/↓ (desktop) */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowDown") {
@@ -828,19 +789,18 @@ export default function CareersPage(): React.JSX.Element {
 
   const jump = useCallback(
     (i: number) => {
-      const last = slides.length; // CTA slide uses index = slides.length
+      const last = slides.length; 
       const idx = Math.max(0, Math.min(last, i));
       sectionRefs.current[idx]?.scrollIntoView({ behavior: "smooth", block: "start" });
     },
     [slides.length]
   );
 
-  /* Desktop wheel → page-by-page */
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-    if (isTouch) return; // mobile uses native snap
+    if (isTouch) return; 
 
     let locked = false;
     let accum = 0;
@@ -865,7 +825,6 @@ export default function CareersPage(): React.JSX.Element {
     return () => el.removeEventListener("wheel", onWheel);
   }, [active, jump]);
 
-  /* ---------- Filters for roles ---------- */
   const [filter, setFilter] = useState<FilterState>({
     team: "All",
     location: "All",
@@ -890,18 +849,15 @@ export default function CareersPage(): React.JSX.Element {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-white text-neutral-900 dark:bg-neutral-950 dark:text-white">
-      {/* <TopBar /> */}
 
       <ParallaxField container={containerRef} />
       <NavRail total={slides.length + 1} activeIndex={active} onGo={jump} />
       <MobileRail total={slides.length + 1} activeIndex={active} onGo={jump} />
 
-      {/* Scroll container */}
       <div
         ref={containerRef}
         className="relative z-10 h-[100dvh] overflow-y-auto overscroll-y-contain scroll-smooth snap-y snap-mandatory pb-[84px] md:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        {/* Slide 0 — Hero */}
         <Slide
           ref={registerRef(0)}
           index={0}
@@ -916,7 +872,6 @@ export default function CareersPage(): React.JSX.Element {
           scrollContainer={containerRef}
         />
 
-        {/* Slide 1 — Open Roles (Filters only) */}
         <section
           ref={registerRef(1)}
           id="slide-1"
@@ -931,7 +886,6 @@ export default function CareersPage(): React.JSX.Element {
             className="mx-auto w-full max-w-5xl"
           >
             <div className="relative mx-auto grid items-start gap-8 sm:gap-10 md:grid-cols-12">
-              {/* Left text */}
               <div className="relative z-10 md:col-span-7">
                 <div className="inline-flex items-center gap-2 rounded-full bg-neutral-900/70 px-3 py-1 text-[11px] uppercase tracking-wider text-white backdrop-blur dark:bg-white/10">
                   <span className="h-1.5 w-1.5 rounded-full bg-white/90" />
@@ -968,7 +922,6 @@ export default function CareersPage(): React.JSX.Element {
                 </div>
               </div>
 
-              {/* Art */}
               <div className="md:col-span-5 md:mt-0 mt-1 relative z-0">
                 <GradientArt
                   palette="violet"
@@ -981,7 +934,6 @@ export default function CareersPage(): React.JSX.Element {
           </motion.div>
         </section>
 
-        {/* NEW Slide 2 — Listings (scroll inside) */}
         <section
           ref={registerRef(2)}
           id="slide-2"
@@ -1033,7 +985,6 @@ export default function CareersPage(): React.JSX.Element {
                 </div>
               </div>
 
-              {/* Art */}
               <div className="md:col-span-5 md:mt-0 mt-1 relative z-0">
                 <GradientArt
                   palette="violet"
@@ -1046,7 +997,6 @@ export default function CareersPage(): React.JSX.Element {
           </motion.div>
         </section>
 
-        {/* Slide 3 — Benefits */}
         <Slide
           ref={registerRef(3)}
           index={3}
@@ -1073,7 +1023,6 @@ export default function CareersPage(): React.JSX.Element {
           scrollContainer={containerRef}
         />
 
-        {/* Slide 4 — Life at FMG */}
         <section
           ref={registerRef(4)}
           id="slide-4"
@@ -1125,7 +1074,6 @@ export default function CareersPage(): React.JSX.Element {
           </motion.div>
         </section>
 
-        {/* Slide 5 — Hiring Process */}
         <section
           ref={registerRef(5)}
           id="slide-5"
@@ -1195,7 +1143,6 @@ export default function CareersPage(): React.JSX.Element {
           </motion.div>
         </section>
 
-        {/* CTA / Closing slide */}
         <section
           ref={registerRef(slides.length)}
           className="relative grid min-h-[100dvh] snap-start place-items-center px-4 pt-12 pb-28 sm:pt-16 sm:pb-24 sm:px-8"
@@ -1246,7 +1193,6 @@ export default function CareersPage(): React.JSX.Element {
 
       <FloatArrows onPrev={() => jump(active - 1)} onNext={() => jump(active + 1)} />
 
-      {/* Edge fades */}
       <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 h-16 bg-gradient-to-b from-white to-transparent dark:from-neutral-950" />
       <div aria-hidden className="pointer-events-none fixed inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent dark:from-neutral-950" />
     </main>

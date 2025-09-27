@@ -55,10 +55,6 @@ declare global {
   }
 }
 
-/* ============================
- * Midtrans loader
- * ============================ */
-
 function useSnapLoader(clientKey: string | undefined, isProduction: boolean) {
   useEffect(() => {
     if (!clientKey) return;
@@ -75,22 +71,16 @@ function useSnapLoader(clientKey: string | undefined, isProduction: boolean) {
   }, [clientKey, isProduction]);
 }
 
-/* ============================
- * Component
- * ============================ */
-
 export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }): React.JSX.Element {
   const sb = useMemo(() => getSupabaseClient(), []);
   const [loading, setLoading] = useState(true);
   const [inv, setInv] = useState<InvoiceRow | null>(null);
   const [items, setItems] = useState<InvoiceItemRow[] | null>(null);
 
-  // Role state
   const [role, setRole] = useState<UserRole>("client");
   const isAdminOwner = role === "admin" || role === "owner";
   const backHref = isAdminOwner ? "/admin/invoices" : "/client/invoices";
 
-  // Load role (simple: cek profiles.main_role)
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -117,7 +107,6 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
     };
   }, [sb]);
 
-  // Midtrans
   const MIDTRANS_CLIENT_KEY = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY;
   const MIDTRANS_IS_PRODUCTION =
     (process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION ?? "false") === "true";
@@ -145,7 +134,6 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
     void load();
   }, [load]);
 
-  // Realtime: invoice_items & invoices
   useEffect(() => {
     const ch = sb
       .channel(`inv-${invoiceId}`)
@@ -180,7 +168,6 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
 
   const sendReminder = async (): Promise<void> => {
     if (!inv) return;
-    // TODO: panggil Edge Function / API route untuk email/WA.
     // eslint-disable-next-line no-console
     console.log("send reminder -> invoice:", inv.id);
   };
@@ -215,14 +202,12 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
     }
   };
 
-  // NEW: Refresh Payment Link (generate link dan simpan ke invoices.payment_url)
   const refreshPaymentLink = async (): Promise<void> => {
     if (!inv) return;
     try {
       const res = await fetch("/api/payments/midtrans/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // tambahkan hint mode bila API kamu mendukung (opsional)
         body: JSON.stringify({ invoiceId: inv.id, mode: "link" }),
       });
       if (!res.ok) {
@@ -277,7 +262,6 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Invoice {inv.invoice_no}</h1>
@@ -294,9 +278,7 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
           </div>
         </div>
 
-        {/* ACTION BUTTONS with Role Gate */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Unpaid-only actions */}
           {inv.status === "unpaid" && (
             <>
               {isAdminOwner && (
@@ -342,7 +324,6 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
             </>
           )}
 
-          {/* Always available */}
           <button
             onClick={printInvoice}
             className="h-9 rounded-md border px-3 text-sm hover:bg-muted"
@@ -356,7 +337,6 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
         </div>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="text-sm text-muted-foreground">Client</div>
@@ -385,7 +365,6 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
         </div>
       </div>
 
-      {/* Line Items */}
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
         <div className="border-b bg-muted/40 px-4 py-3 font-medium">Items</div>
         {items && items.length > 0 ? (

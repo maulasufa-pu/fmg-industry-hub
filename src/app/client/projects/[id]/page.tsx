@@ -6,7 +6,6 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
-// Shared types
 import type {
   ProjectSummary,
   TabKey,
@@ -50,21 +49,17 @@ export default function ClientProjectDetailPage() {
   const params = useParams<{ id: string }>();
   const supabase = useMemo(() => getSupabaseClient(), []);
 
-  // ownership
   const [isOwner, setIsOwner] = useState(false);
 
-  // Core state
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState<ProjectSummary | null>(null);
   const [userAccess, setUserAccess] = useState<UserAccess | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [assignmentsLoading, setAssignmentsLoading] = useState<boolean>(true);
 
-  // ✅ flags to prevent Not Found flicker
   const [accessChecked, setAccessChecked] = useState(false);
   const [projectChecked, setProjectChecked] = useState(false);
 
-  // Team assignment state
   const [currentAssignments, setCurrentAssignments] = useState<CurrentAssignments>({
     anr: "",
     composer: "",
@@ -80,14 +75,12 @@ export default function ClientProjectDetailPage() {
     publisher: [],
   });
 
-  // Tab data state
   const [drafts, setDrafts] = useState<any[] | null>(null);
   const [revisions, setRevisions] = useState<any[] | null>(null);
   const [links, setLinks] = useState<any[] | null>(null);
   const [messages, setMessages] = useState<any[] | null>(null);
   const [meetings, setMeetings] = useState<any[] | null>(null);
 
-  // ====== HELPERS ======
   const loadCurrentAssignments = useCallback(async () => {
     setAssignmentsLoading(true);
     try {
@@ -142,7 +135,6 @@ export default function ClientProjectDetailPage() {
     return null;
   };
 
-  // ====== LOAD ALL DATA (Client/Admin scope) ======
   useEffect(() => {
     let mounted = true;
 
@@ -155,7 +147,6 @@ export default function ClientProjectDetailPage() {
           setLoading(false);
           return;
         }
-        // role user
         const { data: profile } = await supabase
           .from("profiles")
           .select("main_role, staff_role, email")
@@ -174,9 +165,8 @@ export default function ClientProjectDetailPage() {
           staff_role: profile.staff_role || [],
         };
         setUserAccess(access);
-        setAccessChecked(true); // ✅ akses sudah dipastikan
+        setAccessChecked(true); 
 
-        // Ambil proyek by id
         const { data: projectData, error: projErr } = await supabase
           .from("project_summary")
           .select("*")
@@ -186,7 +176,7 @@ export default function ClientProjectDetailPage() {
         if (projErr || !projectData) { setProject(null); setLoading(false); return; }
 
         setProject(projectData);
-        setProjectChecked(true); // ✅ project sudah dipastikan
+        setProjectChecked(true); 
 
         const owner =
           !!projectData &&
@@ -194,7 +184,6 @@ export default function ClientProjectDetailPage() {
            ("created_by" in projectData && (projectData as any).created_by === user.id));
         setIsOwner(owner);
 
-        // Hanya admin/staff yg punya akses TEAM_ASSIGNMENTS perlu staff-list
         if (hasAccess(access, ACCESS_RULES.TEAM_ASSIGNMENTS)) {
           type StaffListRow = {
             id: string;
@@ -247,7 +236,6 @@ export default function ClientProjectDetailPage() {
         }
       } catch (error) {
         console.error("Error loading project data:", error);
-        // pada error pun tandai sudah dicek agar tidak flicker
         setAccessChecked(true);
         setProjectChecked(true);
       } finally {
@@ -259,7 +247,6 @@ export default function ClientProjectDetailPage() {
     return () => { mounted = false; };
   }, [params.id, supabase]);
 
-  // ====== LAZY TAB LOAD ======
   useEffect(() => {
     if (!project || !userAccess) return;
     let mounted = true;
@@ -317,7 +304,6 @@ export default function ClientProjectDetailPage() {
     return () => { mounted = false; };
   }, [activeTab, project, userAccess, params.id, supabase, drafts, links, messages, meetings]);
 
-  // ====== ACTIONS ======
   const handleSaveAssignmentsAlgo = async (draft: CurrentAssignments) => {
     if (!project) return;
 
@@ -413,7 +399,6 @@ export default function ClientProjectDetailPage() {
     return days;
   })();
 
-  // ====== RENDER ======
   if (loading || !accessChecked || !projectChecked) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-6 flex items-center justify-center">
@@ -475,7 +460,7 @@ export default function ClientProjectDetailPage() {
       {(isOwner || hasAccess(userAccess, ACCESS_RULES.HERO_SECTION)) && (
         <HeroSection
           project={project}
-          showRightActions={false} // client tidak butuh tombol admin
+          showRightActions={false} 
           onAcceptProject={handleAcceptProject}
           onPutOnHold={handlePutOnHold}
           teamMemberCount={teamMemberCount}
@@ -483,7 +468,6 @@ export default function ClientProjectDetailPage() {
         />
       )}
 
-      {/* Team assignment: hanya muncul utk admin/staff sesuai akses */}
       {hasAccess(userAccess, ACCESS_RULES.TEAM_ASSIGNMENTS) && (
         <TeamAssignmentSection
           project={project}
@@ -494,7 +478,6 @@ export default function ClientProjectDetailPage() {
         />
       )}
 
-      {/* Tabs & konten selalu dikelola ProjectControlsSection (baik admin maupun client) */}
       <ProjectControlsSection
         project={project}
         userAccess={userAccess}

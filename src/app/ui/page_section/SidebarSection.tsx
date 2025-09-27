@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import type { UserRole } from "@/lib/roles";
 import {
   Layout, Clipboard, FileText, Calendar, BookOpen, Users,
-  BarChart3, Music, Headphones, Mic2, Settings, Package2 // ⬅️ tambah ini
+  BarChart3, Music, Headphones, Mic2, Settings, Package2 
 } from "lucide-react";
 
 import { motion, AnimatePresence, MotionConfig } from "framer-motion";
@@ -14,10 +14,6 @@ import UserDropdown from "../pop_over/user_dropdown";
 import { useProfile } from "@/hooks/useProfile";
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
 import Portal from "@/components/ui/Portal";
-
-/** ------------------------------------------------------------------
- * Types
- * ------------------------------------------------------------------ */
 
 type NavItem = {
   href: string;
@@ -31,17 +27,11 @@ type Props = {
   onClose?: () => void;
 };
 
-/** ------------------------------------------------------------------
- * Menu Map (keep strictly typed)
- * ------------------------------------------------------------------ */
-
 const MENU: Partial<Record<UserRole, readonly NavItem[]>> = {
   admin: [
     { href: "/admin/dashboard", label: "Dashboard", Icon: Layout },
     { href: "/admin/projects", label: "Projects", Icon: Clipboard },
     { href: "/admin/invoices", label: "Invoices", Icon: FileText },
-    // { href: "/admin/meetings", label: "Meetings", Icon: Calendar },
-    // { href: "/admin/publishing", label: "Publishing", Icon: BookOpen },
     { href: "/admin/productservices", label: "Products & Services", Icon: Package2 }, // ⬅️ baru
     { href: "/admin/users", label: "Users (Owner)", Icon: Users },
   ],
@@ -49,41 +39,23 @@ const MENU: Partial<Record<UserRole, readonly NavItem[]>> = {
     { href: "/admin/dashboard", label: "Dashboard", Icon: Layout },
     { href: "/admin/projects", label: "Projects", Icon: Clipboard },
     { href: "/admin/invoices", label: "Invoices", Icon: FileText },
-    // { href: "/admin/meetings", label: "Meetings", Icon: Calendar },
-    // { href: "/admin/publishing", label: "Publishing", Icon: BookOpen },
     { href: "/admin/productservices", label: "Products & Services", Icon: Package2 }, // ⬅️ baru
     { href: "/admin/users", label: "Users", Icon: Users },
   ],
   anr: [
-    // { href: "/admin/anr/queue", label: "My Queue", Icon: Clipboard },
-    // { href: "/admin/anr/meetings", label: "Meetings", Icon: Calendar },
-    // { href: "/admin/anr/qc", label: "QC & Revisions", Icon: Settings },
-    // { href: "/admin/anr/projects", label: "Projects", Icon: Layout },
     { href: "/admin/projects", label: "Projects", Icon: Clipboard },
   ],
   composer: [
     { href: "/admin/projects", label: "Projects", Icon: Clipboard },
-    // { href: "/admin/composer/assigned", label: "Assigned Tracks", Icon: Music },
-    // { href: "/admin/composer/drafts", label: "Drafts", Icon: FileText },
-    // { href: "/admin/composer/uploads", label: "Uploads", Icon: BookOpen },
   ],
   producer: [
     { href: "/admin/projects", label: "Projects", Icon: Clipboard },
-    // { href: "/admin/producer/board", label: "Production Board", Icon: BarChart3 },
-    // { href: "/admin/producer/sessions", label: "Sessions", Icon: Calendar },
-    // { href: "/admin/producer/deliverables", label: "Deliverables", Icon: FileText },
   ],
   engineer: [
     { href: "/admin/projects", label: "Projects", Icon: Clipboard },
-    // { href: "/admin/engineer/queue", label: "Mix/Master Queue", Icon: Headphones },
-    // { href: "/admin/engineer/sessions", label: "Sessions", Icon: Mic2 },
-    // { href: "/admin/engineer/renders", label: "Renders", Icon: FileText },
   ],
   publisher: [
     { href: "/admin/projects", label: "Projects", Icon: Clipboard },
-    // { href: "/admin/engineer/queue", label: "Mix/Master Queue", Icon: Headphones },
-    // { href: "/admin/engineer/sessions", label: "Sessions", Icon: Mic2 },
-    // { href: "/admin/engineer/renders", label: "Renders", Icon: FileText },
   ],
   client: [
     { href: "/client/dashboard/", label: "Dashboard", Icon: Layout },
@@ -92,16 +64,11 @@ const MENU: Partial<Record<UserRole, readonly NavItem[]>> = {
   ]
 } as const;
 
-/** ------------------------------------------------------------------
- * Utils
- * ------------------------------------------------------------------ */
-
 const normalizeRole = (role: UserRole): UserRole => (String(role).replace(/-/g, "_") as UserRole);
 
 const isActive = (pathname: string, href: string): boolean =>
   pathname === href || (href !== "/" && pathname.startsWith(href + "/"));
 
-// Color schemes untuk setiap halaman
 const getPageColorScheme = (pathname: string) => {
   if (pathname.includes("/dashboard")) {
     return {
@@ -153,7 +120,6 @@ const getPageColorScheme = (pathname: string) => {
     };
   }
   
-  // Default purple scheme
   return {
     primary: "purple",
     gradient: "from-slate-900 via-slate-800 to-blue-900", 
@@ -168,10 +134,6 @@ const TWEEN_FAST = { type: "tween" as const, duration: 0.18, ease: EASE };
 const SPRING_SNAPPY = { type: "spring" as const, stiffness: 600, damping: 42, mass: 0.6 };
 const STAGGER = 0.03;
 
-/** ------------------------------------------------------------------
- * Component
- * ------------------------------------------------------------------ */
-
 export default function SidebarSection({ role, isOpen = true, onClose }: Props): React.JSX.Element {
   const pathname = usePathname();
   const normalizedRole = normalizeRole(role);
@@ -180,12 +142,10 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
     : MENU[normalizedRole] ?? MENU.admin ?? [];
   const colorScheme = getPageColorScheme(pathname ?? "");
   
-  // State for UserMenu
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const profileButtonRef = useRef<HTMLButtonElement>(null);
   const mobileProfileButtonRef = useRef<HTMLButtonElement>(null);
-  // Focusable keyboard nav (ArrowUp/Down, Home/End)
   const containerRef = useRef<HTMLDivElement | null>(null);
   const linkRefs = useRef<Array<HTMLAnchorElement | null>>([]);
 
@@ -224,14 +184,11 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
     }
   }, []);
   
-  // Load profile data
   const { profile, loading: profileLoading } = useProfile();
   
-  // Subtle entrance animation once per mount
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // Calculate dropdown position
   const calculateDropdownPosition = useCallback(() => {
     
     const buttonRef = profileButtonRef.current || mobileProfileButtonRef.current;
@@ -241,28 +198,24 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
       const gap = 8;
       const viewportHeight = window.innerHeight;
       
-      // Check if this is mobile by checking which ref is being used
       const isMobile = buttonRef === mobileProfileButtonRef.current;
       
       if (isMobile) {
-        // For mobile, position dropdown below the button to avoid going off-screen
         setDropdownPosition({
           top: rect.bottom + gap,
-          left: Math.max(16, rect.left), // Ensure minimum 16px from left edge
+          left: Math.max(16, rect.left), 
         });
       } else {
-        // Desktop positioning - above the button
         const topPosition = rect.top - dropdownHeight - gap;
         
         setDropdownPosition({
-          top: topPosition < 0 ? rect.bottom + gap : topPosition, // Fallback if too high
+          top: topPosition < 0 ? rect.bottom + gap : topPosition, 
           left: rect.left,
         });
       }
     }
   }, []);
   
-  // Handle profile button click
   const handleProfileClick = useCallback(() => {
     if (!showUserMenu) {
       calculateDropdownPosition();
@@ -270,7 +223,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
     setShowUserMenu(!showUserMenu);
   }, [showUserMenu, calculateDropdownPosition]);
 
-  // Recalculate position on window resize
   useEffect(() => {
     const handleResize = () => {
       if (showUserMenu) {
@@ -282,7 +234,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
     return () => window.removeEventListener('resize', handleResize);
   }, [showUserMenu, calculateDropdownPosition]);
   
-  // Debug logging
   useEffect(() => {
     console.log('[SidebarSection] role =', role, 'normalizedRole =', normalizedRole);
     console.log('[SidebarSection] items.length =', items.length);
@@ -292,20 +243,17 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
   
   if (normalizedRole === "guest") {
     console.log('[SidebarSection] Returning empty for guest role');
-    return <></>; // atau return null
+    return <></>; 
   }
 
-  /** Render */
   return (
     <MotionConfig reducedMotion="user" transition={TWEEN_FAST}>
     <>
-      {/* Desktop Sidebar - Always visible on lg+ screens */}
       <aside
         data-sidebar
         className="hidden lg:block fixed top-0 left-0 z-10 h-dvh w-72 flex flex-col shrink-0 border-r border-slate-600 dark:border-slate-500 bg-gradient-to-b from-slate-700 via-slate-600 to-slate-800 dark:from-slate-800 dark:via-slate-700 dark:to-slate-900 shadow-xl dark:shadow-slate-800/25"
         aria-label="Sidebar"
       >
-      {/* Animated background pattern */}
       <motion.div 
         className="absolute inset-0 opacity-5 pointer-events-none"
         initial={{ opacity: 0 }}
@@ -339,7 +287,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
         />
       </motion.div>
 
-      {/* Header / Brand */}
       <motion.div 
         className="relative px-7 pt-6 pb-5"
         initial={{ opacity: 0, y: -12 }}
@@ -352,7 +299,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
             whileHover={{ scale: 1.05, rotate: 5 }}
             transition={{ duration: 0.2 }}
           >
-            {/* Animated background overlay */}
             <motion.div 
               className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"
             />
@@ -377,17 +323,8 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
                 </div>
               </div>
             </motion.div>
-            {/* <motion.div 
-              className="text-xs text-slate-300 dark:text-slate-300 font-medium leading-relaxed"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-            >
-              Role: <span className="capitalize text-white dark:text-white font-semibold ml-1">{String(normalizedRole).replace(/_/g, " ")}</span>
-            </motion.div> */}
           </div>
         </div>
-        {/* Accent underline */}
         <motion.div 
           className="pointer-events-none absolute inset-x-7 bottom-0 h-px bg-gradient-to-r from-transparent via-purple-400 to-transparent"
           initial={{ scaleX: 0 }}
@@ -396,20 +333,11 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
         />
       </motion.div>
 
-      {/* Nav list */}
       <nav
         ref={containerRef}
         onKeyDown={onKeyDown}
         className="relative flex flex-col flex-1 min-h-0 gap-2 overflow-y-auto px-6 py-6 pb-28"
       >
-        {/* Navigation background overlay */}
-        {/* <motion.div 
-          className="absolute inset-0 bg-gradient-to-b from-white/50 via-transparent to-white/20 pointer-events-none"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6, duration: 1 }}
-        /> */}
-        
         <div className="relative z-10">
           <AnimatePresence initial={false}>
             {mounted && (
@@ -453,7 +381,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
                                 : "text-white dark:text-white hover:bg-slate-700/40 hover:text-white focus:bg-slate-50 focus:shadow-lg focus:shadow-purple-500/15 dark:bg-slate-800 hover:shadow-sm",
                             ].join(" ")}
                           >
-                            {/* Hover background effect */}
                             <motion.div
                               className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-violet-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                             />
@@ -468,7 +395,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
                               whileHover={{ scale: 1.05, rotate: 2 }}
                               transition={{ duration: 0.2 }}
                             >
-                              {/* Icon background shimmer effect */}
                               <motion.div
                                 className="absolute inset-0 bg-gradient-to-br from-transparent to-purple-600 opacity-0 group-hover:opacity-100"
                                 initial={{ x: -100 }}
@@ -499,7 +425,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
           </AnimatePresence>
         </div>
 
-        {/* Footer Quick Actions */}
         <motion.div 
           className="mt-6 mx-2 rounded-xl border border-purple-400/30 dark:border-purple-500/40 bg-gradient-to-br from-slate-800/90 via-purple-900/20 to-violet-900/30 backdrop-blur-sm p-5 shadow-lg dark:shadow-purple-900/25"
           initial={{ opacity: 0, y: 20 }}
@@ -521,7 +446,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
           </div>
         </motion.div>
 
-        {/* User Controls Footer */}
         <motion.div 
           className="mt-4 mx-2 rounded-full backdrop-blur-sm px-3 py-1.5 shadow-lg shadow-teal-500/20 dark:shadow-cyan-900/30"
           initial={{ opacity: 0, y: 20 }}
@@ -529,7 +453,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
           transition={{ delay: 0.9, duration: 0.5 }}
         >
           <div className="flex items-center justify-center">
-            {/* Profile Picture - Opens UserMenu - Centered */}
             <motion.div 
               className="relative"
               whileHover={{ scale: 1.05 }}
@@ -554,7 +477,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
                 </span>
               </button>
               
-              {/* UserMenu positioned above the button */}
               {showUserMenu && (
                 <Portal>
                   <div 
@@ -576,7 +498,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
           </div>
         </motion.div>
 
-        {/* Settings Gear Icon - Below User Controls */}
         <motion.div 
           className="mt-3 flex justify-center"
           initial={{ opacity: 0, y: 20 }}
@@ -603,7 +524,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
       </nav>
     </aside>
 
-    {/* Mobile Sidebar */}
     <AnimatePresence initial={false}>
       {isOpen && (
         <motion.aside
@@ -615,8 +535,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
           transition={{ type: "tween", ease: EASE, duration: 0.22 }}
           aria-label="Mobile admin sidebar"
         >
-          {/* Mobile Sidebar Content - Same as Desktop */}
-          {/* Animated background pattern */}
           <motion.div 
             className="absolute inset-0 opacity-5 pointer-events-none transform-gpu will-change-transform will-change-opacity hidden lg:block"
             initial={{ opacity: 0 }}
@@ -635,64 +553,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
               transition={{ duration: 9, repeat: Infinity, ease: "linear" }}
             />
           </motion.div>
-
-          {/* Mobile Header */}
-          {/* <motion.div 
-            className="relative px-7 pt-6 pb-5"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-          >
-            <div className="flex items-center gap-4"> */}
-              {/* <motion.div 
-                className="relative grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-lg dark:shadow-slate-800/25 overflow-hidden"
-                whileHover={{ scale: 1.05, rotate: 5 }}
-                transition={{ duration: 0.2 }}
-              > */}
-                {/* <motion.div 
-                  className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"
-                />
-                <Layout className="relative block overflow-visible text-white z-10" size={20} aria-hidden="true" />
-              </motion.div> */}
-              {/* <div className="min-w-0 space-y-1.5"> */}
-                {/* <motion.div 
-                  className="text-xl font-bold bg-gradient-to-r from-purple-600 to-violet-600 dark:from-purple-300 dark:to-violet-300 bg-clip-text text-transparent leading-tight"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2, duration: 0.5 }}
-                >
-                  {/* Admin Panel */}
-                  {/* <div className="inline-flex flex-col items-end justify-center relative flex-[0_0_auto]">
-                    <div 
-                      className="relative w-fit mt-[-1.00px] font-heading-4 font-[number:var(--heading-4-font-weight)] text-gray-800 dark:text-gray-100 dark:text-gray-100 text-[length:var(--heading-4-font-size)] tracking-[var(--heading-4-letter-spacing)] leading-[var(--heading-4-line-height)] whitespace-nowrap [font-style:var(--heading-4-font-style)]">
-                      Flemmo Music
-                    </div>
-
-                    <div 
-                      className="relative w-fit -mt-1 font-body-XS font-[number:var(--body-XS-font-weight)] text-neutral-600 dark:text-neutral-200 dark:text-gray-200 text-[length:var(--body-XS-font-size)] tracking-[var(--body-XS-letter-spacing)] leading-[var(--body-XS-line-height)] whitespace-nowrap [font-style:var(--body-XS-font-style)]">
-                    Global Universe Solution
-                    </div>
-                  </div> */}
-                {/* </motion.div> */}
-                {/* <motion.div 
-                  className="text-xs text-slate-300 dark:text-slate-300 font-medium leading-relaxed"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3, duration: 0.5 }}
-                >
-                  Role: <span className="capitalize text-white dark:text-white font-semibold ml-1">{String(normalizedRole).replace(/_/g, " ")}</span>
-                </motion.div> */}
-              {/* </div>
-            </div> */}
-            {/* <motion.div 
-              className="pointer-events-none absolute inset-x-7 bottom-0 h-px bg-gradient-to-r from-transparent via-purple-400 to-transparent"
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
-            /> */}
-          {/* </motion.div> */}
-
-          {/* Mobile Nav */}
           <nav
             className="relative flex h-[calc(100%-180px)] flex-col gap-2 overflow-y-auto px-6 py-6"
           >
@@ -774,7 +634,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
               </AnimatePresence>
             </div>
 
-            {/* Mobile User Controls Footer */}
             <motion.div 
               className="mt-4 mx-2 mb-4 rounded-full backdrop-blur-sm px-3 py-1.5 shadow-lg shadow-teal-500/20 dark:shadow-cyan-900/30"
               initial={{ opacity: 0, y: 20 }}
@@ -782,7 +641,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
               transition={{ delay: 0.9, duration: 0.5 }}
             >
               <div className="flex items-center justify-center">
-                {/* Profile Picture - Opens UserMenu - Centered */}
                 <motion.div 
                   className="relative"
                   whileHover={{ scale: 1.05 }}
@@ -807,7 +665,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
                     </span>
                   </button>
                   
-                  {/* UserMenu positioned with Portal for mobile */}
                   {showUserMenu && (
                     <Portal>
                       <div 
@@ -829,7 +686,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
               </div>
             </motion.div>
 
-            {/* Settings Gear Icon - Below User Controls (Mobile) */}
             <motion.div 
               className="mb-4 flex justify-center"
               initial={{ opacity: 0, y: 20 }}
@@ -863,10 +719,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
   );
 }
 
-/** ------------------------------------------------------------------
- * Quick Button
- * ------------------------------------------------------------------ */
-
 function QuickButton({
   href,
   label,
@@ -886,7 +738,6 @@ function QuickButton({
         href={href}
         className="group relative flex items-center gap-3 rounded-xl border border-purple-300/40 dark:border-purple-400/50 bg-gradient-to-r from-purple-800/60 via-violet-800/50 to-purple-900/60 backdrop-blur-md px-4 py-3 text-sm font-semibold text-purple-100 shadow-lg hover:shadow-xl dark:shadow-purple-900/30 transition-all duration-300 hover:border-purple-200/60 hover:from-purple-700/70 hover:via-violet-700/60 hover:to-purple-800/70 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/60 overflow-hidden"
       >
-        {/* Animated background overlay */}
         <motion.div
           className="absolute inset-0 bg-gradient-to-r from-purple-400/10 via-violet-400/15 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
           initial={{ x: -100 }}
@@ -894,13 +745,11 @@ function QuickButton({
           transition={{ duration: 0.8, ease: "easeInOut" }}
         />
         
-        {/* Icon container */}
         <motion.div 
           className="relative grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-purple-500/90 to-violet-600/90 shadow-md group-hover:shadow-lg group-hover:shadow-purple-400/30"
           whileHover={{ rotate: 5, scale: 1.05 }}
           transition={{ duration: 0.2 }}
         >
-          {/* Icon shimmer effect */}
           <motion.div
             className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 rounded-lg"
             initial={{ x: -20 }}
@@ -910,7 +759,6 @@ function QuickButton({
           <Icon className="relative w-4 h-4 text-purple-50 z-10" aria-hidden="true" />
         </motion.div>
         
-        {/* Label */}
         <motion.span 
           className="relative truncate font-medium tracking-wide"
           initial={{ opacity: 0.9 }}
@@ -919,7 +767,6 @@ function QuickButton({
           {label}
         </motion.span>
 
-        {/* Hover arrow */}
         <motion.div
           className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-300"
           initial={{ x: -10 }}

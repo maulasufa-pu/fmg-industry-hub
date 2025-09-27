@@ -7,7 +7,6 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 
 type Props = {
   children: React.ReactNode;
-  /** Target area yang diharapkan halaman ini */
   area?: "any" | "client" | "admin";
 };
 type GuardStatus = "checking" | "authed" | "guest";
@@ -38,21 +37,14 @@ export default function RequireAuth({ children, area = "any" }: Props) {
     }
   };
 
-  // Debug bypass for GitHub Copilot development
   const debugBypass = () => {
-    console.log("🔍 RequireAuth: Checking for debug bypass...");
-    
     if (typeof window !== 'undefined') {
-      // AUTOMATIC BYPASS FOR LOCALHOST in development
       const isLocalhost = window.location.hostname === 'localhost' || 
                          window.location.hostname === '127.0.0.1' ||
                          window.location.hostname.startsWith('192.168.') ||
                          window.location.hostname.endsWith('.local');
       
       if (isLocalhost && process.env.NODE_ENV === 'development') {
-        console.log("🐛 RequireAuth: AUTOMATIC LOCALHOST BYPASS ACTIVATED");
-        console.log("🐛 RequireAuth: Hostname:", window.location.hostname);
-        console.log("🐛 RequireAuth: Setting status to 'authed'");
         setStatus("authed");
         return true;
       }
@@ -60,37 +52,21 @@ export default function RequireAuth({ children, area = "any" }: Props) {
       const urlParams = new URLSearchParams(window.location.search);
       const debugKey = urlParams.get('debug_key');
       
-      console.log("🔍 RequireAuth: Found debug_key in URL:", debugKey);
-      console.log("🔍 RequireAuth: Expected key:", 'copilot-debug-2025-fmg-industry-hub');
-      
-      // Check untuk debug key yang sesuai
       if (debugKey === 'copilot-debug-2025-fmg-industry-hub') {
-        console.log("🤖 RequireAuth: DEBUG BYPASS ACTIVATED for GitHub Copilot");
-        console.log("🤖 RequireAuth: Setting status to 'authed'");
         setStatus("authed");
         return true;
-      } else {
-        console.log("❌ RequireAuth: Debug key mismatch or not found");
       }
-    } else {
-      console.log("❌ RequireAuth: Window not available");
     }
     return false;
   };
 
-  // Temporary bypass for testing - remove in production
   const bypassAuthForTesting = () => {
-    console.log("RequireAuth: BYPASSING AUTH FOR TESTING - This should be removed in production!");
     setStatus("authed");
     return true;
   };
 
-  // getSession aman dengan fallback
   const getSessionSafe = async () => {
     try {
-      console.log("RequireAuth: Getting session from Supabase...");
-      
-      // Add timeout to prevent hanging - reduced to 2 seconds for better UX
       const sessionPromise = supabase.auth.getSession();
       const timeoutPromise = new Promise<never>((_, reject) => 
         setTimeout(() => reject(new Error('Session check timeout')), 2000)
@@ -101,34 +77,26 @@ export default function RequireAuth({ children, area = "any" }: Props) {
         timeoutPromise
       ]);
       
-      console.log("RequireAuth: Session result:", { session: !!session, error });
       if (error) {
-        console.error("RequireAuth: Session error:", error);
         return null;
       }
       return session;
     } catch (err) {
-      console.error("RequireAuth: Exception getting session:", err);
-      
-      // In development, allow bypass after 1 failed attempt
       if (process.env.NODE_ENV === 'development' && initAttemptRef.current < 1) {
         initAttemptRef.current++;
-        console.log("RequireAuth: Development mode - attempting bypass due to network issues");
         return "bypass" as any;
       }
       
-      // In production, be more strict but still handle gracefully
       return null;
     }
   };
 
   const goLoginOnce = async () => {
     if (redirectingRef.current || isLoginPage) return;
-    // double-check sebelum redirect
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session || statusRef.current === "authed") return;
-    } catch { /* ignore */ }
+    } catch { }
 
     redirectingRef.current = true;
     const to = `/login?redirectedFrom=${encodeURIComponent(pathname || (area === "admin" ? "/admin/dashboard" : "/client/dashboard"))}`;
@@ -140,11 +108,8 @@ export default function RequireAuth({ children, area = "any" }: Props) {
 
   const checkSession = async (opts?: { retry?: boolean; attempt?: number }) => {
     const attempt = opts?.attempt ?? 0;
-    console.log(`RequireAuth: checkSession called (attempt: ${attempt})`);
     
-    // Prevent infinite retry - max 2 attempts only
     if (attempt >= 2) {
-      console.log("RequireAuth: Max attempts reached, redirecting to login");
       setStatus("guest");
       void goLoginOnce();
       return;
@@ -152,22 +117,17 @@ export default function RequireAuth({ children, area = "any" }: Props) {
     
     const session = await getSessionSafe();
     if (!mountedRef.current) {
-      console.log("RequireAuth: Component unmounted, aborting");
       return;
     }
 
-    // Handle development bypass
     if (session === "bypass") {
-      console.log("RequireAuth: Using development bypass");
       setStatus("authed");
       return;
     }
 
     if (session) {
-      console.log("RequireAuth: Session found, user authenticated");
       clearRetry();
       setStatus("authed");
-      // Jika halaman mensyaratkan area tertentu, cek role sekali
       if (!roleCheckedRef.current && area !== "any") {
         roleCheckedRef.current = true;
         void checkRoleGate(session.user.id, area);
@@ -176,21 +136,17 @@ export default function RequireAuth({ children, area = "any" }: Props) {
     }
     
     if (session === null) {
-      console.log("RequireAuth: No session, redirecting to login");
       clearRetry();
       setStatus("guest");
       void goLoginOnce();
       return;
     }
 
-    // This should not happen now since getSessionSafe returns session | null | "bypass"
-    console.log("RequireAuth: Unexpected session state, treating as no session");
     setStatus("guest");
     void goLoginOnce();
   };
 
   const checkRoleGate = async (userId: string, expected: "client" | "admin") => {
-    // Ambil role dari DB menggunakan schema baru
     try {
       const { data: prof } = await supabase
       .from("profiles")
@@ -198,7 +154,6 @@ export default function RequireAuth({ children, area = "any" }: Props) {
       .eq("id", userId)
       .maybeSingle();
 
-      // Determine effective role using same logic as getEffectiveRole
       let effectiveRole: Role = "client";
       if (prof) {
         const allRoles: string[] = [];
@@ -206,7 +161,6 @@ export default function RequireAuth({ children, area = "any" }: Props) {
         if (Array.isArray(prof.staff_role)) {
           allRoles.push(...prof.staff_role);
         }        
-        // Check priority: owner > admin > client
         if (allRoles.includes("owner")) effectiveRole = "owner";
         else if (allRoles.includes("admin")) effectiveRole = "admin";
         else effectiveRole = "client";
@@ -224,38 +178,22 @@ export default function RequireAuth({ children, area = "any" }: Props) {
         startTransition(() => router.replace("/admin/dashboard"));
         return;
       }
-      // else: cocok, stay
     } catch (err) {
-      console.error("Error checking role gate:", err);
-      // Kalau gagal baca role, biar UX aman: jangan mengusir user yang sudah authed
-      // (server-side guard/middleware tetap akan menolak jika tak berhak)
     }
   };
 
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log("RequireAuth: useEffect triggered", { area, pathname, isLoginPage });
-    }
-    
     mountedRef.current = true;
     roleCheckedRef.current = false;
     
-    // 🤖 Check for debug bypass FIRST before any other checks
     if (debugBypass()) {
-      console.log("🤖 RequireAuth: Debug bypass successful, skipping all auth checks");
       return;
     }
     
-    // Initial check
     void checkSession({ retry: false });
 
-    // Listen to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((evt) => {
       if (!mountedRef.current) return;
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`RequireAuth: Auth state changed - ${evt}`);
-      }
 
       if (evt === "SIGNED_IN" || evt === "TOKEN_REFRESHED") {
         clearRetry();
@@ -270,19 +208,13 @@ export default function RequireAuth({ children, area = "any" }: Props) {
         return;
       }
 
-      // For other events, do a simple check
       void checkSession({ retry: false });
     });
 
-    // Re-validate on focus/visibility change
     const kick = () => {
       const now = Date.now();
-      if (now - lastKickRef.current < 5000) return; // Increased debounce to 5 seconds
+      if (now - lastKickRef.current < 5000) return;
       lastKickRef.current = now;
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log("RequireAuth: Page focus/visibility change, rechecking session");
-      }
       
       roleCheckedRef.current = false;
       void checkSession({ retry: false });
@@ -299,9 +231,6 @@ export default function RequireAuth({ children, area = "any" }: Props) {
     }
 
     return () => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log("RequireAuth: Cleanup");
-      }
       mountedRef.current = false;
       clearRetry();
       if (!isLoginPage) {
@@ -310,7 +239,6 @@ export default function RequireAuth({ children, area = "any" }: Props) {
       }
       subscription.unsubscribe();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, isLoginPage, pathname, area]);
 
   if (status !== "authed") {

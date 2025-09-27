@@ -26,19 +26,15 @@ export async function POST(req: NextRequest) {
   try {
     const { title, startAt, durationMin, timezone } = (await req.json()) as {
       title: string;
-      startAt: string;     // kirim ISO dari client kalau bisa (startLocal.toISOString())
+      startAt: string;    
       durationMin: number;
-      timezone?: string;   // optional; default Asia/Jakarta
+      timezone?: string;   
     };
 
     if (!title || !startAt || !durationMin) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    // NORMALISASI WAKTU → UTC ISO
-    // Jika client sudah kirim ISO (ada 'Z' / offset), ini aman.
-    // Kalau yang dikirim bukan ISO lengkap, new Date(startAt) bisa salah tergantung server TZ.
-    // Jadi paling aman: kirim dari client pakai startLocal.toISOString().
     const date = new Date(startAt);
     if (isNaN(date.getTime())) {
       return NextResponse.json({ error: "Invalid startAt" }, { status: 400 });
@@ -49,10 +45,10 @@ export async function POST(req: NextRequest) {
 
     const payload = {
       topic: title,
-      type: 2,                 // scheduled
-      start_time: utcISO,      // UTC
+      type: 2,                 
+      start_time: utcISO,      
       duration: durationMin,
-      timezone: timezone || "Asia/Jakarta", // tampilkan sesuai WIB di Zoom
+      timezone: timezone || "Asia/Jakarta", 
       settings: {
         join_before_host: true,
         waiting_room: true,

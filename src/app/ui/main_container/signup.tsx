@@ -19,9 +19,6 @@ import {
   RefreshCcw,
 } from "lucide-react";
 
-/*********************************
- * Helpers & Types
- *********************************/
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type FieldErrors = {
@@ -50,9 +47,6 @@ const validate = (v: {
   return next;
 };
 
-/*********************************
- * Component
- *********************************/
 
 export function SignUpSection(): React.JSX.Element {
   const [firstName, setFirst] = useState<string>("");
@@ -85,7 +79,6 @@ export function SignUpSection(): React.JSX.Element {
 
   const router = useRouter();
 
-  // --- hCaptcha
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaKey, setCaptchaKey] = useState<number>(0); // force re-mount on reset
   const siteKey: string = process.env.NEXT_PUBLIC_HCAPTCHA_SITEKEY ?? "";
@@ -122,7 +115,6 @@ export function SignUpSection(): React.JSX.Element {
     return `${origin}/auth/callback`;
   };
 
-  // Disabled submit if invalid or captcha belum ada
   const canSubmit = useMemo(() => {
     const v = validate({ firstName, lastName, email, password, agree });
     return Object.keys(v).length === 0 && !!captchaToken && !loading;
@@ -146,7 +138,6 @@ export function SignUpSection(): React.JSX.Element {
     setTouched({ firstName: true, lastName: true, email: true, password: true, agree: true });
     if (Object.keys(next).length > 0) { focusFirstInvalid(next); return; }
 
-    // Wajib captcha
     if (!captchaToken) {
       setErr("Please complete the captcha.");
       return;
@@ -154,14 +145,12 @@ export function SignUpSection(): React.JSX.Element {
 
     setLoading(true);
     try {
-      // 0) Verify hCaptcha on server
       const ok = await verifyCaptcha(captchaToken);
       if (!ok) {
         resetCaptcha();
         throw new Error("Captcha verification failed. Please try again.");
       }
 
-      // 1) Supabase signUp
       const supabase = getSupabaseClient();
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -169,19 +158,17 @@ export function SignUpSection(): React.JSX.Element {
         options: {
           data: { first_name: firstName, last_name: lastName },
           emailRedirectTo: buildRedirect("signup"),
-          captchaToken: captchaToken ?? undefined, // ⬅️ WAJIB kalau Captcha ON
+          captchaToken: captchaToken ?? undefined, 
         },
       });
       if (error) throw error;
 
-      // 2) Jika email confirmation ON → session null → beri pesan
       if (!data.session) {
         setMsg("We’ve sent a confirmation link to your email. Please verify to continue.");
-        resetCaptcha(); // user bisa resend/solve lagi
+        resetCaptcha(); 
         return;
       }
 
-      // 3) Set HttpOnly cookie
       const resp = await fetch("/auth/set", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -196,7 +183,6 @@ export function SignUpSection(): React.JSX.Element {
         throw new Error(m);
       }
 
-      // 4) Redirect final (hormati ?next)
       const rawNext = sp.get("next") || sp.get("redirectedFrom") || "";
       const dest = rawNext.startsWith("/") ? rawNext : "/client/dashboard";
       router.replace(dest);
@@ -213,7 +199,6 @@ export function SignUpSection(): React.JSX.Element {
     setErr(null);
     setMsg(null);
 
-    // Opsional (disarankan): butuh captcha utk resend agar anti-abuse
     if (!captchaToken) {
       setErr("Please complete the captcha before resending.");
       return;
@@ -230,7 +215,7 @@ export function SignUpSection(): React.JSX.Element {
         email,
         options: {
           emailRedirectTo: buildRedirect("signup"),
-          captchaToken: captchaToken ?? undefined, // ⬅️ kirim juga
+          captchaToken: captchaToken ?? undefined, 
         },
       });
       if (error) throw error;
@@ -271,7 +256,6 @@ export function SignUpSection(): React.JSX.Element {
 
   return (
     <section className="relative w-full px-4 sm:px-6 lg:px-8 py-10">
-      {/* Subtle backdrop */}
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-500/10 via-transparent to-transparent" />
 
       <motion.div
@@ -281,7 +265,6 @@ export function SignUpSection(): React.JSX.Element {
         className="mx-auto w-full max-w-md sm:max-w-lg lg:max-w-xl"
       >
         <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-black/40 backdrop-blur-xl shadow-[0_20px_60px_-20px_rgba(0,0,0,0.35)] overflow-hidden">
-          {/* Header */}
           <div className="px-6 sm:px-8 pt-7 pb-4">
             <div className="flex items-center justify-center gap-2 text-indigo-600 dark:text-indigo-300">
               <ShieldCheck className="h-5 w-5" />
@@ -295,9 +278,7 @@ export function SignUpSection(): React.JSX.Element {
             </p>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="px-6 sm:px-8 pb-6 sm:pb-8">
-            {/* Names */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label htmlFor="first" className="block text-[13px] font-medium text-neutral-800 dark:text-neutral-200">
@@ -374,7 +355,6 @@ export function SignUpSection(): React.JSX.Element {
               </div>
             </div>
 
-            {/* Email */}
             <div className="mt-4">
               <label htmlFor="email" className="block text-[13px] font-medium text-neutral-800 dark:text-neutral-200">
                 Email address
@@ -413,7 +393,6 @@ export function SignUpSection(): React.JSX.Element {
               )}
             </div>
 
-            {/* Password */}
             <div className="mt-4">
               <label htmlFor="password" className="block text-[13px] font-medium text-neutral-800 dark:text-neutral-200">
                 Password
@@ -464,7 +443,6 @@ export function SignUpSection(): React.JSX.Element {
               )}
             </div>
 
-            {/* Agree to terms */}
             <div className="mt-4">
               <label className="inline-flex items-center gap-2 select-none">
                 <input
@@ -503,7 +481,6 @@ export function SignUpSection(): React.JSX.Element {
               Forgot password?
             </Link>
 
-            {/* hCaptcha */}
             <div className="mt-4 flex justify-center">
               <HCaptcha
                 key={captchaKey}
@@ -517,7 +494,6 @@ export function SignUpSection(): React.JSX.Element {
               />
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={!canSubmit}
@@ -535,7 +511,6 @@ export function SignUpSection(): React.JSX.Element {
               )}
             </button>
 
-            {/* Error / Success banner */}
             {(err || msg) && (
               <div
                 className={`mt-3 rounded-lg p-3 text-[13px] ${
@@ -594,7 +569,6 @@ export function SignUpSection(): React.JSX.Element {
               </p>
             )}
 
-            {/* Divider */}
             <div className="mt-6 flex items-center gap-3">
               <div className="h-px flex-1 bg-black/10 dark:bg-white/10" />
               <span className="text-[12px] text-neutral-500 whitespace-nowrap">
@@ -603,7 +577,6 @@ export function SignUpSection(): React.JSX.Element {
               <div className="h-px flex-1 bg-black/10 dark:bg-white/10" />
             </div>
 
-            {/* Social */}
             <div className="mt-3 grid grid-cols-1 gap-3">
               <motion.button
                 type="button"
@@ -628,7 +601,6 @@ export function SignUpSection(): React.JSX.Element {
               </motion.button>
             </div>
 
-            {/* Login link */}
             <p className="mt-6 text-center text-[13px] text-neutral-700 dark:text-neutral-300">
               Already have an account?{" "}
               <a href="/login" className="font-semibold text-indigo-700 hover:text-indigo-800 dark:text-indigo-300 dark:hover:text-indigo-200 underline">

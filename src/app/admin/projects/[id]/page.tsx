@@ -6,7 +6,6 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
-// Shared types
 import type {
   ProjectSummary,
   TabKey,
@@ -51,14 +50,12 @@ export default function AdminProjectDetailPage() {
   const params = useParams<{ id: string }>();
   const supabase = useMemo(() => getSupabaseClient(), []);
 
-  // Core state
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState<ProjectSummary | null>(null);
   const [userAccess, setUserAccess] = useState<UserAccess | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [assignmentsLoading, setAssignmentsLoading] = useState<boolean>(true); // ← optional
   
-  // ✅ flags supaya gak flicker Not Found
   const [accessChecked, setAccessChecked] = useState(false);
   const [projectChecked, setProjectChecked] = useState(false);
 
@@ -76,7 +73,6 @@ export default function AdminProjectDetailPage() {
     if (data) setProject(data as ProjectSummary);
   }, [params.id, supabase]);
 
-  // Team assignment state
   const [currentAssignments, setCurrentAssignments] = useState<CurrentAssignments>({
     anr: "",
     composer: "",
@@ -92,18 +88,14 @@ export default function AdminProjectDetailPage() {
     publisher: [],
   });
 
-  // Tab data state
   const [drafts, setDrafts] = useState<any[] | null>(null);
   const [revisions, setRevisions] = useState<any[] | null>(null);
   const [links, setLinks] = useState<any[] | null>(null);
   const [messages, setMessages] = useState<any[] | null>(null);
   const [meetings, setMeetings] = useState<any[] | null>(null);
 
-  // ====== ALGORTIMA (helpers) ======
-
-  // Load current assignments dari database (shared function)
   const loadCurrentAssignments = useCallback(async () => {
-    setAssignmentsLoading(true); // ← optional
+    setAssignmentsLoading(true);
     try {
       const response = await fetch(`/api/assignments?project_id=${params.id}`, {
         signal: AbortSignal.timeout(5000),
@@ -119,7 +111,7 @@ export default function AdminProjectDetailPage() {
       console.warn("Load current assignments failed:", e);
       setCurrentAssignments({ anr: "", composer: "", producer: "", engineer: "", publisher: "" });
     } finally {
-      setAssignmentsLoading(false); // ← optional
+      setAssignmentsLoading(false);
     }
   }, [params.id]);
 
@@ -127,20 +119,16 @@ export default function AdminProjectDetailPage() {
     void loadCurrentAssignments();
   }, [loadCurrentAssignments]);
 
-
-  // Helper untuk mendapatkan nama lengkap
   const getFullName = (member: TeamMember): string => {
     const firstName = member.first_name || "";
     const lastName = member.last_name || "";
     return [firstName, lastName].filter(Boolean).join(" ") || member.email || "Unknown";
   };
 
-  // Helper untuk opsi dropdown per role
   const getTeamOptionsForRole = (role: keyof TeamRoleOptions): TeamMember[] => {
     return teamRoleOptions[role] || [];
   };
 
-  // cari profile.id berdasarkan teks input (nama/email) + role option
   const findProfileIdByDisplay = (display: string, roleKey: keyof TeamRoleOptions): string | null => {
     if (!display?.trim()) return null;
     const list = getTeamOptionsForRole(roleKey);
@@ -160,7 +148,6 @@ export default function AdminProjectDetailPage() {
     return null;
   };
 
-  // non-upsert: matikan yang aktif lalu insert baris baru (aman dengan partial unique index)
   const assignOne = async (projectId: string, role: "anr" | "composer" | "producer" | "engineer", userId: string) => {
     const { error: e1 } = await supabase
       .from("assignments")
@@ -182,7 +169,6 @@ export default function AdminProjectDetailPage() {
     if (e2) throw e2;
   };
 
-  // ambil nama tampilan dari profiles.id (tidak dipakai kalau API sudah balikin display)
   const getDisplayNameById = (
     profiles: Array<{ id: string; first_name: string | null; last_name: string | null; email: string | null }>,
     id: string | null
@@ -194,14 +180,12 @@ export default function AdminProjectDetailPage() {
     return full || p.email || "";
   };
 
-  // Improved timeout handler
   const raceWithTimeout = <T,>(promise: PromiseLike<T>, ms = 8000, errorMessage = "Request timed out"): Promise<T> =>
     Promise.race([
       Promise.resolve(promise),
       new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`${errorMessage} (${ms}ms)`)), ms)),
     ]);
 
-  // ====== LOAD ALL DATA ======
   useEffect(() => {
     let mounted = true;
 
@@ -233,7 +217,7 @@ export default function AdminProjectDetailPage() {
           staff_role: profile.staff_role || [],
         };
         setUserAccess(access);
-        setAccessChecked(true); // ✅ akses sudah dipastikan
+        setAccessChecked(true); 
 
         const { data: projectData } = await supabase
           .from("project_summary")
@@ -242,7 +226,7 @@ export default function AdminProjectDetailPage() {
           .single();
 
         setProject(projectData ?? null);
-        setProjectChecked(true); // ✅ project sudah dipastikan
+        setProjectChecked(true); 
 
         if (projectData && mounted) setProject(projectData);
 
@@ -252,7 +236,7 @@ export default function AdminProjectDetailPage() {
           last_name: string | null;
           email: string | null;
           main_role: string | null;
-          staff_role: string[]; // enum[] -> serialized string[]
+          staff_role: string[]; 
           full_name: string | null;
           is_anr: boolean;
           is_composer: boolean;
@@ -295,10 +279,8 @@ export default function AdminProjectDetailPage() {
         } catch (e) {
           console.error("Error fetching staff_list:", e);
         }
-        // ⬇️ setelah options siap, load assignments dari API
         } catch (error) {
           console.error("Error loading project data:", error);
-          // pada error pun tandai sudah dicek agar tidak flicker
           setAccessChecked(true);
           setProjectChecked(true);
         } finally {
@@ -310,7 +292,6 @@ export default function AdminProjectDetailPage() {
     return () => { mounted = false; };
   }, [params.id, supabase, loadCurrentAssignments]);
 
-  // ====== LAZY TAB LOAD (biarkan sesuai punyamu) ======
   useEffect(() => {
     if (!project || !userAccess) return;
     let mounted = true;
@@ -366,33 +347,24 @@ export default function AdminProjectDetailPage() {
     return () => { mounted = false; };
   }, [activeTab, project, userAccess, params.id, supabase, drafts, links, messages, meetings]);
 
-  // ====== ACTIONS ======
-
-  // Simpan assignment via API server-side yang sudah ada.
-  // Catatan: hanya kirim role yang inputnya valid (punya user_id).
   const handleSaveAssignmentsAlgo = async (draft: CurrentAssignments) => {
     if (!project) return;
 
-    // build payload: { anr?: "uuid", composer?: "uuid", ... }
     const assignmentsPayload: Partial<Record<(typeof ASSIGNABLE_ROLES)[number], string>> = {};
 
     ASSIGNABLE_ROLES.forEach((role) => {
-      const display = draft[role];               // teks dari textbox
-      const userId = findProfileIdByDisplay(display, role); // resolve ke profile.id dari options
+      const display = draft[role];               
+      const userId = findProfileIdByDisplay(display, role); 
       if (userId) {
         assignmentsPayload[role] = userId;
       }
-      // NOTE: kalau display kosong/ga ketemu userId -> tidak dikirim
-      // supaya role itu TIDAK dideactivate oleh API (API-mu hanya memproses role yang dikirim)
     });
 
-    // kalau tidak ada perubahan, cukup refresh panel assignments
     if (Object.keys(assignmentsPayload).length === 0) {
       await loadCurrentAssignments();
       return;
     }
 
-    // call API server-side (service role) — sesuai kontrak POST yang kamu kirim
     const res = await fetch("/api/assignments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -409,14 +381,12 @@ export default function AdminProjectDetailPage() {
       return;
     }
 
-    await loadCurrentAssignments(); // refresh panel "Currently Assigned"
+    await loadCurrentAssignments(); 
   };
 
-  // Hapus assignment via API server-side DELETE yang sudah ada
   const handleRemoveAssignment = async (role: StaffRole) => {
     if (!project) return;
     try {
-      // hanya role yang kamu kelola via assignments table
       if ((ASSIGNABLE_ROLES as readonly string[]).includes(role)) {
         const qs = new URLSearchParams({ project_id: project.project_id, role });
         const res = await fetch(`/api/assignments?${qs.toString()}`, {
@@ -438,7 +408,6 @@ export default function AdminProjectDetailPage() {
     if (!project) return;
     const prev = { status: project.status, stage: project.stage };
 
-    // gunakan enum valid; misal: in_progress + awaiting_payment
     setProject(p => (p ? { ...p, status: "in_progress", stage: "awaiting_payment" } : p));
 
     const { data, error } = await supabase.rpc("accept_project", {
@@ -452,7 +421,6 @@ export default function AdminProjectDetailPage() {
       return;
     }
 
-    // pastikan UI mengikuti yang ada di DB
     await refetchProject();
   };
 
@@ -496,12 +464,10 @@ export default function AdminProjectDetailPage() {
     await refetchProject();
   };
 
-  // jumlah role yang sudah terisi (anr/composer/producer/engineer/publisher)
   const teamMemberCount = useMemo(() => {
     return Object.values(currentAssignments).filter(Boolean).length;
   }, [currentAssignments]);
 
-  // hari aktif dihitung dari created_at (fallback: updated_at)
   const daysActive = useMemo(() => {
     const ts =
       (project as any)?.created_at ??
@@ -509,11 +475,10 @@ export default function AdminProjectDetailPage() {
       null;
     if (!ts) return undefined;
     const ms = Date.now() - new Date(ts).getTime();
-    const days = Math.max(1, Math.ceil(ms / 86_400_000)); // 86.4e6 ms = 1 hari
+    const days = Math.max(1, Math.ceil(ms / 86_400_000)); 
     return days;
   }, [project]);
 
-  // ====== RENDER ======
     if (loading || !accessChecked || !projectChecked) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-6 flex items-center justify-center">

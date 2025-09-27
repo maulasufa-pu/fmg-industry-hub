@@ -30,7 +30,6 @@ type ProfileRow = {
 const isUuid = (v: string): boolean =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 
-/* ---------- UI bits (unchanged) ---------- */
 const AnimatedCard = ({
   title,
   children,
@@ -159,7 +158,6 @@ function MessageMenu({
   );
 }
 
-/* ---------- MAIN ---------- */
 export default function DiscussionTab({ project, messages, setMessages }: DiscussionTabProps) {
   const supabase = useMemo(() => getSupabaseClient(), []);
   const [sending, setSending] = useState(false);
@@ -218,7 +216,6 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
     return () => el.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
-  // ⬇️ REWORK: scroll bottom only chat area using anchor (doesn't affect page)
   const scrollToBottom = useCallback((smooth = true) => {
     const el = listRef.current;
     if (!el) return;
@@ -227,7 +224,6 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
     });
   }, []);
 
-  // initial auto-scroll after data & auth ready
   useEffect(() => {
     if (!uiLoading && justLoadedRef.current) {
       justLoadedRef.current = false;
@@ -235,15 +231,12 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
     }
   }, [uiLoading, scrollToBottom]);
 
-  // draft input
   useEffect(() => setInput(localStorage.getItem(`draft:${project.project_id}`) ?? ""), [project.project_id]);
   useEffect(() => localStorage.setItem(`draft:${project.project_id}`, input), [input, project.project_id]);
 
-  /* -------- Resolve user & perms -------- */
   useEffect(() => {
     let active = true;
     (async () => {
-      // seed realtime token (if already logged in)
       const { data: sess } = await supabase.auth.getSession();
       if (sess?.session?.access_token) supabase.realtime.setAuth(sess.session.access_token);
 
@@ -296,7 +289,6 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
     return () => { active = false; };
   }, [project.project_id, supabase, project]);
 
-  /* -------- Initial fetch once -------- */
   useEffect(() => {
     if (mountedRef.current) return;
     mountedRef.current = true;
@@ -322,20 +314,17 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.project_id, supabase]);
 
-  /* -------- Auto-scroll on NEW message appended -------- */
   const lastTailIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (uiLoading) return;
     const tailId = messages?.length ? messages[messages.length - 1].id : null;
 
-    // blok jika ini berasal dari prepend (load older)
     if (suppressAutoScrollRef.current) {
       suppressAutoScrollRef.current = false;
       lastTailIdRef.current = tailId ?? null;
       return;
     }
 
-    // only if tail changes (new message appended)
     if (tailId && tailId !== lastTailIdRef.current) {
       requestAnimationFrame(() => scrollToBottom(true));
       lastTailIdRef.current = tailId;
@@ -347,12 +336,11 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
   useEffect(() => {
     const count = messages?.length ?? 0;
     if (count > lastCountRef.current) {
-      scrollToBottom(true); // always auto-scroll when new item added
+      scrollToBottom(true); 
     }
     lastCountRef.current = count;
   }, [messages?.length, scrollToBottom]);
 
-  /* -------- Load older (prepend) -------- */
   const loadOlder = useCallback(async () => {
     if (loading || loadingOlder || !hasMore) return;
     const oldest = messages?.[0]?.created_at;
@@ -376,7 +364,6 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
     const prepend = rows.slice().reverse().filter((r) => !(messages ?? []).some((m) => m.id === r.id));
     if (!prepend.length) return;
 
-    // ⬇️ DON'T auto-scroll during prepend
     suppressAutoScrollRef.current = true;
     preserveScrollDuring(() => setMessages((prev) => [...prepend, ...(prev ?? [])]));
   }, [loading, loadingOlder, hasMore, messages, project.project_id, supabase, setMessages]);
@@ -391,7 +378,6 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
     return () => io.disconnect();
   }, [loadOlder]);
 
-  /* -------- Realtime token refresh -------- */
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((_evt, session) => {
       supabase.realtime.setAuth(session?.access_token ?? "");
@@ -400,11 +386,9 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
     return () => data.subscription.unsubscribe();
   }, [supabase]);
 
-  /* -------- Single subscription (no duplicates) -------- */
   useEffect(() => {
     if (!authResolved || !viewerId) return;
 
-    // cleanup jika sudah ada channel
     if (channelRef.current) {
       try { supabase.removeChannel(channelRef.current); } catch {}
       channelRef.current = null;
@@ -419,7 +403,6 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
           if (payload.eventType === "INSERT") {
             const base = payload.new as ChatMessage;
 
-            // buang optimistic jika match
             setMessages((prev) => {
               const arr = prev ?? [];
               const idx = arr.findIndex(
@@ -433,7 +416,6 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
               return prev;
             });
 
-            // ambil dari VIEW biar ada display name
             const { data: row } = await supabase
               .from("discussion_messages_view")
               .select("id,project_id,author_id,content,created_at,deleted_at,author_display_name,updated_at")
@@ -447,7 +429,6 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
               return [...arr, current];
             });
 
-            // ⬇️ ALWAYS scroll to bottom when new message arrives
             requestAnimationFrame(() => scrollToBottom(true));
           } else if (payload.eventType === "UPDATE") {
             const nextRec = payload.new as ChatMessage;
@@ -469,7 +450,6 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
     };
   }, [supabase, project.project_id, authResolved, viewerId, rtKey, setMessages, scrollToBottom]);
 
-  /* -------- Auto reconnect hints (focus/online) & fallback polling -------- */
   useEffect(() => {
     const bump = () => setRtKey((k) => k + 1);
     const onVisibility = () => { if (document.visibilityState === "visible") bump(); };
@@ -496,7 +476,7 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
       const { data, error } = since ? await q.gt("created_at", since) : await q;
       if (!error && data?.length) {
         setMessages((prev) => ([...(prev ?? []), ...(data as ChatMessage[])]));
-        requestAnimationFrame(() => scrollToBottom(true)); // pastikan ikut scroll
+        requestAnimationFrame(() => scrollToBottom(true)); 
       }
     }, 2500);
     return () => clearInterval(iv);
@@ -512,7 +492,6 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
     [viewerId, selfDisplayName]
   );
 
-  /* -------- Send -------- */
   const sendMessage = useCallback(async () => {
     const content = input.trim();
     const authorId = viewerId;
@@ -521,7 +500,6 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
     setSending(true);
     setInput("");
 
-    // Optimistic
     const optimisticId = `optimistic-${Date.now()}`;
     const optimisticMessage: ChatMessage = {
       id: optimisticId as any,
@@ -535,7 +513,6 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
     };
     setMessages((prev) => [...(prev ?? []), optimisticMessage]);
 
-    // ⬇️ immediately scroll when user sends
     requestAnimationFrame(() => scrollToBottom(true));
 
     const { error } = await supabase
@@ -545,18 +522,15 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
     setSending(false);
 
     if (error) {
-      // rollback optimistic
       setMessages((prev) => prev ? prev.filter((m) => m.id !== optimisticId) : prev);
       alert(error.message ?? "Gagal mengirim pesan.");
       setInput(content);
     }
-    // event asli akan datang via Realtime → optimistic akan dibersihkan di handler INSERT
   }, [input, project.project_id, supabase, canPost, viewerId, selfDisplayName, setMessages, scrollToBottom]);
 
-  /* -------- Delete / Edit -------- */
   const handleDeleteMessage = useCallback(
     async (id: string) => {
-      if (!isUuid(id)) return; // abaikan optimistic
+      if (!isUuid(id)) return; 
       const prevSnapshot = messages ?? [];
       preserveScrollDuring(() => setMessages((prev) => (prev ? prev.filter((m) => m.id !== id) : prev)));
       const { error } = await supabase.from("discussion_messages").delete().eq("id", id);
@@ -597,7 +571,6 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
     [input, sending, canPost]
   );
 
-  /* ---------- RENDER ---------- */
   return (
     <AnimatedCard title="💬 Discussion (Admin moderation)" gradient className="md:h-[70vh] max-h-[100dvh]">
       <div className="flex md:h-[70vh] max-h-[100dvh] flex-col min-h-0">
@@ -617,7 +590,7 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
             const atTop = el.scrollTop <= 0;
             const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= 0;
             if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
-              e.preventDefault(); // cegah page scroll
+              e.preventDefault(); 
             }
           }}
           className="relative flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y
@@ -677,7 +650,6 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
               })
             )}
 
-            {/* ⬇️ ANCHOR for auto-scroll chat only */}
             <div ref={bottomRef} aria-hidden />
           </motion.div>
         </div>
@@ -721,7 +693,6 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
   );
 }
 
-/* ---------- Bubble (unchanged secara fungsional) ---------- */
 function Bubble({
   m, isMine, showName, isAdminOwner, selfDisplayName, resolveDisplayName, onEdit, onDelete,
   scrollElRef, editingId, editValue, setEditValue, handleSaveEdit, handleCancelEdit,

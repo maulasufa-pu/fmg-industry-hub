@@ -4,9 +4,6 @@ import { createServerClient } from "@supabase/ssr";
 
 export async function middleware(req: NextRequest) {
   const { pathname, origin, search } = req.nextUrl;
-
-  // DEBUG MODE: Bypass auth for localhost
-  // Set DISABLE_AUTH_DEBUG=true in .env to disable this
   const isLocalhost = req.nextUrl.hostname === 'localhost' || 
                      req.nextUrl.hostname === '127.0.0.1' ||
                      req.nextUrl.hostname.startsWith('192.168.') ||
@@ -20,23 +17,16 @@ export async function middleware(req: NextRequest) {
     disableFlag: process.env.DISABLE_AUTH_DEBUG,
     port: req.nextUrl.port
   });
-  
-  // Force bypass for localhost in development - make it more aggressive
   if (isLocalhost && process.env.NODE_ENV === 'development') {
     console.log('🐛 FORCE DEBUG MODE: Bypassing ALL middleware auth for localhost:', pathname);
-    
-    // Handle admin root redirect for localhost
     if (pathname === "/admin") {
       console.log('🔄 Redirecting /admin to /admin/dashboard');
       return NextResponse.redirect(new URL("/admin/dashboard", origin));
     }
     
-    // Allow all admin/client paths on localhost
     console.log('✅ FORCE Allowing access to:', pathname);
     return NextResponse.next();
   }
-
-  // Allow callback & static
   if (
     pathname.startsWith("/auth") ||
     pathname.startsWith("/_next") ||
@@ -46,21 +36,17 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // ⬇️ tampung cookie yg ingin diset Supabase (jangan langsung nempel ke res)
   const pendingCookies: { name: string; value: string; options?: Parameters<typeof NextResponse.prototype.cookies.set>[2] }[] = [];
 
-  // bikin client dengan adapter getAll/setAll
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
-          // baca dari request
           return req.cookies.getAll().map(c => ({ name: c.name, value: c.value }));
         },
         setAll(cookies) {
-          // JANGAN set ke response dulu — masukkin ke buffer
           cookies.forEach(({ name, value, options }) => {
             pendingCookies.push({ name, value, options });
           });
@@ -71,7 +57,6 @@ export async function middleware(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  // helper untuk apply cookie ke response apa pun yg dikembalikan
   const withCookies = (res: NextResponse) => {
     pendingCookies.forEach(({ name, value, options }) => {
       res.cookies.set(name, value, options);
@@ -79,7 +64,6 @@ export async function middleware(req: NextRequest) {
     return res;
   };
 
-  // Root panel redirect (gated)
   if (pathname === "/admin") {
     if (!user) {
       const url = new URL("/login", origin);
@@ -98,7 +82,6 @@ export async function middleware(req: NextRequest) {
     return withCookies(NextResponse.redirect(new URL("/client/dashboard", origin)));
   }
 
-  // Proteksi halaman panel
   const isPrivate = pathname.startsWith("/admin/") || pathname.startsWith("/client/");
   if (isPrivate && !user) {
     const url = new URL("/login", origin);
@@ -106,18 +89,16 @@ export async function middleware(req: NextRequest) {
     return withCookies(NextResponse.redirect(url));
   }
 
-  // Sudah login tapi ke /login → lempar ke dashboard
   if (pathname === "/login" && user) {
     const nextParam = req.nextUrl.searchParams.get("next") ?? "";
     if (nextParam.startsWith("/client") || nextParam.startsWith("/admin")) {
       try {
         return withCookies(NextResponse.redirect(new URL(nextParam, origin)));
-      } catch { /* ignore */ }
+      } catch { }
     }
     return withCookies(NextResponse.redirect(new URL("/client/dashboard", origin)));
   }
 
-  // default pass-through + apply cookies kalau Supabase minta set (refresh, dsb.)
   return withCookies(NextResponse.next());
 }
 

@@ -17,7 +17,6 @@ interface DraftsTabProps {
   isClient?: boolean;
 }
 
-// Ambil nama file tanpa ekstensi (buat "Nama")
 const extractName = (url: string) => {
   try {
     const u = new URL(url);
@@ -84,14 +83,11 @@ export default function DraftsTab({
   const params = useParams<{ id: string }>();
   const projectId = params.id;
 
-  // ===== Viewer role detection (self-contained) =====
   type ProfileMinimal = { main_role: string | null; staff_role: UserRole[] | null };
   type ProjectOwner = { client_id: string | null };
 
   const [viewerRole, setViewerRole] = useState<UserRole | "client" | "guest">("guest");
 
-  // role gating
-  // role gating berbasis viewerRole hasil deteksi lokal (tanpa prop dari parent)
   const effectiveRole: UserRole | "client" | "guest" = viewerRole;
 
   const canUploadMusic =
@@ -105,7 +101,6 @@ export default function DraftsTab({
 
   const canWriteNotes = effectiveRole === "anr";
 
-  // utils & guard manage
   const USER_ROLES = ["owner","admin","anr","producer","composer","engineer","publisher"] as const;
   const USER_ROLE_SET: ReadonlySet<string> = new Set(USER_ROLES as readonly string[]);
   const isUserRole = (r: unknown): r is UserRole =>
@@ -142,7 +137,6 @@ export default function DraftsTab({
       const mainRole = prof?.main_role ?? null;
       const isOwnerClient = proj?.client_id === user.id;
 
-      // Prioritas: kalau punya staff role, pakai itu; kalau tidak, cek apakah client project ini
       const staffPriority = staff.find(r =>
         ["owner","admin","anr","producer","composer","engineer","publisher"].includes(r)
       );
@@ -155,7 +149,6 @@ export default function DraftsTab({
     return () => { off = true; };
   }, [projectId, supabase]);
 
-  // local mirrors
   const [localDrafts, setLocalDrafts] = useState<DraftRow[] | null>(drafts ?? null);
   const [localRevisions, setLocalRevisions] = useState<RevisionRow[] | null>(revisions ?? null);
 
@@ -164,7 +157,7 @@ export default function DraftsTab({
 
   useEffect(() => {
     let off = false;
-    if (localDrafts !== null) return; // sudah ada (dari parent atau sebelumnya)
+    if (localDrafts !== null) return; 
     (async () => {
       const { data, error } = await supabase
         .from("drafts")
@@ -191,8 +184,6 @@ export default function DraftsTab({
     return () => { off = true; };
   }, [localRevisions, projectId, supabase]);
 
-  // parse storage ref (handle legacy URL atau storage path)
-  // di DraftsTab.tsx
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const parseStorageRef = (urlOrPath: string) => {
@@ -214,17 +205,14 @@ export default function DraftsTab({
     if (!confirm("Hapus draft ini?")) return;
     setDeletingId(draft.draft_id);
     try {
-      // 1) hapus file storage (wav + peaks)
       const ref = parseStorageRef(draft.file_path) ?? { bucket: "drafts", path: draft.file_path };
       const toRemove = [ref.path, `${ref.path}.peaks.json`];
 
       const { error: rmErr } = await supabase.storage.from(ref.bucket).remove(toRemove);
-      // abaikan error not-found biar idempotent
       if (rmErr && !String(rmErr.message || "").toLowerCase().includes("not found")) {
         throw rmErr;
       }
 
-      // 2) hapus row DB
       const { error: dbErr } = await supabase
         .from("drafts")
         .delete()
@@ -233,7 +221,6 @@ export default function DraftsTab({
 
       if (dbErr) throw dbErr;
 
-      // 3) update UI
       setLocalDrafts(prev => asArr(prev).filter(d => d.draft_id !== draft.draft_id));
     } catch (e: any) {
       alert(e?.message || "Gagal menghapus draft");
@@ -242,13 +229,11 @@ export default function DraftsTab({
     }
   };
 
-  // upload
   const [uploading, setUploading] = useState(false);
   const [uploadErr, setUploadErr] = useState<string | null>(null);
   type DraftCategory = "composition" | "arrangement" | "production" | "mixing" | "mastering";
 
   const splitName = (name: string): { base: string; ext: string } => {
-    // antisipasi "C:\fakepath\xxx.wav"
     const justName = name.split(/[/\\]/).pop() ?? name;
     const dot = justName.lastIndexOf(".");
     if (dot <= 0) return { base: justName, ext: "" };
@@ -256,7 +241,6 @@ export default function DraftsTab({
   };
 
   const sanitizeBase = (base: string): string => {
-    // normalisasi, buang diacritics, hanya huruf/angka/._-
     const noDiacritics = base.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
     return noDiacritics
       .replace(/[^a-zA-Z0-9._-]+/g, "_")
@@ -275,7 +259,6 @@ export default function DraftsTab({
       setUploadErr(null);
       if (!file) { setUploadErr("Pilih file .wav terlebih dahulu."); return; }
 
-      // cek & pakai ekstensi asli
       const { base, ext } = splitName(file.name);
       const extLower = ext.toLowerCase();
       if (extLower !== "wav") { setUploadErr("File harus .wav"); return; }
@@ -285,21 +268,16 @@ export default function DraftsTab({
       const { data: auth } = await supabase.auth.getUser();
       const userId = auth.user?.id ?? null;
 
-      // version berikutnya (sama seperti sebelumnya)
       const newVersion =
         (localDrafts?.reduce((mx, d) => Math.max(mx, Number(d.version || 0)), 0) || 0) + 1;
 
-      // draft_id untuk DB (tetap, tidak dipakai di nama file)
       const draftId = safeUUID();
 
-      // nama file yang disimpan = NAMA ASLI YANG DIUPLOAD (disanitasi)
       const safeBase = sanitizeBase(base);
       const originalSafeName = `${safeBase}.wav`;
 
-      // path awal dengan nama asli
       let path = `${projectId}/${category}/${originalSafeName}`;
 
-      // coba upload tanpa upsert (hindari overwrite)
       const tryUpload = async (p: string) => {
         const { error } = await supabase.storage
           .from("drafts")
@@ -313,7 +291,6 @@ export default function DraftsTab({
 
       let upErr = await tryUpload(path);
 
-      // jika sudah ada (409), fallback ke nama dengan suffix _v{version}
       if (upErr && (upErr as { statusCode?: number }).statusCode === 409) {
         const withVersion = `${safeBase}_v${String(newVersion).padStart(2, "0")}.wav`;
         path = `${projectId}/${category}/${withVersion}`;
@@ -322,7 +299,6 @@ export default function DraftsTab({
 
       if (upErr) throw upErr;
 
-      // simpan row DB dengan file_path yang sama persis ke bucket
       const { data: ins, error: insErr } = await supabase
         .from("drafts")
         .insert({
@@ -330,7 +306,7 @@ export default function DraftsTab({
           project_id: projectId,
           version: newVersion,
           category,
-          file_path: path,     // ← path pakai nama file asli (atau _vXX jika bentrok)
+          file_path: path,     
           uploaded_by: userId,
         })
         .select("*")
@@ -348,9 +324,6 @@ export default function DraftsTab({
     }
   };
 
-
-
-  // revisions
   const [revLoading, setRevLoading] = useState<string | null>(null);
   const [revErr, setRevErr] = useState<string | null>(null);
   const [revTextByDraft, setRevTextByDraft] = useState<Record<string, string>>({});
@@ -383,7 +356,6 @@ export default function DraftsTab({
     }
   };
 
-  // upload widget
   const UploadWidget = ({
     label,
     allowedCategories,
@@ -474,9 +446,7 @@ export default function DraftsTab({
                     initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 * index }}
                     whileHover={{ scale: 1.01, boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)" }}
                   >
-                    {/* HEADER: judul + meta + tombol */}
                     <div className="flex items-start justify-between gap-3">
-                      {/* kiri: judul + meta */}
                       <div className="min-w-0">
                         <div className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
                           {extractName(d.file_path)}
@@ -491,7 +461,6 @@ export default function DraftsTab({
                         </div>
                       </div>
 
-                      {/* kanan: aksi */}
                       <div className="shrink-0">
                         {canManageDrafts && (
                           <motion.button
@@ -522,12 +491,10 @@ export default function DraftsTab({
                       </div>
                     </div>
 
-                    {/* PLAYER */}
                     <div className="mt-3">
                       <WaveformPlayer src={d.file_path} title={`Draft v${d.version}`} />
                     </div>
 
-                    {/* FORM REVISI (tetap) */}
                     {canRequestRevision && (
                       <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-700 p-3 bg-white/70 dark:bg-slate-900/50">
                         <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">

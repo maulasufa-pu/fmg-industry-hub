@@ -18,15 +18,6 @@ import {
   ExternalLink
 } from "lucide-react";
 
-/*************************************************
- * FMG Universe — /contact (EN)
- * - Confident hero + tagline
- * - Channel cards (Project, Partnership, Publishing, Press, Support)
- * - Form with realtime validation + status banner
- * - Light/Dark friendly, reduced-motion aware
- * - No `any`, accessible, mobile-first
- *************************************************/
-
 type Reason =
   | "project"
   | "partnership"
@@ -61,7 +52,6 @@ const defaultValues: FormValues = {
   message: "",
 };
 
-/* ---------- Channel Card ---------- */
 type Channel = {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   title: string;
@@ -96,7 +86,6 @@ function ChannelCard({ icon: Icon, title, desc, href, badge }: Channel): React.J
         </div>
       </div>
 
-      {/* subtle gradient wash */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-indigo-500/0 via-fuchsia-500/0 to-amber-300/0 opacity-0 transition-opacity duration-300 group-hover:opacity-30"
@@ -105,7 +94,6 @@ function ChannelCard({ icon: Icon, title, desc, href, badge }: Channel): React.J
   );
 }
 
-/* ---------- Status Banner ---------- */
 function StatusBanner({ state }: { state: FormState }): React.JSX.Element | null {
   if (state.status === "idle") return null;
   const base = "rounded-xl border px-3 py-2 text-sm";
@@ -130,7 +118,6 @@ function StatusBanner({ state }: { state: FormState }): React.JSX.Element | null
   );
 }
 
-/* ---------- Page ---------- */
 export default function ContactPage(): React.JSX.Element {
   const reduce = useReducedMotion();
   const [values, setValues] = useState<FormValues>(defaultValues);
@@ -144,7 +131,6 @@ export default function ContactPage(): React.JSX.Element {
     message: false,
   });
 
-  // Prefill reason from query (?reason=publishing)
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -192,7 +178,6 @@ export default function ContactPage(): React.JSX.Element {
 
     try {
       setState({ status: "submitting" });
-      // NOTE: implement handler at /app/api/contact/route.ts
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -254,7 +239,6 @@ export default function ContactPage(): React.JSX.Element {
 
   return (
     <main className="relative min-h-[100dvh] bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-white">
-      {/* Background gradient blobs */}
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <motion.div
           initial={reduce ? false : { opacity: 0, y: 20 }}
@@ -284,7 +268,6 @@ export default function ContactPage(): React.JSX.Element {
             Beyond Sound. Built-in Intelligence. We help artists, labels, and brands turn creativity into compounding value — with one operating system for music.
           </p>
 
-          {/* meta info */}
           <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-neutral-700 dark:text-white/70">
             <span className="inline-flex items-center gap-2">
               <Building2 className="h-4 w-4" /> FMG Universe — Global / Remote
@@ -299,13 +282,11 @@ export default function ContactPage(): React.JSX.Element {
         </div>
       </section>
 
-      {/* Channels */}
       <section className="relative px-4 pb-6 pt-8 sm:px-8">
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {channels.map((c, i) => (
             <ChannelCard key={i} {...c} />
           ))}
-          {/* Press & Media Kit highlight */}
           <a
             href="/press"
             className="group relative block rounded-2xl border border-dashed border-neutral-900/20 p-5 text-neutral-700 transition hover:border-neutral-900/40 dark:border-white/20 dark:text-white/80 dark:hover:border-white/40"
@@ -328,7 +309,6 @@ export default function ContactPage(): React.JSX.Element {
         </div>
       </section>
 
-      {/* Contact Form */}
       <section className="relative px-4 pb-24 pt-6 sm:px-8">
         <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-5">
           <div className="md:col-span-3">
@@ -453,7 +433,6 @@ export default function ContactPage(): React.JSX.Element {
                   )}
                 </div>
 
-                {/* captcha/consent placeholder */}
                 <div className="flex items-start gap-2 rounded-xl border border-neutral-900/10 bg-white/60 p-3 text-xs text-neutral-600 dark:border-white/10 dark:bg-white/5 dark:text-white/70">
                   <ShieldCheck className="mt-0.5 h-4 w-4" />
                   <p>
@@ -489,7 +468,6 @@ export default function ContactPage(): React.JSX.Element {
             </div>
           </div>
 
-          {/* Sidebar mini FAQ */}
           <aside className="md:col-span-2">
             <div className="rounded-2xl border border-neutral-900/10 bg-white/60 p-5 backdrop-blur-lg dark:border-white/10 dark:bg-white/5">
               <h3 className="text-base font-semibold">Quick questions</h3>
@@ -536,11 +514,9 @@ export default function ContactPage(): React.JSX.Element {
         </div>
       </section>
 
-      {/* Edge fades */}
       <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 h-16 bg-gradient-to-b from-white to-transparent dark:from-neutral-950" />
       <div aria-hidden className="pointer-events-none fixed inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent dark:from-neutral-950" />
 
-      {/* Minimal ContactPoint JSON-LD (replace with your real domain/email) */}
       <script
         type="application/ld+json"
         suppressHydrationWarning

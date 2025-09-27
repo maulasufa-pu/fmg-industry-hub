@@ -14,12 +14,10 @@ const VIEW = "project_summary";
 const QUERY_COLS =
   "project_id,title,status,stage,updated_at,client_id,artist_name,genre,progress_percent,composer_id,producer_id,anr_id,engineer_id,publisher_id,client_first_name,client_last_name";
 
-// Function to fetch assignment names for projects
 const fetchAssignmentNames = async (supabase: any, projectIds: string[]) => {
   if (projectIds.length === 0) return {};
   
   try {
-    // Get assignments data directly from assignments_view with staff_first_name
     const { data: assignments, error: assignmentsError } = await supabase
       .from('assignment_view')
       .select('project_id, user_id, role, staff_first_name')
@@ -33,7 +31,6 @@ const fetchAssignmentNames = async (supabase: any, projectIds: string[]) => {
 
     if (!assignments || assignments.length === 0) return {};
 
-    // Group assignments by project_id and role using staff_first_name from view
     const assignmentMap: Record<string, Record<string, string>> = {};
     
     assignments.forEach((assignment: any) => {
@@ -46,7 +43,6 @@ const fetchAssignmentNames = async (supabase: any, projectIds: string[]) => {
         assignmentMap[projectId] = {};
       }
       
-      // Use staff_first_name from assignments_view
       assignmentMap[projectId][role] = staffName || `User ${userId}`;
     });
     
@@ -142,10 +138,8 @@ export default function AdminProjectsPage(): React.JSX.Element {
   // ui state
   const [loadingInitial, setLoadingInitial] = useState(true);
 
-  // SIMPLE COUNTS - NO BS
   const fetchCounts = useCallback(async () => {
     try {
-      // Create separate queries for each count to avoid conflicts
       const [all, active, finished, pending, unassigned, requested] = await Promise.all([
         supabase.from(VIEW).select("project_id", { count: "estimated", head: true }),
         supabase.from(VIEW).select("project_id", { count: "estimated", head: true }).eq("status", "in_progress"),
@@ -174,7 +168,6 @@ export default function AdminProjectsPage(): React.JSX.Element {
     }
   }, [supabase]);
 
-  // SIMPLE DATA FETCH - NO BS
   const fetchPage = useCallback(async (tab: TabKey, pageNum: number) => {
     try {
       const from = (pageNum - 1) * pageSize;
@@ -182,7 +175,6 @@ export default function AdminProjectsPage(): React.JSX.Element {
 
       let query = supabase.from(VIEW).select(QUERY_COLS, { count: "estimated" });
 
-      // Apply tab filter
       if (tab === "Active") query = query.eq("status", "in_progress");
       else if (tab === "Finished") query = query.eq("status", "completed");
       else if (tab === "Pending") query = query.in("status", ["pending", "on_hold"]);
@@ -195,18 +187,14 @@ export default function AdminProjectsPage(): React.JSX.Element {
           .is("publisher_id", null);
       }
 
-      // Apply search
       if (debouncedSearch) {
         const like = `%${debouncedSearch}%`;
         query = query.or(`title.ilike.${like},artist_name.ilike.${like}`);
       }
 
-      // Apply filters - Note: PIC filtering now requires a different approach with assignments
-      // For now, skip PIC filtering until we can implement assignment-based filtering
       if (filterStage !== "any") query = query.eq("stage", filterStage);
       if (filterStatus !== "any") query = query.eq("status", filterStatus);
 
-      // Execute
       const { data, count, error } = await query
         .order("updated_at", { ascending: false })
         .range(from, to);
@@ -216,7 +204,6 @@ export default function AdminProjectsPage(): React.JSX.Element {
       const clientIds = (data ?? []).map(r => r.client_id).filter((v): v is string => Boolean(v));
       const projectIds = (data ?? []).map(r => r.project_id);
 
-      // Fetch assignment names for these projects
       const assignmentNames = await fetchAssignmentNames(supabase, projectIds);
 
       const mapped: ProjectRow[] = (data ?? []).map((r: DbProjectSummary) => {
@@ -258,17 +245,14 @@ export default function AdminProjectsPage(): React.JSX.Element {
     }
   }, [supabase, pageSize, debouncedSearch, filterPIC, filterStage, filterStatus]);
 
-  // Load counts on mount
   useEffect(() => {
     fetchCounts().then(setTabCounts);
   }, [fetchCounts]);
 
-  // Load data when filters change
   useEffect(() => {
     fetchPage(activeTab, page);
   }, [fetchPage, activeTab, page]);
 
-  // Load filter options
   useEffect(() => {
     const loadOptions = async () => {
       try {
@@ -302,12 +286,10 @@ export default function AdminProjectsPage(): React.JSX.Element {
   };
 
   const handleBulkAssignPIC = async (ids: string[], pic: string | null) => {
-    // TODO: Implement bulk assign
     console.log("Bulk assign PIC:", ids, pic);
   };
 
   const handleBulkMarkFinished = async (ids: string[]) => {
-    // TODO: Implement bulk mark finished
     console.log("Bulk mark finished:", ids);
   };
 

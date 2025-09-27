@@ -10,11 +10,11 @@ type HashTokens = {
   refresh_token: string | null;
   token_type?: string | null;
   expires_in?: string | null;
-  type?: string | null; // e.g. "recovery"
+  type?: string | null; 
 };
 
 const DEBUG_PKCE = true;
-const RECOVERY_DEST = "/auth/callback?type=recovery"; // tujuan UI ganti password
+const RECOVERY_DEST = "/auth/callback?type=recovery"; 
 
 function parseHash(): HashTokens {
   const raw = typeof window !== "undefined" ? window.location.hash : "";
@@ -32,7 +32,7 @@ function parseHash(): HashTokens {
 function stripHash(keepQuery?: string) {
   if (typeof window === "undefined") return;
   const base = window.location.pathname + (keepQuery ? `?${keepQuery}` : "");
-  window.history.replaceState({}, "", base); // hapus fragmen token dari URL
+  window.history.replaceState({}, "", base); 
 }
 
 function dumpPkce(label: string) {
@@ -70,7 +70,6 @@ export default function CallbackClient() {
       const nextParam = sp.get("next") || sp.get("redirectedFrom") || "";
       const safeNext = nextParam.startsWith("/") ? nextParam : "/client/dashboard";
 
-      // --- Branch A: password recovery via hash tokens ---
       const hash = parseHash();
     const flowType = url.searchParams.get("type") || hash.type; // "email" | "recovery" | "magiclink" | "invite" | ...
     const hasHashTokens = Boolean(hash.access_token && hash.refresh_token);
@@ -78,7 +77,6 @@ export default function CallbackClient() {
     if (hasHashTokens) {
     dumpPkce("hash-tokens-detected:" + (flowType || "unknown"));
 
-    // 1) Auth di client dari token hash
     const { data: setData, error: setErr } = await supabase.auth.setSession({
         access_token: hash.access_token as string,
         refresh_token: hash.refresh_token as string,
@@ -90,7 +88,6 @@ export default function CallbackClient() {
         return;
     }
 
-    // 2) Set HttpOnly cookie di server
     const resp = await fetch("/auth/set", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
@@ -110,12 +107,10 @@ export default function CallbackClient() {
         return;
     }
 
-    // 3) Bersihkan hash & redirect
     stripHash(flowType ? `type=${flowType}` : undefined);
     if (flowType === "recovery") {
-        window.location.replace(RECOVERY_DEST);     // ke UI ubah password
+        window.location.replace(RECOVERY_DEST);     
     } else {
-        // signup email (type="email") / magiclink / invite → lanjut ke app
         const rawNext = sp.get("next") || sp.get("redirectedFrom") || "";
         const dest = rawNext.startsWith("/") ? rawNext : "/client/dashboard";
         window.location.replace(dest);
@@ -123,7 +118,6 @@ export default function CallbackClient() {
     return;
     }
     
-      // --- Branch B: code exchange (signup / oauth / magic link) ---
       if (code) {
         dumpPkce("before-exchange");
         const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
@@ -136,7 +130,6 @@ export default function CallbackClient() {
         }
         dumpPkce("after-exchange");
 
-        // Set HttpOnly cookie
         const resp = await fetch("/auth/set", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
@@ -165,7 +158,6 @@ export default function CallbackClient() {
         return;
       }
 
-      // --- Fallback: tidak ada code & bukan recovery tokens ---
       console.error("[callback] missing code and no recovery tokens");
       stripHash();
       window.location.replace("/login?err=nocode");

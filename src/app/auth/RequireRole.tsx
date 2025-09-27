@@ -12,5 +12,5 @@ export default async function RequireRole({
 }) {
   const role = await getEffectiveRole();
   if (role === "guest") redirect("/login");
-  return allow.includes(role) ? <>{children}</> : notFound(); // atau redirect("/403")
+  return allow.includes(role) ? <>{children}</> : notFound(); 
 }

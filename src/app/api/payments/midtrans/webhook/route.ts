@@ -1,4 +1,4 @@
-//E:\FMGIH\fmg-industry-hub\src\app\api\payments\midtrans\webhook\route.ts
+//src\app\api\payments\midtrans\webhook\route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
@@ -27,7 +27,6 @@ type MidtransNotif = {
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const body = (await req.json()) as MidtransNotif;
 
-  // verify signature
   const expected = crypto
     .createHash("sha512")
     .update(body.order_id + body.status_code + body.gross_amount + MIDTRANS_SERVER_KEY)
@@ -39,14 +38,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-  // Map midtrans status -> our status
   let nextStatus: "paid" | "unpaid" | "cancelled" = "unpaid";
   if (body.transaction_status === "settlement") nextStatus = "paid";
   else if (body.transaction_status === "capture" && body.fraud_status === "accept") nextStatus = "paid";
   else if (body.transaction_status === "pending") nextStatus = "unpaid";
   else if (["deny", "expire", "cancel"].includes(body.transaction_status)) nextStatus = "cancelled";
 
-  // order_id = invoice_no; update by invoice_no
   const { error } = await admin
     .from("invoices")
     .update({ status: nextStatus })

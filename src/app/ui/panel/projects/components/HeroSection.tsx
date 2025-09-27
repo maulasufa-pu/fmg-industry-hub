@@ -33,9 +33,6 @@ const heroVariants: Variants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" as const } }
 };
 
-/** ------------------------------------------------------------------
- * Human-friendly text mappers (tidak sama dengan enum DB)
- * ------------------------------------------------------------------ */
 const STATUS_TEXT: Record<string, string> = {
   requested: "Awaiting review",
   pending: "Awaiting review",
@@ -79,7 +76,6 @@ function formatStage(raw: string | null | undefined): string {
   return STAGE_TEXT[k] ?? (k ? "Active phase" : "Not specified");
 }
 
-/** Properti opsional yang mungkin ada di view untuk client name */
 type WithClientName = ProjectSummary & {
   client_name?: string | null;
   client_full_name?: string | null;
@@ -97,11 +93,9 @@ export default function HeroSection({
   teamMemberCount,
   daysActive,
 }: HeroSectionProps) {
-  // prevent double click & visual feedback
   const [isAccepting, setIsAccepting] = useState(false);
   const [isHolding, setIsHolding] = useState(false);
 
-  // helper display
   const artistName = project.artist_name?.trim() || "Unknown Artist";
   const p = project as WithClientName;
   const clientName =
@@ -112,11 +106,9 @@ export default function HeroSection({
 
   const genreText = project.genre?.trim() || "No genre";
 
-  // pilih sumber year yang paling masuk akal
   const yearFrom = p.released_at ?? p.created_at ?? project.updated_at ?? null;
   const yearText = yearFrom ? new Date(yearFrom).getFullYear().toString() : undefined;
 
-  // handler aman
   const handleAccept = useCallback(async (e?: React.MouseEvent<HTMLButtonElement>) => {
     e?.preventDefault();
     e?.stopPropagation();
@@ -161,7 +153,6 @@ export default function HeroSection({
     }
   }, [onContinueProject, isContinuing]);
 
-  // rules tampil tombol
   const statusRaw = (project.status ?? "").toLowerCase();
   const isRequested  = statusRaw === "requested" || statusRaw === "pending";
   const isOnHold     = statusRaw === "on_hold" || statusRaw === "hold" || statusRaw === "paused";
@@ -173,14 +164,12 @@ export default function HeroSection({
   const teamCount = teamMemberCount ?? 0;
   const activeDays = daysActive ?? 0;
 
-  // susun meta line: "Project by *client name* . genre . year."
   const metaParts: string[] = [`Project by ${clientName}`, genreText];
   if (yearText) metaParts.push(yearText);
-  const metaLine = `${metaParts.join(" . ")}.`; // titik di akhir
+  const metaLine = `${metaParts.join(" . ")}.`; 
 
   const isSmall = useIsSmallScreen();
 
-  // progress guard
   const rawProgress = (project as { progress_percent?: number | null }).progress_percent;
   const progress = typeof rawProgress === "number" && Number.isFinite(rawProgress)
     ? Math.min(100, Math.max(0, rawProgress))
@@ -188,7 +177,6 @@ export default function HeroSection({
 
   return (
     <>
-      {/* Breadcrumb */}
       <motion.div
         className="sticky top-4 z-40"
         initial={{ opacity: 0, y: -30 }}
@@ -230,7 +218,6 @@ export default function HeroSection({
         </div>
       </motion.div>
 
-      {/* Hero */}
       <motion.div
         className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-8 lg:p-12 text-white shadow-2xl floating-element"
         variants={heroVariants}
@@ -241,7 +228,6 @@ export default function HeroSection({
           boxShadow: "0 25px 50px -12px rgba(99, 102, 241, 0.5)",
         }}
       >
-        {/* Bg anim */}
         <motion.div
           className="absolute inset-0 opacity-20"
           animate={{
@@ -256,9 +242,7 @@ export default function HeroSection({
         />
 
         <div className="relative z-10 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8">
-          {/* Left */}
           <div className="flex-1 space-y-6">
-            {/* Title — artist italic */}
             <motion.h1
               className="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight floating-element"
               initial={{ opacity: 0, y: 30 }}
@@ -270,7 +254,6 @@ export default function HeroSection({
               <span className="text-white font-bold"> — {artistName}</span>
             </motion.h1>
 
-            {/* Meta line: Project by *client* . genre . year. */}
             <motion.p
               className="text-lg lg:text-xl text-blue-100 floating-element"
               initial={{ opacity: 0, y: 20 }}
@@ -280,7 +263,6 @@ export default function HeroSection({
               <span>{metaLine}</span>
             </motion.p>
 
-            {/* Badges (status & stage human-friendly) */}
             <motion.div
               className="flex flex-wrap gap-4"
               initial={{ opacity: 0 }}
@@ -308,8 +290,6 @@ export default function HeroSection({
             </motion.div>
           </div>
 
-          {/* Right Actions */}
-          {/* (opsional tombol besar di kanan) */}
           {showRightActions && (showAcceptBtn || showHoldBtn || showContinueBtn) && (
             <motion.div
               className="hidden sm:flex flex-col sm:flex-row xl:flex-col gap-4 xl:min-w-[280px]"
@@ -393,7 +373,6 @@ export default function HeroSection({
                 </motion.button>
               )}
 
-              {/* Quick Stats */}
               <motion.div
                 className="grid grid-cols-2 gap-3 p-4 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20"
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -448,7 +427,6 @@ export default function HeroSection({
         )}
       </motion.div>
 
-      {/* Mobile Quick Actions */}
       {showRightActions && isSmall && (showAcceptBtn || showHoldBtn || showContinueBtn) && (
         <motion.div
           className="sm:hidden flex flex-col items-center gap-4"

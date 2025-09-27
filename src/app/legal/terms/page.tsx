@@ -4,15 +4,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion, motion, useScroll, useTransform } from "framer-motion";
 import { ShieldCheck, FileText, ArrowDown, Printer, Download, ExternalLink } from "lucide-react";
 
-/*************************************************
- * FMG Universe — /legal/terms
- * - Modern, professional legal page (no slides)
- * - Light + Dark friendly, reduced-motion aware
- * - Sticky Table of Contents with scroll-spy
- * - Consistent glass/gradient styling
- *************************************************/
-
-/* ---------- Utils ---------- */
 function useIsMobile(breakpoint = 768): boolean {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -26,7 +17,6 @@ function useIsMobile(breakpoint = 768): boolean {
   return isMobile;
 }
 
-/* ---------- Parallax background ---------- */
 function ParallaxField({ container }: { container: React.RefObject<HTMLDivElement | null> }) {
   const reduce = useReducedMotion();
   const isMobile = useIsMobile();
@@ -49,7 +39,6 @@ function ParallaxField({ container }: { container: React.RefObject<HTMLDivElemen
   );
 }
 
-/* ---------- Simple gradient emblem ---------- */
 function GradientEmblem(): React.JSX.Element {
   return (
     <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-neutral-900/10 bg-white/60 backdrop-blur dark:border-white/10 dark:bg-white/5">
@@ -59,7 +48,6 @@ function GradientEmblem(): React.JSX.Element {
   );
 }
 
-/* ---------- Scroll spy (headings) ---------- */
 const SECTIONS = [
   { id: "introduction", title: "Introduction" },
   { id: "eligibility", title: "Eligibility" },
@@ -116,11 +104,9 @@ export default function TermsPage(): React.JSX.Element {
     <main className="relative min-h-screen overflow-hidden bg-white text-neutral-900 dark:bg-neutral-950 dark:text-white">
       <ParallaxField container={containerRef} />
 
-      {/* Edge fades */}
       <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 h-16 bg-gradient-to-b from-white to-transparent dark:from-neutral-950" />
       <div aria-hidden className="pointer-events-none fixed inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent dark:from-neutral-950" />
 
-      {/* Header */}
       <header className="relative z-10">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-14 sm:pt-16">
           <div className="flex items-center gap-3">
@@ -147,9 +133,7 @@ export default function TermsPage(): React.JSX.Element {
         </div>
       </header>
 
-      {/* Body */}
       <div ref={containerRef} className="relative z-10 mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 pb-24 pt-8 sm:px-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:px-8">
-        {/* TOC */}
         <aside className="hidden lg:block">
           <nav aria-label="Table of contents" className="sticky top-24 rounded-2xl border border-neutral-900/10 bg-white/70 p-3 backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <div className="px-1 pb-2 text-xs uppercase tracking-wider text-neutral-600 dark:text-white/60">On this page</div>
@@ -170,9 +154,7 @@ export default function TermsPage(): React.JSX.Element {
           </nav>
         </aside>
 
-        {/* Content */}
         <article className="space-y-10">
-          {/* Intro */}
           <section id="introduction" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <h2 className="text-xl font-semibold">Introduction</h2>
             <p className="mt-3 text-neutral-800 dark:text-white/85">
@@ -183,7 +165,6 @@ export default function TermsPage(): React.JSX.Element {
             </p>
           </section>
 
-          {/* Eligibility */}
           <section id="eligibility" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <h2 className="text-xl font-semibold">Eligibility</h2>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-neutral-800 dark:text-white/85">
@@ -192,7 +173,6 @@ export default function TermsPage(): React.JSX.Element {
             </ul>
           </section>
 
-          {/* Accounts & Security */}
           <section id="accounts-security" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <h2 className="text-xl font-semibold">Accounts & Security</h2>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-neutral-800 dark:text-white/85">
@@ -202,7 +182,6 @@ export default function TermsPage(): React.JSX.Element {
             </ul>
           </section>
 
-          {/* Acceptable Use */}
           <section id="acceptable-use" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <h2 className="text-xl font-semibold">Acceptable Use</h2>
             <p className="mt-3 text-neutral-800 dark:text-white/85">You agree not to, and not to allow others to:</p>
@@ -215,7 +194,6 @@ export default function TermsPage(): React.JSX.Element {
             </ul>
           </section>
 
-          {/* Services & Transactions */}
           <section id="services-and-transactions" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <h2 className="text-xl font-semibold">Services & Transactions</h2>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-neutral-800 dark:text-white/85">
@@ -227,7 +205,6 @@ export default function TermsPage(): React.JSX.Element {
             </ul>
           </section>
 
-          {/* User Content */}
           <section id="user-content" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <h2 className="text-xl font-semibold">User Content & License</h2>
             <p className="mt-3 text-neutral-800 dark:text-white/85">&#34;User Content&#34; means audio, compositions, recordings, metadata, artwork, text, images, video, feedback, and other material you submit or upload.</p>
@@ -239,7 +216,6 @@ export default function TermsPage(): React.JSX.Element {
             </ul>
           </section>
 
-          {/* Music rights */}
           <section id="music-rights" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <h2 className="text-xl font-semibold">Music Rights & Metadata</h2>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-neutral-800 dark:text-white/85">
@@ -249,7 +225,6 @@ export default function TermsPage(): React.JSX.Element {
             </ul>
           </section>
 
-          {/* DMCA */}
           <section id="dmca" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <h2 className="text-xl font-semibold">Copyright (DMCA)</h2>
             <p className="mt-3 text-neutral-800 dark:text-white/85">
@@ -257,7 +232,6 @@ export default function TermsPage(): React.JSX.Element {
             </p>
           </section>
 
-          {/* Privacy */}
           <section id="privacy" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <h2 className="text-xl font-semibold">Privacy</h2>
             <p className="mt-3 text-neutral-800 dark:text-white/85">
@@ -265,7 +239,6 @@ export default function TermsPage(): React.JSX.Element {
             </p>
           </section>
 
-          {/* Third parties */}
           <section id="third-parties" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <h2 className="text-xl font-semibold">Third‑Party Services</h2>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-neutral-800 dark:text-white/85">
@@ -274,7 +247,6 @@ export default function TermsPage(): React.JSX.Element {
             </ul>
           </section>
 
-          {/* Termination */}
           <section id="termination" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <h2 className="text-xl font-semibold">Termination</h2>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-neutral-800 dark:text-white/85">
@@ -284,7 +256,6 @@ export default function TermsPage(): React.JSX.Element {
             </ul>
           </section>
 
-          {/* Disclaimers */}
           <section id="disclaimers" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <h2 className="text-xl font-semibold">Disclaimers</h2>
             <p className="mt-3 text-neutral-800 dark:text-white/85">
@@ -292,7 +263,6 @@ export default function TermsPage(): React.JSX.Element {
             </p>
           </section>
 
-          {/* Limitation of liability */}
           <section id="limitation" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <h2 className="text-xl font-semibold">Limitation of Liability</h2>
             <p className="mt-3 text-neutral-800 dark:text-white/85">
@@ -303,7 +273,6 @@ export default function TermsPage(): React.JSX.Element {
             </p>
           </section>
 
-          {/* Indemnification */}
           <section id="indemnity" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <h2 className="text-xl font-semibold">Indemnification</h2>
             <p className="mt-3 text-neutral-800 dark:text-white/85">
@@ -311,7 +280,6 @@ export default function TermsPage(): React.JSX.Element {
             </p>
           </section>
 
-          {/* Governing law & disputes */}
           <section id="governing-law" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <h2 className="text-xl font-semibold">Governing Law & Disputes</h2>
             <p className="mt-3 text-neutral-800 dark:text-white/85">
@@ -321,7 +289,6 @@ export default function TermsPage(): React.JSX.Element {
               <strong>Arbitration (optional).</strong> If you prefer binding arbitration with a class‑action waiver, we can include an arbitration clause—let us know your preferred seat and rules (e.g., SIAC, AAA).</p>
           </section>
 
-          {/* Changes */}
           <section id="changes" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <h2 className="text-xl font-semibold">Changes to these Terms</h2>
             <p className="mt-3 text-neutral-800 dark:text-white/85">
@@ -329,7 +296,6 @@ export default function TermsPage(): React.JSX.Element {
             </p>
           </section>
 
-          {/* Misc */}
           <section id="misc" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <h2 className="text-xl font-semibold">Miscellaneous</h2>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-neutral-800 dark:text-white/85">
@@ -342,7 +308,6 @@ export default function TermsPage(): React.JSX.Element {
             </ul>
           </section>
 
-          {/* Contact */}
           <section id="contact" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <h2 className="text-xl font-semibold">Contact</h2>
             <p className="mt-3 text-neutral-800 dark:text-white/85">

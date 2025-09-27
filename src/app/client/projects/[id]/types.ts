@@ -71,7 +71,6 @@ export interface CurrentAssignments {
 
 export type TabKey = "overview" | "drafts" | "references" | "discussion" | "meetings" | "publishing";
 
-// Tab data types
 export interface DraftRow {
   draft_id: string;
   project_id: string;

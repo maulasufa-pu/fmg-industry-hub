@@ -9,11 +9,9 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const mode = url.searchParams.get('mode');
     
-    // Use service role untuk bypass RLS
     const supabase = createClient(supabaseUrl, supabaseKey);
     
     if (mode === 'admin') {
-      // Mode for admin users page - return all users with complete info
       const { data, error } = await supabase
         .from("profiles")
         .select("id, first_name, last_name, name, email, staff_role, main_role, created_at")
@@ -27,7 +25,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: true, data: data || [] });
     }
     
-    // Default mode: Simple query untuk team assignment dropdown
     const { data, error } = await supabase
       .from("profiles")
       .select("id, first_name, last_name, email, staff_role")
@@ -38,7 +35,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Filter dan group by role
     const roleOptions: any = {
       anr: [],
       composer: [],
@@ -50,7 +46,6 @@ export async function GET(request: Request) {
     data?.forEach((profile: any) => {
       if (!profile.staff_role) return;
 
-      // Handle staff_role as array or string
       let roles = Array.isArray(profile.staff_role) ? profile.staff_role : [profile.staff_role];
 
       const member = {
@@ -62,7 +57,6 @@ export async function GET(request: Request) {
         main_role: 'staff',
       };
 
-      // Add to appropriate role arrays
       roles.forEach((role: string) => {
         if (role === 'anr') roleOptions.anr.push(member);
         if (role === 'composer') roleOptions.composer.push(member);

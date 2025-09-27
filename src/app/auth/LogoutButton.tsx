@@ -48,18 +48,14 @@ export default function LogoutButton({
     try {
       const supabase = getSupabaseClient();
 
-      // 1) drop session lokal (cepat)
       await supabase.auth.signOut();
       if (mountedRef.current) setIsAuthed(false);
 
-      // 2) refresh boundary supaya cache server-side tidak stale
       startTransition(() => router.refresh());
 
-      // 3) fire-and-forget bersihkan cookie server (jangan ditunggu)
       void fetch("/auth/signout", { method: "POST", cache: "no-store", credentials: "include" })
-        .catch(() => { /* abaikan error jaringan */ });
+        .catch(() => { });
 
-      // 4) navigasi ke login
       startTransition(() => router.replace("/login"));
     } finally {
       if (mountedRef.current) setLoading(false);

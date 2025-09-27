@@ -12,7 +12,7 @@ const WAKE_EVENT = "admin-wake";
 const DEBOUNCE_MS = 1500;
 
 type Props = {
-  role: UserRole;            // ⬅️ diterima dari layout (server)
+  role: UserRole;            
   children: React.ReactNode;
 };
 
@@ -23,7 +23,6 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
   const [isLoading, setIsLoading] = useState(true);
   const supabase = useMemo(() => getSupabaseClient(), []);
 
-  // Check user role on mount
   useEffect(() => {
     const checkUserRole = async () => {
       try {
@@ -36,7 +35,6 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
 
         console.log('[AdminShell] User email:', session.user.email);
 
-        // Check if user is owner from environment
         const ownerEmails = (process.env.NEXT_PUBLIC_OWNER_EMAILS || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
         const userEmail = (session.user.email || "").toLowerCase();
         
@@ -50,7 +48,6 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
           return;
         }
 
-        // Get role from database
         const { data: profile, error } = await supabase
           .from("profiles")
           .select("main_role, staff_role")
@@ -68,7 +65,6 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
           
           console.log('[AdminShell] All roles:', allRoles);
           
-          // Priority: owner > admin > client
           let effectiveRole: UserRole = "client";
           if (allRoles.includes("owner")) effectiveRole = "owner";
           else if (allRoles.includes("admin")) effectiveRole = "admin";
@@ -78,12 +74,10 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
           setCurrentRole(effectiveRole);
         } else {
           console.log('[AdminShell] No profile found, defaulting to admin for testing');
-          // Fallback: if no profile but user is authenticated, assume admin for debugging
           setCurrentRole("admin");
         }
       } catch (error) {
         console.error("Error checking user role:", error);
-        // Fallback to admin if there's an error
         setCurrentRole("admin");
       } finally {
         setIsLoading(false);
@@ -115,7 +109,6 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
     };
   }, []);
 
-  // Close sidebar when clicking outside on mobile
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
@@ -130,7 +123,6 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
     }
   }, [sidebarOpen]);
 
-  // Close sidebar on escape key
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && sidebarOpen) {
@@ -142,17 +134,14 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
     return () => document.removeEventListener('keydown', handleEscape);
   }, [sidebarOpen]);
 
-  // Kalau kamu mau tampilkan badge kecil role di header, bisa pakai memo ini.
   const arolePretty = useMemo(() => currentRole.replace("_", " ").toUpperCase(), [currentRole]);
   
-  // Debug logging
   useEffect(() => {
     console.log('[AdminShell] currentRole =', currentRole, 'isLoading =', isLoading);
     console.log('[AdminShell] sidebarOpen =', sidebarOpen);
     console.log('[AdminShell] NEXT_PUBLIC_OWNER_EMAILS =', process.env.NEXT_PUBLIC_OWNER_EMAILS);
   }, [currentRole, isLoading, sidebarOpen]);
 
-  // Show loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900">
@@ -166,7 +155,6 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
 
   return (
     <div className="flex items-start relative bg-coolgray-10 w-full min-h-screen overflow-x-hidden">
-      {/* Mobile Header */}
       <motion.div 
         className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900 backdrop-blur-sm border-b border-slate-700 h-16"
         initial={{ y: -64 }}
@@ -228,7 +216,6 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
         </div>
       </motion.div>
 
-      {/* Mobile Overlay */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
@@ -242,14 +229,12 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
       <SidebarSection
         role={currentRole} 
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
 
-      {/* Main Content */}
       <main className="flex-1 min-w-0 pt-16 lg:pt-0 w-full max-w-none lg:pl-72">
         {children}
       </main>

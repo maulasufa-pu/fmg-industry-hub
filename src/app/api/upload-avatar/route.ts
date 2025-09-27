@@ -6,7 +6,6 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function POST(request: NextRequest) {
   try {
-    // Get JWT token from Authorization header
     const authHeader = request.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return NextResponse.json({ error: "Missing authorization" }, { status: 401 });
@@ -14,7 +13,6 @@ export async function POST(request: NextRequest) {
 
     const token = authHeader.split(" ")[1];
     
-    // Create client dengan JWT token untuk validasi user
     const userSupabase = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
       global: {
         headers: {
@@ -28,7 +26,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    // Parse form data
     const formData = await request.formData();
     const file = formData.get("file") as File;
     
@@ -36,16 +33,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Use service role client untuk bypass RLS
     const serviceSupabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Generate filename
     const fileName = `${user.id}-${Date.now()}.${file.name.split('.').pop()}`;
     
-    // Convert file to buffer
     const fileBuffer = await file.arrayBuffer();
     
-    // Upload to storage dengan service role
     const { data: uploadData, error: uploadError } = await serviceSupabase.storage
       .from("avatars")
       .upload(fileName, fileBuffer, {
@@ -58,7 +51,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: uploadError.message }, { status: 500 });
     }
 
-    // Update profile dengan service role
     const { error: updateError } = await serviceSupabase
       .from("profiles")
       .update({ avatar_path: uploadData.path })

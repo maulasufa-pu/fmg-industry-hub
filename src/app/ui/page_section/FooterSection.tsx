@@ -85,13 +85,11 @@ export default function Footer(): React.JSX.Element {
 
   return (
     <footer className="relative border-t border-neutral-900/10 bg-white/60 text-neutral-800 backdrop-blur-sm transition-colors dark:border-white/10 dark:bg-neutral-950/60 dark:text-neutral-100">
-      {/* hairline accent */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-neutral-900/10 to-transparent dark:via-white/10"
       />
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        {/* Top row */}
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <BrandMark href="/" logoSrc="/logo/FMG-Universe-Flemmo-Music-Global.png"/>
           <form
@@ -126,7 +124,6 @@ export default function Footer(): React.JSX.Element {
           </form>
         </div>
 
-        {/* Columns */}
         <div className="mt-10 grid grid-cols-2 gap-8 text-sm sm:grid-cols-4">
           {columns.map((col) => (
             <div key={col.title}>
@@ -161,7 +158,6 @@ export default function Footer(): React.JSX.Element {
           ))}
         </div>
 
-        {/* Bottom row */}
         <div className="mt-10 flex flex-col items-start justify-between gap-3 text-xs text-neutral-500 dark:text-neutral-400 sm:flex-row sm:items-center">
           <div>
             © {new Date().getFullYear()} PT. Flemmo Music Global (Powered by FMG Universe). All rights

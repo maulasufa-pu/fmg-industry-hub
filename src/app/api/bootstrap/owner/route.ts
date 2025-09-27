@@ -13,14 +13,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid code" satisfies string }, { status: 403 });
   }
 
-  // user yang memanggil endpoint ini harus sudah login
   const supabase = createRouteHandlerClient({ cookies });
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
     return NextResponse.json({ error: "Must be logged in" satisfies string }, { status: 401 });
   }
 
-  // Cek apakah sudah ada owner di profiles
   const { data: owners, error: ownersErr, count } = await supabase
     .from("profiles")
     .select("id", { count: "exact", head: false })
@@ -33,10 +31,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Owner already exists" satisfies string }, { status: 409 });
   }
 
-  // Promote via SERVICE ROLE → app_metadata.role = "owner"
   const admin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY! // server-only
+    process.env.SUPABASE_SERVICE_ROLE_KEY! 
   );
 
   const userId = session.user.id;
@@ -48,13 +45,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Auth update failed: ${String(updErr.message ?? updErr)}` }, { status: 500 });
   }
 
-  // (opsional) sinkron ke profiles.main_role
   const { error: profErr } = await admin
     .from("profiles")
     .update({ main_role: "owner" })
     .eq("id", userId);
   if (profErr) {
-    // tidak fatal untuk JWT, tapi laporkan
     return NextResponse.json({ error: `Profile sync failed: ${String(profErr.message ?? profErr)}` }, { status: 500 });
   }
 

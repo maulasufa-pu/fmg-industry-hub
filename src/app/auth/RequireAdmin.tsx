@@ -26,7 +26,6 @@ export default function RequireAdmin({ children }: { children: React.ReactNode }
         return;
       }
 
-      // Allowlist email di client (hanya jika kamu memang mau)
       const raw = process.env.NEXT_PUBLIC_OWNER_EMAILS || "";
       const allow = raw.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
       const email = (session.user.email || "").toLowerCase();
@@ -35,7 +34,6 @@ export default function RequireAdmin({ children }: { children: React.ReactNode }
         return;
       }
 
-      // Ambil role dari DB menggunakan schema baru
       const { data: prof, error } = await supabase
         .from("profiles")
         .select("main_role, staff_role")
@@ -43,12 +41,10 @@ export default function RequireAdmin({ children }: { children: React.ReactNode }
         .maybeSingle();
 
       if (error) {
-        // fallback aman: anggap bukan admin
         router.replace("/client/dashboard");
         return;
       }
 
-      // Determine effective role using same logic as getEffectiveRole
       let effectiveRole: Role = "client";
       if (prof) {
         const allRoles: string[] = [];
@@ -57,7 +53,6 @@ export default function RequireAdmin({ children }: { children: React.ReactNode }
           allRoles.push(...prof.staff_role);
         }
         
-        // Priority: owner > admin > client
         if (allRoles.includes("owner")) effectiveRole = "owner";
         else if (allRoles.includes("admin")) effectiveRole = "admin";
         else effectiveRole = "client";
@@ -70,9 +65,7 @@ export default function RequireAdmin({ children }: { children: React.ReactNode }
         return;
       }
 
-      // Admin/Owner OK
       if (mountedRef.current) {
-        // smooth UX
         router.prefetch("/admin/dashboard");
         setState("ok");
       }

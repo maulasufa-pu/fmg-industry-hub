@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// Use service role to bypass RLS for admin assignments
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
@@ -14,7 +13,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Project ID required" }, { status: 400 });
     }
 
-    // Use service role client to bypass RLS
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data, error } = await supabase
@@ -34,7 +32,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Process assignments data
     const assignments = {
       anr: "",
       composer: "",
@@ -75,14 +72,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Use service role client to bypass RLS
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Process each role assignment
     for (const [role, userId] of Object.entries(newAssignments)) {
       if (typeof userId !== 'string' && userId !== null) continue;
 
-      // First, deactivate existing assignments for this role
       const { error: deactivateError } = await supabase
         .from('assignments')
         .update({ 
@@ -98,7 +92,6 @@ export async function POST(request: Request) {
         continue;
       }
 
-      // If userId is provided, create new assignment
       if (userId) {
         const { error: insertError } = await supabase
           .from('assignments')
@@ -138,10 +131,8 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Project ID and role required" }, { status: 400 });
     }
 
-    // Use service role client to bypass RLS
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Try DELETE instead of UPDATE to avoid triggers that validate staff roles
     const { error } = await supabase
       .from('assignments')
       .delete()

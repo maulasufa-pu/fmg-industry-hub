@@ -1,4 +1,3 @@
-// E:\FMGIH\fmg-industry-hub\src\app\ui\panel\invoices\components\ProductServicesPage.tsx
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState, forwardRef } from "react";
@@ -10,10 +9,6 @@ import {
 } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { getEffectiveRole } from "@/lib/roles/effective";
-
-/****************************************
- * Types (fallbacks if no generated types)
- ****************************************/
 
 type UserRole =
   | "owner" | "admin" | "client" | "composer"
@@ -68,14 +63,10 @@ type FMGButtonProps = Omit<HTMLMotionProps<"button">, "children"> & {
   busy?: boolean;
 };
 
-/***************************************
- * Helpers
- ***************************************/
 const scrollIntoViewSmooth = (el: HTMLElement | null) => {
   if (!el) return;
   el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
 };
-// Import currency utilities
 import { formatPrice, Currency } from '@/lib/currency';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { CurrencyDropdown } from '@/components/CurrencyDropdown';
@@ -159,10 +150,6 @@ function normalizeBundle(row: Record<string, unknown>): BundleRow {
   };
 }
 
-/***************************************
- * Theming atoms — FMG Universe vibe
- ***************************************/
-
 const glassWrap =
   "rounded-3xl p-[1px] bg-[linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.06)_35%,transparent)] " +
   "shadow-[0_1px_0_rgba(255,255,255,.05),0_18px_50px_rgba(2,6,23,.55)]";
@@ -181,7 +168,6 @@ const inputBase =
 
 const labelBase = "text-xs text-white/80";
 
-/** Status pill (Active/Inactive) **/
 function StatusPill({ active }: { active: boolean }) {
   return active ? (
     <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-0.5 text-xs text-emerald-200">
@@ -194,7 +180,6 @@ function StatusPill({ active }: { active: boolean }) {
   );
 }
 
-/** Group chip with color **/
 function GroupChip({ g }: { g: ServiceGroup }) {
   const map: Record<ServiceGroup, string> = {
     core: "from-indigo-400 via-fuchsia-400 to-sky-400",
@@ -209,7 +194,6 @@ function GroupChip({ g }: { g: ServiceGroup }) {
   );
 }
 
-/** Promo badge **/
 function PromoBadge({ type, value }: { type: PromoType; value: number }) {
   const { currency, rates } = useCurrency();
   
@@ -223,7 +207,6 @@ function PromoBadge({ type, value }: { type: PromoType; value: number }) {
   );
 }
 
-/** Gradient primary button **/
 const PrimaryBtn = forwardRef<HTMLButtonElement, FMGButtonProps>(
   ({ className = "", busy, children, ...rest }, ref) => {
     return (
@@ -246,14 +229,13 @@ const PrimaryBtn = forwardRef<HTMLButtonElement, FMGButtonProps>(
             <path d="M22 12a10 10 0 0 1-10 10" stroke="white" strokeWidth="2" fill="none" />
           </svg>
         ) : null}
-        {children /* ✅ sekarang pasti ReactNode */}
+        {children}
       </motion.button>
     );
   }
 );
 PrimaryBtn.displayName = "PrimaryBtn";
 
-/** Subtle button **/
 const SubtleBtn = forwardRef<HTMLButtonElement, FMGButtonProps>(
   ({ className = "", children, ...rest }, ref) => (
     <motion.button
@@ -273,8 +255,6 @@ const SubtleBtn = forwardRef<HTMLButtonElement, FMGButtonProps>(
 );
 SubtleBtn.displayName = "SubtleBtn";
 
-/** Popover (headless, animated) — fixed + viewport aware **/
-/** Simple popover: always attached below button (right-aligned) */
 function Popover({
   open,
   onClose,
@@ -296,7 +276,6 @@ function Popover({
     const onClick = (e: MouseEvent) => {
       const t = e.target as Node;
       if (popRef.current && popRef.current.contains(t)) return;
-      // if clicking anchor button, let button handler toggle
       if (anchorRef?.current && anchorRef.current.contains(t)) return;
       onClose();
     };
@@ -319,7 +298,6 @@ function Popover({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 6, scale: 0.98 }}
           transition={{ duration: 0.16 }}
-          // NOTE: parent pembungkus tombol HARUS className="relative"
           className="absolute z-[1000] right-0 top-[calc(100%+8px)] rounded-2xl border border-white/10 bg-neutral-950/90 p-3 backdrop-blur shadow-2xl max-w-[calc(100vw-32px)]"
           style={{ width }}
         >
@@ -329,11 +307,6 @@ function Popover({
     </AnimatePresence>
   );
 }
-
-
-/***************************************
- * Main Page
- ***************************************/
 
 export default function ProductServicesPage(): React.JSX.Element {
   const [role, setRole] = useState<UserRole | null>(null);
@@ -374,7 +347,6 @@ export default function ProductServicesPage(): React.JSX.Element {
 
   return (
     <main className="relative min-h-screen bg-neutral-950 text-white p-4 sm:p-6 overflow-x-hidden">
-      {/* FMG ambient glows */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-32 -left-28 h-[40rem] w-[40rem] rounded-full bg-gradient-to-br from-indigo-600/20 via-fuchsia-500/15 to-sky-500/10 blur-3xl" />
         <div className="absolute -bottom-40 -right-32 h-[36rem] w-[36rem] rounded-full bg-gradient-to-tr from-emerald-500/20 via-teal-400/15 to-cyan-400/10 blur-3xl" />
@@ -395,7 +367,6 @@ export default function ProductServicesPage(): React.JSX.Element {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Currency Selector */}
               <div className="flex flex-col gap-1">
                 <span className="text-xs text-white/70">Display Currency</span>
                 <CurrencyDropdown compact showStatus={false} />

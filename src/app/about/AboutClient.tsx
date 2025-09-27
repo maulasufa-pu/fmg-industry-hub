@@ -31,9 +31,6 @@ import {
   Briefcase,
 } from "lucide-react";
 
-/*************************
- * Utilities & shared styles
- *************************/
 const cn = (...classes: Array<string | false | null | undefined>) =>
   classes.filter(Boolean).join(" ");
 
@@ -46,9 +43,6 @@ const fadeUp: Variants = {
   }),
 };
 
-/*************************
- * Magnetic Button (same vibe)
- *************************/
 function MagneticButton({
   children,
   href,
@@ -99,9 +93,6 @@ function MagneticButton({
   return Btn;
 }
 
-/*************************
- * Gentle Parallax wrapper (clamped, instant + ease-out)
- *************************/
 function Parallax({
   children,
   amount = 12,
@@ -133,9 +124,6 @@ function Parallax({
   );
 }
 
-/*************************
- * Split headline
- *************************/
 function SplitHeadline({ text }: { text: string }) {
   return (
     <h1 className="mx-auto max-w-5xl text-balance text-center text-5xl font-bold leading-tight tracking-tight sm:text-6xl">
@@ -155,9 +143,6 @@ function SplitHeadline({ text }: { text: string }) {
   );
 }
 
-/*************************
- * Sticky quick facts (international pattern)
- *************************/
 function QuickFacts() {
   const FACTS: { label: string; value: string }[] = [
     { label: "Founded", value: "2018" },
@@ -191,9 +176,6 @@ function QuickFacts() {
   );
 }
 
-/*************************
- * Service Pillar card
- *************************/
 function Pillar({
   icon: Icon,
   title,
@@ -225,9 +207,6 @@ function Pillar({
   );
 }
 
-/*************************
- * Founder (Alfath Flemmo)
- *************************/
 function FounderCard() {
   return (
     <Parallax amount={12}>
@@ -280,9 +259,6 @@ function FounderCard() {
   );
 }
 
-/*************************
- * Timeline
- *************************/
 function TimelineItem({
   year,
   title,
@@ -303,9 +279,6 @@ function TimelineItem({
   );
 }
 
-/*************************
- * FAQ
- *************************/
 function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
@@ -331,9 +304,6 @@ function FAQItem({ q, a }: { q: string; a: string }) {
   );
 }
 
-/*************************
- * Small components
- *************************/
 function Value({
   icon: Icon,
   title,
@@ -358,9 +328,6 @@ function Value({
   );
 }
 
-/*************************
- * Page (Client)
- *************************/
 export default function AboutClientV2() {
   const controls = useAnimation();
   useEffect(() => {
@@ -369,7 +336,6 @@ export default function AboutClientV2() {
 
   return (
     <main className="relative min-h-screen bg-white text-black antialiased dark:bg-black dark:text-white">
-      {/* subtle noise overlay */}
       <div
         className="pointer-events-none fixed inset-0 z-[-1] opacity-[0.06] mix-blend-soft-light"
         aria-hidden
@@ -388,7 +354,6 @@ export default function AboutClientV2() {
         </svg>
       </div>
 
-      {/* Hero */}
       <section className="relative overflow-hidden pt-20 sm:pt-10">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(1200px_500px_at_50%_-100px,rgba(79,70,229,0.15),transparent)]" />
         <div className="mx-auto max-w-6xl px-4">
@@ -435,7 +400,6 @@ export default function AboutClientV2() {
         </div>
       </section>
 
-      {/* Content layout: sticky quick facts + long-form content */}
       <section className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 pb-10 pt-16 text-black/70 dark:text-white/70 lg:grid-cols-[270px_1fr]">
         <QuickFacts />
         <article
@@ -530,16 +494,6 @@ export default function AboutClientV2() {
 
           <h2 className="mt-12">Leadership</h2>
           <FounderCard />
-
-          {/* 
-          <h2 className="mt-12">Milestones</h2>
-          <ol className="relative mx-auto max-w-3xl space-y-8 border-l border-black/10 pl-6 dark:border-white/10">
-            <TimelineItem year="2020" title="Studio roots" desc="Songwriting and production for independent artists." />
-            <TimelineItem year="2022" title="Publishing arm" desc="Launched FMG Publishing for registrations & splits." />
-            <TimelineItem year="2023" title="Distribution" desc="Rolled out DSP delivery and quality control checks." />
-            <TimelineItem year="2024" title="Licensing & portal" desc="Introduced licensing support and secure client portal." />
-          </ol>
-          */}
 
           <h2 className="mt-12">Global footprint</h2>
           <p>
@@ -665,20 +619,6 @@ export default function AboutClientV2() {
           </div>
         </article>
       </section>
-
-      {/* Footer (light) — hapus bila sudah pakai global Footer dari layout */}
-      {/* <footer className="border-t border-black/10 py-10 text-sm dark:border-white/10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 sm:flex-row">
-          <div className="text-black/60 dark:text-white/60">
-            © {new Date().getFullYear()} FMGIHub / Flemmo Studio
-          </div>
-          <div className="flex gap-6 text-black/60 dark:text-white/60">
-            <Link href="/">Home</Link>
-            <Link href="/services">Services</Link>
-            <Link href="/about">About</Link>
-          </div>
-        </div>
-      </footer> */}
     </main>
   );
 }

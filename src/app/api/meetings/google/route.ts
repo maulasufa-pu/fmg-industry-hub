@@ -7,7 +7,6 @@ const GOOGLE_OAUTH_REFRESH_TOKEN = process.env.GOOGLE_OAUTH_REFRESH_TOKEN!;
 const GOOGLE_CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || "primary";
 
 export async function POST(req: NextRequest) {
-  // Guard env
   if (!GOOGLE_OAUTH_CLIENT_ID || !GOOGLE_OAUTH_CLIENT_SECRET || !GOOGLE_OAUTH_REFRESH_TOKEN) {
     return NextResponse.json(
       { error: "Missing Google env. Check GOOGLE_OAUTH_CLIENT_ID/SECRET/REFRESH_TOKEN" },
@@ -18,7 +17,7 @@ export async function POST(req: NextRequest) {
   try {
     const { title, startAt, durationMin } = (await req.json()) as {
       title: string;
-      startAt: string;   // UTC ISO dari client
+      startAt: string;   
       durationMin: number;
     };
 
@@ -32,7 +31,6 @@ export async function POST(req: NextRequest) {
     }
     const end = new Date(start.getTime() + Number(durationMin) * 60_000);
 
-    // OAuth client
     const oAuth2 = new google.auth.OAuth2(
       GOOGLE_OAUTH_CLIENT_ID,
       GOOGLE_OAUTH_CLIENT_SECRET
@@ -41,7 +39,6 @@ export async function POST(req: NextRequest) {
 
     const calendar = google.calendar({ version: "v3", auth: oAuth2 });
 
-    // Penting: conferenceDataVersion=1 agar Meet link dibuat
     const res = await calendar.events.insert({
       calendarId: GOOGLE_CALENDAR_ID,
       conferenceDataVersion: 1,
@@ -60,7 +57,6 @@ export async function POST(req: NextRequest) {
 
     const event = res.data;
 
-    // Ketik entryPoints dengan tipe resmi dari googleapis
     const videoEP = event.conferenceData?.entryPoints?.find(
       (ep): ep is calendar_v3.Schema$EntryPoint => ep?.entryPointType === "video"
     );

@@ -20,26 +20,16 @@ import {
   KeyRound,
 } from "lucide-react";
 
-/*************************************************
- * FMG Universe — /legal/privacy
- * - Modern, professional single page (no slides)
- * - Light/Dark friendly, glass cards, gradient accents
- * - Sticky Table of Contents with scroll-spy
- * - Reduced-motion aware, a11y focused
- *************************************************/
-
-/* ---------- Small helpers ---------- */
 function classNames(...xs: Array<string | false | null | undefined>) {
   return xs.filter(Boolean).join(" ");
 }
 
-/* ---------- The page ---------- */
 export default function PrivacyPage(): React.JSX.Element {
   const reduce = useReducedMotion();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [active, setActive] = useState<string>("intro");
 
-  const lastUpdated = "2025-08-01"; // set to your official effective date (YYYY-MM-DD)
+  const lastUpdated = "2025-08-01";
 
   const sections = useMemo(
     () => [
@@ -64,7 +54,6 @@ export default function PrivacyPage(): React.JSX.Element {
     []
   );
 
-  /* ---------- Scroll‑spy ---------- */
   useEffect(() => {
     const root = containerRef.current ?? undefined;
     const observer = new IntersectionObserver(
@@ -95,7 +84,6 @@ export default function PrivacyPage(): React.JSX.Element {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-white text-neutral-900 dark:bg-neutral-950 dark:text-white">
-      {/* Soft gradient background accents */}
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <motion.div
           initial={reduce ? undefined : { opacity: 0, y: -16 }}
@@ -111,7 +99,6 @@ export default function PrivacyPage(): React.JSX.Element {
         />
       </div>
 
-      {/* Header */}
       <header className="relative z-10">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="pt-16 sm:pt-20 md:pt-24 pb-6">
@@ -134,7 +121,6 @@ export default function PrivacyPage(): React.JSX.Element {
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-20">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
-          {/* Sticky TOC */}
           <aside className="lg:col-span-4 xl:col-span-3">
             <div className={classNames(card, "sticky top-6 p-4 sm:p-5")}>
               <div className="text-sm font-semibold opacity-80">On this page</div>
@@ -171,7 +157,6 @@ export default function PrivacyPage(): React.JSX.Element {
             </div>
           </aside>
 
-          {/* Content */}
           <div ref={containerRef} className="lg:col-span-8 xl:col-span-9">
             <ArticleCard id="intro" title="Introduction" Icon={FileText}>
               <p className={p}>
@@ -351,7 +336,6 @@ export default function PrivacyPage(): React.JSX.Element {
   );
 }
 
-/* ---------- Reusable Article Card ---------- */
 function ArticleCard({
   id,
   title,

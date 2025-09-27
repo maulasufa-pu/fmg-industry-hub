@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { getSupabaseClient } from "@/lib/supabase/client";
-import { Google } from "@/icons"; // keep your existing icon set
+import { Google } from "@/icons"; 
 import {
   Mail,
   Lock,
@@ -16,9 +16,6 @@ import {
 } from "lucide-react";
 import HCaptcha from '@hcaptcha/react-hcaptcha'
 
-/*********************************
- * Helpers & Types
- *********************************/
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type FieldErrors = { email?: string; password?: string };
@@ -33,12 +30,9 @@ const validate = (v: { email: string; password: string }): FieldErrors => {
   return next;
 };
 
-/*********************************
- * Component
- *********************************/
 export const LoginSection = (): React.JSX.Element => {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const [captchaKey, setCaptchaKey] = useState<number>(0); // untuk force re-mount widget jika perlu
+  const [captchaKey, setCaptchaKey] = useState<number>(0); 
   const siteKey: string = process.env.NEXT_PUBLIC_HCAPTCHA_SITEKEY ?? "";
 
   const [email, setEmail] = useState<string>("");
@@ -60,7 +54,6 @@ export const LoginSection = (): React.JSX.Element => {
   const msg = qp.get("m");
   const [socialLoading, setSocialLoading] = useState(false);
 
-  // Prefill remembered email
   useEffect(() => {
     const saved = typeof window !== "undefined" ? localStorage.getItem("remember_email") : null;
     if (saved) {
@@ -69,7 +62,6 @@ export const LoginSection = (): React.JSX.Element => {
     }
   }, []);
 
-  // Disable submit if invalid
   const canSubmit = useMemo(() => {
     const v = validate({ email, password });
     return Object.keys(v).length === 0 && !!captchaToken && !loading;
@@ -104,7 +96,6 @@ export const LoginSection = (): React.JSX.Element => {
       return;
     }
 
-    // Wajib ada token
     if (!captchaToken) {
       setErr("Please complete the captcha.");
       return;
@@ -112,19 +103,12 @@ export const LoginSection = (): React.JSX.Element => {
 
     setLoading(true);
     try {
-      // 0) Verify hCaptcha on server
-      // const ok = await verifyCaptcha(captchaToken);
-      // if (!ok) {
-      //   resetCaptcha();
-      //   throw new Error("Captcha verification failed. Please try again.");
-      // }
-
-      // 1) Supabase login
+      
       const supabase = getSupabaseClient()
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-        options: { captchaToken: captchaToken! }, // wajib saat CAPTCHA ON
+        options: { captchaToken: captchaToken! }, 
       });
 
       if (error) throw new Error(error.message || "Login failed")
@@ -132,7 +116,6 @@ export const LoginSection = (): React.JSX.Element => {
       const session = data.session;
       if (!session) throw new Error("No session returned");
 
-      // 2) Set HttpOnly cookie
       const resp = await fetch("/auth/set", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -147,17 +130,15 @@ export const LoginSection = (): React.JSX.Element => {
         throw new Error(m);
       }
 
-      // 3) Remember email (opsional)
       if (rememberMe) localStorage.setItem("remember_email", email);
       else localStorage.removeItem("remember_email");
 
-      // 4) Redirect final
       const rawNext = qp.get("next") || qp.get("redirectedFrom") || "";
       const dest = rawNext.startsWith("/") ? rawNext : "/client/dashboard";
       router.replace(dest);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Login failed");
-      resetCaptcha(); // paksa user solve lagi
+      resetCaptcha();
     } finally {
       setLoading(false);
     }
@@ -171,23 +152,17 @@ export const LoginSection = (): React.JSX.Element => {
 
       const redirectTo = `${window.location.origin}/auth/callback`;
 
-      // produksi (langsung redirect oleh SDK):
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo,
-          // skipBrowserRedirect: true, // <- set ke true kalau mau debug URL dulu
         },
       });
-
-      // DEBUG: kalau pakai skipBrowserRedirect:true di atas, kamu bisa manual redirect:
-      // if (!error && data?.url) window.location.assign(data.url);
 
       if (error) setErr(error.message);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "OAuth failed");
     } finally {
-      // kalau sukses normal, halaman akan pindah sebelum baris ini sempat jalan—gak apa-apa
       setSocialLoading(false);
     }
   };
@@ -197,7 +172,6 @@ export const LoginSection = (): React.JSX.Element => {
   const passwordInvalid = touched.password && !!errors.password;
   return (
     <section className="relative w-full px-4 sm:px-6 lg:px-8 py-10">
-      {/* Subtle backdrop */}
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-500/10 via-transparent to-transparent" />
 
       <motion.div
@@ -207,7 +181,6 @@ export const LoginSection = (): React.JSX.Element => {
         className="mx-auto w-full max-w-md sm:max-w-lg lg:max-w-xl"
       >
         <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-black/40 backdrop-blur-xl shadow-[0_20px_60px_-20px_rgba(0,0,0,0.35)] overflow-hidden">
-          {/* Header */}
           <div className="px-6 sm:px-8 pt-7 pb-4">
             <div className="flex items-center justify-center gap-2 text-indigo-600 dark:text-indigo-300">
               <ShieldCheck className="h-5 w-5" />
@@ -224,9 +197,7 @@ export const LoginSection = (): React.JSX.Element => {
             )}
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="px-6 sm:px-8 pb-6 sm:pb-8">
-            {/* Email */}
             <label htmlFor="email" className="block text-[13px] font-medium text-neutral-800 dark:text-neutral-200">
               Email address
             </label>
@@ -263,7 +234,6 @@ export const LoginSection = (): React.JSX.Element => {
               </p>
             )}
 
-            {/* Password */}
             <div className="mt-4">
               <label htmlFor="password" className="block text-[13px] font-medium text-neutral-800 dark:text-neutral-200">
                 Password
@@ -313,7 +283,6 @@ export const LoginSection = (): React.JSX.Element => {
               )}
             </div>
 
-            {/* Row: remember + forgot */}
             <div className="mt-4 flex items-center justify-between">
               <label className="inline-flex items-center gap-2 select-none">
                 <input
@@ -341,7 +310,6 @@ export const LoginSection = (): React.JSX.Element => {
               </button>
             </div>
 
-              {/* hCaptcha */}
             <div className="mt-4 flex justify-center">
               <HCaptcha
                 key={captchaKey}
@@ -355,7 +323,6 @@ export const LoginSection = (): React.JSX.Element => {
               />
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={!canSubmit}
@@ -373,7 +340,6 @@ export const LoginSection = (): React.JSX.Element => {
               )}
             </button>
 
-            {/* Error Banner (Supabase or form) */}
             {(err || Object.keys(errors).length > 0) && (
               <div className="mt-3 rounded-lg border border-red-200/60 bg-red-50/70 p-3 text-[13px] text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200">
                 {err ? (
@@ -387,7 +353,6 @@ export const LoginSection = (): React.JSX.Element => {
               </div>
             )}
 
-            {/* Divider */}
             <div className="mt-6 flex items-center gap-3">
               <div className="h-px flex-1 bg-black/10 dark:bg-white/10" />
               <span className="text-[12px] text-neutral-500 whitespace-nowrap">
@@ -396,7 +361,6 @@ export const LoginSection = (): React.JSX.Element => {
               <div className="h-px flex-1 bg-black/10 dark:bg-white/10" />
             </div>
 
-            {/* Social */}
             <div className="mt-3 grid grid-cols-1 gap-3">
               <motion.button
                 type="button"
@@ -421,7 +385,6 @@ export const LoginSection = (): React.JSX.Element => {
               </motion.button>
             </div>
 
-            {/* Sign up link */}
             <p className="mt-6 text-center text-[13px] text-neutral-700 dark:text-neutral-300">
               No account yet?{" "}
               <button

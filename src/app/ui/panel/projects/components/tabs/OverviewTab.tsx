@@ -57,7 +57,6 @@ const AnimatedCard = ({
   );
 };
 
-// small helper for display
 const pretty = (s?: string | null) =>
   (s ?? "N/A")
     .toString()
@@ -86,9 +85,7 @@ export default function OverviewTab({ project }: OverviewTabProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      {/* MAIN INFO */}
       <AnimatedCard title="📝 Main Info (Read-only)" gradient>
-        {/* Status & Stage - formatted, not input */}
         <motion.div
           className="mb-6 space-y-3"
           initial={{ opacity: 0, y: 6 }}
@@ -119,7 +116,6 @@ export default function OverviewTab({ project }: OverviewTabProps) {
           </p>
         </motion.div>
 
-        {/* Other details - keep as read-only inputs for neatness */}
         <motion.div
           className="grid grid-cols-2 gap-4 text-sm"
           initial={{ opacity: 0 }}
@@ -132,8 +128,6 @@ export default function OverviewTab({ project }: OverviewTabProps) {
             { label: "🎼 Genre", value: project.genre || "N/A" },
             { label: "👤 Client ID", value: project.client_id || "N/A" },
             { label: "📅 Last Updated", value: lastUpdated },
-            // Progress removed as requested
-            // { label: "📈 Progress", value: `${project.progress_percent || 0}%` },
           ].map((field, index) => (
             <motion.div
               key={field.label}
@@ -156,7 +150,6 @@ export default function OverviewTab({ project }: OverviewTabProps) {
         </motion.div>
       </AnimatedCard>
 
-      {/* DESCRIPTION with custom scrollbar */}
       <AnimatedCard title="📝 Project Description" gradient className="h-full flex flex-col">
         <motion.div
           className="flex-1 flex flex-col"
@@ -165,9 +158,7 @@ export default function OverviewTab({ project }: OverviewTabProps) {
           transition={{ delay: 0.4 }}
         >
           <div className="relative">
-            {/* Top fade */}
             <div className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-white/70 dark:from-gray-900/70 to-transparent rounded-t-xl" />
-            {/* Scrollable content */}
             <div
               className="descScroll whitespace-pre-wrap leading-relaxed text-sm text-gray-800 dark:text-gray-200 bg-white/70 dark:bg-gray-800/70 border border-gray-200 dark:border-gray-700 rounded-xl p-4 max-h-[420px] overflow-auto shadow-inner"
               role="region"
@@ -175,12 +166,10 @@ export default function OverviewTab({ project }: OverviewTabProps) {
             >
               {project.description?.trim() || "No description provided"}
             </div>
-            {/* Bottom fade */}
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-white/70 dark:from-gray-900/70 to-transparent rounded-b-xl" />
           </div>
         </motion.div>
 
-        {/* custom scrollbar styles */}
         <style jsx>{`
           :global(.descScroll) {
             scrollbar-width: thin; /* Firefox */

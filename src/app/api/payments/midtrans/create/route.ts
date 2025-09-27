@@ -13,9 +13,8 @@ type InvoiceRow = {
   payment_url: string | null;
 };
 
-export const runtime = "nodejs";        // pastikan Node runtime (bukan Edge)
-export const dynamic = "force-dynamic"; // no caching
-
+export const runtime = "nodejs";        
+export const dynamic = "force-dynamic"; 
 const midtransClient = require("midtrans-client");
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -34,7 +33,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "Missing invoiceId" }, { status: 400 });
     }
 
-    // Cek env biar errornya jelas, bukan 500 random
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       return NextResponse.json(
         { error: "Server misconfigured: missing Supabase env" },
@@ -50,7 +48,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Ambil invoice (sekaligus payment_url utk fallback)
     const { data: inv, error: invErr } = await admin
       .from("invoices")
       .select(COLS)
@@ -78,11 +75,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
 
     try {
-      // Coba bikin transaksi baru
       const trx = await snap.createTransaction({
         transaction_details: {
-          order_id: inv.invoice_no, // harus unik di Midtrans
-          gross_amount: gross,      // integer (tanpa desimal)
+          order_id: inv.invoice_no, 
+          gross_amount: gross,      
         },
         customer_details: {
           first_name: inv.client_name ?? "Client",
@@ -102,7 +98,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         },
       });
 
-      // Simpan payment_url supaya bisa dipakai ulang
       await admin
         .from("invoices")
         .update({ payment_url: trx.redirect_url })
@@ -113,15 +108,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         redirect_url: trx.redirect_url,
       });
     } catch (e: any) {
-      // Handle duplikat order_id (user klik Pay 2x, dll.)
       const msg =
         e?.ApiResponse?.status_message ||
         e?.message ||
         "Midtrans error";
       if (/order_id.*used/i.test(msg) || /duplicate order id/i.test(msg)) {
         if (inv.payment_url) {
-          // Fallback: pakai payment_url lama (token mungkin gak ada, gak masalah —
-          // client akan redirect langsung)
           return NextResponse.json({ token: null, redirect_url: inv.payment_url });
         }
       }

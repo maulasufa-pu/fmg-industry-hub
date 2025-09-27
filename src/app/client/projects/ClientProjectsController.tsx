@@ -11,7 +11,7 @@ import ProjectList, {
 
 type Props = {
   mode?: "client";
-  basePath: string; // e.g. "/client/projects"
+  basePath: string; 
   rows: ClientProjectRow[];
   counts: Record<ClientTabKey, number>;
   activeTab: ClientTabKey;
@@ -50,12 +50,10 @@ export default function ClientProjectsController(props: Props) {
       counts={props.counts}
       activeTab={props.activeTab}
       onTabChange={(tab) => {
-        // reset page ke 1 saat ganti tab
         push({ tab, page: 1 });
       }}
       search={props.search}
       onSearchChange={(q) => {
-        // reset page ke 1 saat cari
         push({ q, page: 1 });
       }}
       filterPIC={props.filterPIC}
@@ -74,7 +72,6 @@ export default function ClientProjectsController(props: Props) {
         router.push(`/client/projects/${project_id}`);
       }}
       onBulkAssignPIC={async (ids, pic) => {
-        // kalau memang mau diaktifkan, arahkan ke modal/halaman khusus
         console.log("Bulk assign PIC (client scope):", ids, pic);
       }}
       onBulkMarkFinished={async (ids) => {

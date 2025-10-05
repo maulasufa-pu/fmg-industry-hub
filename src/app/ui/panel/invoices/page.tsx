@@ -513,10 +513,10 @@ export default function InvoicesPage(): React.JSX.Element {
                     },
                   ].map((s, i) => (
                     <div key={i} className={`rounded-2xl p-3 sm:p-4 ${s.bg} backdrop-blur shadow`}>
-                      <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-white/85">
+                      <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-slate-700 dark:text-white/85">
                         {s.icon} {s.label}
                       </div>
-                      <div className="mt-1 text-lg sm:text-xl font-bold">{String(s.value)}</div>
+                      <div className="mt-1 text-lg sm:text-xl font-bold text-slate-800 dark:text-white">{String(s.value)}</div>
                     </div>
                   ))}
                 </div>

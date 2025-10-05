@@ -135,19 +135,19 @@ export default function ClientShell({ role, children }: Props): React.JSX.Elemen
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-white via-slate-50 to-slate-100 dark:from-slate-800 dark:via-slate-700 dark:to-slate-900">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-400 mx-auto mb-4"></div>
-          <div className="text-slate-300">Loading client panel...</div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 dark:border-purple-400 mx-auto mb-4"></div>
+          <div className="text-slate-700 dark:text-slate-300">Loading client panel...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-start relative bg-coolgray-10 w-full min-h-screen overflow-x-hidden">
+    <div className="flex items-start relative bg-gradient-to-br from-white via-slate-50 to-slate-100 dark:from-slate-800 dark:via-slate-700 dark:to-slate-900 w-full min-h-screen overflow-x-hidden">
       <motion.div 
-        className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900 backdrop-blur-sm border-b border-slate-700 h-16"
+        className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-slate-50/95 via-white/95 to-slate-100/95 dark:from-slate-800/95 dark:via-slate-700/95 dark:to-slate-900/95 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-600/40 h-16 shadow-lg shadow-slate-200/40 dark:shadow-slate-800/25"
         initial={{ y: -64 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.3 }}
@@ -157,7 +157,7 @@ export default function ClientShell({ role, children }: Props): React.JSX.Elemen
             <motion.button
               data-menu-button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+              className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-200/30 dark:shadow-slate-800/25 hover:shadow-xl hover:shadow-indigo-300/40 dark:hover:shadow-slate-700/30 transition-all duration-200"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               aria-label="Toggle sidebar"
@@ -190,16 +190,16 @@ export default function ClientShell({ role, children }: Props): React.JSX.Elemen
             <div className="flex items-center gap-2">
               <div className="inline-flex flex-col items-end justify-center relative flex-[0_0_auto]">
                 <div 
-                  className="relative w-fit mt-[-1.00px] font-heading-4 font-[number:var(--heading-4-font-weight)] text-gray-800 dark:text-gray-100 dark:text-gray-100 text-[length:var(--heading-4-font-size)] tracking-[var(--heading-4-letter-spacing)] leading-[var(--heading-4-line-height)] whitespace-nowrap [font-style:var(--heading-4-font-style)]">
+                  className="relative w-fit mt-[-1.00px] font-heading-4 font-[number:var(--heading-4-font-weight)] bg-gradient-to-r from-indigo-700 to-purple-700 dark:from-indigo-300 dark:to-purple-300 bg-clip-text text-transparent text-[length:var(--heading-4-font-size)] tracking-[var(--heading-4-letter-spacing)] leading-[var(--heading-4-line-height)] whitespace-nowrap [font-style:var(--heading-4-font-style)]">
                   Flemmo Music
                 </div>
 
                 <div 
-                  className="relative w-fit -mt-1 font-body-XS font-[number:var(--body-XS-font-weight)] text-neutral-600 dark:text-neutral-200 dark:text-gray-200 text-[length:var(--body-XS-font-size)] tracking-[var(--body-XS-letter-spacing)] leading-[var(--body-XS-line-height)] whitespace-nowrap [font-style:var(--body-XS-font-style)]">
+                  className="relative w-fit -mt-1 font-body-XS font-[number:var(--body-XS-font-weight)] text-slate-600 dark:text-slate-300 text-[length:var(--body-XS-font-size)] tracking-[var(--body-XS-letter-spacing)] leading-[var(--body-XS-line-height)] whitespace-nowrap [font-style:var(--body-XS-font-style)]">
                 Global Universe Solution
                 </div>
               </div>
-              <div className="hidden sm:block text-xs text-slate-300 px-2 py-1 bg-slate-800/50 rounded-full border border-slate-600">
+              <div className="hidden sm:block text-xs text-slate-700 dark:text-slate-300 px-3 py-1.5 bg-gradient-to-r from-slate-200/80 to-slate-300/80 dark:from-slate-700/80 dark:to-slate-600/80 rounded-full border border-slate-300/40 dark:border-slate-500/40 shadow-sm backdrop-blur-sm">
                 {arolePretty}
               </div>
             </div>
@@ -210,7 +210,7 @@ export default function ClientShell({ role, children }: Props): React.JSX.Elemen
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
-            className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+            className="lg:hidden fixed inset-0 z-40 bg-slate-900/50 dark:bg-black/60 backdrop-blur-md"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -226,8 +226,10 @@ export default function ClientShell({ role, children }: Props): React.JSX.Elemen
         onClose={() => setSidebarOpen(false)}
       />
 
-      <main className="flex-1 min-w-0 pt-16 lg:pt-0 w-full max-w-none lg:pl-72">
-        {children}
+      <main className="flex-1 min-w-0 pt-16 lg:pt-0 w-full max-w-none lg:pl-72 lg:ml-4 xl:ml-6">
+        <div className="px-4 py-6 lg:px-6 lg:py-8 xl:px-8 xl:py-10">
+          {children}
+        </div>
       </main>
     </div>
   );

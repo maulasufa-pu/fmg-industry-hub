@@ -500,13 +500,13 @@ export default function ProjectList(props: Props): React.JSX.Element {
                 return (
                   <motion.div key={index} className="relative" whileHover={{ scale: 1.01 }}>
                     <motion.select
-                      className="h-10 sm:h-12 rounded-lg sm:rounded-xl border border-purple-400/30 bg-slate-800/60 backdrop-blur-sm px-3 sm:px-4 pr-8 sm:pr-10 text-xs sm:text-sm text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400/50 transition-all duration-300 shadow-lg hover:bg-slate-800/80 appearance-none"
+                      className="h-10 sm:h-12 rounded-lg sm:rounded-xl border border-slate-300 dark:border-purple-400/30 bg-white/90 dark:bg-slate-800/60 backdrop-blur-sm px-3 sm:px-4 pr-8 sm:pr-10 text-xs sm:text-sm text-slate-800 dark:text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/50 dark:focus:ring-purple-500/50 focus:border-indigo-400 dark:focus:border-purple-400/50 transition-all duration-300 shadow-lg hover:bg-white dark:hover:bg-slate-800/80 appearance-none"
                       value={filter.value}
                       onChange={(e) => filter.onChange(e.currentTarget.value as PicOption | StageOption | StatusOption)}
                       whileTap={{ scale: 0.98 }}
                     >
                       {filter.options.map((o) => (
-                        <option key={o} value={o} className="bg-slate-800 text-white">
+                        <option key={o} value={o} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">
                           {o === "any" ? `${filter.prefix}: All` : `${filter.prefix}: ${o}`}
                         </option>
                       ))}
@@ -642,8 +642,8 @@ export default function ProjectList(props: Props): React.JSX.Element {
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <h3 className="font-semibold text-white truncate">{r.title || "-"}</h3>
-                          <span className="text-xs text-slate-300 tabular-nums">{progress}%</span>
+                          <h3 className="font-semibold text-slate-800 dark:text-white truncate">{r.title || "-"}</h3>
+                          <span className="text-xs text-slate-600 dark:text-slate-300 tabular-nums">{progress}%</span>
                         </div>
 
                         <div className="mt-1 w-full bg-slate-700 rounded-full h-2 overflow-hidden">
@@ -663,11 +663,11 @@ export default function ProjectList(props: Props): React.JSX.Element {
                         <User className="h-4 w-4 text-sky-400" />
                       </div>
                       <div className="min-w-0">
-                        <div className="text-sm text-slate-200 truncate">{r.client_name ?? r.client_id ?? "-"}</div>
-                        <div className="text-xs text-slate-400 truncate">{r.artist_name || "-"}</div>
+                        <div className="text-sm text-slate-700 dark:text-slate-200 truncate">{r.client_name ?? r.client_id ?? "-"}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{r.artist_name || "-"}</div>
                       </div>
                       {r.genre && (
-                        <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100/10 text-slate-200 border border-slate-600/50">
+                        <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 dark:bg-slate-100/10 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600/50">
                           {r.genre}
                         </span>
                       )}
@@ -677,7 +677,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       <StatusBadge status={r.status} />
                       <StageBadge stage={r.stage} />
-                      <div className="ml-auto text-[11px] text-slate-400 flex items-center gap-1">
+                      <div className="ml-auto text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
                         {new Date(r.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                       </div>
@@ -690,7 +690,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
                         {r.producer_id && <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-100/10 text-blue-300 border border-blue-400/20">Producer</span>}
                         {r.anr_id && <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100/10 text-amber-300 border border-amber-400/20">A&amp;R</span>}
                         {r.engineer_id && <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-violet-100/10 text-violet-300 border border-violet-400/20">Engineer</span>}
-                        {!r.composer_id && !r.producer_id && !r.anr_id && !r.engineer_id && <span className="text-xs text-slate-400">No assignments</span>}
+                        {!r.composer_id && !r.producer_id && !r.anr_id && !r.engineer_id && <span className="text-xs text-slate-500 dark:text-slate-400">No assignments</span>}
                       </div>
                     )}
 
@@ -769,8 +769,8 @@ export default function ProjectList(props: Props): React.JSX.Element {
                     {headers.map((h) => (
                       <th key={h.key as string} className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-white text-sm">{h.label}</span>
-                          {h.sortable && <ArrowDown className="text-purple-400 w-4 h-4 hover:text-purple-300 transition-colors cursor-pointer" />}
+                          <span className="font-semibold text-slate-800 dark:text-white text-sm">{h.label}</span>
+                          {h.sortable && <ArrowDown className="text-purple-600 dark:text-purple-400 w-4 h-4 hover:text-purple-700 dark:hover:text-purple-300 transition-colors cursor-pointer" />}
                         </div>
                       </th>
                     ))}
@@ -863,7 +863,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
                               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                 <div className="bg-blue-600 h-2 rounded-full transition-all duration-300" style={{ width: `${Math.max(0, Math.min(100, r.progress_percent ?? 0))}%` }} />
                               </div>
-                              <span className="text-sm text-neutral-600 dark:text-neutral-200 min-w-[3ch]">
+                              <span className="text-sm text-slate-600 dark:text-slate-300 min-w-[3ch]">
                                 {r.progress_percent ?? 0}%
                               </span>
                             </div>
@@ -871,7 +871,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
 
                           <td className="p-4 text-center">
                             <button
-                              className={`h-8 w-8 rounded-full text-neutral-600 dark:text-neutral-200 hover:bg-blue-50 dark:bg-blue-900/20 hover:text-sky-600 dark:text-sky-200 transition ${isExpanded ? "rotate-180" : ""}`}
+                              className={`h-8 w-8 rounded-full text-slate-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-sky-600 dark:hover:text-sky-200 transition ${isExpanded ? "rotate-180" : ""}`}
                               onClick={(e) => { e.stopPropagation(); toggleExpand(r.project_id); }}
                               aria-label="Toggle details"
                             >

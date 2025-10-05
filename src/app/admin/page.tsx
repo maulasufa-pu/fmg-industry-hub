@@ -12,16 +12,16 @@ export default async function AdminIndex() {
     case "owner":
     case "admin":
       redirect("/admin/projects");
-    case "anr":
-      redirect("/admin/anr/queue");
-    case "producer":
-      redirect("/admin/producer/board");
-    case "composer":
-      redirect("/admin/composer/assigned");
-    case "engineer":
-      redirect("/admin/engineer/queue");
-    case "publisher":
-      redirect("/admin/publishing/dashboard");
+    // case "anr":
+    //   redirect("/admin/anr/queue");
+    // case "producer":
+    //   redirect("/admin/producer/board");
+    // case "composer":
+    //   redirect("/admin/composer/assigned");
+    // case "engineer":
+    //   redirect("/admin/engineer/queue");
+    // case "publisher":
+    //   redirect("/admin/publishing/dashboard");
     default:
       redirect("/client");
   }

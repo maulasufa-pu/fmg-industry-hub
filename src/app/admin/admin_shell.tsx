@@ -236,9 +236,7 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
       />
 
       <main className="flex-1 min-w-0 pt-16 lg:pt-0 w-full max-w-none lg:pl-72 lg:ml-4 xl:ml-6">
-        <div className="px-4 py-6 lg:px-6 lg:py-8 xl:px-8 xl:py-10">
-          {children}
-        </div>
+        {children}
       </main>
     </div>
   );

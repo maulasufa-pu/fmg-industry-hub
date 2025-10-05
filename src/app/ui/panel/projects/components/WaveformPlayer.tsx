@@ -99,7 +99,7 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
         const a = await supabase.storage.from("drafts").createSignedUrl(src, 3600);
         if (cancelled) return;
         if (a.error || !a.data?.signedUrl) {
-        console.error("[Storage] gagal bikin signed URL:", a.error, src);
+        //console.error("[Storage] gagal bikin signed URL:", a.error, src);
         setAudioUrl("");
         return;
         }
@@ -145,7 +145,7 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
                 }
             }
             } catch (e) {
-            console.warn("[PEAKS] fetch error:", e);
+            //console.warn("[PEAKS] fetch error:", e);
             }
         }
         }
@@ -197,7 +197,7 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
         });
 
         ws.on("error", (e: unknown) => {
-            console.error("[WaveSurfer] error:", e);
+            //console.error("[WaveSurfer] error:", e);
             setReady(false);
         });
 
@@ -227,13 +227,13 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
     if (hasPeaks) {
         ws.load(audioUrl, [Float32Array.from(peaks as number[])])
         .catch((e: unknown) => {
-            console.error("[WaveSurfer] load error:", e, { audioUrl });
+            //console.error("[WaveSurfer] load error:", e, { audioUrl });
             setReady(false);
         });
     } else {
         ws.load(audioUrl)
         .catch((e: unknown) => {
-            console.error("[WaveSurfer] load error:", e, { audioUrl });
+            //console.error("[WaveSurfer] load error:", e, { audioUrl });
             setReady(false);
         });
     }

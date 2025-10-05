@@ -491,7 +491,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
         throw new Error(result.error || "Failed to load assignments");
       }
     } catch (e) {
-      console.warn("Load current assignments failed:", e);
+      //console.warn("Load current assignments failed:", e);
       // Set empty state on error
       setCurrentAssignments({
         anr: "",
@@ -600,7 +600,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
           .maybeSingle(); // generic dihapus
 
         if (perr || !proj) {
-          console.error("Project fetch error:", perr);
+          //console.error("Project fetch error:", perr);
           if (!mounted) return;
           router.replace("/admin/projects");
           return;
@@ -638,13 +638,13 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
             if (mounted) setTeamRoleOptions(roleOptions);
           }
         } catch (error) {
-          console.debug("Team options load failed:", error);
+          //console.debug("Team options load failed:", error);
         }
 
         // Load current assignments after team options
         await loadCurrentAssignments();
       } catch (e) {
-        console.error("Critical data load failed:", e);
+        //console.error("Critical data load failed:", e);
         if (mounted) {
           router.replace("/admin/projects");
         }
@@ -681,7 +681,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
               if (error) throw error;
               if (mounted) setDrafts(data ?? []);
             } catch (error) {
-              console.warn("Failed to load drafts:", error);
+              //console.warn("Failed to load drafts:", error);
               if (mounted) setDrafts([]);
             }
           }
@@ -699,7 +699,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
               if (error) throw error;
               if (mounted) setLinks(data ?? []);
             } catch (error) {
-              console.warn("Failed to load reference links:", error);
+              //console.warn("Failed to load reference links:", error);
               if (mounted) setLinks([]);
             }
           }
@@ -717,7 +717,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
               if (error) throw error;
               if (mounted) setMessages(data ?? []);
             } catch (error) {
-              console.warn("Failed to load discussion messages:", error);
+              //console.warn("Failed to load discussion messages:", error);
               if (mounted) setMessages([]);
             }
           }
@@ -735,7 +735,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
               if (error) throw error;
               if (mounted) setMeetings(data ?? []);
             } catch (error) {
-              console.warn("Failed to load meetings:", error);
+              //console.warn("Failed to load meetings:", error);
               if (mounted) setMeetings([]);
             }
           }
@@ -800,7 +800,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
       setProject((p) => (p ? { ...p, status } : p));
       showToast("success", "Status Updated", `Project status changed to ${status}`);
     } catch (e) {
-      console.error(e);
+      //console.error(e);
       showToast("error", "Update Failed", "Failed to update status. Please check permissions.");
     }
   };
@@ -812,7 +812,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
       setProject((p) => (p ? { ...p, stage } : p));
       showToast("success", "Stage Updated", `Project stage changed to ${stage}`);
     } catch (e) {
-      console.error(e);
+      //console.error(e);
       showToast("error", "Update Failed", "Failed to update stage. Please check permissions.");
     }
   };
@@ -865,7 +865,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
 
       showToast("success", "Assignment Removed", `${role.toUpperCase()} assignment removed successfully!`);
     } catch (e: unknown) {
-      console.error("removeAssignment error:", e);
+      //console.error("removeAssignment error:", e);
       showToast("error", "Remove Failed", `Failed to remove ${role} assignment: ${getErrMsg(e)}`);
     }
   };
@@ -955,7 +955,7 @@ export default function AdminProjectDetailPage(): React.JSX.Element {
 
       showToast("success", "Assignments Saved", "Team assignments updated successfully!");
     } catch (e: unknown) {
-      console.error("saveAssignments error:", e);
+      //console.error("saveAssignments error:", e);
       showToast("error", "Save Failed", `Failed to save assignments: ${getErrMsg(e)}`);
     }
   };
@@ -2230,7 +2230,7 @@ function DeleteReferenceButton({ id, onDeleted }: { id: string; onDeleted: () =>
           if (error) throw error;
           onDeleted();
         } catch (e) {
-          console.error(e);
+          //console.error(e);
           alert("Gagal hapus link (cek RLS).");
         }
       }}
@@ -2252,7 +2252,7 @@ function DeleteMessageButton({ id, onDeleted }: { id: string; onDeleted: () => v
           if (error) throw error;
           onDeleted();
         } catch (e) {
-          console.error(e);
+          //console.error(e);
           alert("Gagal hapus pesan (cek RLS).");
         }
       }}
@@ -2274,7 +2274,7 @@ function CancelMeetingButton({ id, onCancelled }: { id: string; onCancelled: () 
           if (error) throw error;
           onCancelled();
         } catch (e) {
-          console.error(e);
+          //console.error(e);
           alert("Gagal membatalkan meeting (cek RLS).");
         }
       }}
@@ -2469,7 +2469,7 @@ function ReferenceAdder({
       onAdded(data);
       setUrl("");
     } catch (e) {
-      console.error(e);
+      //console.error(e);
       return false; // Error occurred
     } finally {
       setPosting(false);

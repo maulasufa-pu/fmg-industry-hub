@@ -117,11 +117,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           return NextResponse.json({ token: null, redirect_url: inv.payment_url });
         }
       }
-      console.error("[midtrans.createTransaction] error:", e);
+      //console.error("[midtrans.createTransaction] error:", e);
       return NextResponse.json({ error: msg }, { status: 500 });
     }
   } catch (err: any) {
-    console.error("[payments/midtrans/create] fatal:", err);
+    //console.error("[payments/midtrans/create] fatal:", err);
     return NextResponse.json(
       { error: err?.message ?? "Internal error" },
       { status: 500 }

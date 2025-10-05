@@ -28,7 +28,7 @@ export async function GET(request: Request) {
       .eq('active', true);
 
     if (error) {
-      console.error('Assignments query error:', error);
+      //console.error('Assignments query error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -58,7 +58,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: true, assignments });
 
   } catch (error) {
-    console.error('API error:', error);
+    //console.error('API error:', error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
         .eq('active', true);
 
       if (deactivateError) {
-        console.error(`Error deactivating ${role}:`, deactivateError);
+        //console.error(`Error deactivating ${role}:`, deactivateError);
         continue;
       }
 
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
           });
 
         if (insertError) {
-          console.error(`Error inserting ${role} assignment:`, insertError);
+          //console.error(`Error inserting ${role} assignment:`, insertError);
           return NextResponse.json({ 
             error: `Failed to assign ${role}: ${insertError.message}` 
           }, { status: 500 });
@@ -116,7 +116,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, message: "Assignments updated successfully" });
 
   } catch (error) {
-    console.error('Assignment update error:', error);
+    //console.error('Assignment update error:', error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -141,7 +141,7 @@ export async function DELETE(request: Request) {
       .eq('active', true);
 
     if (error) {
-      console.error('Remove assignment error:', error);
+      //console.error('Remove assignment error:', error);
       return NextResponse.json({ 
         error: `Failed to remove ${role} assignment: ${error.message}` 
       }, { status: 500 });
@@ -150,7 +150,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ success: true, message: `${role} assignment removed successfully` });
 
   } catch (error) {
-    console.error('Remove assignment error:', error);
+    //console.error('Remove assignment error:', error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

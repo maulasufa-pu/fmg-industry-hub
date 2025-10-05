@@ -169,7 +169,7 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
   const sendReminder = async (): Promise<void> => {
     if (!inv) return;
     // eslint-disable-next-line no-console
-    console.log("send reminder -> invoice:", inv.id);
+    //console.log("send reminder -> invoice:", inv.id);
   };
 
   const createSnapAndPay = async (): Promise<void> => {
@@ -183,7 +183,7 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      console.error("payment create error:", text || res.statusText);
+      //console.error("payment create error:", text || res.statusText);
       alert("Failed to start payment.");
       return;
     }
@@ -222,7 +222,7 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
       }
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error("refresh payment link failed:", err);
+      //console.error("refresh payment link failed:", err);
       alert("Failed to refresh payment.");
     } finally {
       await load();

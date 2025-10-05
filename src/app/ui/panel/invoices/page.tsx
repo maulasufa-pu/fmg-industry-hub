@@ -63,8 +63,8 @@ function useSnapLoader(clientKey: string | undefined, isProduction: boolean) {
     s.src = `https://${host}/snap/snap.js`;
     s.async = true;
     s.setAttribute("data-client-key", clientKey);
-    s.onload = () => console.info("[Midtrans] snap.js loaded");
-    s.onerror = (e) => console.error("[Midtrans] failed to load snap.js", e);
+    s.onload = () => //console.info("[Midtrans] snap.js loaded");
+    s.onerror = (e) => //console.error("[Midtrans] failed to load snap.js", e);
 
     document.body.appendChild(s);
     return () => { s.remove(); };
@@ -429,7 +429,7 @@ export default function InvoicesPage(): React.JSX.Element {
       if (json.redirect_url) await sb.from("invoices").update({ payment_url: json.redirect_url }).eq("id", id);
       await load();
     } catch (e) {
-      console.error("refresh link error", e);
+      //console.error("refresh link error", e);
       alert("Failed to refresh payment link");
     } finally {
       setBusy(null);
@@ -442,7 +442,7 @@ export default function InvoicesPage(): React.JSX.Element {
     const { error } = await sb.functions.invoke("send_invoice_reminder", { body: { invoiceId: id } });
     setBusy(null);
     if (error) {
-      console.error("send reminder error", error);
+      //console.error("send reminder error", error);
       alert("Failed to send reminder.");
     } else {
       alert("Reminder sent.");

@@ -24,8 +24,8 @@ export default function TestAuth() {
     const checkAuth = async () => {
       try {
         const { data: { session }, error: sessionError } = await sb.auth.getSession();
-        console.log("Session:", session);
-        console.log("Session error:", sessionError);
+        //console.log("Session:", session);
+        //console.log("Session error:", sessionError);
         
         setSession(session);
         
@@ -36,13 +36,13 @@ export default function TestAuth() {
             .eq("id", session.user.id)
             .maybeSingle();
             
-          console.log("Profile:", profile);
-          console.log("Profile error:", profileError);
+          //console.log("Profile:", profile);
+          //console.log("Profile error:", profileError);
           
           setProfile(profile);
         }
       } catch (err) {
-        console.error("Auth check error:", err);
+        //console.error("Auth check error:", err);
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
         setLoading(false);

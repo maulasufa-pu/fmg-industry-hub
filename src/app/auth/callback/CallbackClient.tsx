@@ -42,15 +42,15 @@ function dumpPkce(label: string) {
     const values: Record<string, string | null> = {};
     keys.forEach((k) => (values[k] = localStorage.getItem(k)));
     // eslint-disable-next-line no-console
-    console.log("[callback]", label, {
-      href: location.href,
-      origin: location.origin,
-      pkceKeys: keys,
-      pkceValues: values,
-    });
+    //console.log("[callback]", label, {
+    //   href: location.href,
+    //   origin: location.origin,
+    //   pkceKeys: keys,
+    //   pkceValues: values,
+    // });
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.warn("[callback] dumpPkce error:", e);
+    //console.warn("[callback] dumpPkce error:", e);
   }
 }
 
@@ -82,7 +82,7 @@ export default function CallbackClient() {
         refresh_token: hash.refresh_token as string,
     });
     if (setErr || !setData.session) {
-        console.error("[callback] setSession (hash) error:", setErr);
+        //console.error("[callback] setSession (hash) error:", setErr);
         stripHash();
         window.location.replace("/login?err=hash-setsession");
         return;
@@ -101,7 +101,7 @@ export default function CallbackClient() {
     if (!resp.ok) {
         let msg = "failed to set server session (hash)";
         try { msg = (await resp.json())?.error ?? msg; } catch {}
-        console.error("[callback] set-session (hash) error:", msg);
+        //console.error("[callback] set-session (hash) error:", msg);
         stripHash();
         window.location.replace("/login?err=hash-setcookie");
         return;
@@ -122,7 +122,7 @@ export default function CallbackClient() {
         dumpPkce("before-exchange");
         const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
         if (error || !data.session) {
-          console.error("[callback] exchange error:", error);
+          //console.error("[callback] exchange error:", error);
           dumpPkce("exchange-failed");
           stripHash();
           window.location.replace("/login?err=oauth");
@@ -145,7 +145,7 @@ export default function CallbackClient() {
           try {
             msg = (await resp.json())?.error ?? msg;
           } catch {}
-          console.error("[callback] set-session error:", msg);
+          //console.error("[callback] set-session error:", msg);
           dumpPkce("after-set-failed");
           stripHash();
           window.location.replace("/login?err=setcookie");
@@ -158,7 +158,7 @@ export default function CallbackClient() {
         return;
       }
 
-      console.error("[callback] missing code and no recovery tokens");
+      //console.error("[callback] missing code and no recovery tokens");
       stripHash();
       window.location.replace("/login?err=nocode");
     })();

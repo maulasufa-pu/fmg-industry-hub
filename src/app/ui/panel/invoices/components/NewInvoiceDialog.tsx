@@ -213,7 +213,7 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
         .select("id")
         .single<{ id: string }>();
       if (e1 || !inv?.id) {
-        console.error("[create invoice] failed:", e1);
+        //console.error("[create invoice] failed:", e1);
         setSaving(false);
         return;
       }
@@ -230,7 +230,7 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
       }));
       const { error: e2 } = await sb.from("invoice_items").insert(payloads).select("id");
       if (e2) {
-        console.error("[insert invoice_items] failed:", e2);
+        //console.error("[insert invoice_items] failed:", e2);
         setSaving(false);
         return;
       }

@@ -1828,31 +1828,31 @@ export default function LandingPage() {
         const missingCurrencies = requiredCurrencies.filter(curr => !data.rates[curr]);
         
         if (missingCurrencies.length > 0) {
-          console.warn('Missing currencies:', missingCurrencies);
+          //console.warn('Missing currencies:', missingCurrencies);
         }
         
         setRates(data.rates);
         setLastUpdated(data.lastUpdated || new Date().toISOString());
         
-        console.log('Exchange rates updated:', {
-          date: data.date,
-          currencyCount: Object.keys(data.rates).length,
-          sample: {
-            USD: data.rates.USD,
-            IDR: data.rates.IDR,
-            EUR: data.rates.EUR,
-            JPY: data.rates.JPY
-          }
-        });
+        //console.log('Exchange rates updated:', {
+        //   date: data.date,
+        //   currencyCount: Object.keys(data.rates).length,
+        //   sample: {
+        //     USD: data.rates.USD,
+        //     IDR: data.rates.IDR,
+        //     EUR: data.rates.EUR,
+        //     JPY: data.rates.JPY
+        //   }
+        // });
         
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
         setRatesError(errorMessage);
-        console.error('Exchange rate fetch failed:', errorMessage);
+        //console.error('Exchange rate fetch failed:', errorMessage);
         
         // Only set fallback if we don't have any rates yet
         if (Object.keys(rates).length <= 1) {
-          console.warn('Using emergency fallback rates');
+          //console.warn('Using emergency fallback rates');
           setRates({ USD: 1 }); // Minimal fallback - will show "Custom" for other currencies
         }
       } finally {
@@ -2020,13 +2020,13 @@ export default function LandingPage() {
 function formatPrice(usd: number, currency: Currency, rates: Record<string, number>) {
   // Safety check: ensure rates object exists and has the currency
   if (!rates || typeof rates !== 'object') {
-    console.warn("Invalid rates object, using fallback");
+    //console.warn("Invalid rates object, using fallback");
     return "Custom"; // Return custom for invalid rates
   }
   
   const rate = rates[currency];
   if (!rate || typeof rate !== 'number') {
-    console.warn(`Rate not found for currency: ${currency}`);
+    //console.warn(`Rate not found for currency: ${currency}`);
     return "Custom";
   }
   
@@ -2083,7 +2083,7 @@ function formatPrice(usd: number, currency: Currency, rates: Record<string, numb
       minimumFractionDigits,
     }).format(value);
   } catch (error) {
-    console.error(`Error formatting price for ${currency}:`, error);
+    //console.error(`Error formatting price for ${currency}:`, error);
     return `${value.toFixed(maximumFractionDigits)} ${currency}`;
   }
 }

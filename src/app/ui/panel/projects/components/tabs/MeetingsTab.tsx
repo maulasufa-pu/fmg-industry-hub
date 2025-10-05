@@ -229,7 +229,7 @@ export default function MeetingsTab({ project, meetings, setMeetings }: Meetings
       setShowMeetingForm(false);
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error(e);
+      //console.error(e);
       alert("Gagal membuat meeting otomatis.");
     } finally {
       setIsCreatingMeeting(false);

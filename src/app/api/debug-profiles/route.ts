@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = getSupabaseClient();
     
-    console.log('🔍 [API] Fetching profiles...');
+    //console.log('🔍 [API] Fetching profiles...');
     
     const { data, error } = await supabase
       .from('profiles')
@@ -14,14 +14,14 @@ export async function GET(request: NextRequest) {
       .limit(10);
     
     if (error) {
-      console.error('❌ [API] Error:', error);
+      //console.error('❌ [API] Error:', error);
       return NextResponse.json({ 
         error: error.message,
         details: error 
       }, { status: 500 });
     }
     
-    console.log(`✅ [API] Found ${data?.length || 0} profiles`);
+    //console.log(`✅ [API] Found ${data?.length || 0} profiles`);
     
     const roleCount: { [key: string]: number } = { anr: 0, composer: 0, producer: 0, engineer: 0 };
     const processedProfiles = data?.map((profile: any) => {
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (err: any) {
-    console.error('❌ [API] Unexpected error:', err);
+    //console.error('❌ [API] Unexpected error:', err);
     return NextResponse.json({ 
       error: 'Internal server error',
       details: err?.message || 'Unknown error'

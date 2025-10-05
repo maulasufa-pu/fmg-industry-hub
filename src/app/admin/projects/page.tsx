@@ -25,7 +25,7 @@ const fetchAssignmentNames = async (supabase: any, projectIds: string[]) => {
       .eq('active', true);
 
     if (assignmentsError) {
-      console.warn('Assignments view fetch error:', assignmentsError);
+      //console.warn('Assignments view fetch error:', assignmentsError);
       return {};
     }
 
@@ -49,7 +49,7 @@ const fetchAssignmentNames = async (supabase: any, projectIds: string[]) => {
     return assignmentMap;
 
   } catch (error) {
-    console.warn('Assignment names fetch error:', error);
+    //console.warn('Assignment names fetch error:', error);
     return {};
   }
 };
@@ -163,7 +163,7 @@ export default function AdminProjectsPage(): React.JSX.Element {
         Requested: requested.count || 0,
       };
     } catch (err) {
-      console.warn("Count error:", err);
+      //console.warn("Count error:", err);
       return { All: 0, Active: 0, Finished: 0, Pending: 0, Unassigned: 0, Requested: 0 };
     }
   }, [supabase]);
@@ -237,7 +237,7 @@ export default function AdminProjectsPage(): React.JSX.Element {
       setTotalCount(count || 0);
 
     } catch (error) {
-      console.warn("Fetch error:", error);
+      //console.warn("Fetch error:", error);
       setRows([]);
       setTotalCount(0);
     } finally {
@@ -265,7 +265,7 @@ export default function AdminProjectsPage(): React.JSX.Element {
         setStageOptions(["any", ...stages]);
         setStatusOptions(["any", ...statuses]);
       } catch (err) {
-        console.warn("Options load error:", err);
+        //console.warn("Options load error:", err);
       }
     };
     loadOptions();
@@ -286,11 +286,11 @@ export default function AdminProjectsPage(): React.JSX.Element {
   };
 
   const handleBulkAssignPIC = async (ids: string[], pic: string | null) => {
-    console.log("Bulk assign PIC:", ids, pic);
+    //console.log("Bulk assign PIC:", ids, pic);
   };
 
   const handleBulkMarkFinished = async (ids: string[]) => {
-    console.log("Bulk mark finished:", ids);
+    //console.log("Bulk mark finished:", ids);
   };
 
   return (

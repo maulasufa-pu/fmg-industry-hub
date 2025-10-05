@@ -258,7 +258,7 @@ export default function ReferencesTab(
       if (!cancelled) {
         if (error) {
           setLinks([]);
-          console.error("[ReferencesTab] load error:", error);
+          //console.error("[ReferencesTab] load error:", error);
         } else {
           setLinks(data as ReferenceLinkRow[]);
         }
@@ -332,7 +332,7 @@ export default function ReferencesTab(
       if (error) throw error;
       setLinks((prev) => [data as ReferenceLinkRow, ...(prev ?? [])]);
     } catch (err) {
-      console.error("[ReferencesTab] add error:", err);
+      //console.error("[ReferencesTab] add error:", err);
       alert("Failed to add link. Check RLS or policies.");
     }
   }, [project.project_id, setLinks, supabase]);
@@ -346,7 +346,7 @@ export default function ReferencesTab(
       if (error) throw error;
     } catch (err) {
       setLinks(backup);
-      console.error("[ReferencesTab] delete error:", err);
+      //console.error("[ReferencesTab] delete error:", err);
       alert("Failed to delete link. Check RLS or policies.");
     } finally {
       setDeleting((d) => { const { [id]: _removed, ...rest } = d; return rest; });

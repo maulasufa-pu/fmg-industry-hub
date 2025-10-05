@@ -28,21 +28,21 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
-          console.log('[AdminShell] No session found');
+          //console.log('[AdminShell] No session found');
           setIsLoading(false);
           return;
         }
 
-        console.log('[AdminShell] User email:', session.user.email);
+        //console.log('[AdminShell] User email:', session.user.email);
 
         const ownerEmails = (process.env.NEXT_PUBLIC_OWNER_EMAILS || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
         const userEmail = (session.user.email || "").toLowerCase();
         
-        console.log('[AdminShell] Owner emails:', ownerEmails);
-        console.log('[AdminShell] User email normalized:', userEmail);
+        //console.log('[AdminShell] Owner emails:', ownerEmails);
+        //console.log('[AdminShell] User email normalized:', userEmail);
         
         if (ownerEmails.length > 0 && ownerEmails.includes(userEmail)) {
-          console.log('[AdminShell] User is owner based on environment');
+          //console.log('[AdminShell] User is owner based on environment');
           setCurrentRole("owner");
           setIsLoading(false);
           return;
@@ -54,7 +54,7 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
           .eq("id", session.user.id)
           .maybeSingle();
 
-        console.log('[AdminShell] Profile data:', profile, 'error:', error);
+        //console.log('[AdminShell] Profile data:', profile, 'error:', error);
 
         if (profile) {
           const allRoles: string[] = [];
@@ -63,21 +63,21 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
             allRoles.push(...profile.staff_role);
           }
           
-          console.log('[AdminShell] All roles:', allRoles);
+          //console.log('[AdminShell] All roles:', allRoles);
           
           let effectiveRole: UserRole = "client";
           if (allRoles.includes("owner")) effectiveRole = "owner";
           else if (allRoles.includes("admin")) effectiveRole = "admin";
           else effectiveRole = "client";
           
-          console.log('[AdminShell] Effective role:', effectiveRole);
+          //console.log('[AdminShell] Effective role:', effectiveRole);
           setCurrentRole(effectiveRole);
         } else {
-          console.log('[AdminShell] No profile found, defaulting to admin for testing');
+          //console.log('[AdminShell] No profile found, defaulting to admin for testing');
           setCurrentRole("admin");
         }
       } catch (error) {
-        console.error("Error checking user role:", error);
+        //console.error("Error checking user role:", error);
         setCurrentRole("admin");
       } finally {
         setIsLoading(false);
@@ -137,9 +137,9 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
   const arolePretty = useMemo(() => currentRole.replace("_", " ").toUpperCase(), [currentRole]);
   
   useEffect(() => {
-    console.log('[AdminShell] currentRole =', currentRole, 'isLoading =', isLoading);
-    console.log('[AdminShell] sidebarOpen =', sidebarOpen);
-    console.log('[AdminShell] NEXT_PUBLIC_OWNER_EMAILS =', process.env.NEXT_PUBLIC_OWNER_EMAILS);
+    //console.log('[AdminShell] currentRole =', currentRole, 'isLoading =', isLoading);
+    //console.log('[AdminShell] sidebarOpen =', sidebarOpen);
+    //console.log('[AdminShell] NEXT_PUBLIC_OWNER_EMAILS =', process.env.NEXT_PUBLIC_OWNER_EMAILS);
   }, [currentRole, isLoading, sidebarOpen]);
 
   if (isLoading) {

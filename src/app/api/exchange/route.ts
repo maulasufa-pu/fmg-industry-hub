@@ -35,7 +35,7 @@ export async function GET() {
     });
 
     if (!response.ok) {
-      console.log(`Primary API failed with status: ${response.status}`);
+      //console.log(`Primary API failed with status: ${response.status}`);
       response = await fetch("https://api.jsonrates.com/rates/", {
         next: { revalidate: 3600 },
         headers: {
@@ -46,7 +46,7 @@ export async function GET() {
     }
 
     if (!response.ok) {
-      console.log(`Fallback API also failed with status: ${response.status}`);
+      //console.log(`Fallback API also failed with status: ${response.status}`);
       response = await fetch("https://api.vatcomply.com/rates?base=USD", {
         next: { revalidate: 3600 },
         headers: {
@@ -57,29 +57,29 @@ export async function GET() {
     }
 
     if (!response.ok) {
-      console.log(`All APIs failed, using fallback rates`);
+      //console.log(`All APIs failed, using fallback rates`);
       throw new Error("All exchange rate APIs failed");
     }
 
     const data = await response.json();
     
-    console.log("Exchange API response:", {
-      success: response.ok,
-      status: response.status,
-      url: response.url,
-      hasRates: !!data.rates,
-      hasConversionRates: !!data.conversion_rates,
-      hasSuccess: data.success,
-      dataKeys: Object.keys(data || {}),
-    });
+    //console.log("Exchange API response:", {
+    //   success: response.ok,
+    //   status: response.status,
+    //   url: response.url,
+    //   hasRates: !!data.rates,
+    //   hasConversionRates: !!data.conversion_rates,
+    //   hasSuccess: data.success,
+    //   dataKeys: Object.keys(data || {}),
+    // });
     
     if (data.success === false || data.error) {
-      console.log("API returned error:", data.error || "Unknown error");
+      //console.log("API returned error:", data.error || "Unknown error");
       throw new Error(`API Error: ${data.error?.info || data.error?.message || "Invalid response"}`);
     }
     
     if (!data.rates && !data.conversion_rates) {
-      console.error("No rates found in API response:", { dataKeys: Object.keys(data) });
+      //console.error("No rates found in API response:", { dataKeys: Object.keys(data) });
       throw new Error("Invalid API response format - no rates found");
     }
 
@@ -116,7 +116,7 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error("Exchange rate API error:", error);
+    //console.error("Exchange rate API error:", error);
     
     const fallbackRates = {
       USD: 1,

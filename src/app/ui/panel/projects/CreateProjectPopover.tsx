@@ -91,7 +91,7 @@ function saveToCookie(data: Partial<ProjectDraftData>) {
     expires.setDate(expires.getDate() + 7); 
     document.cookie = `${DRAFT_COOKIE_KEY}=${encodeURIComponent(JSON.stringify(updated))}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
   } catch (err) {
-    console.warn('Failed to save draft to cookie:', err);
+    //console.warn('Failed to save draft to cookie:', err);
   }
 }
 
@@ -103,7 +103,7 @@ function loadFromCookie(): Partial<ProjectDraftData> {
     const value = draftCookie.split('=')[1];
     return JSON.parse(decodeURIComponent(value));
   } catch (err) {
-    console.warn('Failed to load draft from cookie:', err);
+    //console.warn('Failed to load draft from cookie:', err);
     return {};
   }
 }
@@ -377,7 +377,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
         if (draft.currentStep) setStep(draft.currentStep as 1 | 2 | 3);
       }
     } catch (err) {
-      console.warn('Failed to load draft:', err);
+      //console.warn('Failed to load draft:', err);
     } finally {
       setIsLoadingDraft(false);
     }
@@ -538,7 +538,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
         }
       }
     } catch (err) {
-      console.warn('Failed to save draft to database:', err);
+      //console.warn('Failed to save draft to database:', err);
     }
     return null;
   };

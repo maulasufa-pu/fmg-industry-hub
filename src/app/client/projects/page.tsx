@@ -29,7 +29,7 @@ const fetchAssignmentNames = async (supabase: any, projectIds: string[]) => {
       .eq("active", true);
 
     if (assignmentsError) {
-      console.warn("Assignments view fetch error:", assignmentsError);
+      //console.warn("Assignments view fetch error:", assignmentsError);
       return {};
     }
 
@@ -47,7 +47,7 @@ const fetchAssignmentNames = async (supabase: any, projectIds: string[]) => {
 
     return assignmentMap;
   } catch (error) {
-    console.warn("Assignment names fetch error:", error);
+    //console.warn("Assignment names fetch error:", error);
     return {};
   }
 };
@@ -165,7 +165,7 @@ export default function ClientProjectsPage(): React.ReactElement {
         Requested: 0,
       };
     } catch (err) {
-      console.warn("Count error:", err);
+      //console.warn("Count error:", err);
       return { All: 0, Active: 0, Finished: 0, Pending: 0, Unassigned: 0, Requested: 0 };
     }
   }, [supabase, myId]);
@@ -234,7 +234,7 @@ export default function ClientProjectsPage(): React.ReactElement {
       setRows(mapped);
       setTotalCount(count || 0);
     } catch (error) {
-      console.warn("Fetch error:", error);
+      //console.warn("Fetch error:", error);
       setRows([]);
       setTotalCount(0);
     } finally {
@@ -267,7 +267,7 @@ export default function ClientProjectsPage(): React.ReactElement {
         setStageOptions(["any", ...stages]);
         setStatusOptions(["any", ...statuses]);
       } catch (err) {
-        console.warn("Options load error:", err);
+        //console.warn("Options load error:", err);
       }
     };
     loadOptions();
@@ -288,11 +288,11 @@ export default function ClientProjectsPage(): React.ReactElement {
   };
 
   const handleBulkAssignPIC = async (ids: string[], pic: string | null) => {
-    console.log("Client bulk assign PIC (ignored):", ids, pic);
+    //console.log("Client bulk assign PIC (ignored):", ids, pic);
   };
 
   const handleBulkMarkFinished = async (ids: string[]) => {
-    console.log("Client bulk mark finished (ignored):", ids);
+    //console.log("Client bulk mark finished (ignored):", ids);
   };
 
   return (

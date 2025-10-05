@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       });
 
     if (uploadError) {
-      console.error("Upload error:", uploadError);
+      //console.error("Upload error:", uploadError);
       return NextResponse.json({ error: uploadError.message }, { status: 500 });
     }
 
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       .eq("id", user.id);
 
     if (updateError) {
-      console.error("Profile update error:", updateError);
+      //console.error("Profile update error:", updateError);
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error("Avatar upload API error:", error);
+    //console.error("Avatar upload API error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

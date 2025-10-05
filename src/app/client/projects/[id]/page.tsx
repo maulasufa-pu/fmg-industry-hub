@@ -95,7 +95,7 @@ export default function ClientProjectDetailPage() {
         throw new Error(result.error || "Failed to load assignments");
       }
     } catch (e) {
-      console.warn("Load current assignments failed:", e);
+      //console.warn("Load current assignments failed:", e);
       setCurrentAssignments({ anr: "", composer: "", producer: "", engineer: "", publisher: "" });
     } finally {
       setAssignmentsLoading(false);
@@ -231,11 +231,11 @@ export default function ClientProjectDetailPage() {
               setTeamRoleOptions(options);
             }
           } catch (e) {
-            console.error("Error fetching staff_list:", e);
+            //console.error("Error fetching staff_list:", e);
           }
         }
       } catch (error) {
-        console.error("Error loading project data:", error);
+        //console.error("Error loading project data:", error);
         setAccessChecked(true);
         setProjectChecked(true);
       } finally {
@@ -296,7 +296,7 @@ export default function ClientProjectDetailPage() {
             break;
         }
       } catch (error) {
-        console.error("Error loading tab data:", error);
+        //console.error("Error loading tab data:", error);
       }
     };
 
@@ -331,7 +331,7 @@ export default function ClientProjectDetailPage() {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      console.error("Save assignments failed:", err?.error || `HTTP ${res.status}`);
+      //console.error("Save assignments failed:", err?.error || `HTTP ${res.status}`);
       return;
     }
 
@@ -349,12 +349,12 @@ export default function ClientProjectDetailPage() {
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          console.error(`Failed to remove ${role}:`, err?.error || `HTTP ${res.status}`);
+          //console.error(`Failed to remove ${role}:`, err?.error || `HTTP ${res.status}`);
         }
       }
       await loadCurrentAssignments();
     } catch (err) {
-      console.error("Failed to remove assignment:", err);
+      //console.error("Failed to remove assignment:", err);
     }
   };
 
@@ -368,7 +368,7 @@ export default function ClientProjectDetailPage() {
       if (error) throw error;
       setProject(prev => prev ? { ...prev, status: "approved", stage: "drafting" } : prev);
     } catch (err) {
-      console.error("Failed to accept project:", err);
+      //console.error("Failed to accept project:", err);
     }
   };
 
@@ -382,7 +382,7 @@ export default function ClientProjectDetailPage() {
       if (error) throw error;
       setProject(prev => prev ? { ...prev, status: "pending" } : prev);
     } catch (err) {
-      console.error("Failed to put project on hold:", err);
+      //console.error("Failed to put project on hold:", err);
     }
   };
 

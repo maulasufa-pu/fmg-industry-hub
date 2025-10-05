@@ -80,7 +80,7 @@ export default function Footer(): React.JSX.Element {
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Subscribe:", email);
+    //console.log("Subscribe:", email);
   };
 
   return (

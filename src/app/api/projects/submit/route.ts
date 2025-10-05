@@ -347,7 +347,7 @@ export async function POST(req: Request) {
     );
   } catch (e: unknown) {
     // eslint-disable-next-line no-console
-    console.error("[/api/projects/submit] error:", e);
+    //console.error("[/api/projects/submit] error:", e);
     const msg =
       typeof e === "object" &&
       e !== null &&

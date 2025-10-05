@@ -117,7 +117,7 @@ export default function HeroSection({
       setIsAccepting(true);
       await onAcceptProject();
     } catch (err) {
-      console.error("[HeroSection] onAcceptProject error:", err);
+      //console.error("[HeroSection] onAcceptProject error:", err);
     } finally {
       setIsAccepting(false);
     }
@@ -131,7 +131,7 @@ export default function HeroSection({
       setIsHolding(true);
       await onPutOnHold();
     } catch (err) {
-      console.error("[HeroSection] onPutOnHold error:", err);
+      //console.error("[HeroSection] onPutOnHold error:", err);
     } finally {
       setIsHolding(false);
     }
@@ -147,7 +147,7 @@ export default function HeroSection({
       setIsContinuing(true);
       await onContinueProject();
     } catch (err) {
-      console.error("[HeroSection] onContinueProject error:", err);
+      //console.error("[HeroSection] onContinueProject error:", err);
     } finally {
       setIsContinuing(false);
     }

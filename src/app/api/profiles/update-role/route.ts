@@ -25,7 +25,7 @@ export async function POST(request: Request) {
         .eq("id", profileId);
 
       if (error) {
-        console.error("Error updating main_role:", error);
+        //console.error("Error updating main_role:", error);
         return NextResponse.json({ 
           success: false, 
           error: error.message 
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
         .single();
 
       if (fetchError) {
-        console.error("Error fetching current profile:", fetchError);
+        //console.error("Error fetching current profile:", fetchError);
         return NextResponse.json({ 
           success: false, 
           error: fetchError.message 
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
         .eq("id", profileId);
 
       if (updateError) {
-        console.error("Error updating staff_role:", updateError);
+        //console.error("Error updating staff_role:", updateError);
         return NextResponse.json({ 
           success: false, 
           error: updateError.message 
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
     }
 
   } catch (error) {
-    console.error("API error:", error);
+    //console.error("API error:", error);
     return NextResponse.json({ 
       success: false, 
       error: "Internal server error" 

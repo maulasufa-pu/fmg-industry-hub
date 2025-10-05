@@ -189,7 +189,7 @@ export default function ProfileSettingsPage() {
         if (data.avatar_path) await refreshAvatarUrl(data.avatar_path);
         else if (data.avatar_url) setAvatarUrl(data.avatar_url);
       } catch (e) {
-        console.error("Load profile error:", e);
+        //console.error("Load profile error:", e);
       } finally {
         setLoading(false);
       }
@@ -249,7 +249,7 @@ export default function ProfileSettingsPage() {
       }
       setTimeout(() => setSuccess(false), 3000);
     } catch (e) {
-      console.error("Save profile error:", e);
+      //console.error("Save profile error:", e);
     } finally {
       setSaving(false);
     }
@@ -274,7 +274,7 @@ export default function ProfileSettingsPage() {
       setIsEmailEditing(false);
       setTimeout(() => setEmailVerificationSent(false), 5000);
     } catch (e) {
-      console.error("Update email error:", e);
+      //console.error("Update email error:", e);
       setFormData((p) => ({ ...p, email: profile.email }));
     } finally {
       setEmailConfirming(false);
@@ -308,7 +308,7 @@ export default function ProfileSettingsPage() {
         gsap.fromTo(avatarRef.current, { scale: 1.2, opacity: 0.7 }, { scale: 1, opacity: 1, duration: 0.45 });
       }
     } catch (e) {
-      console.error("Upload avatar error:", e);
+      //console.error("Upload avatar error:", e);
       alert("Failed to upload avatar. Please try again.");
     } finally {
       setUploading(false);

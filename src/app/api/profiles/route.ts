@@ -18,7 +18,7 @@ export async function GET(request: Request) {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Database error:", error);
+        //console.error("Database error:", error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
       }
 
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
       .limit(10);
 
     if (error) {
-      console.error("Database error:", error);
+      //console.error("Database error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -68,7 +68,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(roleOptions);
   } catch (error) {
-    console.error("API error:", error);
+    //console.error("API error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

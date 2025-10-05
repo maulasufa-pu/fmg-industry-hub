@@ -82,13 +82,13 @@ export default function AdminDashboard(): React.JSX.Element {
       const result = await Promise.race([queryPromise, timeoutPromise]) as { count: number | null; error: Error | null };
       const { count, error } = result;
       if (error) {
-        console.warn(`Failed to fetch count from ${tableName}:`, error);
+        //console.warn(`Failed to fetch count from ${tableName}:`, error);
         return 0;
       }
       return count ?? 0;
     } catch (err) {
       const e = err as { message?: string };
-      console.warn(`Error querying ${tableName}:`, e?.message || err);
+      //console.warn(`Error querying ${tableName}:`, e?.message || err);
       return 0;
     }
   }, []);
@@ -198,7 +198,7 @@ export default function AdminDashboard(): React.JSX.Element {
         unpaidInvoices
       });
     } catch (err) {
-      console.error("Failed to load dashboard data:", err);
+      //console.error("Failed to load dashboard data:", err);
       setError(err instanceof Error ? err.message : "Failed to load dashboard data");
     } finally {
       setLoading(false);

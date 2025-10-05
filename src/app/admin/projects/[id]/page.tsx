@@ -67,7 +67,7 @@ export default function AdminProjectDetailPage() {
       .single();
 
     if (error) {
-      console.warn("[Refetch project] error:", error);
+      //console.warn("[Refetch project] error:", error);
       return;
     }
     if (data) setProject(data as ProjectSummary);
@@ -108,7 +108,7 @@ export default function AdminProjectDetailPage() {
         throw new Error(result.error || "Failed to load assignments");
       }
     } catch (e) {
-      console.warn("Load current assignments failed:", e);
+      //console.warn("Load current assignments failed:", e);
       setCurrentAssignments({ anr: "", composer: "", producer: "", engineer: "", publisher: "" });
     } finally {
       setAssignmentsLoading(false);
@@ -277,10 +277,10 @@ export default function AdminProjectDetailPage() {
             setTeamRoleOptions(options);
           }
         } catch (e) {
-          console.error("Error fetching staff_list:", e);
+          //console.error("Error fetching staff_list:", e);
         }
         } catch (error) {
-          console.error("Error loading project data:", error);
+          //console.error("Error loading project data:", error);
           setAccessChecked(true);
           setProjectChecked(true);
         } finally {
@@ -340,7 +340,7 @@ export default function AdminProjectDetailPage() {
             break;
         }
       } catch (error) {
-        console.error("Error loading tab data:", error);
+        //console.error("Error loading tab data:", error);
       }
     };
     loadTabData();
@@ -377,7 +377,7 @@ export default function AdminProjectDetailPage() {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      console.error("Save assignments failed:", err?.error || `HTTP ${res.status}`);
+      //console.error("Save assignments failed:", err?.error || `HTTP ${res.status}`);
       return;
     }
 
@@ -395,12 +395,12 @@ export default function AdminProjectDetailPage() {
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          console.error(`Failed to remove ${role}:`, err?.error || `HTTP ${res.status}`);
+          //console.error(`Failed to remove ${role}:`, err?.error || `HTTP ${res.status}`);
         }
       }
       await loadCurrentAssignments();
     } catch (err) {
-      console.error("Failed to remove assignment:", err);
+      //console.error("Failed to remove assignment:", err);
     }
   };
 
@@ -416,7 +416,7 @@ export default function AdminProjectDetailPage() {
 
     if (error) {
       setProject(p => (p ? { ...p, ...prev } : p));
-      console.error("[Accept] RPC error:", error);
+      //console.error("[Accept] RPC error:", error);
       alert(`Accept gagal: ${error.message}`);
       return;
     }
@@ -436,7 +436,7 @@ export default function AdminProjectDetailPage() {
 
     if (error) {
       setProject(p => (p ? { ...p, ...prev } : p));
-      console.error("[Hold] RPC error:", error);
+      //console.error("[Hold] RPC error:", error);
       alert(`Put on Hold gagal: ${error.message}`);
       return;
     }
@@ -456,7 +456,7 @@ export default function AdminProjectDetailPage() {
 
     if (error) {
       setProject(p => (p ? { ...p, ...prev } : p));
-      console.error("[Continue] RPC error:", error);
+      //console.error("[Continue] RPC error:", error);
       alert(`Continue gagal: ${error.message}`);
       return;
     }

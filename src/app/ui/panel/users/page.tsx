@@ -117,7 +117,7 @@ export default function UsersPage(): React.JSX.Element {
         if (err && typeof err === 'object' && 'name' in err && err.name === "AbortError") {
           // diabaikan saat unmount/strict re-run
         } else {
-          console.error("Failed to load users:", err);
+          //console.error("Failed to load users:", err);
           if (mountedRef.current) setError(err instanceof Error ? err.message : "Failed to load users");
           if (mountedRef.current) setDebugInfo(`ERROR: ${err instanceof Error ? err.message : String(err)}`);
         }
@@ -175,7 +175,7 @@ export default function UsersPage(): React.JSX.Element {
 
       void load();
     } catch (err: unknown) {
-      console.error("Failed to update role:", err);
+      //console.error("Failed to update role:", err);
       setError(err instanceof Error ? err.message : "Failed to update role");
     } finally {
       setUpdating(null);
@@ -218,7 +218,7 @@ export default function UsersPage(): React.JSX.Element {
 
       void load();
     } catch (err: unknown) {
-      console.error("Failed to toggle functional role:", err);
+      //console.error("Failed to toggle functional role:", err);
       setError(err instanceof Error ? err.message : "Failed to toggle role");
     } finally {
       setUpdatingRole(null);

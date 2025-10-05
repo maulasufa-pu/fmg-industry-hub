@@ -235,14 +235,14 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
   }, [showUserMenu, calculateDropdownPosition]);
   
   useEffect(() => {
-    console.log('[SidebarSection] role =', role, 'normalizedRole =', normalizedRole);
-    console.log('[SidebarSection] items.length =', items.length);
-    console.log('[SidebarSection] isOpen =', isOpen);
-    console.log('[SidebarSection] profile =', profile);
+    //console.log('[SidebarSection] role =', role, 'normalizedRole =', normalizedRole);
+    //console.log('[SidebarSection] items.length =', items.length);
+    //console.log('[SidebarSection] isOpen =', isOpen);
+    //console.log('[SidebarSection] profile =', profile);
   }, [role, normalizedRole, items.length, isOpen, profile]);
   
   if (normalizedRole === "guest") {
-    console.log('[SidebarSection] Returning empty for guest role');
+    //console.log('[SidebarSection] Returning empty for guest role');
     return <></>; 
   }
 

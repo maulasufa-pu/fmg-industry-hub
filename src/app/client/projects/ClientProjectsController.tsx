@@ -72,10 +72,10 @@ export default function ClientProjectsController(props: Props) {
         router.push(`/client/projects/${project_id}`);
       }}
       onBulkAssignPIC={async (ids, pic) => {
-        console.log("Bulk assign PIC (client scope):", ids, pic);
+        //console.log("Bulk assign PIC (client scope):", ids, pic);
       }}
       onBulkMarkFinished={async (ids) => {
-        console.log("Bulk mark finished (client scope):", ids);
+        //console.log("Bulk mark finished (client scope):", ids);
       }}
     />
   );

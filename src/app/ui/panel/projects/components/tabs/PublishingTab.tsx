@@ -83,9 +83,11 @@ const STAFF_ROLES: ReadonlyArray<UserRole> = [
 ] as const;
 
 const inputCls =
-  "w-full rounded-xl border border-gray-300/80 dark:border-gray-700/70 " +
-  "bg-white/70 dark:bg-gray-800/70 px-3 py-2 outline-none " +
-  "focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow";
+  "w-full rounded-xl border-2 border-slate-200 dark:border-slate-600 " +
+  "bg-white/95 dark:bg-slate-800/95 px-4 py-3 text-slate-900 dark:text-slate-100 " +
+  "placeholder:text-slate-500 dark:placeholder:text-slate-400 outline-none shadow-sm " +
+  "focus:ring-4 focus:ring-blue-500/20 dark:focus:ring-blue-400/30 focus:border-blue-500 dark:focus:border-blue-400 " +
+  "hover:border-slate-300 dark:hover:border-slate-500 hover:shadow-md transition-all duration-200";
 
 const Field = ({
   label,
@@ -97,10 +99,10 @@ const Field = ({
   required?: boolean;
 }) => (
   <label className="block">
-    <span className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+    <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">
       {label} {required && <span className="text-rose-500">*</span>}
     </span>
-    <div className="mt-1">{children}</div>
+    <div className="mt-1.5">{children}</div>
   </label>
 );
 
@@ -117,17 +119,17 @@ const AnimatedCard = ({
 }) => {
   return (
     <motion.section
-      className={`relative overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl dark:shadow-gray-800/25 ${
+      className={`relative overflow-hidden rounded-3xl border-2 border-slate-200 dark:border-slate-700 shadow-xl shadow-black/10 dark:shadow-black/30 ${
         gradient
-          ? "bg-gradient-to-br from-white via-blue-50 to-purple-50 dark:from-gray-900 dark:via-blue-900/20 dark:to-purple-900/20"
-          : "bg-white dark:bg-gray-900"
-      } ${className}`}
+          ? "bg-gradient-to-br from-white/95 via-blue-50/90 to-purple-50/80 dark:from-slate-900/95 dark:via-blue-950/40 dark:to-purple-950/40"
+          : "bg-white/95 dark:bg-slate-900/95"
+      } backdrop-blur-sm ${className}`}
       initial={{ opacity: 0, y: 30, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
       whileHover={{
         scale: 1.01,
-        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
       }}
     >
       <div className="relative z-10 p-6 md:p-8">
@@ -137,7 +139,7 @@ const AnimatedCard = ({
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.15 }}
         >
-          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 bg-gradient-to-r from-gray-800 to-blue-600 bg-clip-text text-transparent">
+          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 bg-gradient-to-r from-slate-800 via-blue-600 to-indigo-600 dark:from-slate-100 dark:via-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
             {title}
           </h3>
         </motion.div>
@@ -168,23 +170,23 @@ const STATUS_BADGE: Record<
 > = {
   pending: {
     text: "Pending",
-    cls: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
+    cls: "bg-orange-50/90 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300 border border-orange-200 dark:border-orange-800 shadow-sm",
   },
   submitted: {
     text: "Submitted",
-    cls: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+    cls: "bg-blue-50/90 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-sm",
   },
   live: {
     text: "Live",
-    cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+    cls: "bg-emerald-50/90 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-sm",
   },
   rejected: {
     text: "Rejected",
-    cls: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300",
+    cls: "bg-rose-50/90 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800 shadow-sm",
   },
   takedown: {
     text: "Takedown",
-    cls: "bg-gray-200 text-gray-700 dark:bg-gray-800/60 dark:text-gray-300",
+    cls: "bg-slate-100/90 text-slate-700 dark:bg-slate-800/80 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-sm",
   },
 };
 
@@ -456,7 +458,7 @@ export default function PublishingTab({
     >
       <AnimatedCard title="📑 Publishing Data" gradient className="lg:col-span-5">
         {loading ? (
-          <div className="text-sm text-gray-500 dark:text-gray-400">Loading…</div>
+          <div className="text-sm text-slate-500 dark:text-slate-400">Loading…</div>
         ) : (
           <div className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -503,7 +505,7 @@ export default function PublishingTab({
                     onChange={onChangeBool("explicit")}
                     disabled={isClientView}
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-200">
+                  <span className="text-sm text-slate-700 dark:text-slate-300">
                     Mark explicit
                   </span>
                 </label>
@@ -583,10 +585,10 @@ export default function PublishingTab({
                     <img
                       src={form.artwork_url}
                       alt="Artwork"
-                      className="h-20 w-20 rounded-xl object-cover border border-gray-200 dark:border-gray-700"
+                      className="h-20 w-20 rounded-xl object-cover border-2 border-slate-200 dark:border-slate-600 shadow-sm"
                     />
                   ) : (
-                    <div className="h-20 w-20 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 grid place-items-center text-xs text-gray-500">
+                    <div className="h-20 w-20 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/50 dark:bg-slate-800/50 grid place-items-center text-xs text-slate-500 dark:text-slate-400 shadow-inner">
                       no image
                     </div>
                   )}
@@ -619,7 +621,7 @@ export default function PublishingTab({
                         max={100}
                         step={0.01}
                         placeholder="%"
-                        className="w-28 rounded-xl border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-800/70 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-28 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white/95 dark:bg-slate-800/95 px-3 py-2 text-slate-900 dark:text-slate-100 shadow-sm outline-none focus:ring-4 focus:ring-blue-500/20 dark:focus:ring-blue-400/30 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200"
                         value={Number.isFinite(s.percentage) ? s.percentage : 0}
                         onChange={(e) =>
                           updateSplit(i, {
@@ -635,7 +637,7 @@ export default function PublishingTab({
                         <button
                           type="button"
                           onClick={() => removeSplit(i)}
-                          className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                          className="px-3 py-2 rounded-lg border-2 border-slate-200 dark:border-slate-600 bg-white/95 dark:bg-slate-800/95 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500 shadow-sm hover:shadow-md transition-all duration-200"
                           aria-label="remove split"
                         >
                           ✕
@@ -647,26 +649,26 @@ export default function PublishingTab({
                     <button
                       type="button"
                       onClick={addSplit}
-                      className="mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm transition-colors"
+                      className="mt-1 px-3 py-2 rounded-lg border-2 border-slate-200 dark:border-slate-600 bg-white/95 dark:bg-slate-800/95 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500 shadow-sm hover:shadow-md transition-all duration-200 text-sm"
                     >
                       + Add split
                     </button>
                   )}
 
-                  <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-800 overflow-hidden">
+                  <div className="h-3 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden shadow-inner">
                     <div
-                      className={`h-2 ${
-                        totalSplit > 100 ? "bg-rose-500" : "bg-emerald-500"
+                      className={`h-3 transition-all duration-300 ${
+                        totalSplit > 100 ? "bg-gradient-to-r from-rose-500 to-red-600" : "bg-gradient-to-r from-emerald-500 to-green-600"
                       }`}
                       style={{ width: `${Math.min(totalSplit, 100)}%` }}
                     />
                   </div>
 
                   <div
-                    className={`text-xs ${
+                    className={`text-xs font-medium ${
                       totalSplit > 100
-                        ? "text-rose-500"
-                        : "text-gray-500 dark:text-gray-400"
+                        ? "text-rose-600 dark:text-rose-400"
+                        : "text-slate-600 dark:text-slate-400"
                     }`}
                   >
                     Total: {totalSplit.toFixed(2)}%
@@ -677,10 +679,10 @@ export default function PublishingTab({
 
             {!isClientView && (
               <div
-                className="sticky bottom-0 -mx-6 md:-mx-8 mt-4 border-t border-gray-200/80 dark:border-gray-700/70
-                  bg-white/80 dark:bg-gray-900/80 backdrop-blur supports-[backdrop-filter]:bg-white/60
-                  dark:supports-[backdrop-filter]:bg-gray-900/60 px-6 md:px-8 py-3
-                  flex items-center justify-between rounded-b-3xl"
+                className="sticky bottom-0 -mx-6 md:-mx-8 mt-4 border-t-2 border-slate-200/90 dark:border-slate-700/80
+                  bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm supports-[backdrop-filter]:bg-white/70
+                  dark:supports-[backdrop-filter]:bg-slate-900/70 px-6 md:px-8 py-3
+                  flex items-center justify-between rounded-b-3xl shadow-lg shadow-black/5 dark:shadow-black/20"
               >
                 <div className="text-xs">
                   {err ? (
@@ -688,7 +690,7 @@ export default function PublishingTab({
                   ) : ok ? (
                     <span className="text-emerald-600">{ok}</span>
                   ) : (
-                    <span className="text-gray-500 dark:text-gray-400">
+                    <span className="text-slate-500 dark:text-slate-400">
                       Ensure all fields are valid.
                     </span>
                   )}
@@ -696,7 +698,7 @@ export default function PublishingTab({
                 <button
                   onClick={onSave}
                   disabled={saving}
-                  className="px-4 py-2 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-60"
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white font-medium shadow-lg shadow-blue-500/25 dark:shadow-blue-400/20 hover:from-blue-700 hover:to-indigo-700 dark:hover:from-blue-600 dark:hover:to-indigo-600 hover:shadow-xl hover:shadow-blue-500/30 dark:hover:shadow-blue-400/25 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 active:scale-95"
                 >
                   {saving ? "Saving…" : "Save"}
                 </button>
@@ -704,7 +706,7 @@ export default function PublishingTab({
             )}
 
             {isClientView && (
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-xs text-slate-500 dark:text-slate-400">
                 Only authorized staff can modify publishing data.
               </div>
             )}
@@ -714,14 +716,14 @@ export default function PublishingTab({
 
       <AnimatedCard title="📚 Publishing Status" gradient className="lg:col-span-4">
         <div className="space-y-4">
-          <div className="p-4 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl border border-green-200 dark:border-green-700/50">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+          <div className="p-4 bg-gradient-to-br from-green-50/90 to-blue-50/90 dark:from-green-900/30 dark:to-blue-900/30 rounded-xl border-2 border-green-200 dark:border-green-700/60 shadow-sm">
+            <h4 className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
               📊 Current Status
             </h4>
             <div className="text-lg font-bold text-green-600 dark:text-green-400">
               {project.status === "published" ? "Published ✅" : "Not Published Yet ⏳"}
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               Stage: {project.stage || "Unknown"}
             </p>
           </div>
@@ -733,14 +735,14 @@ export default function PublishingTab({
               return (
                 <motion.div
                   key={key}
-                  className="p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                  className="p-4 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white/95 dark:bg-slate-800/95 shadow-sm hover:shadow-md transition-all duration-200"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.15 + idx * 0.05 }}
                   whileHover={{ scale: 1.01 }}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                       <span className="mr-1">{emoji}</span>
                       {label}
                     </div>
@@ -751,7 +753,7 @@ export default function PublishingTab({
 
                   <div className="space-y-2">
                     <select
-                      className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-800/70 px-2 py-2 text-sm"
+                      className="w-full rounded-lg border-2 border-slate-200 dark:border-slate-600 bg-white/95 dark:bg-slate-800/95 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 shadow-sm focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/30 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200"
                       value={st.status}
                       onChange={(e) => setDSPStatus(key, e.target.value as DSPStatus)}
                       disabled={isClientView}
@@ -796,10 +798,10 @@ export default function PublishingTab({
             <img
               src={form.artwork_url}
               alt="Artwork"
-              className="w-64 h-64 object-cover rounded-2xl border border-gray-200 dark:border-gray-700"
+              className="w-64 h-64 object-cover rounded-2xl border-2 border-slate-200 dark:border-slate-600 shadow-lg"
             />
           ) : (
-            <div className="w-64 h-64 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 grid place-items-center text-sm text-gray-500">
+            <div className="w-64 h-64 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/50 dark:bg-slate-800/50 grid place-items-center text-sm text-slate-500 dark:text-slate-400 shadow-inner">
               Artwork not uploaded yet
             </div>
           )}
@@ -840,7 +842,7 @@ export default function PublishingTab({
       )}
 
       <AnimatedCard title="📈 Analytics & Performance" gradient className="lg:col-span-12">
-        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+        <div className="text-center py-8 text-slate-500 dark:text-slate-400">
           <div className="text-4xl mb-4">📊</div>
           <p>Performance analytics will appear after track is published.</p>
           <p className="text-xs mt-2">

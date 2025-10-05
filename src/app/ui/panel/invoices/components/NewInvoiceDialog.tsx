@@ -52,7 +52,7 @@ function ChipToggle({
   ariaLabel: string;
 }) {
   return (
-    <div role="tablist" aria-label={ariaLabel} className="inline-flex rounded-xl border bg-background/60 p-1">
+    <div role="tablist" aria-label={ariaLabel} className="inline-flex rounded-xl border-2 border-slate-300/50 dark:border-slate-600/50 bg-white/80 dark:bg-slate-800/60 p-1 backdrop-blur">
       {options.map((opt) => {
         const active = opt.value === value;
         return (
@@ -62,10 +62,10 @@ function ChipToggle({
             aria-selected={active}
             onClick={() => onChange(opt.value)}
             className={[
-              "px-3 py-1.5 text-sm rounded-lg transition-all",
+              "px-3 py-1.5 text-sm rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50",
               active
                 ? "bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white shadow"
-                : "text-foreground/80 hover:bg-muted",
+                : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50",
             ].join(" ")}
           >
             {opt.label}
@@ -90,11 +90,11 @@ function Field({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-sm">
-        {icon}
-        <label className="font-medium">{label}</label>
+        {icon && <span className="text-slate-500 dark:text-slate-400">{icon}</span>}
+        <label className="font-medium text-slate-700 dark:text-slate-300">{label}</label>
       </div>
       {children}
-      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+      {hint ? <p className="text-xs text-slate-500 dark:text-slate-400">{hint}</p> : null}
     </div>
   );
 }
@@ -244,36 +244,36 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
   return (
     <div className="fixed inset-0 z-50 grid place-items-center p-4">
       <div
-        className="absolute inset-0 bg-black/60"
+        className="absolute inset-0 bg-black/60 dark:bg-black/80"
         onClick={onClose}
         aria-hidden
       />
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-gradient-to-br from-indigo-500/25 via-fuchsia-500/20 to-sky-500/15 blur-3xl" />
-        <div className="absolute -bottom-20 -right-24 h-80 w-80 rounded-full bg-gradient-to-tr from-emerald-500/25 via-teal-400/20 to-cyan-400/15 blur-3xl" />
+        <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-gradient-to-br from-indigo-500/15 via-fuchsia-500/12 to-sky-500/8 dark:from-indigo-500/25 dark:via-fuchsia-500/20 dark:to-sky-500/15 blur-3xl" />
+        <div className="absolute -bottom-20 -right-24 h-80 w-80 rounded-full bg-gradient-to-tr from-emerald-500/15 via-teal-400/12 to-cyan-400/8 dark:from-emerald-500/25 dark:via-teal-400/20 dark:to-cyan-400/15 blur-3xl" />
       </div>
 
       <motion.div
         initial={{ opacity: 0, y: 18, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
-        className="relative w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/70 to-white/40 p-0 shadow-2xl backdrop-blur dark:from-slate-900/70 dark:to-slate-900/40"
+        className="relative w-full max-w-3xl overflow-hidden rounded-2xl border-2 border-slate-300/50 dark:border-white/10 bg-gradient-to-br from-white/95 to-slate-50/90 dark:from-slate-900/95 dark:to-slate-800/90 p-0 shadow-2xl backdrop-blur"
         role="dialog"
         aria-modal="true"
         aria-label="Create a new invoice"
       >
         <div className="relative px-5 py-4 sm:px-6">
-          <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-gradient-to-br from-indigo-500/20 via-fuchsia-400/15 to-amber-300/15 blur-2xl" />
+          <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-gradient-to-br from-indigo-500/12 via-fuchsia-400/8 to-amber-300/8 dark:from-indigo-500/20 dark:via-fuchsia-400/15 dark:to-amber-300/15 blur-2xl" />
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-amber-400">
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-fuchsia-600 to-amber-500 dark:from-indigo-400 dark:via-fuchsia-400 dark:to-amber-400">
                 New Invoice
               </h2>
-              <p className="text-sm text-foreground/80">Create, stage, and send with FMG polish.</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300">Create, stage, and send with FMG polish.</p>
             </div>
             <button
               onClick={onClose}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white/40 text-foreground backdrop-blur hover:bg-white/60 dark:bg-white/10 dark:hover:bg-white/15"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border-2 border-slate-300/50 dark:border-white/20 bg-white/80 dark:bg-white/10 text-slate-700 dark:text-white backdrop-blur hover:bg-white/90 dark:hover:bg-white/15 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
               aria-label="Close"
               title="Close"
             >
@@ -290,7 +290,7 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
                   disabled={clientsLoading}
                   value={selectedClientId}
                   onChange={(e) => setSelectedClientId(e.currentTarget.value)}
-                  className="w-full appearance-none rounded-xl border bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full appearance-none rounded-xl border-2 border-slate-300/50 dark:border-slate-600/50 bg-white dark:bg-slate-800 px-3 py-2 pr-8 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="">{clientsLoading ? "Loading…" : "— Select client —"}</option>
                   {clients.map((c) => (
@@ -300,7 +300,7 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60" />
+                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 dark:text-slate-400" />
               </div>
             </Field>
 
@@ -334,7 +334,7 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
                 min={1}
                 value={dueDays}
                 onChange={(e) => setDueDays(parseInt(e.currentTarget.value || "1", 10))}
-                className="w-full rounded-xl border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-xl border-2 border-slate-300/50 dark:border-slate-600/50 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
                 placeholder="14"
               />
             </Field>
@@ -346,7 +346,7 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
                 step={0.5}
                 value={ppnPercent}
                 onChange={(e) => setPpnPercent(parseFloat(e.currentTarget.value || "0"))}
-                className="w-full rounded-xl border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-xl border-2 border-slate-300/50 dark:border-slate-600/50 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
                 placeholder="11"
               />
             </Field>
@@ -358,7 +358,7 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
                     disabled={servicesLoading}
                     value={quickServiceId}
                     onChange={(e) => setQuickServiceId(e.currentTarget.value)}
-                    className="mt-0 w-full appearance-none rounded-xl border bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="mt-0 w-full appearance-none rounded-xl border-2 border-slate-300/50 dark:border-slate-600/50 bg-white dark:bg-slate-800 px-3 py-2 pr-8 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">— Choose service —</option>
                     <optgroup label="Core">
@@ -389,12 +389,12 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
                         ))}
                     </optgroup>
                   </select>
-                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60" />
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 dark:text-slate-400" />
                 </div>
                 <button
                   disabled={!quickServiceId}
                   onClick={onQuickAdd}
-                  className="inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm hover:bg-muted disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-xl border-2 border-slate-300/50 dark:border-slate-600/50 px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                   title="Add service"
                 >
                   <Plus className="h-4 w-4" />
@@ -404,12 +404,12 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
             </Field>
           </div>
 
-          <div className="mt-6 rounded-2xl border bg-card/70 p-4 ring-1 ring-black/5">
+          <div className="mt-6 rounded-2xl border-2 border-slate-300/50 dark:border-slate-600/50 bg-white/90 dark:bg-slate-800/70 p-4 shadow-sm backdrop-blur">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold tracking-wide">Line Items</h3>
+              <h3 className="text-sm font-semibold tracking-wide text-slate-900 dark:text-white">Line Items</h3>
               <button
                 onClick={addItem}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 px-3 py-1.5 text-xs font-semibold text-white shadow hover:opacity-95 active:translate-y-[1px]"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 px-3 py-1.5 text-xs font-semibold text-white shadow hover:opacity-95 active:translate-y-[1px] transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add Item
@@ -418,7 +418,7 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
 
             <div className="mt-3 space-y-3">
               {items.length === 0 ? (
-                <div className="grid place-items-center rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
+                <div className="grid place-items-center rounded-xl border-2 border-dashed border-slate-300/60 dark:border-slate-600/60 p-6 text-sm text-slate-600 dark:text-slate-400">
                   No items yet. Add from services or create custom lines.
                 </div>
               ) : null}
@@ -426,13 +426,13 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
               {items.map((it, idx) => (
                 <div
                   key={idx}
-                  className="grid grid-cols-12 items-start gap-2 rounded-xl border bg-background/60 p-2 sm:p-3"
+                  className="grid grid-cols-12 items-start gap-2 rounded-xl border-2 border-slate-200/50 dark:border-slate-600/50 bg-white/80 dark:bg-slate-700/60 p-2 sm:p-3 backdrop-blur"
                 >
                   <input
                     placeholder="Description"
                     value={it.description}
                     onChange={(e) => updateItem(idx, { description: e.currentTarget.value })}
-                    className="col-span-12 sm:col-span-6 rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="col-span-12 sm:col-span-6 rounded-lg border-2 border-slate-300/50 dark:border-slate-600/50 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
                   />
                   <input
                     type="number"
@@ -440,7 +440,7 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
                     placeholder="Qty"
                     value={it.qty}
                     onChange={(e) => updateItem(idx, { qty: parseInt(e.currentTarget.value || "1", 10) })}
-                    className="col-span-6 sm:col-span-2 rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="col-span-6 sm:col-span-2 rounded-lg border-2 border-slate-300/50 dark:border-slate-600/50 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
                   />
                   <input
                     type="number"
@@ -448,12 +448,12 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
                     placeholder="Unit Price"
                     value={it.unit_price}
                     onChange={(e) => updateItem(idx, { unit_price: parseFloat(e.currentTarget.value || "0") })}
-                    className="col-span-6 sm:col-span-3 rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="col-span-6 sm:col-span-3 rounded-lg border-2 border-slate-300/50 dark:border-slate-600/50 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
                   />
 
                   <button
                     onClick={() => removeItem(idx)}
-                    className="col-span-12 sm:col-span-1 inline-flex items-center justify-center rounded-lg border px-2 py-2 text-xs hover:bg-muted"
+                    className="col-span-12 sm:col-span-1 inline-flex items-center justify-center rounded-lg border-2 border-slate-300/50 dark:border-slate-600/50 px-2 py-2 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-red-600 dark:hover:text-red-400 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/50"
                     title="Remove item"
                     aria-label="Remove item"
                   >
@@ -461,7 +461,7 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
                   </button>
 
                   {it.service_id ? (
-                    <div className="col-span-12 text-[11px] text-muted-foreground">
+                    <div className="col-span-12 text-[11px] text-slate-500 dark:text-slate-400">
                       linked service: {it.service_id}
                     </div>
                   ) : null}
@@ -471,40 +471,40 @@ export function NewInvoiceDialog({ onClose, onCreated }: Props): React.JSX.Eleme
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border bg-card/80 p-4 shadow-sm ring-1 ring-black/5">
-              <div className="text-xs uppercase text-muted-foreground">Subtotal</div>
-              <div className="mt-1 text-lg font-semibold">
+            <div className="rounded-2xl border-2 border-slate-200/50 dark:border-slate-600/50 bg-white/90 dark:bg-slate-800/80 p-4 shadow-sm backdrop-blur">
+              <div className="text-xs uppercase text-slate-600 dark:text-slate-400">Subtotal</div>
+              <div className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">
                 {totals.subtotal.toLocaleString("id-ID")}
               </div>
             </div>
-            <div className="rounded-2xl border bg-card/80 p-4 shadow-sm ring-1 ring-black/5">
-              <div className="text-xs uppercase text-muted-foreground">Tax ({ppnPercent}%)</div>
-              <div className="mt-1 text-lg font-semibold">
+            <div className="rounded-2xl border-2 border-slate-200/50 dark:border-slate-600/50 bg-white/90 dark:bg-slate-800/80 p-4 shadow-sm backdrop-blur">
+              <div className="text-xs uppercase text-slate-600 dark:text-slate-400">Tax ({ppnPercent}%)</div>
+              <div className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">
                 {totals.tax.toLocaleString("id-ID")}
               </div>
             </div>
-            <div className="rounded-2xl border bg-gradient-to-br from-indigo-500/10 to-fuchsia-500/10 p-4 shadow-sm ring-1 ring-black/5">
-              <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground">
+            <div className="rounded-2xl border-2 border-indigo-200/50 dark:border-indigo-400/30 bg-gradient-to-br from-indigo-100/80 to-fuchsia-100/60 dark:from-indigo-500/20 dark:to-fuchsia-500/15 p-4 shadow-sm backdrop-blur">
+              <div className="flex items-center gap-2 text-xs uppercase text-slate-700 dark:text-slate-300">
                 <Wallet className="h-3.5 w-3.5" /> Grand Total
               </div>
-              <div className="mt-1 text-xl font-extrabold tracking-tight">
+              <div className="mt-1 text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">
                 {totals.grand_total.toLocaleString("id-ID")}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col-reverse gap-2 border-t bg-background/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6">
+        <div className="flex flex-col-reverse gap-2 border-t-2 border-slate-200/50 dark:border-slate-600/50 bg-slate-50/80 dark:bg-slate-800/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6 backdrop-blur">
           <button
             onClick={onClose}
-            className="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm hover:bg-muted"
+            className="inline-flex items-center justify-center rounded-xl border-2 border-slate-300/50 dark:border-slate-600/50 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
           >
             Cancel
           </button>
           <button
             disabled={saving || !selectedClientId || items.length === 0}
             onClick={() => void submit()}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 px-5 py-2 text-sm font-semibold text-white shadow hover:opacity-95 disabled:opacity-60 active:translate-y-[1px]"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 px-5 py-2 text-sm font-semibold text-white shadow hover:opacity-95 disabled:opacity-60 active:translate-y-[1px] transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 disabled:cursor-not-allowed"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Create Invoice

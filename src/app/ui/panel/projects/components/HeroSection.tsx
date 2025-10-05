@@ -183,13 +183,13 @@ export default function HeroSection({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, type: "spring" }}
       >
-        <div className="backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 rounded-2xl border border-white/30 dark:border-slate-700/30 shadow-2xl dark:shadow-slate-900/50 p-4">
-          <motion.nav className="text-sm text-slate-500 dark:text-slate-400" whileHover={{ scale: 1.02 }}>
+        <div className="backdrop-blur-xl bg-white/90 dark:bg-slate-900/90 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shadow-2xl shadow-black/10 dark:shadow-black/30 p-4">
+          <motion.nav className="text-sm text-slate-600 dark:text-slate-300" whileHover={{ scale: 1.02 }}>
             <ol className="flex items-center gap-3 flex-wrap">
               <li>
                 <Link
                   href="/admin/projects"
-                  className="hover:underline hover:text-indigo-600 dark:hover:text-indigo-400 transition-all duration-300 flex items-center gap-2"
+                  className="hover:underline hover:text-indigo-600 dark:hover:text-indigo-400 transition-all duration-300 flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400"
                 >
                   <motion.span whileHover={{ rotate: 15 }} className="text-lg">
                     🏠
@@ -200,12 +200,12 @@ export default function HeroSection({
               <motion.li
                 animate={{ rotate: [0, 15, -15, 0] }}
                 transition={{ duration: 4, repeat: Infinity, repeatDelay: 5 }}
-                className="text-slate-400 text-lg"
+                className="text-slate-400 dark:text-slate-500 text-lg"
               >
                 →
               </motion.li>
               <motion.li
-                className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2"
+                className="font-medium text-slate-800 dark:text-slate-200 flex items-center gap-2"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.7 }}
@@ -255,7 +255,7 @@ export default function HeroSection({
             </motion.h1>
 
             <motion.p
-              className="text-lg lg:text-xl text-blue-100 floating-element"
+              className="text-lg lg:text-xl text-blue-100 dark:text-blue-200 floating-element"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
@@ -270,20 +270,20 @@ export default function HeroSection({
               transition={{ delay: 0.8 }}
             >
               <motion.div
-                className="px-6 py-3 bg-white/20 backdrop-blur-sm rounded-2xl border border-white/30 floating-element"
+                className="px-6 py-3 bg-white/25 dark:bg-slate-800/40 backdrop-blur-sm rounded-2xl border border-white/40 dark:border-slate-600/50 floating-element shadow-lg"
                 whileHover={{ scale: 1.05, y: -2 }}
               >
-                <span className="text-sm font-semibold">
+                <span className="text-sm font-semibold text-white dark:text-slate-100">
                   Status: {formatStatus(project.status)}
                 </span>
               </motion.div>
 
               <motion.div
-                className="px-6 py-3 bg-white/20 backdrop-blur-sm rounded-2xl border border-white/30 floating-element"
+                className="px-6 py-3 bg-white/25 dark:bg-slate-800/40 backdrop-blur-sm rounded-2xl border border-white/40 dark:border-slate-600/50 floating-element shadow-lg"
                 whileHover={{ scale: 1.05, y: -2 }}
                 transition={{ delay: 0.1 }}
               >
-                <span className="text-sm font-semibold">
+                <span className="text-sm font-semibold text-white dark:text-slate-100">
                   Phase: {formatStage(project.stage)}
                 </span>
               </motion.div>
@@ -303,12 +303,12 @@ export default function HeroSection({
                   onClick={handleContinue}
                   disabled={isContinuing}
                   aria-disabled={isContinuing}
-                  className="group relative px-8 py-4 bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500 text-white font-semibold rounded-2xl shadow-2xl overflow-hidden floating-element"
+                  className="group relative px-8 py-4 bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500 dark:from-sky-600 dark:via-blue-600 dark:to-indigo-600 text-white font-semibold rounded-2xl shadow-2xl shadow-blue-500/25 dark:shadow-blue-600/30 overflow-hidden floating-element"
                   whileHover={{ scale: 1.05, boxShadow: "0 25px 50px -12px rgba(59,130,246,0.6)", y: -3 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <motion.div
-                    className="pointer-events-none absolute inset-0 bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600"
+                    className="pointer-events-none absolute inset-0 bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 dark:from-sky-700 dark:via-blue-700 dark:to-indigo-700"
                     initial={{ x: "-100%" }}
                     whileHover={{ x: 0 }}
                     transition={{ type: "tween", duration: 0.3 }}
@@ -328,12 +328,12 @@ export default function HeroSection({
                   onClick={handleAccept}
                   disabled={isAccepting}
                   aria-disabled={isAccepting}
-                  className="group relative px-8 py-4 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-white font-semibold rounded-2xl shadow-2xl overflow-hidden floating-element"
+                  className="group relative px-8 py-4 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 dark:from-emerald-600 dark:via-green-600 dark:to-teal-600 text-white font-semibold rounded-2xl shadow-2xl shadow-emerald-500/25 dark:shadow-emerald-600/30 overflow-hidden floating-element"
                   whileHover={{ scale: 1.05, boxShadow: "0 25px 50px -12px rgba(16, 185, 129, 0.6)", y: -3 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <motion.div
-                    className="pointer-events-none absolute inset-0 bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600"
+                    className="pointer-events-none absolute inset-0 bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 dark:from-emerald-700 dark:via-green-700 dark:to-teal-700"
                     initial={{ x: "-100%" }}
                     whileHover={{ x: 0 }}
                     transition={{ type: "tween", duration: 0.3 }}
@@ -353,13 +353,13 @@ export default function HeroSection({
                   onClick={handleHold}
                   disabled={isHolding}
                   aria-disabled={isHolding}
-                  className="group relative px-8 py-4 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white font-semibold rounded-2xl shadow-2xl overflow-hidden floating-element"
+                  className="group relative px-8 py-4 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 dark:from-amber-600 dark:via-orange-600 dark:to-red-600 text-white font-semibold rounded-2xl shadow-2xl shadow-amber-500/25 dark:shadow-amber-600/30 overflow-hidden floating-element"
                   whileHover={{ scale: 1.05, boxShadow: "0 25px 50px -12px rgba(245, 158, 11, 0.6)", y: -3 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ delay: 0.1 }}
                 >
                   <motion.div
-                    className="pointer-events-none absolute inset-0 bg-gradient-to-r from-amber-600 via-orange-600 to-red-600"
+                    className="pointer-events-none absolute inset-0 bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 dark:from-amber-700 dark:via-orange-700 dark:to-red-700"
                     initial={{ x: "-100%" }}
                     whileHover={{ x: 0 }}
                     transition={{ type: "tween", duration: 0.3 }}
@@ -374,19 +374,19 @@ export default function HeroSection({
               )}
 
               <motion.div
-                className="grid grid-cols-2 gap-3 p-4 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20"
+                className="grid grid-cols-2 gap-3 p-4 bg-white/15 dark:bg-slate-800/40 backdrop-blur-sm rounded-2xl border border-white/30 dark:border-slate-600/50 shadow-lg"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 1.2 }}
                 whileHover={{ scale: 1.05 }}
               >
                 <div className="text-center">
-                  <div className="text-2xl font-bold stat-number">{teamCount}</div>
-                  <div className="text-xs opacity-80">Team Members</div>
+                  <div className="text-2xl font-bold stat-number text-white dark:text-slate-100">{teamCount}</div>
+                  <div className="text-xs opacity-90 text-white/90 dark:text-slate-200/90">Team Members</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold stat-number">{activeDays}</div>
-                  <div className="text-xs opacity-80">Days Active</div>
+                  <div className="text-2xl font-bold stat-number text-white dark:text-slate-100">{activeDays}</div>
+                  <div className="text-xs opacity-90 text-white/90 dark:text-slate-200/90">Days Active</div>
                 </div>
               </motion.div>
             </motion.div>
@@ -409,15 +409,15 @@ export default function HeroSection({
               <span className="font-bold">{progress}%</span>
             </div>
 
-            <div className="h-3 w-full bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
+            <div className="h-3 w-full bg-white/25 dark:bg-slate-800/40 rounded-full overflow-hidden backdrop-blur-sm border border-white/20 dark:border-slate-600/30">
               <motion.div
-                className="h-full bg-gradient-to-r from-yellow-300 to-yellow-500 rounded-full shadow-lg relative"
+                className="h-full bg-gradient-to-r from-yellow-300 to-yellow-500 dark:from-yellow-400 dark:to-yellow-600 rounded-full shadow-lg relative"
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
                 transition={{ delay: 1.2, duration: 1.5, ease: "easeOut" }}
               >
                 <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent rounded-full"
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 dark:via-white/30 to-transparent rounded-full"
                   animate={{ x: ["-100%", "200%"] }}
                   transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                 />
@@ -440,7 +440,7 @@ export default function HeroSection({
               onClick={handleContinue}
               disabled={isContinuing}
               aria-disabled={isContinuing}
-              className="w-full mt-3 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 px-4 py-3 text-white font-medium shadow"
+              className="w-full mt-3 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 dark:from-sky-600 dark:to-indigo-700 px-4 py-3 text-white font-medium shadow-lg shadow-sky-500/25 dark:shadow-sky-600/30"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -455,7 +455,7 @@ export default function HeroSection({
                 onClick={handleAccept}
                 disabled={isAccepting}
                 aria-disabled={isAccepting}
-                className="w-full rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 px-4 py-3 text-white font-medium shadow"
+                className="w-full rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 dark:from-green-600 dark:to-emerald-700 px-4 py-3 text-white font-medium shadow-lg shadow-green-500/25 dark:shadow-green-600/30"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -469,7 +469,7 @@ export default function HeroSection({
                 onClick={handleHold}
                 disabled={isHolding}
                 aria-disabled={isHolding}
-                className="w-full mt-3 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 px-4 py-3 text-white font-medium shadow"
+                className="w-full mt-3 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 dark:from-orange-600 dark:to-red-700 px-4 py-3 text-white font-medium shadow-lg shadow-orange-500/25 dark:shadow-orange-600/30"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -479,19 +479,19 @@ export default function HeroSection({
           </div>
 
           <motion.div
-            className="w-full max-w-xs grid grid-cols-2 gap-3 p-4 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20"
+            className="w-full max-w-xs grid grid-cols-2 gap-3 p-4 bg-white/15 dark:bg-slate-800/40 backdrop-blur-sm rounded-2xl border border-white/30 dark:border-slate-600/50 shadow-lg"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.6 }}
             whileHover={{ scale: 1.02 }}
           >
             <div className="text-center">
-              <div className="text-2xl font-bold stat-number">{teamCount}</div>
-              <div className="text-xs opacity-80">Team Members</div>
+              <div className="text-2xl font-bold stat-number text-white dark:text-slate-100">{teamCount}</div>
+              <div className="text-xs opacity-90 text-white/90 dark:text-slate-200/90">Team Members</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold stat-number">{activeDays}</div>
-              <div className="text-xs opacity-80">Days Active</div>
+              <div className="text-2xl font-bold stat-number text-white dark:text-slate-100">{activeDays}</div>
+              <div className="text-xs opacity-90 text-white/90 dark:text-slate-200/90">Days Active</div>
             </div>
           </motion.div>
         </motion.div>

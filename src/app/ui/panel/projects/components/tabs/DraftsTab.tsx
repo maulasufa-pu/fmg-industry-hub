@@ -42,10 +42,10 @@ const AnimatedCard = ({
 }) => {
   return (
     <motion.section
-      className={`relative overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl dark:shadow-gray-800/25 ${
+      className={`relative overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl shadow-black/10 dark:shadow-black/30 ${
         gradient
-          ? "bg-gradient-to-br from-white via-blue-50 to-purple-50 dark:from-gray-900 dark:via-blue-900/20 dark:to-purple-900/20"
-          : "bg-white dark:bg-gray-900"
+          ? "bg-gradient-to-br from-white via-blue-50/90 to-purple-50/80 dark:from-slate-900/95 dark:via-blue-900/30 dark:to-purple-900/30"
+          : "bg-white/95 dark:bg-slate-900/95"
       } ${className}`}
       initial={{ opacity: 0, y: 30, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -59,7 +59,7 @@ const AnimatedCard = ({
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 bg-gradient-to-r from-gray-800 to-blue-600 bg-clip-text text-transparent">
+          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 bg-gradient-to-r from-slate-800 via-blue-600 to-purple-600 dark:from-slate-100 dark:via-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
             {title}
           </h3>
         </motion.div>
@@ -370,45 +370,45 @@ export default function DraftsTab({
       <AnimatedCard title={label} gradient>
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Kategori</label>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200">Kategori</label>
             <div className="relative mt-1">
               <select
                 value={cat}
                 onChange={(e) => setCat(e.target.value as DraftCategory)}
-                className="appearance-none w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
+                className="appearance-none w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 p-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/60 focus:border-indigo-400 dark:focus:border-indigo-500 transition-colors"
               >
                 {allowedCategories.map((c) => (
                   <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
                 ))}
               </select>
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z" /></svg>
               </span>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">File</label>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200">File</label>
             <input
               type="file"
               accept=".wav,audio/wav"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="mt-1 block w-full text-sm text-slate-700 dark:text-slate-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-slate-800 dark:file:text-slate-100"
+              className="mt-1 block w-full text-sm text-slate-700 dark:text-slate-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 dark:file:bg-indigo-900/50 file:text-indigo-700 dark:file:text-indigo-300 hover:file:bg-indigo-100 dark:hover:file:bg-indigo-800/60 file:transition-colors cursor-pointer"
             />
           </div>
 
           <motion.button
             onClick={() => handleUpload(file, cat)}
             disabled={uploading}
-            className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold shadow hover:shadow-lg disabled:opacity-60"
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-600 dark:to-indigo-600 text-white font-semibold shadow-lg shadow-purple-500/25 dark:shadow-purple-600/30 hover:shadow-xl hover:shadow-purple-500/30 dark:hover:shadow-purple-600/40 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             {uploading ? "Uploading..." : "Upload"}
           </motion.button>
 
-          {uploadErr && <div className="text-xs text-red-600 dark:text-red-400">{uploadErr}</div>}
-          <div className="text-[11px] text-slate-500">Only .wav files will be saved per-project as <b>drafts</b>.</div>
+          {uploadErr && <div className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-2">{uploadErr}</div>}
+          <div className="text-[11px] text-slate-500 dark:text-slate-400">Only .wav files will be saved per-project as <b className="text-slate-700 dark:text-slate-300">drafts</b>.</div>
         </div>
       </AnimatedCard>
     );
@@ -429,7 +429,10 @@ export default function DraftsTab({
 
       <AnimatedCard title="🔄 Drafts" gradient className="lg:col-span-2">
         {localDrafts === null ? (
-          <motion.div className="text-sm text-gray-500 dark:text-gray-400" animate={{ opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1.5 }}>
+          <motion.div className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2" animate={{ opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1.5 }}>
+            <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
             Loading drafts…
           </motion.div>
         ) : localDrafts.length ? (
@@ -442,19 +445,21 @@ export default function DraftsTab({
                 return (
                   <motion.li
                     key={d.draft_id}
-                    className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 p-4 shadow"
+                    className="rounded-xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50/80 dark:from-slate-800/90 dark:to-slate-900/60 p-4 shadow-lg shadow-slate-200/50 dark:shadow-slate-900/50"
                     initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 * index }}
                     whileHover={{ scale: 1.01, boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)" }}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                        <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                           {extractName(d.file_path)}
                         </div>
-                        <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                          {((d as any).category
-                            ? ((d as any).category as string).charAt(0).toUpperCase() + ((d as any).category as string).slice(1)
-                            : "Draft")}
+                        <div className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">
+                          <span className="font-medium text-indigo-600 dark:text-indigo-400">
+                            {((d as any).category
+                              ? ((d as any).category as string).charAt(0).toUpperCase() + ((d as any).category as string).slice(1)
+                              : "Draft")}
+                          </span>
                           {" • "}v{d.version}
                           {" • "}
                           {d.created_at ? new Date(d.created_at).toLocaleString("id-ID") : "-"}
@@ -467,7 +472,7 @@ export default function DraftsTab({
                             onClick={() => deleteDraft(d)}
                             disabled={deletingId === d.draft_id}
                             className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium
-                                      bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
+                                      bg-red-600 dark:bg-red-600 text-white hover:bg-red-700 dark:hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-red-500/25 dark:shadow-red-600/30 transition-all duration-200"
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                           >
@@ -496,12 +501,13 @@ export default function DraftsTab({
                     </div>
 
                     {canRequestRevision && (
-                      <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-700 p-3 bg-white/70 dark:bg-slate-900/50">
-                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                      <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-600 p-3 bg-white/80 dark:bg-slate-800/60 backdrop-blur-sm">
+                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1">
+                          <span className="text-sm">{effectiveRole === "anr" ? "📝" : "🔄"}</span>
                           {effectiveRole === "anr" ? "Catatan / Alasan Revisi (ANR)" : "Request Revisi"}
                         </label>
                         <textarea
-                          className="mt-2 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-sm"
+                          className="mt-2 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:border-blue-400 dark:focus:border-blue-500 transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500"
                           rows={3}
                           placeholder={effectiveRole === "anr" ? "Write notes / revision instructions for this draft…" : "Write revision request for this draft…"}
                           value={revTextByDraft[d.draft_id] ?? ""}
@@ -511,12 +517,12 @@ export default function DraftsTab({
                           <motion.button
                             onClick={() => submitRevision(d.draft_id)}
                             disabled={revLoading === d.draft_id}
-                            className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-semibold disabled:opacity-60"
+                            className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-600 dark:to-teal-600 text-white text-xs font-semibold disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/25 dark:shadow-emerald-600/30 transition-all duration-200"
                             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                           >
                             {revLoading === d.draft_id ? "Mengirim…" : "Kirim Revisi"}
                           </motion.button>
-                          {revErr && <div className="text-[11px] text-red-600 dark:text-red-400">{revErr}</div>}
+                          {revErr && <div className="text-[11px] text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded px-2 py-1">{revErr}</div>}
                         </div>
                       </div>
                     )}
@@ -525,15 +531,24 @@ export default function DraftsTab({
               })}
           </motion.ul>
         ) : (
-          <motion.div className="text-sm text-gray-500 dark:text-gray-400 text-center py-8" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 }}>
-            📋 Belum ada draft.
+          <motion.div className="text-sm text-slate-500 dark:text-slate-400 text-center py-8 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-slate-200/50 dark:border-slate-700/50" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 }}>
+            <div className="text-2xl mb-2">📋</div>
+            <div className="font-medium">Belum ada draft.</div>
+            <div className="text-xs mt-1 text-slate-400 dark:text-slate-500">Upload file .wav pertama untuk memulai</div>
           </motion.div>
         )}
       </AnimatedCard>
 
       {canWriteNotes && false && (
         <AnimatedCard title="📝 ANR Notes" gradient>
-          <div className="text-sm text-slate-600 dark:text-slate-300">(Coming soon)</div>
+          <div className="text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-200/50 dark:border-slate-700/50">
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span className="font-medium">(Coming soon)</span>
+            </div>
+          </div>
         </AnimatedCard>
       )}
     </motion.div>

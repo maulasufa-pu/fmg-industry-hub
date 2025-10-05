@@ -1,36 +1,140 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FMG Industry Hub 🎵
 
-## Getting Started
+**Beyond Sound. Built-in Intelligence.**
 
-First, run the development server:
+A comprehensive music industry platform connecting artists, labels, and music professionals with Flemmo Music Global's end-to-end services. From creation to distribution, we provide one operating system for the entire music business.
+
+![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
+![Supabase](https://img.shields.io/badge/Supabase-Backend-green?logo=supabase)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?logo=tailwind-css)
+
+## ✨ Features
+
+### 🎼 **Music Production Services**
+- Songwriting, composition, and arrangement
+- Professional recording, mixing, and mastering
+- Audio post-production for film, ads, and games
+- Remote and in-studio workflow management
+
+### 📄 **Publishing & Distribution**
+- Copyright registration and licensing
+- Digital distribution to all major DSPs
+- Metadata optimization and quality control
+- Rights management and royalty tracking
+
+### 💼 **Business Development**
+- Marketing and promotional campaigns
+- Artist branding and image development
+- Partnership and sponsorship opportunities
+- Data-driven monetization strategies
+
+### 🛠 **Technology Stack**
+- **Frontend**: Next.js 14, TypeScript, Tailwind CSS
+- **Backend**: Supabase (PostgreSQL + Auth)
+- **Deployment**: Vercel-ready with edge functions
+- **Payments**: Multi-currency support (USD, IDR, EUR, GBP)
+- **Real-time**: Chat system and live collaboration tools
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 18+ and npm
+- Supabase account
+- Git
+
+### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/maulasufa-pu/fmg-industry-hub.git
+cd fmg-industry-hub
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env.local
+# Edit .env.local with your Supabase credentials
+
+# Run the development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📖 Documentation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **[📋 Installation Guide](INSTALLER_GUIDE.md)** - Complete setup and deployment instructions
+- **[📚 User Manual](USER_MANUAL.md)** - End-user documentation and feature guides
 
-## Learn More
+## 🏗 Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/                 # Next.js app router
+│   ├── admin/          # Admin dashboard pages
+│   ├── client/         # Client dashboard pages
+│   ├── api/            # API routes
+│   └── ui/             # Shared UI components
+├── components/         # Reusable React components
+├── lib/                # Utility libraries and configurations
+├── hooks/              # Custom React hooks
+└── utils/              # Helper functions
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🔐 User Roles
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Client**: Project creation, service access, file management
+- **Admin**: User management, project oversight, analytics
+- **Owner**: Full system access, configuration, security
 
-## Deploy on Vercel
+## 🌍 Multi-Currency Support
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- USD (United States Dollar)
+- IDR (Indonesian Rupiah)
+- EUR (Euro)
+- GBP (British Pound Sterling)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🛡 Security Features
+
+- Row Level Security (RLS) with Supabase
+- Role-based access control
+- Secure file upload/download
+- Audit logging and activity tracking
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+```bash
+npm i -g vercel
+vercel login
+vercel --prod
+```
+
+### Manual Deployment
+See [INSTALLER_GUIDE.md](INSTALLER_GUIDE.md) for detailed instructions.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📞 Support
+
+- **Email**: hello@flemmomusic.com
+- **Documentation**: Check our user manual and installation guide
+- **Issues**: Report bugs via GitHub Issues
+
+## 📄 License
+
+This project is proprietary software owned by Flemmo Music Global (FMG Universe).
+
+---
+
+**Flemmo Music Global Universe** - Uniting creation, talent, distribution, publishing, and education into one connected pipeline.
+
+*Built with ❤️ for the global music community*

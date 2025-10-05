@@ -151,30 +151,34 @@ function normalizeBundle(row: Record<string, unknown>): BundleRow {
 }
 
 const glassWrap =
-  "rounded-3xl p-[1px] bg-[linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.06)_35%,transparent)] " +
-  "shadow-[0_1px_0_rgba(255,255,255,.05),0_18px_50px_rgba(2,6,23,.55)]";
+  "rounded-3xl p-[1px] bg-gradient-to-br from-slate-200/40 via-slate-100/20 to-transparent " +
+  "dark:bg-[linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.06)_35%,transparent)] " +
+  "shadow-lg shadow-slate-300/20 dark:shadow-[0_1px_0_rgba(255,255,255,.05),0_18px_50px_rgba(2,6,23,.55)]";
 
 const glassInner =
-  "rounded-[calc(theme(borderRadius.3xl)-1px)] bg-neutral-900/55 backdrop-blur ring-1 ring-white/10";
+  "rounded-[calc(theme(borderRadius.3xl)-1px)] bg-white/80 dark:bg-neutral-900/55 backdrop-blur " +
+  "ring-1 ring-slate-300/30 dark:ring-white/10 border border-slate-200/50 dark:border-transparent";
 
 const chip =
   "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs " +
-  "border border-white/15 bg-white/5 text-white/90 backdrop-blur";
+  "border border-slate-300/40 dark:border-white/15 bg-slate-100/60 dark:bg-white/5 text-slate-700 dark:text-white/90 backdrop-blur";
 
 const inputBase =
-  "w-full rounded-2xl border border-white/10 bg-neutral-900/60 " +
-  "px-3.5 py-2.5 text-sm text-white placeholder:text-white/60 outline-none " +
-  "focus:ring-2 focus:ring-fuchsia-400/60";
+  "w-full rounded-2xl border border-slate-300/30 dark:border-white/10 " +
+  "bg-white/80 dark:bg-neutral-900/60 px-3.5 py-2.5 text-sm " +
+  "text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-white/60 outline-none " +
+  "focus:ring-2 focus:ring-indigo-400/60 dark:focus:ring-fuchsia-400/60 " +
+  "focus:border-indigo-400/60 dark:focus:border-fuchsia-400/60";
 
-const labelBase = "text-xs text-white/80";
+const labelBase = "text-xs text-slate-700 dark:text-white/80 font-medium";
 
 function StatusPill({ active }: { active: boolean }) {
   return active ? (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-0.5 text-xs text-emerald-200">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-0.5 text-xs text-emerald-700 dark:text-emerald-200">
       <CheckCircle2 className="h-3.5 w-3.5" /> Active
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 text-xs text-white/85">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-300/40 dark:border-white/15 bg-slate-100/60 dark:bg-white/5 px-2.5 py-0.5 text-xs text-slate-600 dark:text-white/85">
       <CircleSlash2 className="h-3.5 w-3.5" /> Inactive
     </span>
   );
@@ -187,9 +191,9 @@ function GroupChip({ g }: { g: ServiceGroup }) {
     business: "from-emerald-400 via-teal-400 to-cyan-300",
   };
   return (
-    <span className="inline-flex items-center gap-2 rounded-full px-2.5 py-0.5 text-xs border border-white/10 bg-white/5 backdrop-blur">
+    <span className="inline-flex items-center gap-2 rounded-full px-2.5 py-0.5 text-xs border border-slate-300/40 dark:border-white/10 bg-slate-100/60 dark:bg-white/5 backdrop-blur">
       <span className={`h-3 w-7 rounded-full bg-gradient-to-r ${map[g]}`} />
-      <span className="text-white/90 capitalize">{g}</span>
+      <span className="text-slate-700 dark:text-white/90 capitalize font-medium">{g}</span>
     </span>
   );
 }
@@ -197,10 +201,10 @@ function GroupChip({ g }: { g: ServiceGroup }) {
 function PromoBadge({ type, value }: { type: PromoType; value: number }) {
   const { currency, rates } = useCurrency();
   
-  if (type === "none") return <span className="text-xs text-white/70">—</span>;
+  if (type === "none") return <span className="text-xs text-slate-500 dark:text-white/70">—</span>;
   
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-400/30 bg-fuchsia-400/10 px-2.5 py-0.5 text-xs text-fuchsia-200">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-400/30 bg-fuchsia-400/10 px-2.5 py-0.5 text-xs text-fuchsia-700 dark:text-fuchsia-200">
       {type === "percentage" ? <Percent className="h-3.5 w-3.5" /> : <Tag className="h-3.5 w-3.5" />}
       {type === "percentage" ? `${value}% OFF` : `-${formatCurrencyPrice(value, currency, rates)}`}
     </span>
@@ -215,9 +219,9 @@ const PrimaryBtn = forwardRef<HTMLButtonElement, FMGButtonProps>(
         whileTap={{ scale: 0.98 }}
         className={[
           "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white",
-          "bg-gradient-to-r from-indigo-500 to-fuchsia-500 shadow-[0_12px_40px_rgba(99,102,241,.35)]",
-          "focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/60",
-          busy ? "opacity-70 cursor-wait" : "hover:opacity-95",
+          "bg-gradient-to-r from-indigo-500 to-fuchsia-500 shadow-lg shadow-indigo-200/30 dark:shadow-[0_12px_40px_rgba(99,102,241,.35)]",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 dark:focus-visible:ring-fuchsia-400/60",
+          busy ? "opacity-70 cursor-wait" : "hover:opacity-95 hover:shadow-xl",
           className,
         ].join(" ")}
         disabled={busy}
@@ -243,8 +247,10 @@ const SubtleBtn = forwardRef<HTMLButtonElement, FMGButtonProps>(
       whileTap={{ scale: 0.98 }}
       className={[
         "inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs",
-        "border border-white/10 bg-white/5 text-white/90 backdrop-blur hover:bg-white/10",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/60",
+        "border border-slate-300/40 dark:border-white/10 bg-slate-100/60 dark:bg-white/5",
+        "text-slate-700 dark:text-white/90 backdrop-blur hover:bg-slate-200/80 dark:hover:bg-white/10",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 dark:focus-visible:ring-fuchsia-400/60",
+        "transition-colors duration-200",
         className,
       ].join(" ")}
       {...rest}
@@ -298,7 +304,7 @@ function Popover({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 6, scale: 0.98 }}
           transition={{ duration: 0.16 }}
-          className="absolute z-[1000] right-0 top-[calc(100%+8px)] rounded-2xl border border-white/10 bg-neutral-950/90 p-3 backdrop-blur shadow-2xl max-w-[calc(100vw-32px)]"
+          className="absolute z-[1000] right-0 top-[calc(100%+8px)] rounded-2xl border border-slate-300/30 dark:border-white/10 bg-white/95 dark:bg-neutral-950/90 p-3 backdrop-blur shadow-2xl max-w-[calc(100vw-32px)]"
           style={{ width }}
         >
           {children}
@@ -325,14 +331,14 @@ export default function ProductServicesPage(): React.JSX.Element {
 
   if (role === null) {
     return (
-      <div className="relative min-h-screen bg-neutral-950 text-white p-6">
-        <div className="animate-pulse text-white/80">Loading…</div>
+      <div className="relative min-h-screen bg-white dark:bg-neutral-950 text-slate-900 dark:text-white p-6">
+        <div className="animate-pulse text-slate-600 dark:text-white/80">Loading…</div>
       </div>
     );
   }
   if (!allowed) {
     return (
-      <div className="relative min-h-screen bg-neutral-950 text-white p-6">
+      <div className="relative min-h-screen bg-white dark:bg-neutral-950 text-slate-900 dark:text-white p-6">
         <div className={[glassWrap, "max-w-xl"].join(" ")}>
           <div className={[glassInner, "p-6"].join(" ")}>
             <h1 className="text-2xl font-semibold">Access restricted</h1>
@@ -346,10 +352,10 @@ export default function ProductServicesPage(): React.JSX.Element {
   }
 
   return (
-    <main className="relative min-h-screen bg-neutral-950 text-white p-4 sm:p-6 overflow-x-hidden">
+    <main className="relative min-h-screen bg-white dark:bg-neutral-950 text-slate-900 dark:text-white p-4 sm:p-6 overflow-x-hidden">
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-32 -left-28 h-[40rem] w-[40rem] rounded-full bg-gradient-to-br from-indigo-600/20 via-fuchsia-500/15 to-sky-500/10 blur-3xl" />
-        <div className="absolute -bottom-40 -right-32 h-[36rem] w-[36rem] rounded-full bg-gradient-to-tr from-emerald-500/20 via-teal-400/15 to-cyan-400/10 blur-3xl" />
+        <div className="absolute -top-32 -left-28 h-[40rem] w-[40rem] rounded-full bg-gradient-to-br from-indigo-600/10 via-fuchsia-500/8 to-sky-500/5 dark:from-indigo-600/20 dark:via-fuchsia-500/15 dark:to-sky-500/10 blur-3xl" />
+        <div className="absolute -bottom-40 -right-32 h-[36rem] w-[36rem] rounded-full bg-gradient-to-tr from-emerald-500/10 via-teal-400/8 to-cyan-400/5 dark:from-emerald-500/20 dark:via-teal-400/15 dark:to-cyan-400/10 blur-3xl" />
       </div>
 
       <header className={[glassWrap].join(" ")}>
@@ -361,14 +367,14 @@ export default function ProductServicesPage(): React.JSX.Element {
                   Products & Services
                 </span>
               </h1>
-              <p className="text-sm text-white/85">
+              <p className="text-sm text-slate-600 dark:text-white/85">
                 Manage services, bundles, promotions, and discounts.
               </p>
             </div>
 
             <div className="flex items-center gap-3">
               <div className="flex flex-col gap-1">
-                <span className="text-xs text-white/70">Display Currency</span>
+                <span className="text-xs text-slate-600 dark:text-white/70">Display Currency</span>
                 <CurrencyDropdown compact showStatus={false} />
               </div>
 
@@ -391,7 +397,7 @@ export default function ProductServicesPage(): React.JSX.Element {
       {/* Quick Actions Section */}
       <div className={[glassWrap, "mb-8"].join(" ")}>
         <div className={[glassInner, "p-4 sm:p-6"].join(" ")}>
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-slate-900 dark:text-white">
             <Sparkles className="h-5 w-5" /> Quick Actions
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -440,9 +446,9 @@ function SummaryCard({ title, value, description }: { title: string; value: stri
   return (
     <div className={glassWrap}>
       <div className={[glassInner, "p-4 text-center"].join(" ")}>
-        <div className="text-2xl font-bold text-white mb-1">{value}</div>
-        <div className="text-sm font-medium text-white/90 mb-1">{title}</div>
-        <div className="text-xs text-white/70">{description}</div>
+        <div className="text-2xl font-bold text-slate-900 dark:text-white mb-1">{value}</div>
+        <div className="text-sm font-medium text-slate-700 dark:text-white/90 mb-1">{title}</div>
+        <div className="text-xs text-slate-600 dark:text-white/70">{description}</div>
       </div>
     </div>
   );
@@ -468,15 +474,15 @@ function QuickActionCard({
       onClick={onClick}
       whileHover={{ scale: 1.02, y: -2 }}
       whileTap={{ scale: 0.98 }}
-      className="text-left p-4 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-200 group"
+      className="text-left p-4 rounded-2xl border border-slate-300/40 dark:border-white/10 bg-slate-100/60 dark:bg-white/5 hover:bg-slate-200/80 dark:hover:bg-white/10 transition-all duration-200 group"
     >
       <div className="flex items-center gap-3 mb-2">
         <div className="p-2 rounded-lg bg-gradient-to-br from-fuchsia-400/20 to-sky-400/20 border border-fuchsia-400/30">
-          <Icon className="h-4 w-4 text-fuchsia-300" />
+          <Icon className="h-4 w-4 text-fuchsia-400 dark:text-fuchsia-300" />
         </div>
       </div>
-      <div className="text-sm font-medium text-white group-hover:text-fuchsia-300 transition-colors">{title}</div>
-      <div className="text-xs text-white/70">{description}</div>
+      <div className="text-sm font-medium text-slate-900 dark:text-white group-hover:text-fuchsia-600 dark:group-hover:text-fuchsia-300 transition-colors">{title}</div>
+      <div className="text-xs text-slate-600 dark:text-white/70">{description}</div>
     </motion.button>
   );
 }
@@ -570,7 +576,7 @@ function ServicesPanel(): React.JSX.Element {
     <section className={glassWrap}>
       <div className={[glassInner, "p-4 sm:p-5"].join(" ")}>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
+          <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
             <Package2 className="h-5 w-5" /> Services
           </h2>
 
@@ -594,12 +600,12 @@ function ServicesPanel(): React.JSX.Element {
               <div className="relative">
                 <Popover open={openPop} onClose={() => setOpenPop(false)} anchorRef={btnRef} width={380}>
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="rounded-xl bg-white/5 p-2 border border-white/10">
-                      <Wand2 className="h-4 w-4 text-white/90" />
+                    <div className="rounded-xl bg-slate-100/60 dark:bg-white/5 p-2 border border-slate-300/40 dark:border-white/10">
+                      <Wand2 className="h-4 w-4 text-slate-700 dark:text-white/90" />
                     </div>
                     <div>
-                      <div className="text-sm font-medium">Quick Create Service</div>
-                      <div className="text-xs text-white/70">Create a new service quickly — details can be edited later.</div>
+                      <div className="text-sm font-medium text-slate-900 dark:text-white">Quick Create Service</div>
+                      <div className="text-xs text-slate-600 dark:text-white/70">Create a new service quickly — details can be edited later.</div>
                     </div>
                   </div>
 
@@ -672,10 +678,10 @@ function ServicesPanel(): React.JSX.Element {
           </div>
         )}
 
-        <div className="overflow-hidden rounded-2xl ring-1 ring-white/10">
+        <div className="overflow-hidden rounded-2xl ring-1 ring-slate-300/30 dark:ring-white/10">
           <table className="w-full text-sm">
-            <thead className="bg-white/5">
-              <tr className="text-left text-white/80">
+            <thead className="bg-slate-100/60 dark:bg-white/5">
+              <tr className="text-left text-slate-700 dark:text-white/80">
                 <th className="p-3">Service</th>
                 <th className="p-3">Group</th>
                 <th className="p-3">Harga</th>
@@ -684,7 +690,7 @@ function ServicesPanel(): React.JSX.Element {
                 <th className="p-3 w-24">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/10">
+            <tbody className="divide-y divide-slate-300/30 dark:divide-white/10">
               {loading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
@@ -697,7 +703,7 @@ function ServicesPanel(): React.JSX.Element {
                 ))
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-6 text-center text-white/80">
+                  <td colSpan={6} className="p-6 text-center text-slate-600 dark:text-white/80">
                     No services found. Create a new one with the <b>New</b> button.
                   </td>
                 </tr>
@@ -717,21 +723,21 @@ function ServicesPanel(): React.JSX.Element {
                         className="hover:bg-white/[0.06] transition-colors"
                       >
                         <td className="p-3">
-                          <div className="font-medium text-white">{r.label}</div>
-                          <div className="text-[11px] text-white/70">{r.service_key}</div>
+                          <div className="font-medium text-slate-900 dark:text-white">{r.label}</div>
+                          <div className="text-[11px] text-slate-600 dark:text-white/70">{r.service_key}</div>
                         </td>
                         <td className="p-3"><GroupChip g={r.group_name} /></td>
                         <td className="p-3">
-                          <div className="font-semibold text-white">
+                          <div className="font-semibold text-slate-900 dark:text-white">
                             {formatCurrencyPrice(eff, currency, rates)}
                           </div>
                           {hasPromo && (
-                            <div className="text-xs text-white/70 line-through">
+                            <div className="text-xs text-slate-600 dark:text-white/70 line-through">
                               {formatCurrencyPrice(r.price, currency, rates)}
                             </div>
                           )}
                           {currency !== 'USD' && (
-                            <div className="text-xs text-white/50">
+                            <div className="text-xs text-slate-500 dark:text-white/50">
                               Base: ${eff.toFixed(eff < 100 ? 2 : 0)}
                             </div>
                           )}
@@ -773,7 +779,7 @@ function ServicesPanel(): React.JSX.Element {
   );
 }
 
-const PANEL_BG = "fixed inset-0 z-50 grid place-items-center bg-black/55 p-4";
+const PANEL_BG = "fixed inset-0 z-50 grid place-items-center bg-black/20 dark:bg-black/55 backdrop-blur-sm p-4";
 
 function ServiceEditor({
   initial,
@@ -842,7 +848,7 @@ function ServiceEditor({
       >
         <div className={[glassInner, "p-5"].join(" ")}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white">
               {initial ? "Edit Service" : "New Service"}
             </h3>
             <SubtleBtn onClick={onClose} aria-label="Close"><X className="h-4 w-4" /></SubtleBtn>
@@ -913,19 +919,21 @@ function ServiceEditor({
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-white">
                 <input
                   type="checkbox"
                   checked={draft.is_subscription}
                   onChange={(e) => set("is_subscription", e.target.checked)}
+                  className="rounded border-slate-300 dark:border-white/20 text-indigo-600 focus:ring-indigo-500 dark:focus:ring-fuchsia-400"
                 />
                 Subscription
               </label>
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-white">
                 <input
                   type="checkbox"
                   checked={draft.is_active}
                   onChange={(e) => set("is_active", e.target.checked)}
+                  className="rounded border-slate-300 dark:border-white/20 text-indigo-600 focus:ring-indigo-500 dark:focus:ring-fuchsia-400"
                 />
                 Active
               </label>
@@ -1086,7 +1094,7 @@ function BundlesPanel(): React.JSX.Element {
     <section className={glassWrap}>
       <div className={[glassInner, "p-4 sm:p-5"].join(" ")}>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
+          <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
             <Layers className="h-5 w-5" /> Bundles
           </h2>
 
@@ -1184,10 +1192,10 @@ function BundlesPanel(): React.JSX.Element {
           </div>
         )}
 
-        <div className="overflow-hidden rounded-2xl ring-1 ring-white/10">
+        <div className="overflow-hidden rounded-2xl ring-1 ring-slate-300/30 dark:ring-white/10">
           <table className="w-full text-sm">
-            <thead className="bg-white/5">
-              <tr className="text-left text-white/80">
+            <thead className="bg-slate-100/60 dark:bg-white/5">
+              <tr className="text-left text-slate-700 dark:text-white/80">
                 <th className="p-3">Bundle</th>
                 <th className="p-3">Harga</th>
                 <th className="p-3">Promo</th>
@@ -1195,7 +1203,7 @@ function BundlesPanel(): React.JSX.Element {
                 <th className="p-3 w-24">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/10">
+            <tbody className="divide-y divide-slate-300/30 dark:divide-white/10">
               {loading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
@@ -1228,20 +1236,20 @@ function BundlesPanel(): React.JSX.Element {
                         className="hover:bg-white/[0.06] transition-colors"
                       >
                         <td className="p-3">
-                          <div className="font-medium text-white">{r.label}</div>
-                          <div className="text-[11px] text-white/70">{r.bundle_key} • {count} item</div>
+                          <div className="font-medium text-slate-900 dark:text-white">{r.label}</div>
+                          <div className="text-[11px] text-slate-600 dark:text-white/70">{r.bundle_key} • {count} item</div>
                         </td>
                         <td className="p-3">
-                          <div className="font-semibold text-white">
+                          <div className="font-semibold text-slate-900 dark:text-white">
                             {formatCurrencyPrice(eff, currency, rates)}
                           </div>
                           {hasPromo && (
-                            <div className="text-xs text-white/70 line-through">
+                            <div className="text-xs text-slate-600 dark:text-white/70 line-through">
                               {formatCurrencyPrice(r.bundle_price, currency, rates)}
                             </div>
                           )}
                           {currency !== 'USD' && (
-                            <div className="text-xs text-white/50">
+                            <div className="text-xs text-slate-500 dark:text-white/50">
                               Base: ${eff.toFixed(eff < 100 ? 2 : 0)}
                             </div>
                           )}
@@ -1389,7 +1397,7 @@ function BundleEditor({
       >
         <div className={[glassInner, "p-5"].join(" ")}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white">
               {initial ? "Edit Bundle" : "New Bundle"}
             </h3>
             <SubtleBtn onClick={onClose} aria-label="Close"><X className="h-4 w-4" /></SubtleBtn>
@@ -1414,11 +1422,12 @@ function BundleEditor({
                 />
               </div>
               <div className="flex items-end">
-                <label className="inline-flex items-center gap-2 text-sm">
+                <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-white">
                   <input
                     type="checkbox"
                     checked={draft.is_active}
                     onChange={(e) => set("is_active", e.target.checked)}
+                    className="rounded border-slate-300 dark:border-white/20 text-indigo-600 focus:ring-indigo-500 dark:focus:ring-fuchsia-400"
                   />
                   Active
                 </label>
@@ -1518,7 +1527,7 @@ function BundleEditor({
             {/* Attach services */}
             {initial && (
               <div className="mt-2">
-                <div className="mb-2 text-sm font-medium">Services in this bundle</div>
+                <div className="mb-2 text-sm font-medium text-slate-900 dark:text-white">Services in this bundle</div>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {services.filter(s => attached.includes(s.id)).map(s => (
                     <span key={s.id} className={chip}>
@@ -1534,7 +1543,7 @@ function BundleEditor({
                     </span>
                   ))}
                   {services.filter(s => attached.includes(s.id)).length === 0 && (
-                    <span className="text-xs text-white/75">No services have been added yet.</span>
+                    <span className="text-xs text-slate-600 dark:text-white/75">No services have been added yet.</span>
                   )}
                 </div>
 

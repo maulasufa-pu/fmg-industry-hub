@@ -131,10 +131,10 @@ export default function ProjectControlsSection({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
     >
-      <div className="backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 rounded-t-2xl border border-white/30 dark:border-slate-700/30 shadow-xl p-4">
+      <div className="backdrop-blur-xl bg-white/90 dark:bg-slate-900/90 rounded-t-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-xl p-4">
         <div className="relative">
-          <div className="pointer-events-none absolute left-0 top-0 h-full w-8 z-20 bg-gradient-to-r from-white/80 dark:from-slate-900/80 to-transparent" />
-          <div className="pointer-events-none absolute right-0 top-0 h-full w-8 z-20 bg-gradient-to-l from-white/80 dark:from-slate-900/80 to-transparent" />
+          <div className="pointer-events-none absolute left-0 top-0 h-full w-8 z-20 bg-gradient-to-r from-white/90 dark:from-slate-900/90 to-transparent" />
+          <div className="pointer-events-none absolute right-0 top-0 h-full w-8 z-20 bg-gradient-to-l from-white/90 dark:from-slate-900/90 to-transparent" />
           <motion.div
             className="flex flex-row items-center gap-2 overflow-x-auto overflow-y-hidden scrollbar-hide px-4 md:px-8"
             whileHover={{ scale: 1.01 }}
@@ -152,7 +152,7 @@ export default function ProjectControlsSection({
                   className={`relative px-6 py-4 text-sm font-semibold rounded-2xl transition-all duration-300 min-w-fit whitespace-nowrap ${
                     isActive
                       ? `text-white bg-gradient-to-r ${tab.color} shadow-2xl scale-105 floating-element`
-                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-700/50 backdrop-blur-sm"
+                      : "text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/90 dark:hover:bg-slate-700/70 backdrop-blur-sm"
                   }`}
                   variants={tabVariants}
                   initial="inactive"
@@ -161,8 +161,8 @@ export default function ProjectControlsSection({
                     scale: isActive ? 1.08 : 1.05,
                     y: -2,
                     boxShadow: isActive
-                      ? "0 20px 25px -5px rgba(59,130,246,0.4)"
-                      : "0 10px 15px -3px rgba(0,0,0,0.1)",
+                      ? "0 20px 25px -5px rgba(59,130,246,0.5)"
+                      : "0 10px 15px -3px rgba(0,0,0,0.15), 0 4px 6px -2px rgba(0,0,0,0.05)",
                   }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ delay: index * 0.1 }}
@@ -186,7 +186,7 @@ export default function ProjectControlsSection({
                   {isActive && (
                     <>
                       <motion.div
-                        className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-white/80 rounded-full"
+                        className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-white/90 rounded-full shadow-lg"
                         layoutId="activeTabIndicator"
                         initial={{ opacity: 0, scaleX: 0 }}
                         animate={{ opacity: 1, scaleX: 1 }}
@@ -229,7 +229,7 @@ export default function ProjectControlsSection({
           exit={{ opacity: 0, y: -20, filter: "blur(4px)" }}
           transition={{ duration: 0.4, ease: "easeInOut" }}
         >
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6">
+          <div className="bg-white/95 dark:bg-slate-900/95 rounded-2xl p-6 border border-slate-200/40 dark:border-slate-700/40">
             {content}
           </div>
         </motion.div>

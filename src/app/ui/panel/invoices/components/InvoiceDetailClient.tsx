@@ -236,13 +236,13 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
   if (loading) {
     return (
       <div className="p-6 space-y-4">
-        <div className="h-6 w-40 rounded bg-muted animate-pulse" />
+        <div className="h-6 w-40 rounded bg-slate-200 dark:bg-slate-700 animate-pulse" />
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <div className="h-24 rounded-lg border bg-card animate-pulse" />
-          <div className="h-24 rounded-lg border bg-card animate-pulse" />
-          <div className="h-24 rounded-lg border bg-card animate-pulse" />
+          <div className="h-24 rounded-lg border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 animate-pulse shadow-sm" />
+          <div className="h-24 rounded-lg border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 animate-pulse shadow-sm" />
+          <div className="h-24 rounded-lg border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 animate-pulse shadow-sm" />
         </div>
-        <div className="h-64 rounded-xl border bg-card animate-pulse" />
+        <div className="h-64 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 animate-pulse shadow-sm" />
       </div>
     );
   }
@@ -250,7 +250,7 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
   if (!inv) {
     return (
       <div className="p-6">
-        <div className="rounded-xl border bg-card p-6 text-sm text-muted-foreground">
+        <div className="rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 text-sm text-slate-600 dark:text-slate-400 shadow-sm">
           Invoice not found.
         </div>
       </div>
@@ -264,15 +264,15 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
     <div className="p-6 space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Invoice {inv.invoice_no}</h1>
-          <div className="mt-2 flex flex-wrap gap-2 text-sm text-muted-foreground">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">Invoice {inv.invoice_no}</h1>
+          <div className="mt-2 flex flex-wrap gap-2 text-sm text-slate-600 dark:text-slate-400">
             <span>
               Created: {inv.created_at ? new Date(inv.created_at).toLocaleDateString("id-ID") : "-"}
             </span>
             <span>•</span>
             <span>Due: {inv.due_date ? new Date(inv.due_date).toLocaleDateString("id-ID") : "-"}</span>
             <span>•</span>
-            <span className={badgeClass + " inline-flex items-center rounded-full px-2 py-0.5 capitalize"}>
+            <span className={badgeClass + " inline-flex items-center rounded-full px-2.5 py-0.5 text-xs capitalize border-2 border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 font-medium"}>
               {overdue && inv.status === "unpaid" ? "overdue" : inv.status}
             </span>
           </div>
@@ -284,7 +284,7 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
               {isAdminOwner && (
                 <button
                   onClick={() => void sendReminder()}
-                  className="h-9 rounded-md border px-3 text-sm hover:bg-muted"
+                  className="h-9 rounded-md border-2 border-slate-300 dark:border-slate-600 px-3 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                 >
                   Reminder
                 </button>
@@ -292,7 +292,7 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
 
               <button
                 onClick={() => void createSnapAndPay()}
-                className="h-9 rounded-md bg-emerald-600 px-3 text-sm font-medium text-white hover:bg-emerald-700"
+                className="h-9 rounded-md bg-emerald-600 hover:bg-emerald-700 px-3 text-sm font-medium text-white transition-colors shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
               >
                 Pay
               </button>
@@ -301,13 +301,13 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
                 <>
                   <button
                     onClick={() => void markPaid()}
-                    className="h-9 rounded-md bg-green-600 px-3 text-sm font-medium text-white hover:bg-green-700"
+                    className="h-9 rounded-md bg-green-600 hover:bg-green-700 px-3 text-sm font-medium text-white transition-colors shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-green-500/50"
                   >
                     Mark Paid
                   </button>
                   <button
                     onClick={() => void cancelInvoice()}
-                    className="h-9 rounded-md bg-red-600 px-3 text-sm font-medium text-white hover:bg-red-700"
+                    className="h-9 rounded-md bg-red-600 hover:bg-red-700 px-3 text-sm font-medium text-white transition-colors shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-red-500/50"
                   >
                     Cancel
                   </button>
@@ -316,7 +316,7 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
 
               <button
                 onClick={() => void refreshPaymentLink()}
-                className="h-9 rounded-md border px-3 text-sm hover:bg-muted"
+                className="h-9 rounded-md border-2 border-slate-300 dark:border-slate-600 px-3 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                 title="Regenerate & save Midtrans payment link"
               >
                 Refresh Payment Link
@@ -326,73 +326,73 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
 
           <button
             onClick={printInvoice}
-            className="h-9 rounded-md border px-3 text-sm hover:bg-muted"
+            className="h-9 rounded-md border-2 border-slate-300 dark:border-slate-600 px-3 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
           >
             Print
           </button>
 
-          <Link href={backHref} className="h-9 rounded-md border px-3 text-sm hover:bg-muted">
+          <Link href={backHref} className="inline-flex items-center h-9 rounded-md border-2 border-slate-300 dark:border-slate-600 px-3 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
             Back
           </Link>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <div className="text-sm text-muted-foreground">Client</div>
-          <div className="mt-1 text-base font-medium">{inv.client_name ?? "-"}</div>
-          <div className="text-xs text-muted-foreground">{inv.client_email ?? ""}</div>
+        <div className="rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
+          <div className="text-sm text-slate-600 dark:text-slate-400">Client</div>
+          <div className="mt-1 text-base font-medium text-slate-900 dark:text-white">{inv.client_name ?? "-"}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">{inv.client_email ?? ""}</div>
         </div>
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <div className="text-sm text-muted-foreground">Amount</div>
-          <div className="mt-1 text-xl font-semibold">
+        <div className="rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
+          <div className="text-sm text-slate-600 dark:text-slate-400">Amount</div>
+          <div className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">
             {inv.amount_total != null
               ? `${(inv.currency ?? "IDR").toUpperCase()} ${Number(inv.amount_total).toLocaleString("id-ID")}`
               : "-"}
           </div>
         </div>
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <div className="text-sm text-muted-foreground">Payment Link</div>
+        <div className="rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
+          <div className="text-sm text-slate-600 dark:text-slate-400">Payment Link</div>
           <div className="mt-1">
             {inv.payment_url ? (
-              <a href={inv.payment_url} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline">
+              <a href={inv.payment_url} target="_blank" rel="noreferrer" className="text-sm text-blue-600 dark:text-blue-400 hover:underline transition-colors">
                 Open in new tab
               </a>
             ) : (
-              <span className="text-sm text-muted-foreground">—</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400">—</span>
             )}
           </div>
         </div>
       </div>
 
-      <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-        <div className="border-b bg-muted/40 px-4 py-3 font-medium">Items</div>
+      <div className="rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
+        <div className="border-b-2 border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-700 px-4 py-3 font-medium text-slate-900 dark:text-white">Items</div>
         {items && items.length > 0 ? (
           <table className="w-full text-sm">
-            <thead className="bg-muted/60 text-left">
-              <tr>
-                <th className="p-3">Description</th>
-                <th className="p-3">Qty</th>
-                <th className="p-3">Unit Price</th>
-                <th className="p-3">Total</th>
+            <thead className="bg-slate-100 dark:bg-slate-700 text-left">
+              <tr className="text-slate-700 dark:text-slate-300">
+                <th className="p-3 font-medium">Description</th>
+                <th className="p-3 font-medium">Qty</th>
+                <th className="p-3 font-medium">Unit Price</th>
+                <th className="p-3 font-medium">Total</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
               {items.map((it) => {
                 const total = (Number(it.qty) || 0) * (Number(it.unit_price) || 0);
                 return (
-                  <tr key={it.id}>
-                    <td className="p-3">{it.description}</td>
-                    <td className="p-3">{it.qty}</td>
-                    <td className="p-3">{formatIDRCurrency(Number(it.unit_price) || 0)}</td>
-                    <td className="p-3">{formatIDRCurrency(total)}</td>
+                  <tr key={it.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                    <td className="p-3 text-slate-900 dark:text-white">{it.description}</td>
+                    <td className="p-3 text-slate-700 dark:text-slate-300">{it.qty}</td>
+                    <td className="p-3 text-slate-700 dark:text-slate-300">{formatIDRCurrency(Number(it.unit_price) || 0)}</td>
+                    <td className="p-3 font-medium text-slate-900 dark:text-white">{formatIDRCurrency(total)}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         ) : (
-          <div className="px-4 py-6 text-sm text-muted-foreground">No items.</div>
+          <div className="px-4 py-6 text-sm text-slate-600 dark:text-slate-400">No items.</div>
         )}
       </div>
     </div>

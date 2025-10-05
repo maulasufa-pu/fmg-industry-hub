@@ -287,46 +287,46 @@ export default function AdminDashboard(): React.JSX.Element {
 
     const colorSchemes = {
       gray: {
-        bg: "from-neutral-50 via-stone-25 to-gray-100 dark:from-neutral-900 dark:via-stone-800 dark:to-gray-750",
-        border: "border-neutral-200/60 dark:border-neutral-600/50",
-        icon: "text-neutral-700 dark:text-neutral-100",
-        accent: "from-neutral-500 via-stone-400 to-gray-600"
+        bg: "from-slate-100 via-gray-100 to-slate-200 dark:from-slate-800 dark:via-gray-800 dark:to-slate-700",
+        border: "border-slate-300/60 dark:border-slate-600/60",
+        icon: "text-slate-700 dark:text-slate-200",
+        accent: "from-slate-500 via-gray-400 to-slate-600"
       },
       blue: {
-        bg: "from-sky-50 via-sky-200 to-sky-400 dark:from-blue-900 dark:via-blue-700 dark:to-sky-400",
-        border: "border-sky-300/70 dark:border-sky-400/60",
-        icon: "text-sky-600 dark:text-sky-200",
-        accent: "from-sky-400 via-sky-300 to-sky-500"
+        bg: "from-blue-100 via-sky-100 to-indigo-200 dark:from-blue-900 dark:via-indigo-900 dark:to-blue-800",
+        border: "border-blue-300/70 dark:border-blue-600/70",
+        icon: "text-blue-700 dark:text-blue-200",
+        accent: "from-blue-500 via-sky-400 to-indigo-500"
       },
       green: {
-        bg: "from-green-100 via-emerald-200 to-lime-300 dark:from-green-700 dark:via-emerald-600 dark:to-lime-500",
-        border: "border-green-300/70 dark:border-green-400/60",
-        icon: "text-green-600 dark:text-green-200",
-        accent: "from-green-400 via-emerald-300 to-lime-400"
+        bg: "from-emerald-100 via-green-100 to-teal-200 dark:from-emerald-900 dark:via-green-900 dark:to-teal-800",
+        border: "border-emerald-300/70 dark:border-emerald-600/70",
+        icon: "text-emerald-700 dark:text-emerald-200",
+        accent: "from-emerald-500 via-green-400 to-teal-500"
       },
       orange: {
-        bg: "from-orange-100 via-amber-200 to-yellow-300 dark:from-orange-700 dark:via-amber-600 dark:to-yellow-00",
-        border: "border-orange-300/70 dark:border-orange-400/60",
-        icon: "text-orange-600 dark:text-orange-200",
-        accent: "from-orange-400 via-amber-300 to-yellow-400"
+        bg: "from-orange-100 via-amber-100 to-yellow-200 dark:from-orange-900 dark:via-amber-900 dark:to-yellow-800",
+        border: "border-orange-300/70 dark:border-orange-600/70",
+        icon: "text-orange-700 dark:text-orange-200",
+        accent: "from-orange-500 via-amber-400 to-yellow-500"
       },
       red: {
-        bg: "from-red-300 via-rose-200 to-pink-300 dark:from-red-800 dark:via-rose-600 dark:to-pink-500",
-        border: "border-red-300/70 dark:border-red-400/60",
-        icon: "text-red-600 dark:text-red-200",
-        accent: "from-red-400 via-rose-300 to-pink-400"
+        bg: "from-red-100 via-rose-100 to-pink-200 dark:from-red-900 dark:via-rose-900 dark:to-pink-800",
+        border: "border-red-300/70 dark:border-red-600/70",
+        icon: "text-red-700 dark:text-red-200",
+        accent: "from-red-500 via-rose-400 to-pink-500"
       },
       purple: {
-        bg: "from-purple-100 via-violet-200 to-fuchsia-300 dark:from-purple-700 dark:via-violet-600 dark:to-fuchsia-500",
-        border: "border-purple-300/70 dark:border-purple-400/60",
-        icon: "text-purple-600 dark:text-purple-200",
-        accent: "from-purple-400 via-violet-300 to-fuchsia-400"
+        bg: "from-purple-100 via-violet-100 to-fuchsia-200 dark:from-purple-900 dark:via-violet-900 dark:to-fuchsia-800",
+        border: "border-purple-300/70 dark:border-purple-600/70",
+        icon: "text-purple-700 dark:text-purple-200",
+        accent: "from-purple-500 via-violet-400 to-fuchsia-500"
       },
       crimson: {
-        bg: "from-red-700 via-red-300 to-red-400 dark:from-red-800 dark:via-red-700 dark:to-red-600",
-        border: "border-red-400/70 dark:border-red-500/60",
-        icon: "text-red-700 dark:text-red-200",
-        accent: "from-red-500 via-red-400 to-red-600"
+        bg: "from-rose-200 via-red-200 to-rose-300 dark:from-rose-900 dark:via-red-900 dark:to-rose-800",
+        border: "border-rose-400/70 dark:border-rose-600/70",
+        icon: "text-rose-700 dark:text-rose-200",
+        accent: "from-rose-500 via-red-400 to-rose-600"
       }
     } as const;
 
@@ -343,7 +343,7 @@ export default function AdminDashboard(): React.JSX.Element {
         <div className={`absolute inset-0 bg-gradient-to-r ${scheme.accent} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
         <div className="relative p-4 sm:p-6">
           <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <div className="text-[11px] sm:text-xs text-gray-600 dark:text-white uppercase tracking-wider font-semibold">
+            <div className="text-[11px] sm:text-xs text-gray-700 dark:text-gray-200 uppercase tracking-wider font-semibold">
               {label}
             </div>
             {Icon && (
@@ -359,7 +359,7 @@ export default function AdminDashboard(): React.JSX.Element {
 
           <div className="flex items-end justify-between gap-2">
             <motion.div
-              className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white truncate"
+              className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate"
               key={displayValue}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.2 }}
@@ -376,7 +376,7 @@ export default function AdminDashboard(): React.JSX.Element {
 
   const AdminView = () => (
     <div
-      className="min-h-screen bg-gradient-to-br from-neutral-50 via-blue-25 to-sky-100 dark:from-neutral-950 dark:via-blue-950 dark:to-sky-900"
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950"
       ref={containerRef}
     >
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 px-4 sm:px-6 md:px-8 lg:px-12 py-6 sm:py-8">
@@ -388,7 +388,7 @@ export default function AdminDashboard(): React.JSX.Element {
         >
           <div className="space-y-1">
             <motion.h1
-              className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 dark:from-sky-400 dark:to-purple-300 bg-clip-text text-transparent"
+              className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1, duration: 0.5 }}
@@ -396,7 +396,7 @@ export default function AdminDashboard(): React.JSX.Element {
               Admin Dashboard
             </motion.h1>
             <motion.p
-              className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-white"
+              className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2, duration: 0.5 }}
@@ -488,7 +488,7 @@ export default function AdminDashboard(): React.JSX.Element {
             ].map((action, index) => (
               <motion.button
                 key={action.title}
-                className="group relative w-full p-5 sm:p-6 text-left border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-700/80 transition-all duration-300 overflow-hidden shadow-lg hover:shadow-xl"
+                className="group relative w-full p-5 sm:p-6 text-left border border-slate-200 dark:border-slate-600 rounded-xl bg-white/90 dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-700/90 transition-all duration-300 overflow-hidden shadow-lg hover:shadow-xl backdrop-blur-sm"
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.98 }}
                 initial={{ opacity: 0, y: 20 }}
@@ -504,15 +504,15 @@ export default function AdminDashboard(): React.JSX.Element {
                   <action.icon />
                 </motion.div>
                 <div className="relative">
-                  <div className="font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition-colors">
+                  <div className="font-semibold text-gray-900 dark:text-gray-100 mb-1 group-hover:text-gray-800 dark:group-hover:text-gray-50 transition-colors">
                     {action.title}
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-neutral-600 dark:group-hover:text-gray-200 transition-colors">
+                  <div className="text-sm text-gray-600 dark:text-gray-300 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors">
                     {action.subtitle}
                   </div>
                 </div>
                 <motion.div
-                  className="absolute top-4 right-4 text-gray-400 group-hover:text-neutral-600 dark:group-hover:text-gray-200 opacity-0 group-hover:opacity-100 transition-all duration-300"
+                  className="absolute top-4 right-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200 opacity-0 group-hover:opacity-100 transition-all duration-300"
                   initial={{ x: -5 }}
                   whileHover={{ x: 0 }}
                   transition={{ type: "spring", stiffness: 400, damping: 20 }}
@@ -529,7 +529,7 @@ export default function AdminDashboard(): React.JSX.Element {
 
   const ClientView = () => (
     <div
-      className="min-h-screen bg-gradient-to-br from-neutral-50 via-emerald-25 to-emerald-100 dark:from-neutral-950 dark:via-emerald-950 dark:to-emerald-900"
+      className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-100 dark:from-slate-950 dark:via-emerald-950 dark:to-teal-950"
       ref={containerRef}
     >
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 px-4 sm:px-6 md:px-8 lg:px-12 py-6 sm:py-8">
@@ -541,7 +541,7 @@ export default function AdminDashboard(): React.JSX.Element {
         >
           <div className="space-y-1">
             <motion.h1
-              className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-300 dark:to-teal-200 bg-clip-text text-transparent"
+              className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1, duration: 0.5 }}
@@ -549,7 +549,7 @@ export default function AdminDashboard(): React.JSX.Element {
               Client Dashboard
             </motion.h1>
             <motion.p
-              className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-white"
+              className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2, duration: 0.5 }}
@@ -637,7 +637,7 @@ export default function AdminDashboard(): React.JSX.Element {
             ].map((action, index) => (
               <motion.button
                 key={action.title}
-                className="group relative w-full p-5 sm:p-6 text-left border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-700/80 transition-all duration-300 overflow-hidden shadow-lg hover:shadow-xl"
+                className="group relative w-full p-5 sm:p-6 text-left border border-slate-200 dark:border-slate-600 rounded-xl bg-white/90 dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-700/90 transition-all duration-300 overflow-hidden shadow-lg hover:shadow-xl backdrop-blur-sm"
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.98 }}
                 initial={{ opacity: 0, y: 20 }}
@@ -678,7 +678,7 @@ export default function AdminDashboard(): React.JSX.Element {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-cyan-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 p-4 sm:p-6">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 p-4 sm:p-6">
         <motion.div
           className="max-w-7xl mx-auto space-y-6"
           initial={{ opacity: 0 }}

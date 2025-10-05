@@ -340,7 +340,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
 
   return (
     <motion.div
-      className="flex flex-col gap-4 sm:gap-6 lg:gap-8 min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 dark:from-black dark:via-slate-950 dark:to-blue-950 w-full max-w-none px-5 sm:px-7 lg:px-9 py-7 sm:py-9 scroll-smooth"
+      className="flex flex-col gap-4 sm:gap-6 lg:gap-8 min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950 w-full max-w-none px-5 sm:px-7 lg:px-9 py-7 sm:py-9 scroll-smooth"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -352,7 +352,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
       >
         <div className="space-y-2 min-w-0 flex-1 w-full lg:w-auto">
           <motion.h1
-            className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-400 to-violet-400 dark:from-purple-300 dark:to-violet-300 bg-clip-text text-transparent leading-tight"
+            className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-purple-400 dark:to-violet-400 bg-clip-text text-transparent leading-tight"
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2, duration: 0.6 }}
@@ -361,7 +361,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
             Project Management
           </motion.h1>
           <motion.p
-            className="text-slate-300 dark:text-slate-100 text-sm sm:text-base lg:text-lg leading-relaxed"
+            className="text-gray-600 dark:text-slate-300 text-sm sm:text-base lg:text-lg leading-relaxed"
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4, duration: 0.6 }}
@@ -373,7 +373,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
 
       {/* Tabs + Controls */}
       <motion.div
-        className="flex flex-col gap-6 border-b border-purple-400/20 dark:border-purple-500/20 pb-6"
+        className="flex flex-col gap-6 border-b border-gray-200 dark:border-purple-400/20 pb-6"
         variants={itemVariants}
       >
         {/* Tabs with arrows */}
@@ -381,7 +381,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
           <AnimatePresence>
             {canScrollLeft && (
               <motion.button
-                className="absolute left-0 top-1/2 -translate-y-4.5 -mt-1 z-10 bg-gradient-to-r from-slate-800/95 to-slate-800/20 backdrop-blur-sm border border-slate-600/40 rounded-l-lg h-10 sm:h-11 lg:h-12 w-8 sm:w-10 grid place-items-center text-slate-300 hover:text-white hover:bg-slate-700/80 transition-all duration-200 shadow-lg"
+                className="absolute left-0 top-1/2 -translate-y-4.5 -mt-1 z-10 bg-gradient-to-r from-white/95 to-white/20 dark:from-slate-800/95 dark:to-slate-800/20 backdrop-blur-sm border border-gray-300 dark:border-slate-600/40 rounded-l-lg h-10 sm:h-11 lg:h-12 w-8 sm:w-10 grid place-items-center text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700/80 transition-all duration-200 shadow-lg"
                 onClick={scrollLeftFn}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -397,7 +397,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
           <AnimatePresence>
             {canScrollRight && (
               <motion.button
-                className="absolute right-0 top-1/2 -translate-y-4.5 -mt-1 z-10 bg-gradient-to-l from-slate-800/95 to-slate-800/20 backdrop-blur-sm border border-slate-600/40 rounded-r-lg h-10 sm:h-11 lg:h-12 w-8 sm:w-10 grid place-items-center text-slate-300 hover:text-white hover:bg-slate-700/80 transition-all duration-200 shadow-lg"
+                className="absolute right-0 top-1/2 -translate-y-4.5 -mt-1 z-10 bg-gradient-to-l from-white/95 to-white/20 dark:from-slate-800/95 dark:to-slate-800/20 backdrop-blur-sm border border-gray-300 dark:border-slate-600/40 rounded-r-lg h-10 sm:h-11 lg:h-12 w-8 sm:w-10 grid place-items-center text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700/80 transition-all duration-200 shadow-lg"
                 onClick={scrollRightFn}
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -427,8 +427,8 @@ export default function ProjectList(props: Props): React.JSX.Element {
                   className={[
                     "relative inline-flex items-center gap-2 sm:gap-3 px-3 sm:px-4 lg:px-6 py-2.5 sm:py-3 lg:py-3.5 h-10 sm:h-11 lg:h-12 text-xs sm:text-sm font-semibold transition-all duration-300 rounded-lg sm:rounded-xl border backdrop-blur-sm whitespace-nowrap flex-shrink-0",
                     isActive
-                      ? "text-white bg-gradient-to-r from-purple-600 to-violet-600 border-purple-400/50 shadow-lg shadow-purple-500/25"
-                      : "text-slate-300 bg-slate-800/60 border-slate-600/40 hover:bg-gradient-to-r hover:from-purple-700/30 hover:to-violet-700/30 hover:border-purple-400/30 hover:text-white hover:shadow-md hover:shadow-purple-500/10",
+                      ? "text-white bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-purple-600 dark:to-violet-600 border-indigo-400/50 dark:border-purple-400/50 shadow-lg shadow-indigo-500/25 dark:shadow-purple-500/25"
+                      : "text-gray-700 dark:text-slate-300 bg-white/80 dark:bg-slate-800/60 border-gray-300 dark:border-slate-600/40 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 dark:hover:from-purple-700/30 dark:hover:to-violet-700/30 hover:border-indigo-300 dark:hover:border-purple-400/30 hover:text-indigo-700 dark:hover:text-white hover:shadow-md hover:shadow-indigo-500/10 dark:hover:shadow-purple-500/10",
                   ].join(" ")}
                   aria-selected={isActive}
                   initial={{ opacity: 0, y: 10 }}
@@ -444,10 +444,10 @@ export default function ProjectList(props: Props): React.JSX.Element {
                         cnt > 0
                           ? isActive
                             ? "bg-white/20 text-white border border-white/30"
-                            : "bg-purple-500/80 text-purple-100 border border-purple-400/50"
+                            : "bg-indigo-500/80 dark:bg-purple-500/80 text-white dark:text-purple-100 border border-indigo-400/50 dark:border-purple-400/50"
                           : isActive
                             ? "bg-slate-400/30 text-slate-200 border border-slate-300/30"
-                            : "bg-slate-700/60 text-slate-400 border border-slate-600/40"
+                            : "bg-gray-200 dark:bg-slate-700/60 text-gray-500 dark:text-slate-400 border border-gray-300 dark:border-slate-600/40"
                       }`}
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
@@ -457,7 +457,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
                     </motion.span>
                   ) : (
                     <motion.span
-                      className="rounded-full bg-slate-700/60 border border-slate-600/40 px-2.5 py-1 text-xs text-slate-400 font-bold min-w-[1.75rem] text-center"
+                      className="rounded-full bg-gray-200 dark:bg-slate-700/60 border border-gray-300 dark:border-slate-600/40 px-2.5 py-1 text-xs text-gray-500 dark:text-slate-400 font-bold min-w-[1.75rem] text-center"
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ type: "spring", stiffness: 500, damping: 30 }}
@@ -479,13 +479,13 @@ export default function ProjectList(props: Props): React.JSX.Element {
           <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
             {/* Search */}
             <motion.div className="relative w-full sm:w-auto" whileHover={{ scale: 1.01 }} transition={{ type: "spring", stiffness: 400 }}>
-              <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-purple-400 w-4 sm:w-5 h-4 sm:h-5" />
+              <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-indigo-500 dark:text-purple-400 w-4 sm:w-5 h-4 sm:h-5" />
               <motion.input
                 value={search}
                 onChange={(e) => onSearchChange(e.currentTarget.value)}
                 placeholder="Search projects, clients, artists..."
-                className="h-10 sm:h-12 w-full sm:w-64 lg:w-80 rounded-lg sm:rounded-xl border border-purple-400/30 bg-slate-800/60 backdrop-blur-sm pl-10 sm:pl-12 pr-3 sm:pr-4 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400/50 transition-all duration-300 shadow-lg hover:bg-slate-800/80"
-                whileFocus={{ scale: 1.02, boxShadow: "0 0 0 3px rgba(139, 92, 246, 0.1)" }}
+                className="h-10 sm:h-12 w-full sm:w-64 lg:w-80 rounded-lg sm:rounded-xl border border-gray-300 dark:border-purple-400/30 bg-white/90 dark:bg-slate-800/60 backdrop-blur-sm pl-10 sm:pl-12 pr-3 sm:pr-4 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 dark:focus:ring-purple-500/50 focus:border-indigo-400 dark:focus:border-purple-400/50 transition-all duration-300 shadow-lg hover:bg-white dark:hover:bg-slate-800/80"
+                whileFocus={{ scale: 1.02, boxShadow: "0 0 0 3px rgba(99, 102, 241, 0.1)" }}
               />
             </motion.div>
 
@@ -523,7 +523,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
             ref={requestBtnRef}
             type="button"
             onClick={() => setOpenRequest(true)}
-            className="h-10 sm:h-12 w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl px-4 sm:px-5 font-semibold text-white bg-gradient-to-r from-fuchsia-500 via-violet-500 to-indigo-500 shadow-[0_12px_40px_rgba(139,92,246,0.35)] hover:opacity-95 active:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/60 transition-all"
+            className="h-10 sm:h-12 w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl px-4 sm:px-5 font-semibold text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500 dark:from-fuchsia-500 dark:via-violet-500 dark:to-indigo-500 shadow-[0_12px_40px_rgba(99,102,241,0.35)] dark:shadow-[0_12px_40px_rgba(139,92,246,0.35)] hover:opacity-95 active:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 dark:focus-visible:ring-fuchsia-400/60 transition-all"
             whileHover={{ scale: 1.02, y: -1 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -537,19 +537,19 @@ export default function ProjectList(props: Props): React.JSX.Element {
       <AnimatePresence>
         {anySelected && (
           <motion.div
-            className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4 rounded-lg sm:rounded-xl border border-purple-400/30 bg-gradient-to-r from-slate-800/80 via-purple-900/20 to-violet-900/20 backdrop-blur-sm p-3 sm:p-4 shadow-lg"
+            className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4 rounded-lg sm:rounded-xl border border-indigo-300 dark:border-purple-400/30 bg-gradient-to-r from-blue-50/80 via-indigo-50/80 to-purple-50/80 dark:from-slate-800/80 dark:via-purple-900/20 dark:to-violet-900/20 backdrop-blur-sm p-3 sm:p-4 shadow-lg"
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
           >
-            <motion.div className="text-xs sm:text-sm font-semibold text-purple-200">
+            <motion.div className="text-xs sm:text-sm font-semibold text-indigo-700 dark:text-purple-200">
               {`${selected.size} projects selected`}
             </motion.div>
-            <div className="hidden sm:block h-4 w-px bg-purple-400/30" />
+            <div className="hidden sm:block h-4 w-px bg-indigo-300 dark:bg-purple-400/30" />
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
               <motion.input
-                className="h-9 sm:h-10 rounded-lg border border-purple-400/30 bg-slate-700/60 backdrop-blur-sm px-3 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400/50 transition-all duration-300 w-full sm:w-auto"
+                className="h-9 sm:h-10 rounded-lg border border-gray-300 dark:border-purple-400/30 bg-white/90 dark:bg-slate-700/60 backdrop-blur-sm px-3 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 dark:focus:ring-purple-500/50 focus:border-indigo-400 dark:focus:border-purple-400/50 transition-all duration-300 w-full sm:w-auto"
                 placeholder="Assign PIC (name/email)"
                 value={assignPIC}
                 onChange={(e) => setAssignPIC(e.target.value)}
@@ -560,7 +560,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
                   type="button"
                   disabled={!anySelected}
                   onClick={() => onBulkAssignPIC(selectedIds, assignPIC || null)}
-                  className="rounded-lg border border-purple-400/30 bg-purple-600/80 backdrop-blur-sm px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white hover:bg-purple-600 hover:border-purple-400/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-purple-500/25"
+                  className="rounded-lg border border-indigo-300 dark:border-purple-400/30 bg-indigo-500/90 dark:bg-purple-600/80 backdrop-blur-sm px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white hover:bg-indigo-600 dark:hover:bg-purple-600 hover:border-indigo-400 dark:hover:border-purple-400/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-indigo-500/25 dark:hover:shadow-purple-500/25"
                   whileHover={!anySelected ? {} : { scale: 1.05, y: -1 }}
                   whileTap={!anySelected ? {} : { scale: 0.95 }}
                 >
@@ -571,7 +571,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
                   type="button"
                   disabled={!anySelected}
                   onClick={() => onBulkMarkFinished(selectedIds)}
-                  className="rounded-lg border border-green-400/30 bg-green-600/80 backdrop-blur-sm px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white hover:bg-green-600 hover:border-green-400/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-green-500/25"
+                  className="rounded-lg border border-emerald-300 dark:border-green-400/30 bg-emerald-500/90 dark:bg-green-600/80 backdrop-blur-sm px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white hover:bg-emerald-600 dark:hover:bg-green-600 hover:border-emerald-400 dark:hover:border-green-400/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-emerald-500/25 dark:hover:shadow-green-500/25"
                   whileHover={!anySelected ? {} : { scale: 1.05, y: -1 }}
                   whileTap={!anySelected ? {} : { scale: 0.95 }}
                 >
@@ -580,7 +580,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
               </div>
             </div>
 
-            <motion.div className="ml-auto text-sm text-purple-200 font-medium">
+            <motion.div className="ml-auto text-sm text-indigo-700 dark:text-purple-200 font-medium">
               {loading ? (
                 <motion.span animate={{ opacity: [1, 0.5, 1] }} transition={{ repeat: Infinity, duration: 1.5 }}>
                   Loading…
@@ -595,22 +595,22 @@ export default function ProjectList(props: Props): React.JSX.Element {
 
       {/* ==================== Responsive List/Table ==================== */}
       <motion.div
-        className="rounded-xl border border-purple-400/30 bg-slate-900/60 backdrop-blur-sm shadow-2xl overflow-hidden"
+        className="rounded-xl border border-gray-200 dark:border-purple-400/30 bg-white/90 dark:bg-slate-900/60 backdrop-blur-sm shadow-2xl overflow-hidden"
         variants={itemVariants}
-        whileHover={{ boxShadow: "0 20px 40px rgba(139, 92, 246, 0.1)" }}
+        whileHover={{ boxShadow: "0 20px 40px rgba(99, 102, 241, 0.1) dark:rgba(139, 92, 246, 0.1)" }}
         transition={{ duration: 0.3 }}
       >
         {loading ? (
           <motion.div
-            className="p-12 text-center text-gray-400"
+            className="p-12 text-center text-gray-600 dark:text-gray-400"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <motion.div className="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-4" animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} />
+            <motion.div className="inline-block w-8 h-8 border-4 border-indigo-500 dark:border-blue-500 border-t-transparent rounded-full mb-4" animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} />
             <div>Loading projects…</div>
           </motion.div>
         ) : rows.length === 0 ? (
-          <motion.div className="p-12 text-center text-gray-400" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+          <motion.div className="p-12 text-center text-gray-600 dark:text-gray-400" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
             <div className="text-4xl mb-4">📊</div>
             No projects found.
           </motion.div>
@@ -624,7 +624,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
                 return (
                   <motion.div
                     key={r.project_id}
-                    className={`rounded-xl border border-slate-700/50 bg-slate-800/60 p-3 shadow-sm ${selected.has(r.project_id) ? "ring-2 ring-emerald-400/50" : ""}`}
+                    className={`rounded-xl border border-gray-200 dark:border-slate-700/50 bg-white/90 dark:bg-slate-800/60 p-3 shadow-sm ${selected.has(r.project_id) ? "ring-2 ring-emerald-400/50" : ""}`}
                     variants={tableRowVariants}
                     initial="hidden"
                     animate="visible"
@@ -753,7 +753,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
             {/* DESKTOP TABLE (md+) */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full border-collapse md:min-w-[1000px]">
-                <thead className="bg-gradient-to-r from-slate-800 to-slate-700 border-b border-purple-400/20">
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-slate-800 dark:to-slate-700 border-b border-gray-200 dark:border-purple-400/20">
                   <tr className="h-12 md:h-16 text-left">
                     <th className="w-12 p-4 text-center">
                       <div className="flex justify-center">
@@ -1050,7 +1050,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
             onClick={prev}
             disabled={isPrevDisabled}
             className={`inline-flex items-center gap-2 rounded-xl border border-transparent px-4 py-2 text-sm font-medium ${
-              isPrevDisabled ? "cursor-not-allowed text-gray-400" : "text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:bg-blue-900/20 hover:text-sky-600 dark:text-sky-200"
+              isPrevDisabled ? "cursor-not-allowed text-gray-400 dark:text-gray-500" : "text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-blue-900/20 hover:text-indigo-600 dark:hover:text-blue-200"
             }`}
             whileHover={!isPrevDisabled ? { scale: 1.05, x: -2 } : {}}
             whileTap={!isPrevDisabled ? { scale: 0.95 } : {}}
@@ -1061,17 +1061,17 @@ export default function ProjectList(props: Props): React.JSX.Element {
 
           <motion.span className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 font-medium bg-gray-50 dark:bg-gray-800 rounded-lg" animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 0.5, ease: "easeInOut" }}>
             <span className="hidden sm:inline">Page </span>
-            <span className="tabular-nums font-bold text-sky-600 dark:text-sky-200">{currentPage}</span>
+            <span className="tabular-nums font-bold text-indigo-600 dark:text-blue-200">{currentPage}</span>
             <span className="hidden sm:inline"> of </span>
             <span className="sm:hidden">/</span>
-            <span className="tabular-nums font-bold text-sky-600 dark:text-sky-200">{Math.max(1, Math.ceil(totalCount / pageSize))}</span>
+            <span className="tabular-nums font-bold text-indigo-600 dark:text-blue-200">{Math.max(1, Math.ceil(totalCount / pageSize))}</span>
           </motion.span>
 
           <motion.button
             onClick={next}
             disabled={isNextDisabled}
-            className={`inline-flex items-center gap-2 rounded-2xl border border-transparent px-4 py-2 text-sm font-medium ${
-              isNextDisabled ? "cursor-not-allowed text-gray-400" : "text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:bg-blue-900/20 hover:text-sky-600 dark:text-sky-200"
+            className={`inline-flex items-center gap-2 rounded-xl border border-transparent px-4 py-2 text-sm font-medium ${
+              isNextDisabled ? "cursor-not-allowed text-gray-400 dark:text-gray-500" : "text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-blue-900/20 hover:text-indigo-600 dark:hover:text-blue-200"
             }`}
             whileHover={!isNextDisabled ? { scale: 1.05, x: 2 } : {}}
             whileTap={!isNextDisabled ? { scale: 0.95 } : {}}

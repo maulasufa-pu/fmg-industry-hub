@@ -42,10 +42,10 @@ const AnimatedCard = ({
   gradient?: boolean;
 }) => (
   <motion.section
-    className={`relative overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl dark:shadow-gray-800/25 ${
+    className={`relative overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl shadow-black/10 dark:shadow-black/30 ${
       gradient
-        ? "bg-gradient-to-br from-white via-blue-50 to-purple-50 dark:from-gray-900 dark:via-blue-900/20 dark:to-purple-900/20"
-        : "bg-white dark:bg-gray-900"
+        ? "bg-gradient-to-br from-white via-blue-50/90 to-purple-50/80 dark:from-slate-900/95 dark:via-blue-900/30 dark:to-purple-900/30"
+        : "bg-white/95 dark:bg-slate-900/95"
     } ${className}`}
     initial={{ opacity: 0, y: 30, scale: 0.95 }}
     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -60,7 +60,7 @@ const AnimatedCard = ({
 function ChatSkeleton() {
   const rows = Array.from({ length: 6 });
   return (
-    <div className="absolute inset-0 z-20 bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm">
+    <div className="absolute inset-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
       <div className="h-full overflow-hidden px-3 sm:px-6 py-3 sm:py-4">
         <div className="flex flex-col gap-5 md:gap-6 animate-pulse">
           {rows.map((_, i) => {
@@ -70,15 +70,15 @@ function ChatSkeleton() {
                 <div className={`max-w-[92%] sm:max-w-[85%] md:max-w-[75%] relative flex gap-2 ${mine ? "flex-row-reverse" : "flex-row"} my-2 sm:my-2.5`}>
                   <div
                     className={`rounded-2xl px-4 py-3 border ${
-                      mine ? "bg-blue-600/70 border-blue-700/60"
-                           : "bg-white/80 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700"
+                      mine ? "bg-blue-600/70 dark:bg-blue-600/80 border-blue-700/60 dark:border-blue-600/70"
+                           : "bg-white/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700"
                     }`}
                   >
-                    <div className={`mb-1 h-3 w-24 rounded ${mine ? "bg-blue-300/60" : "bg-gray-300/60"}`} />
-                    <div className="h-3 w-56 rounded bg-gray-300/60 dark:bg-gray-700/60" />
-                    <div className="mt-2 h-3 w-40 rounded bg-gray-200/60 dark:bg-gray-700/50" />
+                    <div className={`mb-1 h-3 w-24 rounded ${mine ? "bg-blue-300/60 dark:bg-blue-200/50" : "bg-slate-300/70 dark:bg-slate-600/70"}`} />
+                    <div className={`h-3 w-56 rounded ${mine ? "bg-blue-200/50 dark:bg-blue-100/40" : "bg-slate-300/60 dark:bg-slate-600/60"}`} />
+                    <div className={`mt-2 h-3 w-40 rounded ${mine ? "bg-blue-200/40 dark:bg-blue-100/30" : "bg-slate-200/60 dark:bg-slate-600/50"}`} />
                   </div>
-                  <div className="h-5 w-5 rounded-md bg-gray-200/60 dark:bg-gray-700/60" />
+                  <div className="h-5 w-5 rounded-md bg-slate-200/60 dark:bg-slate-600/60" />
                 </div>
               </div>
             );
@@ -139,7 +139,7 @@ function MessageMenu({
         ref={btnRef}
         aria-label="Message actions"
         onClick={toggle}
-        className="p-1.5 rounded-md text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
+        className="p-1.5 rounded-md text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
       >
         ⋮
       </button>
@@ -148,10 +148,10 @@ function MessageMenu({
         <div
           ref={menuRef}
           className={`absolute ${sideClass} ${vertClass} w-32 max-w-[calc(100vw-2rem)]
-                      rounded-xl shadow-xl bg-gray-900/95 text-white backdrop-blur-sm overflow-hidden z-20`}
+                      rounded-xl shadow-xl bg-slate-900/95 dark:bg-slate-800/95 text-white dark:text-slate-100 backdrop-blur-sm overflow-hidden z-20 border border-slate-700/50 dark:border-slate-600/50`}
         >
-          <button onClick={() => { setOpen(false); onEdit(m); }} className="w-full text-left px-3 py-2 text-sm hover:bg-white/10">Edit</button>
-          <button onClick={() => { setOpen(false); onDelete(m.id); }} className="w-full text-left px-3 py-2 text-sm hover:bg-white/10 text-red-300">Delete</button>
+          <button onClick={() => { setOpen(false); onEdit(m); }} className="w-full text-left px-3 py-2 text-sm hover:bg-white/10 dark:hover:bg-slate-700/50 transition-colors">Edit</button>
+          <button onClick={() => { setOpen(false); onDelete(m.id); }} className="w-full text-left px-3 py-2 text-sm hover:bg-white/10 dark:hover:bg-slate-700/50 text-red-300 dark:text-red-400 transition-colors">Delete</button>
         </div>
       )}
     </div>
@@ -574,10 +574,10 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
   return (
     <AnimatedCard title="💬 Discussion (Admin moderation)" gradient className="md:h-[70vh] max-h-[100dvh]">
       <div className="flex md:h-[70vh] max-h-[100dvh] flex-col min-h-0">
-        <div className="px-3 sm:px-6 pt-4 sm:pt-5 pb-3 border-b border-gray-200 dark:border-gray-800">
-          <h3 className="text-sm sm:text-base font-semibold text-gray-800 dark:text-gray-100">Discussion</h3>
+        <div className="px-3 sm:px-6 pt-4 sm:pt-5 pb-3 border-b border-slate-200 dark:border-slate-700">
+          <h3 className="text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-100">Discussion</h3>
           {canPost === false && authResolved && (
-            <p className="mt-1 text-xs text-amber-700 dark:text-amber-200">
+            <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
               Only assigned team members and the client can send messages.
             </p>
           )}
@@ -595,7 +595,7 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
           }}
           className="relative flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y
             px-3 sm:px-6 py-3 sm:py-4 flex flex-col gap-4 sm:gap-5 md:gap-6
-            scrollbar-thin scrollbar-thumb-blue-300 dark:scrollbar-thumb-blue-700 scrollbar-track-transparent
+            scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 scrollbar-track-transparent hover:scrollbar-thumb-slate-400 dark:hover:scrollbar-thumb-slate-500
             pb-[env(safe-area-inset-bottom)]"
           aria-busy={uiLoading}
         >
@@ -614,10 +614,10 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
             initial={{ opacity: 0 }} animate={{ opacity: uiLoading ? 0 : 1 }} transition={{ duration: 0.2 }}
             className={uiLoading ? "opacity-0 pointer-events-none select-none" : "opacity-100"}
           >
-            {loadingOlder && hasMore && <div className="text-center text-xs text-gray-500 mb-4">Loading older…</div>}
+            {loadingOlder && hasMore && <div className="text-center text-xs text-slate-500 dark:text-slate-400 mb-4">Loading older…</div>}
 
             {!messages || messages.length === 0 ? (
-              <motion.div className="text-sm text-gray-500 dark:text-gray-400 text-center py-8"
+              <motion.div className="text-sm text-slate-500 dark:text-slate-400 text-center py-8"
                 initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.2 }}>
                 💬 No messages yet.
               </motion.div>
@@ -654,8 +654,8 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
           </motion.div>
         </div>
 
-        <div className="border-t border-gray-200 dark:border-gray-800 p-3 sm:p-4 pb-[env(safe-area-inset-bottom)]">
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 sm:p-3">
+        <div className="border-t border-slate-200 dark:border-slate-700 p-3 sm:p-4 pb-[env(safe-area-inset-bottom)]">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-800/95 p-2 sm:p-3 shadow-sm">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -664,21 +664,21 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
               }
               disabled={canPost !== true}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (canSend) void sendMessage(); } }}
-              className={`w-full h-14 sm:h-20 max-h-40 resize-none sm:resize-y rounded-xl p-3 outline-none border border-transparent transition-colors scrollbar-thin scrollbar-thumb-blue-300 dark:scrollbar-thumb-blue-700 scrollbar-track-transparent ${
-                canPost ? "bg-gray-50 dark:bg-gray-900/50 focus:border-blue-300 dark:focus:border-blue-700"
-                        : "bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
+              className={`w-full h-14 sm:h-20 max-h-40 resize-none sm:resize-y rounded-xl p-3 outline-none border border-transparent transition-colors scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 scrollbar-track-transparent text-slate-900 dark:text-slate-100 ${
+                canPost ? "bg-slate-50 dark:bg-slate-900/50 focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
               }`}
             />
             <div className="mt-2 flex items-center justify-between">
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
                 Messages are delivered in real-time to all project members{rtStatus !== "SUBSCRIBED" ? " (reconnecting…)" : ""}.
               </span>
               <motion.button
                 onClick={sendMessage}
                 disabled={!canSend}
-                className={`px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base font-semibold transition-colors ${
-                  canSend ? "bg-blue-600 hover:bg-blue-700 text-white"
-                          : "bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed"
+                className={`px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 ${
+                  canSend ? "bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25"
+                          : "bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed"
                 }`}
                 whileHover={canSend ? { scale: 1.03 } : undefined}
                 whileTap={canSend ? { scale: 0.97 } : undefined}
@@ -719,12 +719,12 @@ function Bubble({
     <div className={`flex items-end ${isMine ? "justify-end" : "justify-start"}`}>
       <div className={`relative flex gap-2 items-start ${isMine ? "flex-row-reverse" : "flex-row"} min-w-0
                        max-w-[92%] sm:max-w-[85%] md:max-w-[70%] my-2 sm:my-2.5`}>
-        <div className={`min-w-0 max-w-full rounded-2xl px-4 py-2 border ${
-          isMine ? "bg-blue-600 text-white border-blue-700 shadow-blue-200/30"
-                 : "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700"
+        <div className={`min-w-0 max-w-full rounded-2xl px-4 py-2 border shadow-lg ${
+          isMine ? "bg-blue-600 dark:bg-blue-600 text-white border-blue-700 dark:border-blue-600 shadow-blue-500/25 dark:shadow-blue-600/30"
+                 : "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 shadow-slate-200/50 dark:shadow-slate-900/50"
         }`}>
           {showName && (
-            <div className={`mb-1 text-[11px] ${isMine ? "text-blue-100/90" : "text-gray-500 dark:text-gray-400"}`}>
+            <div className={`mb-1 text-[11px] font-medium ${isMine ? "text-blue-100/90 dark:text-blue-200/90" : "text-slate-500 dark:text-slate-400"}`}>
               {name}
             </div>
           )}
@@ -734,17 +734,21 @@ function Bubble({
               <textarea
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
-                className="w-full rounded-md border p-2 text-sm outline-none text-left bg-white text-gray-900"
+                className="w-full rounded-md border border-slate-300 dark:border-slate-600 p-2 text-sm outline-none text-left bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
               />
               <div className={`flex gap-2 ${isMine ? "justify-end" : "justify-start"}`}>
-                <button onClick={handleSaveEdit} className="px-3 py-1 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700">Save</button>
-                <button onClick={handleCancelEdit} className="px-3 py-1 rounded-md text-sm font-medium bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600">Cancel</button>
+                <button onClick={handleSaveEdit} className="px-3 py-1 rounded-md text-sm font-medium bg-blue-600 dark:bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-700 transition-colors shadow-sm">Save</button>
+                <button onClick={handleCancelEdit} className="px-3 py-1 rounded-md text-sm font-medium bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors shadow-sm">Cancel</button>
               </div>
             </div>
           ) : (
             <div className="whitespace-pre-wrap text-sm leading-relaxed text-left break-all sm:break-words [overflow-wrap:anywhere]">
               {m.content}
-              {m.updated_at && m.updated_at !== m.created_at && <span className="ml-2 text-[10px] opacity-70">edited</span>}
+              {m.updated_at && m.updated_at !== m.created_at && (
+                <span className={`ml-2 text-[10px] opacity-70 font-medium ${
+                  isMine ? "text-blue-200/80 dark:text-blue-300/80" : "text-slate-400 dark:text-slate-500"
+                }`}>edited</span>
+              )}
             </div>
           )}
         </div>

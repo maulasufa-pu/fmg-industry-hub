@@ -617,7 +617,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
         type="button"
         id={id}
         onClick={() => onChange(!checked)}
-        className="w-5 h-5 flex items-center justify-center border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900"
+        className="w-5 h-5 flex items-center justify-center border border-slate-400 dark:border-slate-500 rounded-md bg-white/95 dark:bg-slate-900/95"
       >
         {checked && (
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-violet-500">
@@ -642,8 +642,8 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
           "group relative flex items-center gap-5 p-6 rounded-2xl border-2 text-left",
           "transition-all duration-300 ease-out hover:scale-[1.02]",
           active
-            ? "border-violet-400 dark:border-violet-500 bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-900/30 dark:to-indigo-900/20 shadow-lg shadow-violet-500/20"
-            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-violet-300 dark:hover:border-violet-600 hover:bg-violet-50/50 dark:hover:bg-violet-900/10",
+            ? "border-violet-400 dark:border-violet-500 bg-gradient-to-br from-violet-50/90 to-indigo-50/70 dark:from-violet-900/40 dark:to-indigo-900/30 shadow-lg shadow-violet-500/25"
+            : "border-slate-300 dark:border-slate-600 bg-white/95 dark:bg-slate-900/95 hover:border-violet-300 dark:hover:border-violet-500 hover:bg-violet-50/60 dark:hover:bg-violet-900/20",
         ].join(" ")}
         onMouseDown={(e) => e.preventDefault()}
       >
@@ -653,7 +653,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
             "w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all duration-200",
             active 
               ? "border-violet-500 bg-violet-500 shadow-lg shadow-violet-500/30" 
-              : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 group-hover:border-violet-400"
+              : "border-slate-400 dark:border-slate-500 bg-white/95 dark:bg-slate-900/95 group-hover:border-violet-400 dark:group-hover:border-violet-500"
           ].join(" ")}>
             {active && (
               <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -707,7 +707,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     <div
       className={[
         "fixed inset-0 z-[80] flex transition-all duration-300",
-        "bg-gradient-to-br from-black/60 via-black/50 to-black/40 backdrop-blur-lg",
+        "bg-gradient-to-br from-black/70 via-slate-900/60 to-black/50 backdrop-blur-xl",
         open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
         // Responsive positioning: mobile bottom sheet, desktop centered
         "items-end sm:items-center justify-center p-2 sm:p-6 md:p-8",
@@ -735,9 +735,9 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
               : "translate-y-8 sm:translate-y-0 scale-95 sm:scale-95 opacity-0",
             // Enhanced container styling with flex layout
             "flex flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl",
-            "bg-white/98 dark:bg-slate-900/98 backdrop-blur-xl",
-            "shadow-2xl shadow-black/25 dark:shadow-black/40",
-            "ring-1 ring-black/10 dark:ring-white/10",
+            "bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl",
+            "shadow-2xl shadow-black/30 dark:shadow-black/50",
+            "ring-1 ring-slate-200/50 dark:ring-slate-700/50",
             // Better height management
             "h-[95vh] sm:h-auto sm:max-h-[88vh] sm:my-4",
           ].join(" ")}
@@ -752,7 +752,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
           {/* Enhanced Mobile Drag Handle */}
           <div className="sm:hidden pt-[max(env(safe-area-inset-top),8px)]">
             <div className="flex justify-center py-3">
-              <div className="h-1.5 w-16 bg-gradient-to-r from-slate-300 via-slate-400 to-slate-300 dark:from-slate-600 dark:via-slate-500 dark:to-slate-600 rounded-full opacity-60" />
+              <div className="h-1.5 w-16 bg-gradient-to-r from-slate-400 via-slate-500 to-slate-400 dark:from-slate-500 dark:via-slate-400 dark:to-slate-500 rounded-full opacity-70" />
             </div>
           </div>
 
@@ -849,7 +849,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
               {step === 1 && (
                 <div className="space-y-8">
                   {/* Primary Information */}
-                  <div className="bg-gradient-to-br from-slate-50/80 to-slate-100/50 dark:from-slate-800/50 dark:to-slate-900/30 rounded-2xl p-8 border border-slate-200/60 dark:border-slate-700/60">
+                  <div className="bg-gradient-to-br from-slate-50/90 to-slate-100/60 dark:from-slate-800/60 dark:to-slate-900/40 rounded-2xl p-8 border border-slate-200/80 dark:border-slate-700/80">
                     <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
                       <div className="w-3 h-3 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full"></div>
                       Project Information
@@ -864,8 +864,9 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                           onChange={(e) => setSongTitle(e.target.value)}
                           className="
                             w-full px-5 py-4 rounded-xl text-base
-                            border-2 border-slate-200 dark:border-slate-700
-                            bg-white dark:bg-slate-900
+                            border-2 border-slate-300 dark:border-slate-600
+                            bg-white/95 dark:bg-slate-900/95
+                            text-slate-900 dark:text-slate-100
                             focus:border-violet-500 dark:focus:border-violet-400
                             focus:ring-4 focus:ring-violet-500/20
                             transition-all duration-200
@@ -884,8 +885,9 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                           onChange={(e) => setAlbumTitle(e.target.value)}
                           className="
                             w-full px-5 py-4 rounded-xl text-base
-                            border-2 border-slate-200 dark:border-slate-700
-                            bg-white dark:bg-slate-900
+                            border-2 border-slate-300 dark:border-slate-600
+                            bg-white/95 dark:bg-slate-900/95
+                            text-slate-900 dark:text-slate-100
                             focus:border-violet-500 dark:focus:border-violet-400
                             focus:ring-4 focus:ring-violet-500/20
                             transition-all duration-200
@@ -904,8 +906,9 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                           onChange={(e) => setArtistName(e.target.value)}
                           className="
                             w-full px-5 py-4 rounded-xl text-base
-                            border-2 border-slate-200 dark:border-slate-700
-                            bg-white dark:bg-slate-900
+                            border-2 border-slate-300 dark:border-slate-600
+                            bg-white/95 dark:bg-slate-900/95
+                            text-slate-900 dark:text-slate-100
                             focus:border-violet-500 dark:focus:border-violet-400
                             focus:ring-4 focus:ring-violet-500/20
                             transition-all duration-200
@@ -924,8 +927,9 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                           onChange={(e) => setGenre(e.target.value)}
                           className="
                             w-full px-5 py-4 rounded-xl text-base
-                            border-2 border-slate-200 dark:border-slate-700
-                            bg-white dark:bg-slate-900
+                            border-2 border-slate-300 dark:border-slate-600
+                            bg-white/95 dark:bg-slate-900/95
+                            text-slate-900 dark:text-slate-100
                             focus:border-violet-500 dark:focus:border-violet-400
                             focus:ring-4 focus:ring-violet-500/20
                             transition-all duration-200
@@ -945,8 +949,9 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                           onChange={(e) => setSubGenre(e.target.value)}
                           className="
                             w-full px-5 py-4 rounded-xl text-base
-                            border-2 border-slate-200 dark:border-slate-700
-                            bg-white dark:bg-slate-900
+                            border-2 border-slate-300 dark:border-slate-600
+                            bg-white/95 dark:bg-slate-900/95
+                            text-slate-900 dark:text-slate-100
                             focus:border-violet-500 dark:focus:border-violet-400
                             focus:ring-4 focus:ring-violet-500/20
                             transition-all duration-200
@@ -960,7 +965,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                   </div>
 
                   {/* Currency Selection */}
-                  <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/50 dark:from-blue-900/20 dark:to-indigo-900/10 rounded-2xl p-8 border border-blue-200/40 dark:border-blue-700/30">
+                  <div className="bg-gradient-to-br from-blue-50/90 to-indigo-50/60 dark:from-blue-900/30 dark:to-indigo-900/20 rounded-2xl p-8 border border-blue-200/60 dark:border-blue-700/50">
                     <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
                       <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"></div>
                       Currency Preference
@@ -970,7 +975,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                         <label className="block text-base font-semibold text-slate-700 dark:text-slate-200 mb-3">
                           Display Currency
                         </label>
-                        <div className="bg-white dark:bg-slate-900 rounded-xl p-3 border-2 border-slate-200 dark:border-slate-700">
+                        <div className="bg-white/90 dark:bg-slate-900/90 rounded-xl p-3 border-2 border-slate-200/80 dark:border-slate-700/80">
                           <CurrencyDropdown showStatus={false} />
                         </div>
                         <p className="mt-3 text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
@@ -984,7 +989,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                   </div>
 
                   {/* Project Description */}
-                  <div className="bg-gradient-to-br from-violet-50/80 to-purple-50/50 dark:from-violet-900/20 dark:to-purple-900/10 rounded-2xl p-8 border border-violet-200/40 dark:border-violet-700/30">
+                  <div className="bg-gradient-to-br from-violet-50/90 to-purple-50/60 dark:from-violet-900/30 dark:to-purple-900/20 rounded-2xl p-8 border border-violet-200/60 dark:border-violet-700/50">
                     <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
                       <div className="w-3 h-3 bg-gradient-to-r from-violet-500 to-purple-500 rounded-full"></div>
                       Project Description
@@ -1001,11 +1006,12 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                           className={`
                             w-full px-5 py-4 rounded-xl text-base
                             border-2 transition-all duration-200
+                            text-slate-900 dark:text-slate-100
                             ${description.trim().length < MIN_DESC
                               ? "border-rose-300 dark:border-rose-600 focus:border-rose-500 dark:focus:border-rose-400 focus:ring-4 focus:ring-rose-500/20"
-                              : "border-slate-200 dark:border-slate-700 focus:border-violet-500 dark:focus:border-violet-400 focus:ring-4 focus:ring-violet-500/20"
+                              : "border-slate-300 dark:border-slate-600 focus:border-violet-500 dark:focus:border-violet-400 focus:ring-4 focus:ring-violet-500/20"
                             }
-                            bg-white dark:bg-slate-900
+                            bg-white/95 dark:bg-slate-900/95
                             placeholder:text-slate-400 dark:placeholder:text-slate-500
                             resize-none
                           `}
@@ -1060,8 +1066,8 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                             className={[
                               "rounded-xl border px-4 py-3 text-left transition",
                               active
-                                ? "border-violet-500/70 bg-violet-500/5 shadow-[0_6px_24px_rgba(139,92,246,0.15)]"
-                                : "border-slate-200 dark:border-slate-700 hover:bg-slate-50/60 dark:hover:bg-slate-800/60",
+                                ? "border-violet-500/80 bg-violet-50/80 dark:bg-violet-900/30 shadow-[0_6px_24px_rgba(139,92,246,0.2)]"
+                                : "border-slate-300 dark:border-slate-600 bg-white/95 dark:bg-slate-900/95 hover:bg-slate-50/80 dark:hover:bg-slate-800/80",
                             ].join(" ")}
                             onMouseDown={(e) => e.preventDefault()}
                           >
@@ -1095,8 +1101,8 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
 
                   {/* Custom Price Editor */}
                   <Section title="Service Details">
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-700">
-                      <div className="grid grid-cols-12 bg-slate-50 dark:bg-slate-800/60 px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                    <div className="rounded-xl border border-slate-300 dark:border-slate-600">
+                      <div className="grid grid-cols-12 bg-slate-100/80 dark:bg-slate-800/80 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200">
                         <div className="col-span-6">Service</div>
                         <div className="col-span-2 text-right">Default</div>
                         <div className="col-span-2 text-right">Premium</div>
@@ -1172,7 +1178,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
               {step === 3 && (
                 <div className="space-y-8">
                   {/* Simplified Review Section */}
-                  <div className="bg-gradient-to-br from-emerald-50/80 to-teal-50/50 dark:from-emerald-900/20 dark:to-teal-900/10 rounded-2xl p-8 border border-emerald-200/40 dark:border-emerald-700/30">
+                  <div className="bg-gradient-to-br from-emerald-50/90 to-teal-50/60 dark:from-emerald-900/30 dark:to-teal-900/20 rounded-2xl p-8 border border-emerald-200/60 dark:border-emerald-700/50">
                     <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
                       <div className="w-3 h-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"></div>
                       Project Review
@@ -1263,7 +1269,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                   </div>
 
                   {/* Enhanced Preferences Section */}
-                  <div className="bg-gradient-to-br from-cyan-50/80 to-blue-50/50 dark:from-cyan-900/20 dark:to-blue-900/10 rounded-2xl p-8 border border-cyan-200/40 dark:border-cyan-700/30">
+                  <div className="bg-gradient-to-br from-cyan-50/90 to-blue-50/60 dark:from-cyan-900/30 dark:to-blue-900/20 rounded-2xl p-8 border border-cyan-200/60 dark:border-cyan-700/50">
                     <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
                       <div className="w-3 h-3 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"></div>
                       Project Preferences
@@ -1271,7 +1277,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                     
                     <div className="space-y-6">
                       {/* Timeline Section */}
-                      <div className="bg-white/80 dark:bg-slate-800/50 rounded-xl p-6 border border-cyan-100/60 dark:border-cyan-800/30">
+                      <div className="bg-white/90 dark:bg-slate-800/70 rounded-xl p-6 border border-cyan-100/80 dark:border-cyan-800/50">
                         <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                           <svg className="w-5 h-5 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
@@ -1289,8 +1295,9 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                               onChange={(e) => setStartWithPreserve(e.target.value)}
                               className="
                                 w-full px-5 py-4 rounded-xl text-base
-                                border-2 border-slate-200 dark:border-slate-700
-                                bg-white dark:bg-slate-900
+                                border-2 border-slate-300 dark:border-slate-600
+                                bg-white/95 dark:bg-slate-900/95
+                                text-slate-900 dark:text-slate-100
                                 focus:border-cyan-500 dark:focus:border-cyan-400
                                 focus:ring-4 focus:ring-cyan-500/20
                                 transition-all duration-200
@@ -1307,8 +1314,9 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                               onChange={(e) => setDeadlineWithPreserve(e.target.value)}
                               className="
                                 w-full px-5 py-4 rounded-xl text-base
-                                border-2 border-slate-200 dark:border-slate-700
-                                bg-white dark:bg-slate-900
+                                border-2 border-slate-300 dark:border-slate-600
+                                bg-white/95 dark:bg-slate-900/95
+                                text-slate-900 dark:text-slate-100
                                 focus:border-cyan-500 dark:focus:border-cyan-400
                                 focus:ring-4 focus:ring-cyan-500/20
                                 transition-all duration-200
@@ -1319,7 +1327,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                       </div>
 
                       {/* Team Selection */}
-                      <div className="bg-white/80 dark:bg-slate-800/50 rounded-xl p-6 border border-cyan-100/60 dark:border-cyan-800/30">
+                      <div className="bg-white/90 dark:bg-slate-800/70 rounded-xl p-6 border border-cyan-100/80 dark:border-cyan-800/50">
                         <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                           <svg className="w-5 h-5 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
@@ -1335,8 +1343,9 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                             onChange={(e) => setEngineerWithPreserve(e.target.value)}
                             className="
                               w-full px-5 py-4 rounded-xl text-base
-                              border-2 border-slate-200 dark:border-slate-700
-                              bg-white dark:bg-slate-900
+                              border-2 border-slate-300 dark:border-slate-600
+                              bg-white/95 dark:bg-slate-900/95
+                              text-slate-900 dark:text-slate-100
                               focus:border-cyan-500 dark:focus:border-cyan-400
                               focus:ring-4 focus:ring-cyan-500/20
                               transition-all duration-200
@@ -1356,13 +1365,13 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                   </div>
 
                   {/* Enhanced Payment Plan Section */}
-                  <div className="bg-gradient-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-900/20 dark:to-orange-900/10 rounded-2xl p-8 border border-amber-200/40 dark:border-amber-700/30">
+                  <div className="bg-gradient-to-br from-amber-50/90 to-orange-50/60 dark:from-amber-900/30 dark:to-orange-900/20 rounded-2xl p-8 border border-amber-200/60 dark:border-amber-700/50">
                     <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
                       <div className="w-3 h-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full"></div>
                       Payment Plan
                     </h3>
                     
-                    <div className="bg-white/80 dark:bg-slate-800/50 rounded-xl p-6 border border-amber-100/60 dark:border-amber-800/30">
+                    <div className="bg-white/90 dark:bg-slate-800/70 rounded-xl p-6 border border-amber-100/80 dark:border-amber-800/50">
                       <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                         <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"/>
@@ -1461,13 +1470,13 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                   </div>
 
                   {/* Enhanced Agreement Section */}
-                  <div className="bg-gradient-to-br from-rose-50/80 to-pink-50/50 dark:from-rose-900/20 dark:to-pink-900/10 rounded-2xl p-8 border border-rose-200/40 dark:border-rose-700/30">
+                  <div className="bg-gradient-to-br from-rose-50/90 to-pink-50/60 dark:from-rose-900/30 dark:to-pink-900/20 rounded-2xl p-8 border border-rose-200/60 dark:border-rose-700/50">
                     <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
                       <div className="w-3 h-3 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full"></div>
                       Final Agreement
                     </h3>
                     
-                    <div className="bg-white/80 dark:bg-slate-800/50 rounded-xl p-6 border border-rose-100/60 dark:border-rose-800/30">
+                    <div className="bg-white/90 dark:bg-slate-800/70 rounded-xl p-6 border border-rose-100/80 dark:border-rose-800/50">
                       <div className="flex items-start gap-4">
                         {/* Enhanced Checkbox */}
                         <div className="relative shrink-0 mt-1">
@@ -1522,8 +1531,8 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
           <div
             className="
               sticky bottom-0 z-10
-              border-t border-slate-200/60 dark:border-slate-700/60
-              bg-white/98 dark:bg-slate-900/98
+              border-t border-slate-300/60 dark:border-slate-600/60
+              bg-white/95 dark:bg-slate-900/95
               backdrop-blur-xl
               px-6 sm:px-8 md:px-10 py-6
               shadow-lg shadow-black/5 dark:shadow-black/20
@@ -1561,9 +1570,9 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                   className="
                     inline-flex items-center gap-2 px-4 py-2.5 
                     text-sm font-medium text-slate-700 dark:text-slate-200
-                    border-2 border-slate-200 dark:border-slate-700
-                    rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800
-                    hover:border-slate-300 dark:hover:border-slate-600
+                    border-2 border-slate-300 dark:border-slate-600
+                    rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800
+                    hover:border-slate-400 dark:hover:border-slate-500
                     transition-all duration-200
                     focus:outline-none focus:ring-4 focus:ring-slate-500/20
                   "
@@ -1582,9 +1591,9 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                   className="
                     inline-flex items-center gap-2 px-4 py-2.5
                     text-sm font-medium text-emerald-700 dark:text-emerald-300
-                    bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-200 dark:border-emerald-700
-                    rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/30
-                    hover:border-emerald-300 dark:hover:border-emerald-600
+                    bg-emerald-50/90 dark:bg-emerald-900/30 border-2 border-emerald-300 dark:border-emerald-600
+                    rounded-xl hover:bg-emerald-100/80 dark:hover:bg-emerald-900/40
+                    hover:border-emerald-400 dark:hover:border-emerald-500
                     transition-all duration-200
                     focus:outline-none focus:ring-4 focus:ring-emerald-500/20
                     disabled:opacity-50 disabled:cursor-not-allowed
@@ -1603,9 +1612,9 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                     className="
                       inline-flex items-center gap-2 px-4 py-2.5
                       text-sm font-medium text-slate-700 dark:text-slate-200
-                      border-2 border-slate-200 dark:border-slate-700
-                      rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800
-                      hover:border-slate-300 dark:hover:border-slate-600
+                      border-2 border-slate-300 dark:border-slate-600
+                      rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800
+                      hover:border-slate-400 dark:hover:border-slate-500
                       transition-all duration-200
                       focus:outline-none focus:ring-4 focus:ring-slate-500/20
                     "
@@ -1680,12 +1689,12 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
             
             {/* Enhanced Error Display */}
             {error && (
-              <div className="mt-4 p-3 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-xl">
+              <div className="mt-4 p-3 bg-rose-50/90 dark:bg-rose-900/30 border border-rose-300 dark:border-rose-700 rounded-xl">
                 <div className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-rose-500 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-rose-500 dark:text-rose-400 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                   </svg>
-                  <p className="text-sm text-rose-700 dark:text-rose-300 font-medium">{error}</p>
+                  <p className="text-sm text-rose-700 dark:text-rose-200 font-medium">{error}</p>
                 </div>
               </div>
             )}

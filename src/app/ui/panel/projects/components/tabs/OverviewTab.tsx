@@ -21,17 +21,17 @@ const AnimatedCard = ({
 }) => {
   return (
     <motion.section
-      className={`relative overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl dark:shadow-gray-800/25 ${
+      className={`relative overflow-hidden rounded-3xl border-2 border-slate-200 dark:border-slate-700 shadow-xl shadow-black/10 dark:shadow-black/30 ${
         gradient
-          ? "bg-gradient-to-br from-white via-blue-50 to-purple-50 dark:from-gray-900 dark:via-blue-900/20 dark:to-purple-900/20"
-          : "bg-white dark:bg-gray-900"
-      } ${className}`}
+          ? "bg-gradient-to-br from-white/95 via-blue-50/90 to-purple-50/80 dark:from-slate-900/95 dark:via-blue-950/40 dark:to-purple-950/40"
+          : "bg-white/95 dark:bg-slate-900/95"
+      } backdrop-blur-sm ${className}`}
       initial={{ opacity: 0, y: 30, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
       whileHover={{
         scale: 1.01,
-        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
       }}
     >
       <div className="relative z-10 p-8">
@@ -41,7 +41,7 @@ const AnimatedCard = ({
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 bg-gradient-to-r from-gray-800 to-blue-600 bg-clip-text text-transparent">
+          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 bg-gradient-to-r from-slate-800 via-blue-600 to-indigo-600 dark:from-slate-100 dark:via-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
             {title}
           </h3>
         </motion.div>
@@ -96,23 +96,23 @@ export default function OverviewTab({ project }: OverviewTabProps) {
             <span
               className={`inline-flex items-center gap-2 rounded-2xl px-4 py-1.5 text-white text-xs font-semibold bg-gradient-to-r ${statusTone(
                 project.status
-              )} shadow`}
+              )} shadow-lg shadow-black/20 dark:shadow-black/40 border border-white/20 dark:border-white/10`}
             >
               <span>Status</span>
               <span className="opacity-90">•</span>
               <span className="tracking-wide">{pretty(project.status)}</span>
             </span>
 
-            <span className="inline-flex items-center gap-2 rounded-2xl px-4 py-1.5 text-xs font-semibold bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white shadow">
+            <span className="inline-flex items-center gap-2 rounded-2xl px-4 py-1.5 text-xs font-semibold bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white shadow-lg shadow-fuchsia-500/25 dark:shadow-fuchsia-400/30 border border-white/20 dark:border-white/10">
               <span>Stage</span>
               <span className="opacity-90">•</span>
               <span className="tracking-wide">{pretty(project.stage)}</span>
             </span>
           </div>
 
-          <p className="text-sm text-gray-700 dark:text-gray-300">
-            This project is currently <span className="font-semibold">{pretty(project.status)}</span>{" "}
-            and is at the <span className="font-semibold">{pretty(project.stage)}</span> stage.
+          <p className="text-sm text-slate-700 dark:text-slate-300">
+            This project is currently <span className="font-semibold text-slate-800 dark:text-slate-200">{pretty(project.status)}</span>{" "}
+            and is at the <span className="font-semibold text-slate-800 dark:text-slate-200">{pretty(project.stage)}</span> stage.
           </p>
         </motion.div>
 
@@ -136,13 +136,13 @@ export default function OverviewTab({ project }: OverviewTabProps) {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 + index * 0.08 }}
             >
-              <label className="mb-2 block text-xs font-medium text-gray-600 dark:text-gray-300">
+              <label className="mb-2 block text-xs font-medium text-slate-600 dark:text-slate-400">
                 {field.label}
               </label>
               <motion.input
                 value={field.value}
                 disabled
-                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 transition-all text-gray-800 dark:text-gray-200"
+                className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-slate-50/90 dark:bg-slate-800/90 px-4 py-3 text-slate-800 dark:text-slate-200 shadow-sm transition-all duration-200 cursor-not-allowed"
                 whileHover={{ scale: 1.01 }}
               />
             </motion.div>
@@ -158,36 +158,47 @@ export default function OverviewTab({ project }: OverviewTabProps) {
           transition={{ delay: 0.4 }}
         >
           <div className="relative">
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-white/70 dark:from-gray-900/70 to-transparent rounded-t-xl" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-white/80 dark:from-slate-900/80 to-transparent rounded-t-xl z-10" />
             <div
-              className="descScroll whitespace-pre-wrap leading-relaxed text-sm text-gray-800 dark:text-gray-200 bg-white/70 dark:bg-gray-800/70 border border-gray-200 dark:border-gray-700 rounded-xl p-4 max-h-[420px] overflow-auto shadow-inner"
+              className="descScroll whitespace-pre-wrap leading-relaxed text-sm text-slate-800 dark:text-slate-200 bg-white/90 dark:bg-slate-800/90 border-2 border-slate-200 dark:border-slate-600 rounded-xl p-4 max-h-[420px] overflow-auto shadow-inner shadow-slate-200/50 dark:shadow-slate-800/50"
               role="region"
               aria-label="Project description"
             >
               {project.description?.trim() || "No description provided"}
             </div>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-white/70 dark:from-gray-900/70 to-transparent rounded-b-xl" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-white/80 dark:from-slate-900/80 to-transparent rounded-b-xl z-10" />
           </div>
         </motion.div>
 
         <style jsx>{`
           :global(.descScroll) {
             scrollbar-width: thin; /* Firefox */
-            scrollbar-color: #94a3b8 transparent; /* thumb, track */
+            scrollbar-color: #64748b transparent; /* thumb, track */
+          }
+          :global(.dark .descScroll) {
+            scrollbar-color: #475569 transparent; /* thumb for dark mode */
           }
           :global(.descScroll::-webkit-scrollbar) {
-            width: 10px;
+            width: 12px;
           }
           :global(.descScroll::-webkit-scrollbar-track) {
             background: transparent;
+            border-radius: 10px;
           }
           :global(.descScroll::-webkit-scrollbar-thumb) {
-            background: linear-gradient(180deg, #c7d2fe 0%, #a5b4fc 50%, #818cf8 100%);
-            border-radius: 9999px;
-            border: 2px solid rgba(255, 255, 255, 0.4);
+            background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 50%, #64748b 100%);
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
           }
           :global(.descScroll::-webkit-scrollbar-thumb:hover) {
-            background: linear-gradient(180deg, #a5b4fc 0%, #818cf8 50%, #6366f1 100%);
+            background: linear-gradient(180deg, #94a3b8 0%, #64748b 50%, #475569 100%);
+          }
+          :global(.dark .descScroll::-webkit-scrollbar-thumb) {
+            background: linear-gradient(180deg, #475569 0%, #334155 50%, #1e293b 100%);
+            border: 2px solid rgba(0, 0, 0, 0.2);
+          }
+          :global(.dark .descScroll::-webkit-scrollbar-thumb:hover) {
+            background: linear-gradient(180deg, #334155 0%, #1e293b 50%, #0f172a 100%);
           }
         `}</style>
       </AnimatedCard>

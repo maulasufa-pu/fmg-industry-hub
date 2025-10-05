@@ -251,18 +251,18 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
     <>
       <aside
         data-sidebar
-        className="hidden lg:block fixed top-0 left-0 z-10 h-dvh w-72 flex flex-col shrink-0 border-r border-slate-600 dark:border-slate-500 bg-gradient-to-b from-slate-700 via-slate-600 to-slate-800 dark:from-slate-800 dark:via-slate-700 dark:to-slate-900 shadow-xl dark:shadow-slate-800/25"
+        className="hidden lg:block fixed top-0 left-0 z-10 h-dvh w-72 xl:w-80 flex flex-col shrink-0 border-r border-slate-300/30 dark:border-slate-600/50 bg-gradient-to-b from-white via-slate-50 to-slate-100 dark:from-slate-800 dark:via-slate-700 dark:to-slate-900 shadow-xl shadow-slate-200/40 dark:shadow-slate-800/25 backdrop-blur-sm"
         aria-label="Sidebar"
       >
       <motion.div 
-        className="absolute inset-0 opacity-5 pointer-events-none"
+        className="absolute inset-0 opacity-5 dark:opacity-5 pointer-events-none"
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.05 }}
         transition={{ duration: 2 }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br  from-blue-600/10 via-transparent to-indigo-600/10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-200/20 via-transparent to-purple-200/20 dark:from-blue-600/10 dark:via-transparent dark:to-indigo-600/10" />
         <motion.div 
-          className="absolute top-10 right-10 w-32 h-32 bg-gradient-to-br  from-blue-400/20 to-indigo-400/20 rounded-full blur-3xl"
+          className="absolute top-10 right-10 w-32 h-32 bg-gradient-to-br from-indigo-300/15 to-purple-300/15 dark:from-blue-400/20 dark:to-indigo-400/20 rounded-full blur-3xl"
           animate={{ 
             scale: [1, 1.2, 1],
             rotate: [0, 180, 360]
@@ -274,7 +274,7 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
           }}
         />
         <motion.div 
-          className="absolute bottom-20 left-10 w-24 h-24 bg-gradient-to-br  from-purple-400/20 to-pink-400/20 rounded-full blur-3xl"
+          className="absolute bottom-20 left-10 w-24 h-24 bg-gradient-to-br from-violet-300/15 to-fuchsia-300/15 dark:from-purple-400/20 dark:to-pink-400/20 rounded-full blur-3xl"
           animate={{ 
             scale: [1.2, 1, 1.2],
             rotate: [360, 180, 0]
@@ -288,14 +288,14 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
       </motion.div>
 
       <motion.div 
-        className="relative px-7 pt-6 pb-5"
+        className="relative px-6 xl:px-7 pt-6 pb-5"
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={TWEEN_FAST}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 xl:gap-4">
           <motion.div 
-            className="relative grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-lg dark:shadow-slate-800/25 overflow-hidden"
+            className="relative grid h-12 w-12 xl:h-14 xl:w-14 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-200/30 dark:shadow-slate-800/25 overflow-hidden"
             whileHover={{ scale: 1.05, rotate: 5 }}
             transition={{ duration: 0.2 }}
           >
@@ -304,21 +304,21 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
             />
             <Layout className="relative block overflow-visible text-white z-10" size={20} aria-hidden="true" />
           </motion.div>
-          <div className="min-w-0 space-y-1.5">
+          <div className="min-w-0 space-y-1.5 flex-1">
             <motion.div
-              className="capitalize text-xl font-bold bg-gradient-to-r from-purple-600 to-violet-600 dark:from-purple-300 dark:to-violet-300 bg-clip-text text-transparent leading-tight"
+              className="capitalize text-lg xl:text-xl font-bold bg-gradient-to-r from-indigo-700 to-purple-700 dark:from-indigo-300 dark:to-purple-300 bg-clip-text text-transparent leading-tight"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2, duration: 0.5 }}
             >
-              <div className="inline-flex flex-col items-end justify-center relative flex-[0_0_auto]">
+              <div className="inline-flex flex-col items-start justify-center relative flex-[0_0_auto]">
                 <div 
-                  className="relative w-fit mt-[-1.00px] font-heading-4 font-[number:var(--heading-4-font-weight)] text-gray-800 dark:text-gray-100 dark:text-gray-100 text-[length:var(--heading-4-font-size)] tracking-[var(--heading-4-letter-spacing)] leading-[var(--heading-4-line-height)] whitespace-nowrap [font-style:var(--heading-4-font-style)]">
+                  className="relative w-fit font-heading-4 font-[number:var(--heading-4-font-weight)] text-slate-800 dark:text-slate-100 text-[length:var(--heading-4-font-size)] tracking-[var(--heading-4-letter-spacing)] leading-[var(--heading-4-line-height)] whitespace-nowrap [font-style:var(--heading-4-font-style)]">
                   Flemmo Music
                 </div>
 
                 <div 
-                  className="relative w-fit -mt-1 font-body-XS font-[number:var(--body-XS-font-weight)] text-neutral-600 dark:text-neutral-200 dark:text-gray-200 text-[length:var(--body-XS-font-size)] tracking-[var(--body-XS-letter-spacing)] leading-[var(--body-XS-line-height)] whitespace-nowrap [font-style:var(--body-XS-font-style)]">
+                  className="relative w-fit -mt-1 font-body-XS font-[number:var(--body-XS-font-weight)] text-slate-600 dark:text-slate-300 text-[length:var(--body-XS-font-size)] tracking-[var(--body-XS-letter-spacing)] leading-[var(--body-XS-line-height)] whitespace-nowrap [font-style:var(--body-XS-font-style)] truncate">
                 Global Universe Solution
                 </div>
               </div>
@@ -326,7 +326,7 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
           </div>
         </div>
         <motion.div 
-          className="pointer-events-none absolute inset-x-7 bottom-0 h-px bg-gradient-to-r from-transparent via-purple-400 to-transparent"
+          className="pointer-events-none absolute inset-x-6 xl:inset-x-7 bottom-0 h-px bg-gradient-to-r from-transparent via-indigo-400 dark:via-purple-400 to-transparent"
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
           transition={{ delay: 0.5, duration: 0.8 }}
@@ -357,7 +357,7 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
                         {active && (
                           <motion.span
                             layoutId="active-indicator"
-                            className="absolute inset-y-0 my-2 -left-2 w-1.5 rounded-full bg-gradient-to-br from-purple-600 via-violet-500 to-purple-700 shadow dark:shadow-slate-800/25 z-20"
+                            className="absolute inset-y-0 my-2 -left-2 w-1.5 rounded-full bg-gradient-to-br from-indigo-600 via-purple-500 to-purple-700 shadow-lg shadow-indigo-200/30 dark:shadow-slate-800/25 z-20"
                             initial={{ scaleY: 0, opacity: 0 }}
                             animate={{ scaleY: 1, opacity: 1 }}
                             transition={{ duration: 0.16, ease: "easeOut" }}
@@ -377,26 +377,26 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
                             className={[
                               "group relative z-10 flex items-center gap-4 rounded-xl px-4 py-3 text-sm outline-none transition-all duration-300 overflow-hidden",
                               active
-                                ? "bg-gradient-to-r from-purple-900 to-indigo-600 text-purple-50 font-medium shadow-lg shadow-purple-500/20"
-                                : "text-white dark:text-white hover:bg-slate-700/40 hover:text-white focus:bg-slate-50 focus:shadow-lg focus:shadow-purple-500/15 dark:bg-slate-800 hover:shadow-sm",
+                                ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium shadow-lg shadow-indigo-200/20 dark:shadow-slate-800/25"
+                                : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white focus:bg-slate-100 dark:focus:bg-slate-700/40 focus:shadow-lg focus:shadow-indigo-100/20 dark:focus:shadow-slate-800/25 focus:text-slate-800 dark:focus:text-white ring-2 ring-transparent focus:ring-indigo-200/40 dark:focus:ring-slate-600/30",
                             ].join(" ")}
                           >
                             <motion.div
-                              className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-violet-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                              className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 dark:from-indigo-500/20 dark:to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                             />
                             
                             <motion.span
                               className={[
                                 "relative grid h-9 w-9 place-items-center rounded-lg transition-all duration-300 overflow-hidden",
                                 active 
-                                  ? "bg-gradient-to-br from-blue-600 to-purple-600 text-sky-600 dark:text-sky-200 shadow-md dark:shadow-slate-800/25" 
-                                  : "bg-slate-100 dark:bg-slate-800 text-slate-100 dark:text-slate-400 group-hover:bg-gradient-to-br group-hover:from-blue-600 group-hover:to-purple-600 group-hover:text-sky-200 dark:text-sky-200 group-hover:shadow dark:shadow-slate-800/25",
+                                  ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-200/30 dark:shadow-slate-800/25" 
+                                  : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 group-hover:bg-gradient-to-br group-hover:from-indigo-600 group-hover:to-purple-600 group-hover:text-white group-hover:shadow-md group-hover:shadow-indigo-200/30 dark:group-hover:shadow-slate-800/25",
                               ].join(" ")}
                               whileHover={{ scale: 1.05, rotate: 2 }}
                               transition={{ duration: 0.2 }}
                             >
                               <motion.div
-                                className="absolute inset-0 bg-gradient-to-br from-transparent to-purple-600 opacity-0 group-hover:opacity-100"
+                                className="absolute inset-0 bg-gradient-to-br from-transparent to-indigo-400/30 dark:to-purple-400/30 opacity-0 group-hover:opacity-100"
                                 initial={{ x: -100 }}
                                 whileHover={{ x: 100 }}
                                 transition={{ duration: 0.6, ease: "easeInOut" }}
@@ -426,18 +426,18 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
         </div>
 
         <motion.div 
-          className="mt-6 mx-2 rounded-xl border border-purple-400/30 dark:border-purple-500/40 bg-gradient-to-br from-slate-800/90 via-purple-900/20 to-violet-900/30 backdrop-blur-sm p-5 shadow-lg dark:shadow-purple-900/25"
+          className="mt-6 mx-2 rounded-xl border border-indigo-300/20 dark:border-indigo-400/40 bg-gradient-to-br from-slate-100/90 via-indigo-50/50 to-purple-50/30 dark:from-slate-800/90 dark:via-indigo-900/20 dark:to-purple-900/30 backdrop-blur-sm p-5 shadow-lg shadow-indigo-100/40 dark:shadow-indigo-900/25"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, ...TWEEN_FAST }}
         >
           <motion.div 
-            className="text-xs font-semibold uppercase tracking-wider text-purple-300 dark:text-purple-200 mb-4 flex items-center gap-2"
+            className="text-xs font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-200 mb-4 flex items-center gap-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.25, ...TWEEN_FAST }}
           >
-            <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-violet-500 rounded-full shadow-sm shadow-purple-400/50"></div>
+            <div className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full shadow-sm shadow-indigo-400/50"></div>
             Quick Actions
           </motion.div>
           <div className="space-y-3">
@@ -447,7 +447,7 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
         </motion.div>
 
         <motion.div 
-          className="mt-4 mx-2 rounded-full backdrop-blur-sm px-3 py-1.5 shadow-lg shadow-teal-500/20 dark:shadow-cyan-900/30"
+          className="mt-4 mx-2 rounded-full backdrop-blur-sm px-3 py-1.5 shadow-lg shadow-slate-200/40 dark:shadow-slate-800/30 border border-slate-200/40 dark:border-slate-600/30 bg-gradient-to-r from-slate-100/60 via-slate-50/40 to-slate-100/60 dark:from-slate-700/60 dark:via-slate-800/40 dark:to-slate-700/60"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9, duration: 0.5 }}
@@ -472,7 +472,7 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
                     showFallback={!profileLoading}
                   />
                 </div>
-                <span className="text-sm font-medium text-slate-200 dark:text-slate-200 group-hover:text-white flex-1 truncate">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-800 dark:group-hover:text-white flex-1 truncate">
                   {profileLoading ? "Loading..." : (profile?.fullName || "Profile")}
                 </span>
               </button>
@@ -511,11 +511,11 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
           >
             <Link
               href="/profile/settings"
-              className="group relative grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-slate-600/80 to-slate-700/80 border border-slate-500/50 hover:from-purple-600/80 hover:to-violet-600/80 hover:border-purple-400/60 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-purple-500/25 backdrop-blur-sm"
+              className="group relative grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-slate-300/80 to-slate-400/80 dark:from-slate-600/80 dark:to-slate-700/80 border border-slate-400/50 dark:border-slate-500/50 hover:from-indigo-600/80 hover:to-purple-600/80 hover:border-indigo-400/60 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-indigo-500/25 backdrop-blur-sm"
               title="User Settings"
             >
               <motion.div
-                className="absolute inset-0 bg-gradient-to-br from-purple-400/10 to-violet-400/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                className="absolute inset-0 bg-gradient-to-br from-indigo-400/10 to-purple-400/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
               />
               <Settings className="w-5 h-5 text-slate-300 group-hover:text-white transition-colors duration-200 relative z-10" />
             </Link>
@@ -528,10 +528,10 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
       {isOpen && (
         <motion.aside
           data-sidebar
-          className="lg:hidden fixed top-16 left-0 z-50 h-[calc(100svh-4rem)] w-80 max-w-[90vw] border-r border-slate-600 bg-gradient-to-b from-slate-700 via-slate-600 to-slate-800 shadow-2xl"
-          initial={{ x: -288 }}
+          className="lg:hidden fixed top-16 left-0 z-50 h-[calc(100svh-4rem)] w-80 max-w-[85vw] sm:max-w-[70vw] border-r border-slate-300/40 dark:border-slate-600 bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-700 dark:via-slate-600 dark:to-slate-800 shadow-2xl shadow-slate-300/50 dark:shadow-slate-900/50 backdrop-blur-md"
+          initial={{ x: -320 }}
           animate={{ x: 0 }}
-          exit={{ x: -288 }}
+          exit={{ x: -320 }}
           transition={{ type: "tween", ease: EASE, duration: 0.22 }}
           aria-label="Mobile admin sidebar"
         >
@@ -575,7 +575,7 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
                             {active && (
                               <motion.span
                                 layoutId="mobile-active-indicator"
-                                className="absolute inset-y-0 my-2 -left-2 w-1.5 rounded-full bg-gradient-to-br from-purple-600 via-violet-500 to-purple-700 shadow dark:shadow-slate-800/25 dark:shadow-lg z-20"
+                                className="absolute inset-y-0 my-2 -left-2 w-1.5 rounded-full bg-gradient-to-br from-indigo-600 via-purple-500 to-purple-700 shadow-lg shadow-indigo-200/30 dark:shadow-slate-800/25 z-20"
                                 aria-hidden="true"
                                 initial={{ scaleY: 0, opacity: 0 }}
                                 animate={{ scaleY: 1, opacity: 1 }}
@@ -596,16 +596,16 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
                                 className={[
                                   "group relative z-10 flex items-center gap-3 rounded-xl px-3 py-2.5 pl-4 text-sm outline-none transition-all duration-300 overflow-hidden",
                                   active
-                                    ? "bg-gradient-to-r from-purple-600 to-purple-700 text-purple-50 font-medium shadow-lg shadow-purple-500/20"
-                                    : "text-white dark:text-white hover:bg-slate-700/40 hover:text-white focus:bg-slate-50 focus:shadow-lg focus:shadow-purple-500/15 dark:bg-slate-800 hover:shadow-sm",
+                                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium shadow-lg shadow-indigo-200/20 dark:shadow-slate-800/25"
+                                    : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white focus:bg-slate-100 dark:focus:bg-slate-700/40 focus:shadow-lg focus:shadow-indigo-100/20 dark:focus:shadow-slate-800/25 ring-2 ring-transparent focus:ring-indigo-200/40 dark:focus:ring-slate-600/30",
                                 ].join(" ")}
                               >
                                 <motion.span
                                   className={[
                                     "relative grid h-8 w-8 place-items-center rounded-lg transition-all duration-300 overflow-hidden",
                                     active 
-                                      ? "bg-gradient-to-br from-blue-600 to-purple-600 text-sky-600 dark:text-sky-200 shadow dark:shadow-slate-800/25" 
-                                      : "bg-slate-100 dark:bg-slate-800 text-slate-100 dark:text-slate-400 group-hover:bg-gradient-to-br group-hover:from-blue-600 group-hover:to-purple-600 group-hover:text-sky-200 dark:text-sky-200 group-hover:shadow dark:shadow-slate-800/25",
+                                      ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-200/30 dark:shadow-slate-800/25" 
+                                      : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 group-hover:bg-gradient-to-br group-hover:from-indigo-600 group-hover:to-purple-600 group-hover:text-white group-hover:shadow-md group-hover:shadow-indigo-200/30 dark:group-hover:shadow-slate-800/25",
                                   ].join(" ")}
                                   whileHover={{ scale: 1.05, rotate: 2 }}
                                   transition={{ duration: 0.2 }}
@@ -635,7 +635,7 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
             </div>
 
             <motion.div 
-              className="mt-4 mx-2 mb-4 rounded-full backdrop-blur-sm px-3 py-1.5 shadow-lg shadow-teal-500/20 dark:shadow-cyan-900/30"
+              className="mt-4 mx-2 mb-4 rounded-full backdrop-blur-sm px-3 py-1.5 shadow-lg shadow-slate-200/40 dark:shadow-slate-800/30 border border-slate-200/40 dark:border-slate-600/30 bg-gradient-to-r from-slate-100/60 via-slate-50/40 to-slate-100/60 dark:from-slate-700/60 dark:via-slate-800/40 dark:to-slate-700/60"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.9, duration: 0.5 }}
@@ -660,7 +660,7 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
                         showFallback={!profileLoading}
                       />
                     </div>
-                    <span className="text-sm font-medium text-slate-200 dark:text-slate-200 group-hover:text-white flex-1 truncate">
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-800 dark:group-hover:text-white flex-1 truncate">
                       {profileLoading ? "Loading..." : (profile?.fullName || "Profile")}
                     </span>
                   </button>
@@ -700,13 +700,13 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
                 <Link
                   href="/profile/settings"
                   onClick={onClose}
-                  className="group relative grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-slate-600/80 to-slate-700/80 border border-slate-500/50 hover:from-purple-600/80 hover:to-violet-600/80 hover:border-purple-400/60 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-purple-500/25 backdrop-blur-sm"
+                  className="group relative grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-slate-300/80 to-slate-400/80 dark:from-slate-600/80 dark:to-slate-700/80 border border-slate-400/50 dark:border-slate-500/50 hover:from-indigo-600/80 hover:to-purple-600/80 hover:border-indigo-400/60 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-indigo-500/25 backdrop-blur-sm"
                   title="User Settings"
                 >
                   <motion.div
-                    className="absolute inset-0 bg-gradient-to-br from-purple-400/10 to-violet-400/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    className="absolute inset-0 bg-gradient-to-br from-indigo-400/10 to-purple-400/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   />
-                  <Settings className="w-5 h-5 text-slate-300 group-hover:text-white transition-colors duration-200 relative z-10" />
+                  <Settings className="w-5 h-5 text-slate-600 dark:text-slate-300 group-hover:text-white transition-colors duration-200 relative z-10" />
                 </Link>
               </motion.div>
             </motion.div>
@@ -736,27 +736,27 @@ function QuickButton({
     >
       <Link
         href={href}
-        className="group relative flex items-center gap-3 rounded-xl border border-purple-300/40 dark:border-purple-400/50 bg-gradient-to-r from-purple-800/60 via-violet-800/50 to-purple-900/60 backdrop-blur-md px-4 py-3 text-sm font-semibold text-purple-100 shadow-lg hover:shadow-xl dark:shadow-purple-900/30 transition-all duration-300 hover:border-purple-200/60 hover:from-purple-700/70 hover:via-violet-700/60 hover:to-purple-800/70 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/60 overflow-hidden"
+        className="group relative flex items-center gap-3 rounded-xl border border-indigo-300/40 dark:border-indigo-400/50 bg-gradient-to-r from-slate-200/80 via-indigo-100/60 to-purple-100/50 dark:from-indigo-800/60 dark:via-purple-800/50 dark:to-violet-900/60 backdrop-blur-md px-4 py-3 text-sm font-semibold text-slate-700 dark:text-indigo-100 shadow-lg hover:shadow-xl shadow-indigo-100/30 dark:shadow-indigo-900/30 transition-all duration-300 hover:border-indigo-400/60 hover:from-indigo-200/80 hover:via-purple-200/60 hover:to-violet-200/50 dark:hover:from-indigo-700/70 dark:hover:via-purple-700/60 dark:hover:to-violet-800/70 hover:text-slate-800 dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 overflow-hidden"
       >
         <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-purple-400/10 via-violet-400/15 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+          className="absolute inset-0 bg-gradient-to-r from-indigo-400/10 via-purple-400/15 to-violet-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
           initial={{ x: -100 }}
           whileHover={{ x: 100 }}
           transition={{ duration: 0.8, ease: "easeInOut" }}
         />
         
         <motion.div 
-          className="relative grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-purple-500/90 to-violet-600/90 shadow-md group-hover:shadow-lg group-hover:shadow-purple-400/30"
+          className="relative grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-indigo-600/90 to-purple-600/90 shadow-md group-hover:shadow-lg group-hover:shadow-indigo-400/30"
           whileHover={{ rotate: 5, scale: 1.05 }}
           transition={{ duration: 0.2 }}
         >
           <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 rounded-lg"
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-0 group-hover:opacity-100 rounded-lg"
             initial={{ x: -20 }}
             whileHover={{ x: 20 }}
             transition={{ duration: 0.6, ease: "easeInOut" }}
           />
-          <Icon className="relative w-4 h-4 text-purple-50 z-10" aria-hidden="true" />
+          <Icon className="relative w-4 h-4 text-white z-10" aria-hidden="true" />
         </motion.div>
         
         <motion.span 
@@ -772,7 +772,7 @@ function QuickButton({
           initial={{ x: -10 }}
           whileHover={{ x: 0 }}
         >
-          <div className="w-4 h-4 text-purple-200 group-hover:text-white">
+          <div className="w-4 h-4 text-slate-500 dark:text-indigo-200 group-hover:text-slate-700 dark:group-hover:text-white">
             →
           </div>
         </motion.div>

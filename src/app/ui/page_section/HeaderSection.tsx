@@ -183,7 +183,7 @@ export function BrandLockup({
       </div>
 
       <div
-        className="mt-[-2px] font-body-XS leading-[1] text-neutral-600 dark:text-neutral-300 whitespace-nowrap brand-subtitle"
+        className="mt-[-2px] font-body-XS leading-[1] text-slate-600 dark:text-slate-300 whitespace-nowrap brand-subtitle overflow-hidden"
         style={subStyle}
       >
         {subtitle}
@@ -402,26 +402,26 @@ export const HeaderSection = (): React.JSX.Element => {
       "
       >
         <div className="relative mx-auto h-16 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="relative flex h-16 items-center min-[1028px]:hidden">
-            <div className="flex items-center gap-2">
+          <div className="relative flex h-16 items-center justify-between min-[1028px]:hidden px-1">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 type="button"
                 aria-label={mobileOpen ? "Close menu" : "Open menu"}
                 aria-expanded={mobileOpen}
                 aria-controls="mobile-menu-panel"
                 onClick={() => setMobileOpen((v) => !v)}
-                className="inline-flex h-8.5 w-8.5 items-center justify-center rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.06]"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/[0.06] hover:bg-white/90 dark:hover:bg-white/10 transition-colors"
               >
                 {mobileOpen ? <X className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
               </button>
 
               <ThemeToggle
-                className="grid h-5 w-5 place-items-center rounded-full border border-black/10 bg-white text-white dark:border-white/10 dark:bg-black"
+                className="grid h-9 w-9 place-items-center rounded-xl border border-black/10 bg-white/70 text-black dark:border-white/10 dark:bg-white/[0.06] dark:text-white hover:bg-white/90 dark:hover:bg-white/10 transition-colors"
                 aria-label="Toggle theme (mobile)"
               />
             </div>
 
-            <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1">
+            <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
               <Image
                 src="/logo/FMG-Universe-Flemmo-Music-Global.png"
                 alt="FMG Universe Logo"
@@ -435,7 +435,7 @@ export const HeaderSection = (): React.JSX.Element => {
             <button
               ref={mobileProfileButtonRef}
               onClick={handleProfileClick}
-              className="ml-auto inline-flex items-center rounded-full p-1.5 border border-transparent"
+              className="inline-flex items-center rounded-full p-1 border border-transparent hover:border-black/10 dark:hover:border-white/10 transition-colors flex-shrink-0"
               aria-label="Open user menu"
             >
               <ProfileAvatar
@@ -448,37 +448,40 @@ export const HeaderSection = (): React.JSX.Element => {
             </button>
           </div>
 
-          <div className="hidden h-16 items-center min-[1028px]:flex">
-            <Link href="/" className="flex items-center gap-1.5 font-semibold">
+          <div className="hidden h-16 items-center justify-between min-[1028px]:flex">
+            <Link href="/" className="flex items-center gap-2 font-semibold flex-shrink-0 min-w-0">
               <Image
                 src="/logo/FMG-Universe-Flemmo-Music-Global.png"
                 alt="FMG Universe Logo"
                 width={100}
                 height={100}
-                className="block h-10 w-10 rounded-md object-cover"
+                className="block h-10 w-10 rounded-md object-cover flex-shrink-0"
                 priority
               />
-              <BrandLockup
-                title="FLEMMO MUSIC"
-                subtitle="Global Universe Solution"
-                subtitleBasePx={10}
-                subtitleMinPx={1}
-                subtitleMaxPx={11}
-              />
+              <div className="min-w-0">
+                <BrandLockup
+                  title="FLEMMO MUSIC"
+                  subtitle="Global Universe Solution"
+                  subtitleBasePx={10}
+                  subtitleMinPx={1}
+                  subtitleMaxPx={11}
+                />
+              </div>
             </Link>
 
-            <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 min-[1028px]:flex items-center gap-6 text-sm z-10">
-              <Link href="/#about" className="opacity-80 hover:opacity-100">
-                About
-              </Link>
-              <Link href="/#features" className="opacity-80 hover:opacity-100">
-                Services
-              </Link>
-              <Link href="/#pricing" className="opacity-80 hover:opacity-100">
-                Packages
-              </Link>
+            <div className="hidden min-[1028px]:flex items-center justify-center flex-1 mx-8">
+              <div className="flex items-center gap-6 text-sm">
+                <Link href="/#about" className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
+                  About
+                </Link>
+                <Link href="/#features" className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
+                  Services
+                </Link>
+                <Link href="/#pricing" className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
+                  Packages
+                </Link>
 
-              <div className="relative" ref={menuRef}>
+                <div className="relative" ref={menuRef}>
                 <button
                   ref={triggerRef}
                   type="button"
@@ -516,11 +519,11 @@ export const HeaderSection = (): React.JSX.Element => {
                       style={{ willChange: "transform, opacity" }}
                       className="
                       fixed top-16 left-1/2 z-[60]
-                      w-[520px] max-w-[calc(100vw-1rem)] -translate-x-1/2 mx-2 min-[1028px]:mx-0
+                      w-[520px] max-w-[calc(100vw-2rem)] -translate-x-1/2
                       rounded-2xl ring-1 ring-white/80 dark:ring-black/90
                       overflow-hidden shadow-[0_24px_60px_-12px_rgba(0,0,0,0.35)]
                       bg-white dark:bg-black backdrop-blur-xl
-                      transform-gpu frost-solid w-[520px] max-w-[calc(100vw-1rem)]
+                      transform-gpu
                     "
                     >
                       <div className="relative z-10 p-2">
@@ -633,34 +636,37 @@ export const HeaderSection = (): React.JSX.Element => {
                     </motion.div>
                   )}
                 </AnimatePresence>
+                </div>
               </div>
             </div>
 
-            <div className="ml-auto hidden items-center gap-4 min-[1028px]:flex">
+            <div className="hidden items-center gap-3 min-[1028px]:flex flex-shrink-0">
               <Link
                 href="/client/dashboard"
                 className="
-                group relative inline-flex h-11 items-center gap-2 rounded-2xl px-5
-                text-sm font-semibold leading-none
+                group relative inline-flex h-10 items-center gap-2 rounded-2xl px-4
+                text-sm font-semibold leading-none whitespace-nowrap
                 bg-black text-white dark:bg-white dark:text-black
                 shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-colors
                 hover:bg-gradient-to-r hover:from-indigo-600 hover:to-violet-600 hover:text-white
+                min-[1200px]:h-11 min-[1200px]:px-5
               "
               >
-                Start My Project
+                <span className="hidden min-[1200px]:inline">Start My Project</span>
+                <span className="min-[1200px]:hidden">Start Project</span>
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 <span className="pointer-events-none absolute inset-0 rounded-2xl bg-white/10 opacity-0 blur-xl transition-opacity group-hover:opacity-100 dark:bg-black/10" />
               </Link>
 
-              <ThemeToggle className="grid h-11 w-11 place-items-center rounded-full border border-black/10 bg-white/60 text-black dark:border-white/10 dark:bg-black/40" />
+              <ThemeToggle className="grid h-10 w-10 place-items-center rounded-full border border-black/10 bg-white/60 text-black dark:border-white/10 dark:bg-black/40 min-[1200px]:h-11 min-[1200px]:w-11" />
 
               <motion.div className="relative" whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
                 <button
                   ref={profileButtonRef}
                   onClick={handleProfileClick}
-                  className="hidden min-[1028px]:flex items-center gap-3 rounded-full px-1.5 py-1 transition-all duration-200 border border-transparent"
+                  className="flex items-center gap-2 rounded-full px-1.5 py-1 transition-all duration-200 border border-transparent hover:border-black/10 dark:hover:border-white/10 min-[1200px]:gap-3"
                 >
-                  <span className="text-sm font-medium text-black/80 dark:text-slate-200 truncate">
+                  <span className="hidden min-[1200px]:block text-sm font-medium text-black/80 dark:text-slate-200 truncate max-w-[120px]">
                     {profileLoading ? "Loading..." : profile?.fullName || "Profile"}
                   </span>
                   <div className="flex-shrink-0">
@@ -723,13 +729,13 @@ export const HeaderSection = (): React.JSX.Element => {
                 style={{ willChange: "transform, opacity" }}
                 className="
                 fixed inset-x-0 top-0 z-[60] rounded-b-3xl border-b border-black/10 dark:border-white/10
-                bg-white dark:bg-black backdrop-blur-xl transform-gpu frost-solid w-[520px] max-w-[calc(100vw-1rem)]
+                bg-white dark:bg-black backdrop-blur-xl transform-gpu max-w-full
               "
               >
                 <div className="sticky top-0 inset-x-0 z-10 bg-white dark:bg-black">
                   <div
-                    className="flex items-center justify-start px-2 pb-2 "
-                    style={{ paddingTop: "max(10px, env(safe-area-inset-top))" }}
+                    className="flex items-center justify-start px-4 pb-2"
+                    style={{ paddingTop: "max(16px, env(safe-area-inset-top))" }}
                   >
                     <button
                       onClick={() => setMobileOpen(false)}
@@ -746,7 +752,7 @@ export const HeaderSection = (): React.JSX.Element => {
                   </div>
                 </div>
 
-                <div className="px-4 pt-2 pb-6">
+                <div className="px-4 pt-2 pb-8 overflow-y-auto max-h-[calc(100vh-80px)]">
                   <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-950 p-3">
                     <div className="mb-2 text-xs uppercase tracking-wide text-neutral-600 dark:text-neutral-300">
                       FMG Universe
@@ -770,25 +776,25 @@ export const HeaderSection = (): React.JSX.Element => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 text-sm mt-3">
+                  <div className="grid grid-cols-1 xs:grid-cols-3 gap-2 text-sm mt-3">
                     <Link
                       href="/#about"
                       onClick={() => setMobileOpen(false)}
-                      className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2 text-center"
+                      className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2.5 text-center hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
                     >
                       About
                     </Link>
                     <Link
                       href="/#features"
                       onClick={() => setMobileOpen(false)}
-                      className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2 text-center"
+                      className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2.5 text-center hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
                     >
                       Services
                     </Link>
                     <Link
                       href="/#pricing"
                       onClick={() => setMobileOpen(false)}
-                      className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2 text-center"
+                      className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2.5 text-center hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
                     >
                       Packages
                     </Link>

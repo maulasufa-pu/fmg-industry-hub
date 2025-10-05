@@ -54,10 +54,10 @@ const AnimatedCard = ({
 }) => {
   return (
     <motion.section
-      className={`relative overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl dark:shadow-gray-800/25 ${
+      className={`relative overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl dark:shadow-slate-800/25 ${
         gradient
-          ? "bg-gradient-to-br from-white via-blue-50 to-purple-50 dark:from-gray-900 dark:via-blue-900/20 dark:to-purple-900/20"
-          : "bg-white dark:bg-gray-900"
+          ? "bg-gradient-to-br from-white/95 via-blue-50/90 to-purple-50/90 dark:from-slate-900/95 dark:via-blue-900/30 dark:to-purple-900/30"
+          : "bg-white/95 dark:bg-slate-900/95"
       } ${className}`}
       initial={{ opacity: 0, y: 30, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -74,7 +74,7 @@ const AnimatedCard = ({
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 bg-gradient-to-r from-gray-800 to-blue-600 bg-clip-text text-transparent">
+          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 bg-gradient-to-r from-slate-800 to-blue-600 dark:from-slate-100 dark:to-blue-400 bg-clip-text text-transparent">
             {title}
           </h3>
         </motion.div>
@@ -125,12 +125,12 @@ function TeamAssignmentField({
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.1 * index }}
     >
-      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-        <span className="inline-block px-2 py-1 rounded-lg bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 text-xs font-bold text-blue-700 dark:text-blue-300 shadow-sm">
+      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+        <span className="inline-block px-2 py-1 rounded-lg bg-gradient-to-r from-blue-100/90 to-purple-100/90 dark:from-blue-900/40 dark:to-purple-900/40 text-xs font-bold text-blue-700 dark:text-blue-300 shadow-sm">
           {label}
         </span>
         {disabled && (
-          <span className="ml-2 text-[10px] px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+          <span className="ml-2 text-[10px] px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
             Assigned — remove to change
           </span>
         )}
@@ -149,9 +149,9 @@ function TeamAssignmentField({
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         disabled={disabled} 
         className={
-          "w-full rounded-xl border px-4 py-3 text-sm font-medium transition-all shadow-sm " +
-          "border-blue-200 dark:border-blue-700 bg-white/80 dark:bg-gray-800/80 " +
-          (disabled ? "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-800/50" : "")
+          "w-full rounded-xl border px-4 py-3 text-sm font-medium transition-all shadow-sm text-slate-900 dark:text-slate-100 " +
+          "border-blue-200 dark:border-blue-600 bg-white/90 dark:bg-slate-800/90 " +
+          (disabled ? "opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-800/60" : "")
         }
         placeholder={
           disabled
@@ -163,7 +163,7 @@ function TeamAssignmentField({
 
       {!disabled && open && filtered.length > 0 && (
         <motion.ul
-          className="absolute z-20 mt-2 w-full max-h-56 overflow-y-auto rounded-lg border border-blue-200 dark:border-blue-700 bg-white/95 dark:bg-gray-800/95 shadow-xl backdrop-blur-sm"
+          className="absolute z-20 mt-2 w-full max-h-56 overflow-y-auto rounded-lg border border-blue-200 dark:border-blue-600 bg-white/95 dark:bg-slate-800/95 shadow-xl backdrop-blur-sm"
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
@@ -171,12 +171,12 @@ function TeamAssignmentField({
           {filtered.map((option) => (
             <motion.li
               key={option.id}
-              className="cursor-pointer px-4 py-2 text-sm flex items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+              className="cursor-pointer px-4 py-2 text-sm flex items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/40 transition-colors"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleSelect(option)}
               whileHover={{ backgroundColor: "rgba(59, 130, 246, 0.1)" }}
             >
-              <span className="font-medium text-gray-700 dark:text-gray-200">
+              <span className="font-medium text-slate-700 dark:text-slate-200">
                 {getFullName(option)}
               </span>
             </motion.li>
@@ -234,12 +234,12 @@ export default function TeamAssignmentSection({
     <motion.div className="grid grid-cols-1 gap-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
       <AnimatedCard title="👥 Team Assignment" className="w-full" gradient>
         <motion.div
-          className="mb-6 p-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl border border-blue-200 dark:border-blue-700/50 shadow-lg"
+          className="mb-6 p-4 bg-gradient-to-br from-blue-50/90 to-purple-50/90 dark:from-blue-900/30 dark:to-purple-900/30 rounded-xl border border-blue-200 dark:border-blue-600/60 shadow-lg"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <h4 className="text-base font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
+          <h4 className="text-base font-bold text-slate-700 dark:text-slate-200 mb-3 flex items-center gap-2">
             📋 Currently Assigned Team Members
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -254,8 +254,8 @@ export default function TeamAssignmentSection({
                 key={assignment.role}
                 className={`p-4 rounded-2xl border shadow-lg flex items-center gap-4 ${
                   assignment.value
-                    ? "bg-white/90 dark:bg-gray-900/80 border-blue-200 dark:border-blue-700"
-                    : "bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-600"
+                    ? "bg-white/95 dark:bg-slate-900/90 border-blue-200 dark:border-blue-600"
+                    : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-600"
                 }`}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -264,18 +264,18 @@ export default function TeamAssignmentSection({
               >
                 <div className="flex-1">
                   <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1 flex items-center gap-1">
-                    <span className="inline-block px-2 py-1 rounded-lg bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 text-xs font-bold text-blue-700 dark:text-blue-300 shadow-sm">
+                    <span className="inline-block px-2 py-1 rounded-lg bg-gradient-to-r from-blue-100/90 to-purple-100/90 dark:from-blue-900/40 dark:to-purple-900/40 text-xs font-bold text-blue-700 dark:text-blue-300 shadow-sm">
                       {assignment.label}
                     </span>
                   </div>
-                  <div className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                    {assignment.value ? assignment.value : <span className="text-gray-400 italic">Not assigned</span>}
+                  <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                    {assignment.value ? assignment.value : <span className="text-slate-400 dark:text-slate-500 italic">Not assigned</span>}
                   </div>
                 </div>
                 {assignment.value && (
                   <motion.button
                     onClick={() => onRemoveAssignment(assignment.role as StaffRole)}
-                    className="ml-3 px-3 py-1 bg-gradient-to-r from-red-100 to-pink-100 dark:from-red-900/30 dark:to-pink-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors shadow-sm"
+                    className="ml-3 px-3 py-1 bg-gradient-to-r from-red-100/90 to-pink-100/90 dark:from-red-900/40 dark:to-pink-900/40 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold hover:bg-red-200/80 dark:hover:bg-red-900/60 transition-colors shadow-sm"
                     whileHover={{ scale: 1.07 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -289,8 +289,8 @@ export default function TeamAssignmentSection({
 
         <motion.div className="grid grid-cols-2 gap-4 text-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
           <div className="col-span-2 mb-2">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-2">✏️ Assign New Team Members</h4>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Search and assign team members to this project</p>
+            <h4 className="text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-2">✏️ Assign New Team Members</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Search and assign team members to this project</p>
           </div>
 
           <TeamAssignmentField label="🎭 A&R" value={anrName} setValue={setAnrName} options={getAvailableTeamOptions("anr")} getFullName={getFullName} index={0} role="anr" onRemove={onRemoveAssignment} disabled={Boolean(currentAssignments.anr)}/>
@@ -303,7 +303,7 @@ export default function TeamAssignmentSection({
         <motion.div className="mt-6 flex justify-end" initial={{ opacity: 1 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}>
           <motion.button
             onClick={handleSaveAssignments}
-            className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-sm font-medium text-white shadow hover:from-blue-700 hover:to-indigo-700 transition-colors"
+            className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 px-6 py-3 text-sm font-medium text-white shadow-lg hover:from-blue-700 hover:to-indigo-700 dark:hover:from-blue-600 dark:hover:to-indigo-600 transition-all duration-200"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >

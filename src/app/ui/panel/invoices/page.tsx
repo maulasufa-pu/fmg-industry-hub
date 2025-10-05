@@ -77,10 +77,10 @@ const PillTab = ({ children, active=false, onClick }:{
   <button
     onClick={onClick}
     className={[
-      "relative inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm transition-all",
+      "relative inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50",
       active
         ? "bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white shadow-[0_2px_28px_rgba(99,102,241,0.35)]"
-        : "bg-white/5 text-white/85 hover:bg-white/10 border border-white/10 backdrop-blur"
+        : "bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white/85 hover:bg-slate-200 dark:hover:bg-white/10 border-2 border-slate-200/50 dark:border-white/10 backdrop-blur"
     ].join(" ")}
   >
     {children}
@@ -98,9 +98,9 @@ const GlassButton = ({
     primary: "bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white shadow-[0_6px_32px_rgba(99,102,241,0.35)] hover:opacity-95",
     emerald: "bg-gradient-to-r from-emerald-500 to-lime-500 text-white shadow-[0_6px_32px_rgba(16,185,129,0.35)] hover:opacity-95",
     danger: "bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-[0_6px_32px_rgba(244,63,94,0.35)] hover:opacity-95",
-    outline: "bg-white/5 border border-white/15 text-white/90 hover:bg-white/10",
-    ink: "bg-neutral-900/60 border border-white/10 text-white/90 hover:bg-neutral-800/70",
-    neutral: "bg-white/8 border border-white/10 text-white hover:bg-white/12",
+    outline: "bg-slate-100/80 dark:bg-white/5 border-2 border-slate-300/60 dark:border-white/15 text-slate-700 dark:text-white/90 hover:bg-slate-200/90 dark:hover:bg-white/10",
+    ink: "bg-slate-100/90 dark:bg-slate-900/60 border-2 border-slate-300/50 dark:border-white/10 text-slate-800 dark:text-white/90 hover:bg-slate-200 dark:hover:bg-slate-800/70",
+    neutral: "bg-slate-100/70 dark:bg-white/8 border-2 border-slate-200/50 dark:border-white/10 text-slate-700 dark:text-white hover:bg-slate-200/80 dark:hover:bg-white/12",
   };
   return (
     <button
@@ -108,7 +108,7 @@ const GlassButton = ({
       onClick={onClick}
       className={[
         "inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold backdrop-blur transition-all",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/60",
+        "focus:outline-none focus:ring-2 focus:ring-indigo-500/50 dark:focus:ring-fuchsia-400/60",
         toneMap[tone]
       ].join(" ")}
       disabled={busying}
@@ -120,22 +120,22 @@ const GlassButton = ({
 };
 
 const SkeletonTable = () => (
-  <div className="rounded-3xl border border-white/10 bg-neutral-900/40 backdrop-blur shadow-xl overflow-hidden">
+  <div className="rounded-3xl border-2 border-slate-200/50 dark:border-white/10 bg-white/95 dark:bg-slate-900/40 backdrop-blur shadow-xl overflow-hidden">
     <div className="overflow-x-auto">
       <table className="min-w-full w-full text-sm">
-        <thead className="bg-white/5 text-left">
-          <tr className="text-white/70">
+        <thead className="bg-slate-100/80 dark:bg-white/5 text-left">
+          <tr className="text-slate-600 dark:text-white/70">
             {["Invoice","Client","Items","Amount","Status","Created","Due","Actions"].map(h=>(
               <th key={h} className="p-3">{h}</th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/10">
+        <tbody className="divide-y divide-slate-200/50 dark:divide-white/10">
           {Array.from({length:6}).map((_,i)=>(
             <tr key={i} className="animate-pulse">
               {Array.from({length:8}).map((__,j)=>(
                 <td key={j} className="p-3">
-                  <div className="h-4 w-full max-w-[140px] rounded bg-white/10" />
+                  <div className="h-4 w-full max-w-[140px] rounded bg-slate-200/60 dark:bg-white/10" />
                 </td>
               ))}
             </tr>
@@ -147,22 +147,22 @@ const SkeletonTable = () => (
 );
 
 const EmptyState = ({ isAdmin, onNew }: { isAdmin: boolean; onNew: () => void }) => (
-  <div className="rounded-3xl border border-white/10 bg-neutral-900/50 backdrop-blur p-10 shadow-xl text-center">
+  <div className="rounded-3xl border-2 border-slate-200/50 dark:border-white/10 bg-white/95 dark:bg-slate-900/50 backdrop-blur p-10 shadow-xl text-center">
     <motion.div
       initial={{ scale: 0.95, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.35 }}
-      className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-[conic-gradient(at_top_left,rgba(99,102,241,.4),rgba(236,72,153,.4),rgba(34,197,94,.35),rgba(99,102,241,.4))] ring-1 ring-white/10"
+      className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-[conic-gradient(at_top_left,rgba(99,102,241,.25),rgba(236,72,153,.25),rgba(34,197,94,.2),rgba(99,102,241,.25))] dark:bg-[conic-gradient(at_top_left,rgba(99,102,241,.4),rgba(236,72,153,.4),rgba(34,197,94,.35),rgba(99,102,241,.4))] ring-1 ring-slate-300/30 dark:ring-white/10"
     >
-      <Wallet className="h-7 w-7 text-white" />
+      <Wallet className="h-7 w-7 text-slate-700 dark:text-white" />
     </motion.div>
-    <h3 className="text-lg font-semibold text-white">No invoices found</h3>
-    <p className="mt-1 text-sm text-white/80">Start creating invoices or change your search filter.</p>
+    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">No invoices found</h3>
+    <p className="mt-1 text-sm text-slate-600 dark:text-white/80">Start creating invoices or change your search filter.</p>
     <div className="mt-4 flex items-center justify-center gap-2">
       {isAdmin ? (
         <GlassButton tone="primary" onClick={onNew}>+ New Invoice</GlassButton>
       ) : (
-        <Link href="/contact" className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs bg-white/8 border border-white/10 hover:bg-white/12 backdrop-blur">
+        <Link href="/contact" className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs bg-slate-100/80 dark:bg-white/8 border-2 border-slate-200/50 dark:border-white/10 hover:bg-slate-200/90 dark:hover:bg-white/12 backdrop-blur text-slate-700 dark:text-white/90">
           Need help?
         </Link>
       )}
@@ -174,7 +174,7 @@ const StatusPill: React.FC<{ status: InvoiceStatus; overdue: boolean }> = ({ sta
   const label = overdue && status === "unpaid" ? "overdue" : status;
   const className =
     nextStatusColor(status, overdue) +
-    " inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] capitalize border border-white/10 bg-white/5 backdrop-blur";
+    " inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] capitalize border-2 border-slate-200/50 dark:border-white/10 bg-slate-100/80 dark:bg-white/5 backdrop-blur";
   return <span className={className}>{label}</span>;
 };
 
@@ -197,26 +197,26 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
   const isBusy = (t: NonNullable<NonNullable<typeof busy>["type"]>) => busy?.id === r.id && busy?.type === t;
 
   return (
-    <li className="rounded-2xl border border-white/10 bg-neutral-900/60 backdrop-blur p-4 shadow">
+    <li className="rounded-2xl border-2 border-slate-200/50 dark:border-white/10 bg-white/95 dark:bg-slate-900/60 backdrop-blur p-4 shadow-lg">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <Link
             href={`${isAdmin ? "/admin" : "/client"}/invoices/${r.id}`}
-            className="font-semibold underline-offset-2 hover:underline block truncate"
+            className="font-semibold underline-offset-2 hover:underline block truncate text-slate-900 dark:text-white"
             title={r.invoice_no}
           >
             {r.invoice_no}
           </Link>
-          <div className="mt-1 text-xs text-white/70 truncate">{r.client_name ?? "-"}</div>
+          <div className="mt-1 text-xs text-slate-600 dark:text-white/70 truncate">{r.client_name ?? "-"}</div>
         </div>
-        <div className="text-right whitespace-nowrap tabular-nums font-bold">
+        <div className="text-right whitespace-nowrap tabular-nums font-bold text-slate-900 dark:text-white">
           {r.amount_total != null
             ? `${(r.currency ?? "IDR").toUpperCase()} ${Number(r.amount_total).toLocaleString("id-ID")}`
             : "-"}
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-white/80">
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-white/80">
         <StatusPill status={r.status} overdue={overdue} />
         <span className="opacity-60">•</span>
         <span>Created: {r.created_at ? new Date(r.created_at).toLocaleDateString("id-ID") : "-"}</span>
@@ -236,10 +236,10 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
                 {it.description}
               </span>
             ))}
-            {items.length > 3 && <span className="text-white/70">+{items.length - 3} more</span>}
+            {items.length > 3 && <span className="text-slate-600 dark:text-white/70">+{items.length - 3} more</span>}
           </div>
         ) : (
-          <span className="text-white/60">No items</span>
+          <span className="text-slate-500 dark:text-white/60">No items</span>
         )}
       </div>
 
@@ -463,10 +463,10 @@ export default function InvoicesPage(): React.JSX.Element {
   const paidCount = rows.filter(r => r.status === "paid").length;
 
   return (
-    <div className="relative min-h-screen p-4 sm:p-6 bg-neutral-950 text-white overflow-hidden">
+    <div className="relative min-h-screen p-4 sm:p-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors overflow-hidden">
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-32 -left-28 h-[40rem] w-[40rem] rounded-full bg-gradient-to-br from-indigo-600/20 via-fuchsia-500/15 to-sky-500/10 blur-3xl" />
-        <div className="absolute -bottom-40 -right-32 h-[36rem] w-[36rem] rounded-full bg-gradient-to-tr from-emerald-500/20 via-teal-400/15 to-cyan-400/10 blur-3xl" />
+        <div className="absolute -top-32 -left-28 h-[40rem] w-[40rem] rounded-full bg-gradient-to-br from-indigo-600/10 via-fuchsia-500/8 to-sky-500/6 dark:from-indigo-600/20 dark:via-fuchsia-500/15 dark:to-sky-500/10 blur-3xl" />
+        <div className="absolute -bottom-40 -right-32 h-[36rem] w-[36rem] rounded-full bg-gradient-to-tr from-emerald-500/10 via-teal-400/8 to-cyan-400/6 dark:from-emerald-500/20 dark:via-teal-400/15 dark:to-cyan-400/10 blur-3xl" />
       </div>
 
       <div className="w-full max-w-none space-y-6">
@@ -474,19 +474,19 @@ export default function InvoicesPage(): React.JSX.Element {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="rounded-[28px] p-[1px] bg-[linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.06)_35%,transparent)] shadow-[0_1px_0_rgba(255,255,255,.05),0_20px_60px_rgba(2,6,23,.45)]"
+          className="rounded-[28px] p-[1px] bg-gradient-to-b from-slate-200/20 via-slate-200/10 to-transparent dark:from-white/18 dark:via-white/6 dark:to-transparent shadow-xl shadow-slate-900/10 dark:shadow-black/45"
         >
-          <div className="rounded-[27px] bg-neutral-900/40 backdrop-blur">
+          <div className="rounded-[27px] bg-white/95 dark:bg-slate-900/40 backdrop-blur border border-slate-200/50 dark:border-white/10">
             <div className="relative p-5 sm:p-6">
-              <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-500/20 to-fuchsia-500/10 blur-2xl" />
+              <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-500/10 to-fuchsia-500/5 dark:from-indigo-500/20 dark:to-fuchsia-500/10 blur-2xl" />
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between relative">
                 <div>
                   <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-fuchsia-400 to-sky-400">
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-fuchsia-600 to-sky-600 dark:from-indigo-400 dark:via-fuchsia-400 dark:to-sky-400">
                       Invoices
                     </span>
                   </h1>
-                  <p className="text-sm text-white/90">
+                  <p className="text-sm text-slate-600 dark:text-white/90">
                     {isAdmin ? "Manage & send invoices" : "View and pay your invoices"}
                   </p>
                 </div>
@@ -523,7 +523,7 @@ export default function InvoicesPage(): React.JSX.Element {
               </div>
             </div>
 
-            <div className="sticky top-0 z-10 border-t border-white/10 bg-neutral-900/60 backdrop-blur rounded-b-[27px]">
+            <div className="sticky top-0 z-10 border-t border-slate-200/50 dark:border-white/10 bg-white/95 dark:bg-slate-900/60 backdrop-blur rounded-b-[27px]">
               <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-wrap gap-2">
                   {Tabs.map((t) => (
@@ -534,20 +534,20 @@ export default function InvoicesPage(): React.JSX.Element {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="relative">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/70" />
+                    <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 dark:text-white/70" />
                     <input
                       value={q}
                       onChange={(e) => setQ(e.currentTarget.value)}
                       placeholder="Search invoice/client…"
-                      className="h-10 w-[min(80vw,320px)] rounded-full border border-white/10 bg-neutral-900/60 pl-10 pr-10 text-sm text-white placeholder:text-white/60 outline-none focus:ring-2 focus:ring-fuchsia-400/60"
+                      className="h-10 w-[min(80vw,320px)] rounded-full border-2 border-slate-300/50 dark:border-white/10 bg-white/95 dark:bg-slate-900/60 pl-10 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-white/60 outline-none focus:ring-2 focus:ring-indigo-500/50 dark:focus:ring-fuchsia-400/60 backdrop-blur"
                     />
                     {q && (
                       <button
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-white/10"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-200/80 dark:hover:bg-white/10 transition-colors"
                         onClick={() => setQ("")}
                         aria-label="Clear search"
                       >
-                        <X className="h-4 w-4 text-white/70" />
+                        <X className="h-4 w-4 text-slate-500 dark:text-white/70" />
                       </button>
                     )}
                   </div>
@@ -573,13 +573,13 @@ export default function InvoicesPage(): React.JSX.Element {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
-              className="hidden md:block rounded-3xl p-[1px] bg-[linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.06)_35%,transparent)] shadow-[0_1px_0_rgba(255,255,255,.05),0_20px_60px_rgba(2,6,23,.45)] overflow-hidden"
+              className="hidden md:block rounded-3xl p-[1px] bg-gradient-to-b from-slate-200/20 via-slate-200/10 to-transparent dark:from-white/18 dark:via-white/6 dark:to-transparent shadow-xl shadow-slate-900/10 dark:shadow-black/45 overflow-hidden"
             >
-              <div className="rounded-[calc(theme(borderRadius.3xl)-1px)] bg-neutral-900/50 backdrop-blur">
+              <div className="rounded-[calc(theme(borderRadius.3xl)-1px)] bg-white/95 dark:bg-slate-900/50 backdrop-blur border border-slate-200/50 dark:border-white/10">
                 <div className="overflow-x-auto">
                   <table className="min-w-full w-full text-sm">
-                    <thead className="sticky top-0 z-[1] bg-white/[0.06] text-left">
-                      <tr className="text-white/75">
+                    <thead className="sticky top-0 z-[1] bg-slate-100/80 dark:bg-white/[0.06] text-left">
+                      <tr className="text-slate-600 dark:text-white/75">
                         <th className="p-3">Invoice</th>
                         <th className="p-3">Client</th>
                         <th className="p-3 hidden lg:table-cell">Items</th>
@@ -590,7 +590,7 @@ export default function InvoicesPage(): React.JSX.Element {
                         <th className="p-3 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/10">
+                    <tbody className="divide-y divide-slate-200/50 dark:divide-white/10">
                       {rows.map((r) => {
                         const overdue = isOverdue(r.status, r.due_date);
                         const items = [...(r.invoice_items ?? [])].sort((a, b) => Number(a.position ?? 0) - Number(b.position ?? 0));
@@ -598,7 +598,7 @@ export default function InvoicesPage(): React.JSX.Element {
                         const isBusy = (t: NonNullable<typeof busy>["type"]) => busy?.id === r.id && busy?.type === t;
 
                         return (
-                          <tr key={r.id} className="hover:bg-white/5 transition-colors">
+                          <tr key={r.id} className="hover:bg-slate-100/60 dark:hover:bg-white/5 transition-colors text-slate-800 dark:text-white">
                             <td className="p-3 font-semibold truncate max-w-[220px]">
                               <Link
                                 href={`${isAdmin ? "/admin" : "/client"}/invoices/${r.id}`}
@@ -608,23 +608,23 @@ export default function InvoicesPage(): React.JSX.Element {
                                 {r.invoice_no}
                               </Link>
                             </td>
-                            <td className="p-3 truncate max-w-[220px]">{r.client_name ?? "-"}</td>
+                            <td className="p-3 truncate max-w-[220px] text-slate-700 dark:text-white/90">{r.client_name ?? "-"}</td>
                             <td className="p-3 hidden lg:table-cell">
                               {items.length > 0 ? (
                                 <div className="flex flex-wrap gap-1.5">
                                   {items.slice(0, 2).map((it) => (
                                     <span
                                       key={it.id}
-                                      className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[11px] text-white/90"
+                                      className="rounded-full border-2 border-slate-300/50 dark:border-white/15 bg-slate-100/80 dark:bg-white/5 px-2 py-0.5 text-[11px] text-slate-700 dark:text-white/90"
                                       title={`${it.description} × ${it.qty} @ ${formatIDRCurrency(Number(it.unit_price) || 0)}`}
                                     >
                                       {it.description}
                                     </span>
                                   ))}
-                                  {items.length > 2 && <span className="text-xs text-white/70">+{items.length - 2} more</span>}
+                                  {items.length > 2 && <span className="text-xs text-slate-600 dark:text-white/70">+{items.length - 2} more</span>}
                                 </div>
                               ) : (
-                                <span className="text-white/70">—</span>
+                                <span className="text-slate-500 dark:text-white/70">—</span>
                               )}
                             </td>
                             <td className="p-3 whitespace-nowrap tabular-nums">
@@ -633,7 +633,7 @@ export default function InvoicesPage(): React.JSX.Element {
                                 : "-"}
                             </td>
                             <td className="p-3">
-                              <span className={statusClass + " inline-flex items-center rounded-full px-2.5 py-0.5 text-xs capitalize border border-white/10 bg-white/5 backdrop-blur"}>
+                              <span className={statusClass + " inline-flex items-center rounded-full px-2.5 py-0.5 text-xs capitalize border-2 border-slate-200/50 dark:border-white/10 bg-slate-100/80 dark:bg-white/5 backdrop-blur"}>
                                 {overdue && r.status === "unpaid" ? "overdue" : r.status}
                               </span>
                             </td>
@@ -729,7 +729,7 @@ export default function InvoicesPage(): React.JSX.Element {
       {isAdmin && (
         <button
           onClick={() => setOpenNew(true)}
-          className="fixed md:hidden bottom-5 right-5 inline-flex items-center justify-center h-12 w-12 rounded-full bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-white shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/60"
+          className="fixed md:hidden bottom-5 right-5 inline-flex items-center justify-center h-12 w-12 rounded-full bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 dark:focus:ring-fuchsia-400/60"
           aria-label="+ New Invoice"
           title="+ New Invoice"
         >

@@ -74,7 +74,7 @@ const renderEmbed = (rawUrl: string): React.JSX.Element | null => {
       const type = candidate; const id = parts[1];
       const src = `https://open.spotify.com/embed/${type}/${id}`;
       const height = type === "episode" || type === "show" ? 232 : 152;
-      return <iframe src={src} className="w-full rounded-xl border border-gray-200 dark:border-gray-700" height={height} loading="lazy" title="Spotify embed" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" />;
+      return <iframe src={src} className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-600 shadow-lg" height={height} loading="lazy" title="Spotify embed" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" />;
     }
   }
   if (host.endsWith("soundcloud.com")) {
@@ -148,8 +148,8 @@ const ReferenceItem = memo(function ReferenceItem({
 
   return (
     <li className="rounded-xl">
-      <div className="mb-2 text-xs text-gray-500 dark:text-gray-400">
-        <span className="bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-lg">
+      <div className="mb-2 text-xs text-slate-500 dark:text-slate-400">
+        <span className="bg-blue-50/90 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm">
           {row.created_at ? new Date(row.created_at).toLocaleString("en-US") : ""}
         </span>
       </div>
@@ -157,19 +157,19 @@ const ReferenceItem = memo(function ReferenceItem({
       <div className="group relative">
         <div className="absolute top-2 right-2 z-10 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition">
           {deleting ? (
-            <span className="text-[11px] px-2 py-1 rounded-full bg-white/80 dark:bg-gray-900/70 shadow">Deleting…</span>
+            <span className="text-[11px] px-2 py-1 rounded-full bg-white/90 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 shadow-md border border-slate-200 dark:border-slate-700">Deleting…</span>
           ) : (
             <>
               <button
                 type="button"
-                className="text-[11px] px-2 py-1 rounded-full bg-white/80 dark:bg-gray-900/70 text-gray-800 dark:text-gray-100 shadow border border-gray-200/60"
+                className="text-[11px] px-2 py-1 rounded-full bg-white/90 dark:bg-slate-900/80 text-slate-800 dark:text-slate-200 shadow-md border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 hover:shadow-lg transition-all duration-200"
                 onClick={() => setIsEditing(true)}
               >
                 {row.note ? "Edit note" : "Add note"}
               </button>
               <button
                 type="button"
-                className="text-[11px] px-2 py-1 rounded-full bg-white/80 dark:bg-gray-900/70 text-red-600 shadow border border-red-200/60"
+                className="text-[11px] px-2 py-1 rounded-full bg-white/90 dark:bg-slate-900/80 text-red-600 dark:text-red-400 shadow-md border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 hover:shadow-lg transition-all duration-200"
                 onClick={() => onDelete(row.id)}
               >
                 Delete
@@ -186,10 +186,10 @@ const ReferenceItem = memo(function ReferenceItem({
               href={normalizeUrl(row.url)}
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full aspect-[16/9] rounded-xl border border-gray-200 dark:border-gray-700
-                         bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20
+              className="block w-full aspect-[16/9] rounded-xl border-2 border-slate-200 dark:border-slate-600
+                         bg-gradient-to-r from-blue-50/90 to-purple-50/90 dark:from-blue-900/30 dark:to-purple-900/30
                          grid place-content-center font-medium text-blue-600 hover:text-purple-600
-                         dark:text-blue-400 dark:hover:text-purple-400 transition"
+                         dark:text-blue-400 dark:hover:text-purple-400 shadow-sm hover:shadow-md transition-all duration-200"
             >
               🌐 {row.url}
             </a>
@@ -205,7 +205,7 @@ const ReferenceItem = memo(function ReferenceItem({
               rows={3}
               value={localNote}
               onChange={(e) => setLocalNote(e.target.value)}
-              className="w-full resize-y rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full resize-y rounded-lg border-2 border-slate-200 dark:border-slate-600 bg-white/95 dark:bg-slate-800/95 px-4 py-3 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-500/20 dark:focus:ring-blue-400/30 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200"
               placeholder="Write a note here…"
             />
             <div className="flex items-center gap-2">
@@ -213,21 +213,21 @@ const ReferenceItem = memo(function ReferenceItem({
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="rounded-lg bg-blue-600 text-white px-3 py-1.5 disabled:opacity-60"
+                className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white px-4 py-2 font-medium shadow-lg shadow-blue-500/25 dark:shadow-blue-400/20 hover:from-blue-700 hover:to-indigo-700 dark:hover:from-blue-600 dark:hover:to-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 active:scale-95"
               >
                 {saving ? "Saving…" : "Save"}
               </button>
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-3 py-1.5"
+                className="rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2 font-medium border-2 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600 shadow-sm hover:shadow-md transition-all duration-200"
               >
                 Cancel
               </button>
             </div>
           </div>
         ) : row.note ? (
-          <p className="text-[13px] leading-relaxed text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3 whitespace-pre-wrap">
+          <p className="text-[13px] leading-relaxed text-slate-700 dark:text-slate-200 bg-slate-50/90 dark:bg-slate-800/60 border-2 border-slate-200 dark:border-slate-600 rounded-lg p-3 whitespace-pre-wrap shadow-sm">
             📝 {row.note}
           </p>
         ) : null}
@@ -407,10 +407,10 @@ export default function ReferencesTab(
           </button>
         ) : (
           <div className="rounded-3xl border-2 border-blue-400/60 p-4 bg-gradient-to-b from-transparent to-blue-500/5 min-h[260px] md:min-h-[260px]">
-            <div className="text-sm text-gray-600 dark:text-gray-300 space-y-3">
-              <div className="font-semibold text-gray-800 dark:text-gray-100">➕ Add Reference</div>
+            <div className="text-sm text-slate-600 dark:text-slate-300 space-y-3">
+              <div className="font-semibold text-slate-800 dark:text-slate-100">➕ Add Reference</div>
 
-              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">URL</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">URL</label>
               <input
                 ref={inputRef}
                 type="url"
@@ -418,23 +418,23 @@ export default function ReferencesTab(
                 placeholder="https://example.com/reference..."
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white/95 dark:bg-slate-800/95 px-4 py-3 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-500/20 dark:focus:ring-blue-400/30 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200"
               />
 
-              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Notes (optional)</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Notes (optional)</label>
               <textarea
                 rows={3}
                 placeholder="Write a short note…"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                className="w-full resize-y rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full resize-y rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white/95 dark:bg-slate-800/95 px-4 py-3 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-500/20 dark:focus:ring-blue-400/30 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200"
               />
 
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  className="rounded-xl px-3 py-2 bg-blue-600 text-white disabled:opacity-60"
+                  className="rounded-xl px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white font-medium shadow-lg shadow-blue-500/25 dark:shadow-blue-400/20 hover:from-blue-700 hover:to-indigo-700 dark:hover:from-blue-600 dark:hover:to-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 active:scale-95"
                   disabled={adding || url.trim().length === 0}
                 >
                   {adding ? "Adding…" : "Add Link"}
@@ -442,7 +442,7 @@ export default function ReferencesTab(
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-xl px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+                  className="rounded-xl px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-medium border-2 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600 shadow-sm hover:shadow-md transition-all duration-200"
                 >
                   Cancel
                 </button>
@@ -456,16 +456,16 @@ export default function ReferencesTab(
 
   return (
     <div className="relative grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <section className="relative overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl dark:shadow-gray-800/25 bg-white dark:bg-gray-900 col-span-1 lg:col-span-2">
+      <section className="relative overflow-hidden rounded-3xl border-2 border-slate-200 dark:border-slate-700 shadow-xl shadow-black/10 dark:shadow-black/30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm col-span-1 lg:col-span-2">
         <div className="relative z-10 p-8">
           <div className="mb-6 flex items-center justify-between">
-            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 bg-gradient-to-r from-gray-800 to-blue-600 bg-clip-text text-transparent">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 bg-gradient-to-r from-slate-800 via-blue-600 to-indigo-600 dark:from-slate-100 dark:via-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
               🔗 References Feed
             </h3>
           </div>
 
           {loading || links === null ? (
-            <div className="text-sm text-gray-500 dark:text-gray-400">Loading…</div>
+            <div className="text-sm text-slate-500 dark:text-slate-400">Loading…</div>
           ) : (
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
               {renderLinks.length === 0 ? (

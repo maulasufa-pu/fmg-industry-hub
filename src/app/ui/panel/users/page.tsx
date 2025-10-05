@@ -251,22 +251,22 @@ export default function UsersPage(): React.JSX.Element {
   const getRoleBadgeColor = (role: GlobalRole) => {
     switch (role) {
       case "owner":
-        return "bg-purple-100 text-purple-800";
+        return "bg-purple-100 dark:bg-purple-800/30 text-purple-800 dark:text-purple-200 border border-purple-200 dark:border-purple-700";
       case "admin":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-100 dark:bg-blue-800/30 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-700";
       default:
-        return "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 dark:text-gray-100";
+        return "bg-gray-100 dark:bg-gray-800/50 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600";
     }
   };
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 dark:from-slate-950 dark:via-gray-950 dark:to-slate-900 p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 w-1/4 rounded bg-gray-200 dark:bg-gray-700 dark:bg-gray-700" />
+          <div className="h-8 w-1/4 rounded bg-gray-200 dark:bg-gray-700" />
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-16 rounded bg-gray-200 dark:bg-gray-700 dark:bg-gray-700" />
+              <div key={i} className="h-16 rounded bg-gray-200 dark:bg-gray-700" />
             ))}
           </div>
         </div>
@@ -275,50 +275,51 @@ export default function UsersPage(): React.JSX.Element {
   }
 
   return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 dark:from-slate-950 dark:via-gray-950 dark:to-slate-900">
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">User Management</h1>
-          <p className="mt-1 text-neutral-600 dark:text-neutral-200 dark:text-gray-200">Manage user roles and permissions ({rows.length} users total)</p>
-          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">User Management</h1>
+          <p className="mt-1 text-gray-600 dark:text-gray-300">Manage user roles and permissions ({rows.length} users total)</p>
+          <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
             Global Roles: Client, Admin, Owner | Functional Roles:{" "}
             {FUNCTIONAL_ROLES.map((r) => ROLE_LABEL[r as UserRole] || r).join(", ")}
           </div>
         </div>
 
         <div className="grid grid-cols-4 gap-4 text-center">
-          <div className="rounded-lg bg-purple-50 dark:bg-purple-900/60 p-3">
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-200">{rows.filter((u) => u.main_role === "owner").length}</div>
-            <div className="text-xs text-purple-600 dark:text-purple-200">Owners</div>
+          <div className="rounded-lg bg-purple-100 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-700/50 p-3 shadow-sm">
+            <div className="text-2xl font-bold text-purple-700 dark:text-purple-200">{rows.filter((u) => u.main_role === "owner").length}</div>
+            <div className="text-xs text-purple-600 dark:text-purple-300">Owners</div>
           </div>
-          <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:bg-blue-900/20 p-3">
-            <div className="text-2xl font-bold text-sky-600 dark:text-sky-200">{rows.filter((u) => u.main_role === "admin").length}</div>
-            <div className="text-xs text-sky-600 dark:text-sky-200">Admins</div>
+          <div className="rounded-lg bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700/50 p-3 shadow-sm">
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-200">{rows.filter((u) => u.main_role === "admin").length}</div>
+            <div className="text-xs text-blue-600 dark:text-blue-300">Admins</div>
           </div>
-          <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
-            <div className="text-2xl font-bold text-neutral-600 dark:text-neutral-200 dark:text-gray-200">{rows.filter((u) => u.main_role === "client").length}</div>
-            <div className="text-xs text-neutral-600 dark:text-neutral-200 dark:text-gray-200">Clients</div>
+          <div className="rounded-lg bg-gray-100 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 p-3 shadow-sm">
+            <div className="text-2xl font-bold text-gray-700 dark:text-gray-200">{rows.filter((u) => u.main_role === "client").length}</div>
+            <div className="text-xs text-gray-600 dark:text-gray-300">Clients</div>
           </div>
-          <div className="rounded-lg bg-green-50 dark:bg-green-900/20 dark:bg-green-900/20 p-3">
-            <div className="text-2xl font-bold text-green-600 dark:text-green-200">{filteredRows.length}</div>
-            <div className="text-xs text-green-600 dark:text-green-200">Showing</div>
+          <div className="rounded-lg bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-700/50 p-3 shadow-sm">
+            <div className="text-2xl font-bold text-green-700 dark:text-green-200">{filteredRows.length}</div>
+            <div className="text-xs text-green-600 dark:text-green-300">Showing</div>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="flex items-center justify-between rounded-lg border border-red-200 dark:border-red-600 bg-red-50 dark:bg-red-900/20 dark:bg-red-900/20 px-4 py-3 text-red-700">
+        <div className="flex items-center justify-between rounded-lg border border-red-200 dark:border-red-600 bg-red-50 dark:bg-red-900/30 px-4 py-3 text-red-700 dark:text-red-200 shadow-sm">
           <span>{error}</span>
-          <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
+          <button onClick={() => setError(null)} className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300">
             ×
           </button>
         </div>
       )}
 
       {debugInfo && (
-        <div className="flex items-center justify-between rounded-lg border border-blue-200 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:bg-blue-900/20 px-4 py-3 text-blue-700">
+        <div className="flex items-center justify-between rounded-lg border border-blue-200 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/30 px-4 py-3 text-blue-700 dark:text-blue-200 shadow-sm">
           <span className="text-sm">Debug: {debugInfo}</span>
-          <button onClick={() => setDebugInfo(null)} className="text-blue-500 hover:text-blue-700">
+          <button onClick={() => setDebugInfo(null)} className="text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
             ×
           </button>
         </div>
@@ -330,14 +331,14 @@ export default function UsersPage(): React.JSX.Element {
           <input
             type="text"
             placeholder="Search users by name, email, role, or function..."
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:border-gray-600 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 px-4 py-2 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div className="flex gap-2">
           <select
-            className="rounded-lg border border-gray-300 dark:border-gray-600 dark:border-gray-600 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+            className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-4 py-2 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value as GlobalRole | "all")}
           >
@@ -349,7 +350,7 @@ export default function UsersPage(): React.JSX.Element {
           <button
             onClick={() => void load()}
             disabled={loading}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg bg-blue-600 dark:bg-blue-700 px-4 py-2 text-white hover:bg-blue-700 dark:hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-50 transition-colors shadow-sm"
           >
             {loading ? "Loading..." : "Refresh"}
           </button>
@@ -357,10 +358,10 @@ export default function UsersPage(): React.JSX.Element {
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-lg bg-white dark:bg-gray-900 shadow dark:shadow-gray-800/25 dark:shadow dark:shadow-gray-800/25-gray-800/25">
-        <div className="border-[var(--border)] border-gray-200 dark:border-gray-600 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 p-4">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Users & Role Assignments</h3>
-          <div className="mt-2 text-sm text-neutral-600 dark:text-neutral-200 dark:text-gray-200">
+      <div className="overflow-hidden rounded-lg bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-800/50 border border-gray-200 dark:border-gray-700">
+        <div className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Users & Role Assignments</h3>
+          <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
             Functional Role Summary:{" "}
             {FUNCTIONAL_ROLES.map((role) => {
               const count = rows.reduce((acc, u) => acc + (u.staff_role.includes(role) ? 1 : 0), 0);
@@ -371,53 +372,53 @@ export default function UsersPage(): React.JSX.Element {
         </div>
 
         <table className="w-full">
-          <thead className="bg-gray-50 dark:bg-gray-800">
+          <thead className="bg-gray-50 dark:bg-gray-800/30">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 dark:text-gray-400">User</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 dark:text-gray-400">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">User</th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
                 Global Role
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 dark:text-gray-400">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
                 Functional Roles
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 dark:text-gray-400">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
                 Created Date
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 dark:text-gray-400">
-                Last Sign In <span className="ml-1 text-xs text-gray-400">(N/A)</span>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                Last Sign In <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">(N/A)</span>
               </th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-200 bg-white dark:bg-gray-900">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
             {filteredRows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400 dark:text-gray-400">
+                <td colSpan={5} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                   {searchTerm ? "No users found matching your search" : "No users found"}
                 </td>
               </tr>
             ) : (
               filteredRows.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50 dark:bg-gray-800">
+                <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <div className="h-10 w-10 flex-shrink-0">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-300 dark:bg-gray-600 dark:bg-gray-600">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600">
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
                             {user.name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || "U"}
                           </span>
                         </div>
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{user.name || "No name"}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">{user.email || "No email"}</div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{user.name || "No name"}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">{user.email || "No email"}</div>
                       </div>
                     </div>
                   </td>
 
                   <td className="px-6 py-4">
                     <select
-                      className={`inline-flex items-center rounded-full border-0 px-2.5 py-0.5 text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${getRoleBadgeColor(
+                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 dark:focus:ring-offset-gray-900 ${getRoleBadgeColor(
                         user.main_role
                       )} ${updating === user.id ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
                       value={user.main_role}
@@ -430,7 +431,7 @@ export default function UsersPage(): React.JSX.Element {
                     </select>
                     {updating === user.id && (
                       <div className="ml-2 inline-block">
-                        <div className="h-4 w-4 animate-spin rounded-full border-[var(--border)]-2 border-blue-600" />
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 dark:border-blue-400 border-t-transparent" />
                       </div>
                     )}
                   </td>
@@ -453,32 +454,34 @@ export default function UsersPage(): React.JSX.Element {
                                   key={funcRole}
                                   onClick={() => void toggleFuncRole(user.id, funcRole)}
                                   disabled={(error?.toLowerCase().includes("rls recursion") ?? false) || isUpdating || isClient}
-                                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                    isActive ? "bg-blue-100 text-blue-800 hover:bg-blue-200" : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 dark:text-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:bg-gray-700"
+                                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border transition-colors ${
+                                    isActive 
+                                      ? "bg-blue-100 dark:bg-blue-800/30 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-800/50" 
+                                      : "bg-gray-100 dark:bg-gray-800/50 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700/50"
                                   } ${((error?.toLowerCase().includes("rls recursion") ?? false) || isUpdating || isClient) ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
                                 >
                                   {isUpdating ? (
                                     <>
-                                      <div className="mr-1 h-3 w-3 animate-spin rounded-full border-[var(--border)]-2 border-current" />
+                                      <div className="mr-1 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
                                       Updating…
                                     </>
                                   ) : (
                                     <>
                                       {displayName}
                                       {isActive && <span className="ml-1">✓</span>}
-                                      {isClient && <span className="ml-1 text-gray-400" title="Functional roles not available for clients">🔒</span>}
+                                      {isClient && <span className="ml-1 text-gray-500 dark:text-gray-400" title="Functional roles not available for clients">🔒</span>}
                                     </>
                                   )}
                                 </button>
                               );
                             })}
                             {isClient && (
-                              <div className="mt-1 text-xs italic text-gray-500 dark:text-gray-400 dark:text-gray-400">
+                              <div className="mt-1 text-xs italic text-gray-600 dark:text-gray-400">
                                 Functional roles not available for Client users
                               </div>
                             )}
                             {(error?.toLowerCase().includes("rls recursion") ?? false) && (
-                              <div className="mt-1 text-xs italic text-red-600 dark:text-red-200">
+                              <div className="mt-1 text-xs italic text-red-600 dark:text-red-400">
                                 Functional roles unavailable due to database RLS recursion
                               </div>
                             )}
@@ -488,14 +491,15 @@ export default function UsersPage(): React.JSX.Element {
                     </div>
                   </td>
 
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{formatDate(user.created_at)}</td>
-                  <td className="px-6 py-4 text-sm italic text-gray-500 dark:text-gray-400 dark:text-gray-400">Not Available</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{formatDate(user.created_at)}</td>
+                  <td className="px-6 py-4 text-sm italic text-gray-600 dark:text-gray-400">Not Available</td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
+    </div>
     </div>
   );
 }

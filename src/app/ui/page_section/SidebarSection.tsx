@@ -517,7 +517,7 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
               <motion.div
                 className="absolute inset-0 bg-gradient-to-br from-indigo-400/10 to-purple-400/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
               />
-              <Settings className="w-5 h-5 text-slate-300 group-hover:text-white transition-colors duration-200 relative z-10" />
+              <Settings className="w-5 h-5 text-slate-600 dark:text-slate-300 group-hover:text-white transition-colors duration-200 relative z-10" />
             </Link>
           </motion.div>
         </motion.div>
@@ -528,7 +528,7 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
       {isOpen && (
         <motion.aside
           data-sidebar
-          className="lg:hidden fixed top-16 left-0 z-50 h-[calc(100svh-4rem)] w-80 max-w-[85vw] sm:max-w-[70vw] border-r border-slate-300/40 dark:border-slate-600 bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-700 dark:via-slate-600 dark:to-slate-800 shadow-2xl shadow-slate-300/50 dark:shadow-slate-900/50 backdrop-blur-md"
+          className="lg:hidden fixed top-16 left-0 z-50 h-[calc(100svh-4rem)] w-80 max-w-[85vw] sm:max-w-[70vw] flex flex-col border-r border-slate-300/40 dark:border-slate-600 bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-700 dark:via-slate-600 dark:to-slate-800 shadow-2xl shadow-slate-300/50 dark:shadow-slate-900/50 backdrop-blur-md"
           initial={{ x: -320 }}
           animate={{ x: 0 }}
           exit={{ x: -320 }}
@@ -554,7 +554,7 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
             />
           </motion.div>
           <nav
-            className="relative flex h-[calc(100%-180px)] flex-col gap-2 overflow-y-auto px-6 py-6"
+            className="relative flex flex-1 flex-col gap-2 overflow-y-auto px-6 py-6"
           >
             <div className="relative z-10">
               <AnimatePresence initial={false}>

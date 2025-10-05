@@ -1577,7 +1577,7 @@ function Pricing3DCarousel({
 
       <div
         ref={ref}
-        className="relative h:[560px] sm:h-[580px] md:h-[600px] lg:h-[620px] select-none"
+        className="relative h-[450px] sm:h-[500px] md:h-[560px] lg:h-[600px] xl:h-[620px] select-none"
         style={{ perspective: "1200px" }}
       >
         <motion.div drag="x" dragConstraints={{ left: 0, right: 0 }} onDragEnd={onDragEnd} className="absolute inset-0">
@@ -1671,7 +1671,7 @@ function Pricing({
   lastUpdated?: string | null;
 }): React.JSX.Element {
   return (
-    <section id="pricing" className="relative mx-auto w-full max-w-none py-8">
+    <section id="pricing" className="relative mx-auto w-full max-w-none py-12 md:py-16 lg:py-20">
       <Parallax speed={0.06}>
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="mx-auto max-w-3xl px-4 text-center">
           <motion.h2 variants={fadeUp} className="text-pretty text-3xl font-bold sm:text-4xl">

@@ -15,7 +15,7 @@ export function getSupabaseAdminClient(): SupabaseClient | null {
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!url || !serviceKey) {
-      console.warn('Admin client not available: missing service role key');
+      // console.warn('Admin client not available: missing service role key');
       return null;
     }
 
@@ -28,7 +28,7 @@ export function getSupabaseAdminClient(): SupabaseClient | null {
 
     return _adminClient;
   } catch (err) {
-    console.warn('Failed to create admin client:', err);
+    // console.warn('Failed to create admin client:', err);
     return null;
   }
 }
@@ -99,7 +99,7 @@ export async function toggleProfileRole(
       }
       
     } catch (err) {
-      console.warn('Admin client failed, falling back to regular client:', err);
+      // console.warn('Admin client failed, falling back to regular client:', err);
     }
   }
 
@@ -128,7 +128,7 @@ export async function updateMainRole(
 
     return { error };
   } catch (err) {
-    console.error('Update main role error:', err);
+    // console.error('Update main role error:', err);
     return { error: err instanceof Error ? err : new Error('Failed to update main role') };
   }
 }
@@ -154,7 +154,7 @@ export async function updateStaffRoles(
 
     return { error };
   } catch (err) {
-    console.error('Update staff roles error:', err);
+    //console.error('Update staff roles error:', err);
     return { error: err instanceof Error ? err : new Error('Failed to update staff roles') };
   }
 }
@@ -212,7 +212,7 @@ export async function assignTeamMember(
     return { error: projectUpdateError };
 
   } catch (err) {
-    console.error('Assignment error:', err);
+    //console.error('Assignment error:', err);
     return { error: err instanceof Error ? err : new Error('Assignment failed') };
   }
 }
@@ -255,7 +255,7 @@ export async function unassignTeamMember(
     return { error: projectUpdateError };
 
   } catch (err) {
-    console.error('Unassignment error:', err);
+    // console.error('Unassignment error:', err);
     return { error: err instanceof Error ? err : new Error('Unassignment failed') };
   }
 }
@@ -300,7 +300,7 @@ export async function getTeamMembersByRole(
 
     return { data, error };
   } catch (err) {
-    console.error('Get team members error:', err);
+    //console.error('Get team members error:', err);
     return { 
       data: null, 
       error: err instanceof Error ? err : new Error('Failed to get team members') 
@@ -337,7 +337,7 @@ export async function getAllTeamMembers(): Promise<{
 
     return { data, error };
   } catch (err) {
-    console.error('Get all team members error:', err);
+    //console.error('Get all team members error:', err);
     return { 
       data: null, 
       error: err instanceof Error ? err : new Error('Failed to get team members') 

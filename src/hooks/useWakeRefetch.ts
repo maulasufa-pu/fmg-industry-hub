@@ -36,7 +36,7 @@ export function useWakeRefetch(
 
   const handleError = useCallback((error: unknown) => {
     const errorObj = error instanceof Error ? error : new Error(String(error));
-    console.error("Wake refetch failed:", errorObj);
+    // console.error("Wake refetch failed:", errorObj);
     onError?.(errorObj);
     
     // Retry logic dengan exponential backoff

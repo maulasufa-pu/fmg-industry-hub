@@ -94,7 +94,7 @@ export function useFocusRefetch<T>(
         setIsLoading(false);
         return;
       }
-      console.error(`Reload failed: ${errorMessage}`);
+      //console.error(`Reload failed: ${errorMessage}`);
       if (mountedRef.current) {
         onError?.(error instanceof Error ? error : new Error(errorMessage));
         if (retryCountRef.current < maxRetries) {

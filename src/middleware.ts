@@ -9,22 +9,22 @@ export async function middleware(req: NextRequest) {
                      req.nextUrl.hostname.startsWith('192.168.') ||
                      req.nextUrl.hostname.endsWith('.local');
   
-  console.log('🔍 Middleware Debug:', {
-    hostname: req.nextUrl.hostname,
-    pathname,
-    isLocalhost,
-    nodeEnv: process.env.NODE_ENV,
-    disableFlag: process.env.DISABLE_AUTH_DEBUG,
-    port: req.nextUrl.port
-  });
+  // console.log('🔍 Middleware Debug:', {
+  //   hostname: req.nextUrl.hostname,
+  //   pathname,
+  //   isLocalhost,
+  //   nodeEnv: process.env.NODE_ENV,
+  //   disableFlag: process.env.DISABLE_AUTH_DEBUG,
+  //   port: req.nextUrl.port
+  // });
   if (isLocalhost && process.env.NODE_ENV === 'development') {
-    console.log('🐛 FORCE DEBUG MODE: Bypassing ALL middleware auth for localhost:', pathname);
+    // console.log('🐛 FORCE DEBUG MODE: Bypassing ALL middleware auth for localhost:', pathname);
     if (pathname === "/admin") {
-      console.log('🔄 Redirecting /admin to /admin/dashboard');
+      // console.log('🔄 Redirecting /admin to /admin/dashboard');
       return NextResponse.redirect(new URL("/admin/dashboard", origin));
     }
     
-    console.log('✅ FORCE Allowing access to:', pathname);
+    // console.log('✅ FORCE Allowing access to:', pathname);
     return NextResponse.next();
   }
   if (

@@ -47,20 +47,20 @@ export function CurrencyProvider({
       setRates(data.rates);
       setLastUpdated(data.lastUpdated || new Date().toISOString());
       
-      console.log('Exchange rates updated:', {
-        currencyCount: Object.keys(data.rates).length,
-        timestamp: data.lastUpdated,
-        sampleRates: {
-          USD: data.rates.USD,
-          IDR: data.rates.IDR,
-          EUR: data.rates.EUR
-        }
-      });
+      // console.log('Exchange rates updated:', {
+      //   currencyCount: Object.keys(data.rates).length,
+      //   timestamp: data.lastUpdated,
+      //   sampleRates: {
+      //     USD: data.rates.USD,
+      //     IDR: data.rates.IDR,
+      //     EUR: data.rates.EUR
+      //   }
+      // });
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch rates';
       setError(errorMessage);
-      console.error('Currency rates fetch failed:', errorMessage);
+      // console.error('Currency rates fetch failed:', errorMessage);
       
       // Keep existing rates if available, otherwise use fallback
       if (Object.keys(rates).length <= 1) {

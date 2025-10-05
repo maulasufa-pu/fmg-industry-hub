@@ -33,7 +33,7 @@ export function getSupabaseClient(): SupabaseClient {
       try {
         _client!.realtime.setAuth(token);
       } catch (e) {
-        console.warn("realtime.setAuth(seed) failed:", e);
+        //console.warn("realtime.setAuth(seed) failed:", e);
       }
     }
   });
@@ -44,7 +44,7 @@ export function getSupabaseClient(): SupabaseClient {
       try {
         _client!.realtime.setAuth(session?.access_token ?? "");
       } catch (e) {
-        console.warn("realtime.setAuth(onAuthStateChange) failed:", e);
+        //console.warn("realtime.setAuth(onAuthStateChange) failed:", e);
       }
     }
   );

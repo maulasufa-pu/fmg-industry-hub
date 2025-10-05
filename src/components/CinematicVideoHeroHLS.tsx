@@ -467,7 +467,7 @@ export default function CinematicVideoHeroHLS({
                     onContextMenu={(e) => e.preventDefault()}
                     onError={() => {
                       if (mp4Fallback && videoRef.current) {
-                        console.warn("[video] native error, fallback MP4");
+                        // console.warn("[video] native error, fallback MP4");
                         videoRef.current.src = mp4Fallback;
                         videoRef.current.load();
                         videoRef.current.muted = true;

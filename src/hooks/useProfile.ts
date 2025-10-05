@@ -71,7 +71,7 @@ export function useProfile() {
         return error ? null : (data?.signedUrl ?? null);
       }
     } catch (error) {
-      console.error('Error refreshing avatar URL:', error);
+      // console.error('Error refreshing avatar URL:', error);
       return null;
     }
   }, [supabase]);
@@ -96,7 +96,7 @@ export function useProfile() {
         .maybeSingle();
 
       if (dbError) {
-        console.error('Database error:', dbError);
+        // console.error('Database error:', dbError);
         setError(dbError.message);
         return;
       }
@@ -131,7 +131,7 @@ export function useProfile() {
         avatarUrl,
       });
     } catch (error) {
-      console.error('Error loading profile:', error);
+      // console.error('Error loading profile:', error);
       setError(error instanceof Error ? error.message : 'Unknown error');
       setProfile(null);
     } finally {

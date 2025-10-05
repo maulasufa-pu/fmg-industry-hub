@@ -25,7 +25,7 @@ export default function ClientWakeReloader() {
         window.dispatchEvent(new Event(CLIENT_WAKE_EVENT));
         lastReloadTime.current = now; // Update waktu hanya jika berhasil
       } catch (error) {
-        console.error("Failed to dispatch wake event:", error);
+        // console.error("Failed to dispatch wake event:", error);
         if (retryCount < MAX_RETRIES) {
           retryCount++;
           // Exponential backoff untuk retry

@@ -38,7 +38,7 @@ export function convertFromUSD(
   
   const rate = exchangeRates[targetCurrency];
   if (!rate || !Number.isFinite(rate)) {
-    console.warn(`Exchange rate not found for ${targetCurrency}, using USD`);
+    // console.warn(`Exchange rate not found for ${targetCurrency}, using USD`);
     return usdAmount;
   }
   
@@ -117,7 +117,7 @@ export function formatCurrency(
     return formatted;
     
   } catch (error) {
-    console.warn(`Currency formatting failed for ${currency}:`, error);
+    // console.warn(`Currency formatting failed for ${currency}:`, error);
     const symbol = CURRENCY_OPTIONS.find(opt => opt.code === currency)?.symbol || currency;
     return showSymbol ? `${symbol}${Math.round(amount).toLocaleString()}` : Math.round(amount).toLocaleString();
   }
@@ -178,7 +178,7 @@ export async function fetchExchangeRates(): Promise<{
       lastUpdated: data.lastUpdated || new Date().toISOString()
     };
   } catch (error) {
-    console.warn('Failed to fetch exchange rates, using fallback:', error);
+    // console.warn('Failed to fetch exchange rates, using fallback:', error);
     // Fallback rates
     return {
       rates: { USD: 1, IDR: 16000, EUR: 0.92, JPY: 150 },

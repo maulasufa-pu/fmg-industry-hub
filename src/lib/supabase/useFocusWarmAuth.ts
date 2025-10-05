@@ -10,7 +10,7 @@ export function useFocusWarmAuth() {
       try {
         await ensureFreshSession();
       } catch (error) {
-        console.error('Session refresh failed:', error);
+        //console.error('Session refresh failed:', error);
       }
     };
 

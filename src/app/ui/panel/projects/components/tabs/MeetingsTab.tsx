@@ -54,14 +54,11 @@ const CardShell = ({
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.5, ease: "easeOut" }}
   >
-    <div className="relative">
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-50/90 via-indigo-50/80 to-purple-50/70 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-purple-950/40" />
-      <div className="relative flex items-center justify-between gap-3 px-6 py-4">
-        <h3 className="text-base sm:text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          🗓️ {title}
-        </h3>
-        {right}
-      </div>
+    <div className="relative bg-gradient-to-r from-blue-50/90 via-indigo-50/80 to-purple-50/70 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-purple-950/40 flex items-center justify-between gap-3 px-6 py-4">
+      <h3 className="text-base sm:text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+        🗓️ {title}
+      </h3>
+      {right}
     </div>
     <div className="px-6 pb-6 pt-4">{children}</div>
   </motion.section>

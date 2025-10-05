@@ -133,16 +133,14 @@ const AnimatedCard = ({
       }}
     >
       <div className="relative z-10 p-6 md:p-8">
-        <motion.div
-          className="mb-4 md:mb-6 flex items-center justify-between"
+        <motion.h3 
+          className="mb-4 md:mb-6 text-lg font-bold text-slate-800 dark:text-slate-100 bg-gradient-to-r from-slate-800 via-blue-600 to-indigo-600 dark:from-slate-100 dark:via-blue-400 dark:to-indigo-400 bg-clip-text text-transparent"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.15 }}
         >
-          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 bg-gradient-to-r from-slate-800 via-blue-600 to-indigo-600 dark:from-slate-100 dark:via-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
-            {title}
-          </h3>
-        </motion.div>
+          {title}
+        </motion.h3>
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

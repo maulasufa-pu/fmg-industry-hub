@@ -35,16 +35,14 @@ const AnimatedCard = ({
       }}
     >
       <div className="relative z-10 p-8">
-        <motion.div
-          className="mb-6 flex items-center justify-between"
+        <motion.h3 
+          className="mb-6 text-lg font-bold text-slate-800 dark:text-slate-100 bg-gradient-to-r from-slate-800 via-blue-600 to-indigo-600 dark:from-slate-100 dark:via-blue-400 dark:to-indigo-400 bg-clip-text text-transparent"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 bg-gradient-to-r from-slate-800 via-blue-600 to-indigo-600 dark:from-slate-100 dark:via-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
-            {title}
-          </h3>
-        </motion.div>
+          {title}
+        </motion.h3>
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -86,12 +84,7 @@ export default function OverviewTab({ project }: OverviewTabProps) {
       transition={{ duration: 0.5 }}
     >
       <AnimatedCard title="📝 Main Info (Read-only)" gradient>
-        <motion.div
-          className="mb-6 space-y-3"
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-        >
+        <div className="mb-6 space-y-3">
           <div className="flex flex-wrap items-center gap-3">
             <span
               className={`inline-flex items-center gap-2 rounded-2xl px-4 py-1.5 text-white text-xs font-semibold bg-gradient-to-r ${statusTone(
@@ -114,7 +107,7 @@ export default function OverviewTab({ project }: OverviewTabProps) {
             This project is currently <span className="font-semibold text-slate-800 dark:text-slate-200">{pretty(project.status)}</span>{" "}
             and is at the <span className="font-semibold text-slate-800 dark:text-slate-200">{pretty(project.stage)}</span> stage.
           </p>
-        </motion.div>
+        </div>
 
         <motion.div
           className="grid grid-cols-2 gap-4 text-sm"
@@ -151,12 +144,7 @@ export default function OverviewTab({ project }: OverviewTabProps) {
       </AnimatedCard>
 
       <AnimatedCard title="📝 Project Description" gradient className="h-full flex flex-col">
-        <motion.div
-          className="flex-1 flex flex-col"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-        >
+        <div className="flex-1 flex flex-col">
           <div className="relative">
             <div className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-white/80 dark:from-slate-900/80 to-transparent rounded-t-xl z-10" />
             <div
@@ -168,7 +156,7 @@ export default function OverviewTab({ project }: OverviewTabProps) {
             </div>
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-white/80 dark:from-slate-900/80 to-transparent rounded-b-xl z-10" />
           </div>
-        </motion.div>
+        </div>
 
         <style jsx>{`
           :global(.descScroll) {

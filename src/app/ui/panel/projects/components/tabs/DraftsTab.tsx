@@ -53,16 +53,14 @@ const AnimatedCard = ({
       whileHover={{ scale: 1.01, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}
     >
       <div className="relative z-10 p-8">
-        <motion.div
-          className="mb-6 flex items-center justify-between"
+        <motion.h3 
+          className="mb-6 text-lg font-bold text-slate-800 dark:text-slate-100 bg-gradient-to-r from-slate-800 via-blue-600 to-purple-600 dark:from-slate-100 dark:via-blue-400 dark:to-purple-400 bg-clip-text text-transparent"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 bg-gradient-to-r from-slate-800 via-blue-600 to-purple-600 dark:from-slate-100 dark:via-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
-            {title}
-          </h3>
-        </motion.div>
+          {title}
+        </motion.h3>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           {children}
         </motion.div>
@@ -429,12 +427,12 @@ export default function DraftsTab({
 
       <AnimatedCard title="🔄 Drafts" gradient className="lg:col-span-2">
         {localDrafts === null ? (
-          <motion.div className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2" animate={{ opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1.5 }}>
+          <div className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2 animate-pulse">
             <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
             Loading drafts…
-          </motion.div>
+          </div>
         ) : localDrafts.length ? (
           <motion.ul className="space-y-3 text-sm">
             {localDrafts
@@ -531,11 +529,11 @@ export default function DraftsTab({
               })}
           </motion.ul>
         ) : (
-          <motion.div className="text-sm text-slate-500 dark:text-slate-400 text-center py-8 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-slate-200/50 dark:border-slate-700/50" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 }}>
+          <div className="text-sm text-slate-500 dark:text-slate-400 text-center py-8 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
             <div className="text-2xl mb-2">📋</div>
             <div className="font-medium">Belum ada draft.</div>
             <div className="text-xs mt-1 text-slate-400 dark:text-slate-500">Upload file .wav pertama untuk memulai</div>
-          </motion.div>
+          </div>
         )}
       </AnimatedCard>
 

@@ -51,9 +51,9 @@ const AnimatedCard = ({
     animate={{ opacity: 1, y: 0, scale: 1 }}
     transition={{ duration: 0.6, ease: "easeOut" }}
     whileHover={{ scale: 1.01, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}
+    aria-label={title}
   >
-    <div className="relative z-10 p-0">{children}</div>
-    <div className="sr-only">{title}</div>
+    {children}
   </motion.section>
 );
 

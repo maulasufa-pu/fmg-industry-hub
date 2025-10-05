@@ -126,20 +126,19 @@ export default function ProjectControlsSection({
 
   return (
     <motion.div
-      className="relative"
+      className="relative backdrop-blur-xl bg-white/90 dark:bg-slate-900/90 rounded-t-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-xl p-4"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
     >
-      <div className="backdrop-blur-xl bg-white/90 dark:bg-slate-900/90 rounded-t-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-xl p-4">
-        <div className="relative">
-          <div className="pointer-events-none absolute left-0 top-0 h-full w-8 z-20 bg-gradient-to-r from-white/90 dark:from-slate-900/90 to-transparent" />
-          <div className="pointer-events-none absolute right-0 top-0 h-full w-8 z-20 bg-gradient-to-l from-white/90 dark:from-slate-900/90 to-transparent" />
-          <motion.div
-            className="flex flex-row items-center gap-2 overflow-x-auto overflow-y-hidden scrollbar-hide px-4 md:px-8"
-            whileHover={{ scale: 1.01 }}
-            style={{ WebkitOverflowScrolling: "touch" }}
-          >
+      <div className="relative">
+        <div className="pointer-events-none absolute left-0 top-0 h-full w-8 z-20 bg-gradient-to-r from-white/90 dark:from-slate-900/90 to-transparent" />
+        <div className="pointer-events-none absolute right-0 top-0 h-full w-8 z-20 bg-gradient-to-l from-white/90 dark:from-slate-900/90 to-transparent" />
+        <motion.div
+          className="flex flex-row items-center gap-2 overflow-x-auto overflow-y-hidden scrollbar-hide px-4 md:px-8"
+          whileHover={{ scale: 1.01 }}
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
             {availableTabs.map((tab, index) => {
               const isActive = activeTab === tab.key;
               return (
@@ -220,20 +219,17 @@ export default function ProjectControlsSection({
           </motion.div>
         </div>
 
-        <motion.div
-          ref={contentRef}
-          className="mt-6 min-h-[400px]"
-          data-role={roleStatus}
-          initial={{ opacity: 0, y: 20, filter: "blur(4px)" }}
-          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          exit={{ opacity: 0, y: -20, filter: "blur(4px)" }}
-          transition={{ duration: 0.4, ease: "easeInOut" }}
-        >
-          <div className="bg-white/95 dark:bg-slate-900/95 rounded-2xl p-6 border border-slate-200/40 dark:border-slate-700/40">
-            {content}
-          </div>
-        </motion.div>
-      </div>
+      <motion.div
+        ref={contentRef}
+        className="mt-6 min-h-[400px] bg-white/95 dark:bg-slate-900/95 rounded-2xl p-6 border border-slate-200/40 dark:border-slate-700/40"
+        data-role={roleStatus}
+        initial={{ opacity: 0, y: 20, filter: "blur(4px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        exit={{ opacity: 0, y: -20, filter: "blur(4px)" }}
+        transition={{ duration: 0.4, ease: "easeInOut" }}
+      >
+        {content}
+      </motion.div>
     </motion.div>
   );
 }

@@ -449,17 +449,17 @@ export default function PublishingTab({
   return (
     <motion.div
       data-role={roleStatus || (isClientView ? "client" : "staff")}
-      className="grid grid-cols-1 lg:grid-cols-12 gap-6"
+      className="grid grid-cols-1 xl:grid-cols-12 gap-4 lg:gap-6"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <AnimatedCard title="📑 Publishing Data" gradient className="lg:col-span-5">
+      <AnimatedCard title="📑 Publishing Data" gradient className="xl:col-span-5">
         {loading ? (
           <div className="text-sm text-slate-500 dark:text-slate-400">Loading…</div>
         ) : (
           <div className="space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               <Field label="ISRC" required>
                 <input
                   type="text"
@@ -576,9 +576,9 @@ export default function PublishingTab({
               </Field>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               <Field label="Artwork">
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                   {form.artwork_url ? (
                     <img
                       src={form.artwork_url}
@@ -604,7 +604,7 @@ export default function PublishingTab({
               <Field label="Royalty Share (total ≤ 100%)">
                 <div className="space-y-2">
                   {form.royalty_splits.map((s, i) => (
-                    <div key={`split-${i}`} className="flex items-center gap-2">
+                    <div key={`split-${i}`} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       <input
                         type="text"
                         placeholder="Party name / account"
@@ -619,7 +619,7 @@ export default function PublishingTab({
                         max={100}
                         step={0.01}
                         placeholder="%"
-                        className="w-28 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white/95 dark:bg-slate-800/95 px-3 py-2 text-slate-900 dark:text-slate-100 shadow-sm outline-none focus:ring-4 focus:ring-blue-500/20 dark:focus:ring-blue-400/30 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200"
+                        className="w-full sm:w-28 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white/95 dark:bg-slate-800/95 px-3 py-2 text-slate-900 dark:text-slate-100 shadow-sm outline-none focus:ring-4 focus:ring-blue-500/20 dark:focus:ring-blue-400/30 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200"
                         value={Number.isFinite(s.percentage) ? s.percentage : 0}
                         onChange={(e) =>
                           updateSplit(i, {
@@ -679,12 +679,12 @@ export default function PublishingTab({
               <div
                 className="sticky bottom-0 -mx-6 md:-mx-8 mt-4 border-t-2 border-slate-200/90 dark:border-slate-700/80
                   bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm supports-[backdrop-filter]:bg-white/70
-                  dark:supports-[backdrop-filter]:bg-slate-900/70 px-6 md:px-8 py-3
-                  flex items-center justify-between rounded-b-3xl shadow-lg shadow-black/5 dark:shadow-black/20"
+                  dark:supports-[backdrop-filter]:bg-slate-900/70 px-4 sm:px-6 md:px-8 py-3
+                  flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 rounded-b-3xl shadow-lg shadow-black/5 dark:shadow-black/20"
               >
-                <div className="text-xs">
+                <div className="text-xs flex-1 min-w-0">
                   {err ? (
-                    <span className="text-rose-500">{err}</span>
+                    <span className="text-rose-500 break-words">{err}</span>
                   ) : ok ? (
                     <span className="text-emerald-600">{ok}</span>
                   ) : (
@@ -696,7 +696,7 @@ export default function PublishingTab({
                 <button
                   onClick={onSave}
                   disabled={saving}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white font-medium shadow-lg shadow-blue-500/25 dark:shadow-blue-400/20 hover:from-blue-700 hover:to-indigo-700 dark:hover:from-blue-600 dark:hover:to-indigo-600 hover:shadow-xl hover:shadow-blue-500/30 dark:hover:shadow-blue-400/25 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 active:scale-95"
+                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white font-medium shadow-lg shadow-blue-500/25 dark:shadow-blue-400/20 hover:from-blue-700 hover:to-indigo-700 dark:hover:from-blue-600 dark:hover:to-indigo-600 hover:shadow-xl hover:shadow-blue-500/30 dark:hover:shadow-blue-400/25 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 active:scale-95"
                 >
                   {saving ? "Saving…" : "Save"}
                 </button>
@@ -712,7 +712,7 @@ export default function PublishingTab({
         )}
       </AnimatedCard>
 
-      <AnimatedCard title="📚 Publishing Status" gradient className="lg:col-span-7">
+      <AnimatedCard title="📚 Publishing Status" gradient className="xl:col-span-7">
         <div className="space-y-4">
           <div className="p-4 bg-gradient-to-br from-green-50/90 to-blue-50/90 dark:from-green-900/30 dark:to-blue-900/30 rounded-xl border-2 border-green-200 dark:border-green-700/60 shadow-sm">
             <h4 className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
@@ -726,7 +726,7 @@ export default function PublishingTab({
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 gap-3">
             {DSPS.map(({ key, label, emoji }, idx) => {
               const st = form.platform_statuses[key];
               const badge = STATUS_BADGE[st.status];
@@ -739,12 +739,12 @@ export default function PublishingTab({
                   transition={{ delay: 0.15 + idx * 0.05 }}
                   whileHover={{ scale: 1.01 }}
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                     <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                       <span className="mr-1">{emoji}</span>
                       {label}
                     </div>
-                    <span className={`text-[11px] px-2 py-1 rounded-full ${badge.cls}`}>
+                    <span className={`text-[11px] px-2 py-1 rounded-full ${badge.cls} self-start sm:self-auto`}>
                       {badge.text}
                     </span>
                   </div>
@@ -794,9 +794,9 @@ export default function PublishingTab({
         <AnimatedCard
           title="🔄 Distribution Actions"
           gradient
-          className="lg:col-span-12"
+          className="xl:col-span-12"
         >
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {[
               { action: "Submit to Distributors", icon: "📤", color: "from-blue-500 to-indigo-600" },
               { action: "Generate ISRC Codes", icon: "🔢", color: "from-green-500 to-emerald-600" },
@@ -823,7 +823,7 @@ export default function PublishingTab({
         </AnimatedCard>
       )}
 
-      <AnimatedCard title="📈 Analytics & Performance" gradient className="lg:col-span-12">
+      <AnimatedCard title="📈 Analytics & Performance" gradient className="xl:col-span-12">
         <div className="text-center py-8 text-slate-500 dark:text-slate-400">
           <div className="text-4xl mb-4">📊</div>
           <p>Performance analytics will appear after track is published.</p>

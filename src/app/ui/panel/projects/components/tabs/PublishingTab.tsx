@@ -712,7 +712,7 @@ export default function PublishingTab({
         )}
       </AnimatedCard>
 
-      <AnimatedCard title="📚 Publishing Status" gradient className="lg:col-span-4">
+      <AnimatedCard title="📚 Publishing Status" gradient className="lg:col-span-7">
         <div className="space-y-4">
           <div className="p-4 bg-gradient-to-br from-green-50/90 to-blue-50/90 dark:from-green-900/30 dark:to-blue-900/30 rounded-xl border-2 border-green-200 dark:border-green-700/60 shadow-sm">
             <h4 className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
@@ -787,22 +787,6 @@ export default function PublishingTab({
               );
             })}
           </div>
-        </div>
-      </AnimatedCard>
-
-      <AnimatedCard title="🖼️ Artwork Preview" gradient className="lg:col-span-3">
-        <div className="grid place-items-center">
-          {form.artwork_url ? (
-            <img
-              src={form.artwork_url}
-              alt="Artwork"
-              className="w-64 h-64 object-cover rounded-2xl border-2 border-slate-200 dark:border-slate-600 shadow-lg"
-            />
-          ) : (
-            <div className="w-64 h-64 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/50 dark:bg-slate-800/50 grid place-items-center text-sm text-slate-500 dark:text-slate-400 shadow-inner">
-              Artwork not uploaded yet
-            </div>
-          )}
         </div>
       </AnimatedCard>
 

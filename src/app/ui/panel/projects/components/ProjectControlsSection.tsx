@@ -219,17 +219,13 @@ export default function ProjectControlsSection({
           </motion.div>
         </div>
 
-      <motion.div
+      <div 
         ref={contentRef}
-        className="mt-6 min-h-[400px] bg-white/95 dark:bg-slate-900/95 rounded-2xl p-6 border border-slate-200/40 dark:border-slate-700/40"
+        className="mt-6 min-h-[400px]"
         data-role={roleStatus}
-        initial={{ opacity: 0, y: 20, filter: "blur(4px)" }}
-        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-        exit={{ opacity: 0, y: -20, filter: "blur(4px)" }}
-        transition={{ duration: 0.4, ease: "easeInOut" }}
       >
         {content}
-      </motion.div>
+      </div>
     </motion.div>
   );
 }

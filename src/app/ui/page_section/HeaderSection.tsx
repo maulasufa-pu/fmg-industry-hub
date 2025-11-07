@@ -478,7 +478,10 @@ export const HeaderSection = (): React.JSX.Element => {
                   Services
                 </Link>
                 <Link href="/#pricing" className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
-                  Packages
+                  Pricing
+                </Link>
+                <Link href="/portfolio" className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
+                  Portfolio
                 </Link>
 
                 <div className="relative" ref={menuRef}>

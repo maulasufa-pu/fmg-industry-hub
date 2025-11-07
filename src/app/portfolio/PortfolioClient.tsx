@@ -23,7 +23,6 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Parallax } from "react-scroll-parallax";
 
 // Types
 type ProjectCategory = 'all' | 'production' | 'mixing' | 'mastering' | 'songwriting' | 'publishing';
@@ -223,56 +222,54 @@ export default function PortfolioClient(): React.JSX.Element {
           className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-pink-500/10 dark:from-indigo-500/20 dark:via-purple-500/10 dark:to-pink-500/20"
         />
         
-        <Parallax speed={0.05}>
-          <div className="relative mx-auto max-w-6xl px-4 text-center">
-            <motion.div
-              initial="hidden"
-              animate="visible" 
-              variants={stagger}
-              className="space-y-8"
+        <div className="relative mx-auto max-w-6xl px-4 text-center">
+          <motion.div
+            initial="hidden"
+            animate="visible" 
+            variants={stagger}
+            className="space-y-8"
+          >
+            <motion.h1 
+              variants={fadeUp}
+              className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl"
             >
-              <motion.h1 
-                variants={fadeUp}
-                className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl"
-              >
-                <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  Our
-                </span>{" "}
-                <span className="text-slate-900 dark:text-white">
-                  Portfolio
-                </span>
-              </motion.h1>
+              <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Our
+              </span>{" "}
+              <span className="text-slate-900 dark:text-white">
+                Portfolio
+              </span>
+            </motion.h1>
 
-              <motion.p 
-                variants={fadeUp}
-                custom={1}
-                className="mx-auto max-w-3xl text-lg sm:text-xl text-slate-600 dark:text-slate-300"
-              >
-                Discover the stories behind our music. From intimate songwriting sessions to
-                massive productions, explore the projects that define our creative journey.
-              </motion.p>
+            <motion.p 
+              variants={fadeUp}
+              custom={1}
+              className="mx-auto max-w-3xl text-lg sm:text-xl text-slate-600 dark:text-slate-300"
+            >
+              Discover the stories behind our music. From intimate songwriting sessions to
+              massive productions, explore the projects that define our creative journey.
+            </motion.p>
 
-              <motion.div 
-                variants={fadeUp}
-                custom={2}
-                className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-500 dark:text-slate-400"
-              >
-                <div className="flex items-center gap-2">
-                  <Music className="w-4 h-4" />
-                  <span>50+ Projects</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  <span>25+ Artists</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Award className="w-4 h-4" />
-                  <span>10M+ Streams</span>
-                </div>
-              </motion.div>
+            <motion.div 
+              variants={fadeUp}
+              custom={2}
+              className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-500 dark:text-slate-400"
+            >
+              <div className="flex items-center gap-2">
+                <Music className="w-4 h-4" />
+                <span>50+ Projects</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                <span>25+ Artists</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Award className="w-4 h-4" />
+                <span>10M+ Streams</span>
+              </div>
             </motion.div>
-          </div>
-        </Parallax>
+          </motion.div>
+        </div>
       </section>
 
       {/* Filter Section */}
@@ -355,101 +352,97 @@ export default function PortfolioClient(): React.JSX.Element {
 
       {/* Stats Section */}
       <section className="relative py-20 bg-gradient-to-br from-slate-50 to-indigo-50/50 dark:from-slate-900 dark:to-indigo-950/50">
-        <Parallax speed={0.03}>
-          <div className="mx-auto max-w-4xl px-4 text-center">
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={stagger}
-              className="space-y-12"
+        <div className="mx-auto max-w-4xl px-4 text-center">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={stagger}
+            className="space-y-12"
+          >
+            <motion.h2 
+              variants={fadeUp}
+              className="text-3xl sm:text-4xl font-bold"
             >
-              <motion.h2 
-                variants={fadeUp}
-                className="text-3xl sm:text-4xl font-bold"
-              >
-                Numbers That Speak
-              </motion.h2>
+              Numbers That Speak
+            </motion.h2>
 
-              <motion.div 
-                variants={fadeUp}
-                custom={1}
-                className="grid grid-cols-2 md:grid-cols-4 gap-8"
-              >
-                {[
-                  { label: "Total Projects", value: "50+", icon: Music },
-                  { label: "Artists Worked", value: "25+", icon: Users },
-                  { label: "Total Streams", value: "10M+", icon: Headphones },
-                  { label: "Awards Won", value: "15+", icon: Award }
-                ].map((stat, index) => (
-                  <div key={index} className="text-center space-y-3">
-                    <div className="w-12 h-12 mx-auto bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center">
-                      <stat.icon className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
-                      {stat.value}
-                    </div>
-                    <div className="text-sm text-slate-600 dark:text-slate-400">
-                      {stat.label}
-                    </div>
+            <motion.div 
+              variants={fadeUp}
+              custom={1}
+              className="grid grid-cols-2 md:grid-cols-4 gap-8"
+            >
+              {[
+                { label: "Total Projects", value: "50+", icon: Music },
+                { label: "Artists Worked", value: "25+", icon: Users },
+                { label: "Total Streams", value: "10M+", icon: Headphones },
+                { label: "Awards Won", value: "15+", icon: Award }
+              ].map((stat, index) => (
+                <div key={index} className="text-center space-y-3">
+                  <div className="w-12 h-12 mx-auto bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center">
+                    <stat.icon className="w-6 h-6 text-white" />
                   </div>
-                ))}
-              </motion.div>
+                  <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+                    {stat.value}
+                  </div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">
+                    {stat.label}
+                  </div>
+                </div>
+              ))}
             </motion.div>
-          </div>
-        </Parallax>
+          </motion.div>
+        </div>
       </section>
 
       {/* CTA Section */}
       <section className="relative py-20">
-        <Parallax speed={0.06}>
-          <div className="mx-auto max-w-4xl px-4 text-center">
-            <motion.div
-              initial="hidden" 
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={stagger}
-              className="space-y-8"
+        <div className="mx-auto max-w-4xl px-4 text-center">
+          <motion.div
+            initial="hidden" 
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={stagger}
+            className="space-y-8"
+          >
+            <motion.h2 
+              variants={fadeUp}
+              className="text-3xl sm:text-4xl font-bold"
             >
-              <motion.h2 
-                variants={fadeUp}
-                className="text-3xl sm:text-4xl font-bold"
-              >
-                Ready to Create Your Story?
-              </motion.h2>
+              Ready to Create Your Story?
+            </motion.h2>
 
-              <motion.p 
-                variants={fadeUp}
-                custom={1}
-                className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto"
-              >
-                Join the artists and creators who trust FMG Universe to bring their 
-                vision to life. Let&apos;s create something extraordinary together.
-              </motion.p>
+            <motion.p 
+              variants={fadeUp}
+              custom={1}
+              className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto"
+            >
+              Join the artists and creators who trust FMG Universe to bring their 
+              vision to life. Let&apos;s create something extraordinary together.
+            </motion.p>
 
-              <motion.div 
-                variants={fadeUp}
-                custom={2}
-                className="flex flex-col sm:flex-row gap-4 justify-center"
+            <motion.div 
+              variants={fadeUp}
+              custom={2}
+              className="flex flex-col sm:flex-row gap-4 justify-center"
+            >
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-2xl hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-200"
               >
-                <Link
-                  href="/contact"
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-2xl hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-200"
-                >
-                  Start Your Project
-                  <ExternalLink className="w-4 h-4" />
-                </Link>
-                
-                <Link
-                  href="/services"
-                  className="inline-flex items-center gap-2 px-8 py-4 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-semibold rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200"
-                >
-                  View Services
-                </Link>
-              </motion.div>
+                Start Your Project
+                <ExternalLink className="w-4 h-4" />
+              </Link>
+              
+              <Link
+                href="/services"
+                className="inline-flex items-center gap-2 px-8 py-4 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-semibold rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200"
+              >
+                View Services
+              </Link>
             </motion.div>
-          </div>
-        </Parallax>
+          </motion.div>
+        </div>
       </section>
     </main>
   );

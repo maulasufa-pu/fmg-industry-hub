@@ -67,52 +67,65 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`Batch updating ${updates.length} items...`);
+    console.log(`⚡ FAST batch updating ${updates.length} items...`);
+    const startTime = Date.now();
 
-    // Update each item one by one with proper error handling
-    const results = [];
-    const errors = [];
-
-    for (const update of updates) {
-      try {
-        const { data, error } = await supabase
-          .from("portfolio")
-          .update({ priority_order: update.priority_order })
-          .eq("id", update.id)
-          .select("id, priority_order")
-          .single();
-
-        if (error) {
-          console.error(`Error updating item ${update.id}:`, error);
-          errors.push({ id: update.id, error: error.message });
-        } else {
-          results.push(data);
-        }
-      } catch (err) {
-        console.error(`Exception updating item ${update.id}:`, err);
-        errors.push({ id: update.id, error: err instanceof Error ? err.message : "Unknown error" });
-      }
+    // Process in chunks of 20 for optimal performance
+    const CHUNK_SIZE = 20;
+    const chunks = [];
+    for (let i = 0; i < updates.length; i += CHUNK_SIZE) {
+      chunks.push(updates.slice(i, i + CHUNK_SIZE));
     }
 
-    console.log(`Batch update completed: ${results.length} success, ${errors.length} errors`);
+    console.log(`Processing ${chunks.length} chunks of max ${CHUNK_SIZE} items each`);
 
-    if (errors.length > 0) {
+    let totalSuccess = 0;
+    let totalErrors = 0;
+
+    // Process chunks in parallel for maximum speed
+    await Promise.all(
+      chunks.map(async (chunk, chunkIndex) => {
+        // Update all items in this chunk in parallel
+        const chunkPromises = chunk.map(update =>
+          supabase
+            .from("portfolio")
+            .update({ priority_order: update.priority_order })
+            .eq("id", update.id)
+        );
+
+        const results = await Promise.allSettled(chunkPromises);
+        
+        const successCount = results.filter(r => r.status === 'fulfilled' && !(r.value as any).error).length;
+        const errorCount = results.length - successCount;
+        
+        totalSuccess += successCount;
+        totalErrors += errorCount;
+        
+        console.log(`Chunk ${chunkIndex + 1}/${chunks.length}: ${successCount} success, ${errorCount} errors`);
+      })
+    );
+
+    const duration = Date.now() - startTime;
+    console.log(`✅ Batch update completed in ${duration}ms: ${totalSuccess} success, ${totalErrors} errors`);
+
+    if (totalErrors > 0) {
       return NextResponse.json(
         { 
-          success: false, 
-          message: `Updated ${results.length} items, but ${errors.length} failed`,
-          results,
-          errors 
+          success: true, 
+          message: `Updated ${totalSuccess} items, ${totalErrors} failed`,
+          duration: `${duration}ms`,
+          stats: { success: totalSuccess, errors: totalErrors }
         },
-        { status: 207 } // Multi-Status
+        { status: 207 }
       );
     }
 
     return NextResponse.json(
       { 
         success: true, 
-        message: `Successfully updated ${results.length} items`,
-        results 
+        message: `Successfully updated ${totalSuccess} items`,
+        duration: `${duration}ms`,
+        stats: { success: totalSuccess, errors: totalErrors }
       },
       { status: 200 }
     );

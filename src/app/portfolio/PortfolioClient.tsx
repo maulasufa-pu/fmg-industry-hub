@@ -233,7 +233,8 @@ export default function PortfolioClient(): React.JSX.Element {
         priority_order: index + 1
       }));
 
-      console.log(`Saving ${updates.length} items with batch update...`);
+      console.log(`⚡ Starting batch update for ${updates.length} items...`);
+      const startTime = Date.now();
 
       // Send batch update to server
       const response = await fetch('/api/portfolio/batch-order', {
@@ -243,6 +244,9 @@ export default function PortfolioClient(): React.JSX.Element {
       });
 
       const result = await response.json();
+      const duration = Date.now() - startTime;
+
+      console.log(`Batch update completed in ${duration}ms:`, result);
 
       if (!response.ok || !result.success) {
         console.error('Batch update failed:', result);
@@ -250,14 +254,22 @@ export default function PortfolioClient(): React.JSX.Element {
         return;
       }
 
-      console.log('Batch update successful:', result.message);
+      console.log(`✅ SUCCESS: ${result.message} (${result.duration})`);
       
-      // Close modal and reload
+      // Update local state immediately for instant feedback
+      setPortfolioItems(editListItems);
+      
+      // Close modal
       setIsEditListModalOpen(false);
-      window.location.reload();
+      
+      // Reload to get fresh data from server
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
+      
     } catch (error) {
       console.error('Error updating order:', error);
-      alert('Failed to update order. Please try again.');
+      alert(`Failed to update order: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

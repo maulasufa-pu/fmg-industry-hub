@@ -173,6 +173,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase
       .from("portfolio")
       .select("*")
+      .order("priority_order", { ascending: true, nullsFirst: false })
       .order("release_date_aggregator", { ascending: false, nullsFirst: false });
 
     if (error) {

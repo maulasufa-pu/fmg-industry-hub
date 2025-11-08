@@ -403,22 +403,12 @@ export default function PortfolioClient(): React.JSX.Element {
       return true;
     })
     .sort((a, b) => {
-      // Priority sorting:
-      // 1. Featured items first (is_featured = true)
-      // 2. Then by priority_order (lower number = higher priority)
-      // 3. Then by release date (newest first)
-      
-      // Check featured status
-      const aFeatured = a.is_featured ? 1 : 0;
-      const bFeatured = b.is_featured ? 1 : 0;
-      if (aFeatured !== bFeatured) return bFeatured - aFeatured;
-      
-      // Check priority order
+      // Sort by priority_order (lower number = higher priority)
       const aPriority = a.priority_order ?? 999999;
       const bPriority = b.priority_order ?? 999999;
       if (aPriority !== bPriority) return aPriority - bPriority;
       
-      // Fallback to release date
+      // Fallback to release date (newest first)
       const aDate = a.release_date_aggregator ? new Date(a.release_date_aggregator).getTime() : 0;
       const bDate = b.release_date_aggregator ? new Date(b.release_date_aggregator).getTime() : 0;
       return bDate - aDate;
@@ -546,7 +536,20 @@ export default function PortfolioClient(): React.JSX.Element {
                   
                   <button
                     onClick={() => {
-                      setEditListItems([...portfolioItems]);
+                      // Sort portfolioItems by priority_order before passing to modal
+                      const sortedItems = [...portfolioItems].sort((a, b) => {
+                        // Sort by priority_order (lower number = higher priority)
+                        const aPriority = a.priority_order ?? 999999;
+                        const bPriority = b.priority_order ?? 999999;
+                        if (aPriority !== bPriority) return aPriority - bPriority;
+                        
+                        // Fallback to release date (newest first)
+                        const aDate = a.release_date_aggregator ? new Date(a.release_date_aggregator).getTime() : 0;
+                        const bDate = b.release_date_aggregator ? new Date(b.release_date_aggregator).getTime() : 0;
+                        return bDate - aDate;
+                      });
+                      
+                      setEditListItems(sortedItems);
                       setIsEditListModalOpen(true);
                     }}
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 whitespace-nowrap"
@@ -871,27 +874,6 @@ export default function PortfolioClient(): React.JSX.Element {
                       } catch (error) {
                         console.error('Error deleting portfolio:', error);
                         alert('Error deleting portfolio item');
-                      }
-                    }}
-                    onToggleFeatured={async (id, currentStatus) => {
-                      try {
-                        const response = await fetch(`/api/portfolio?id=${id}`, {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            is_featured: !currentStatus
-                          }),
-                        });
-                        if (response.ok) {
-                          setPortfolioItems(prev => 
-                            prev.map(p => p.id === id ? { ...p, is_featured: !currentStatus } : p)
-                          );
-                        } else {
-                          alert('Failed to update featured status');
-                        }
-                      } catch (error) {
-                        console.error('Error updating featured status:', error);
-                        alert('Error updating featured status');
                       }
                     }}
                   />
@@ -2152,8 +2134,7 @@ const PortfolioCard = React.memo(function PortfolioCard({
   setOpenMenuId,
   viewMode,
   onEdit,
-  onDelete,
-  onToggleFeatured
+  onDelete
 }: { 
   item: PortfolioItem;
   userRole: UserRole;
@@ -2162,7 +2143,6 @@ const PortfolioCard = React.memo(function PortfolioCard({
   viewMode: 'tiles' | 'list';
   onEdit: () => void;
   onDelete: (id: number) => void;
-  onToggleFeatured: (id: number, currentStatus: boolean) => void;
 }): React.JSX.Element {
   const [imgSrc, setImgSrc] = React.useState<string>('');
   const [imgError, setImgError] = React.useState(false);
@@ -2380,20 +2360,6 @@ const PortfolioCard = React.memo(function PortfolioCard({
                       </button>
                       <button
                         onClick={() => {
-                          onToggleFeatured(item.id, item.is_featured || false);
-                          setOpenMenuId(null);
-                        }}
-                        className={`w-full px-4 py-2 text-left text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 flex items-center gap-2 ${
-                          item.is_featured 
-                            ? 'text-amber-600 dark:text-amber-400' 
-                            : 'text-slate-700 dark:text-slate-300'
-                        }`}
-                      >
-                        <Star className={`w-4 h-4 ${item.is_featured ? 'fill-amber-500' : ''}`} />
-                        {item.is_featured ? 'Unfeatured' : 'Featured'}
-                      </button>
-                      <button
-                        onClick={() => {
                           if (confirm(`Delete "${item.song_title}"?`)) {
                             onDelete(item.id);
                           }
@@ -2406,14 +2372,6 @@ const PortfolioCard = React.memo(function PortfolioCard({
                       </button>
                     </div>
                   )}
-                </div>
-              )}
-
-              {/* Featured Badge */}
-              {item.is_featured && isAdmin && (
-                <div className="flex-shrink-0 bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                  <Star className="w-3 h-3 fill-white" />
-                  <span>FEATURED</span>
                 </div>
               )}
             </div>
@@ -2503,14 +2461,6 @@ const PortfolioCard = React.memo(function PortfolioCard({
           onError={handleImageError}
         />
 
-        {/* Featured Badge - Admin Only */}
-        {item.is_featured && (userRole === 'admin' || userRole === 'owner') && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
-            <span>⭐</span>
-            <span>FEATURED</span>
-          </div>
-        )}
-
         {/* Genre Badge */}
         <div className="absolute top-4 right-4 z-20 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-medium px-3 py-1 rounded-full">
           {item.genre}
@@ -2548,20 +2498,6 @@ const PortfolioCard = React.memo(function PortfolioCard({
                 >
                   <Edit className="w-4 h-4" />
                   Edit
-                </button>
-                <button
-                  onClick={() => {
-                    onToggleFeatured(item.id, item.is_featured || false);
-                    setOpenMenuId(null);
-                  }}
-                  className={`w-full px-4 py-2 text-left text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 flex items-center gap-2 ${
-                    item.is_featured 
-                      ? 'text-amber-600 dark:text-amber-400' 
-                      : 'text-slate-700 dark:text-slate-300'
-                  }`}
-                >
-                  <Star className={`w-4 h-4 ${item.is_featured ? 'fill-amber-500' : ''}`} />
-                  {item.is_featured ? 'Unfeatured' : 'Featured'}
                 </button>
                 <button
                   onClick={() => {
@@ -3045,15 +2981,6 @@ function EditListItem({
         />
       </div>
 
-      {/* Order Number */}
-      <div className={`flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg font-bold ${
-        isSelected 
-          ? 'bg-indigo-200 dark:bg-indigo-800 text-indigo-700 dark:text-indigo-300'
-          : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
-      }`}>
-        {index + 1}
-      </div>
-
       {/* Drag Handle */}
       <button
         {...attributes}
@@ -3086,14 +3013,6 @@ function EditListItem({
           </span>
         </div>
       </div>
-
-      {/* Featured Badge */}
-      {item.is_featured && (
-        <div className="flex-shrink-0 flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full text-xs font-bold">
-          <Star className="w-3 h-3 fill-amber-500" />
-          FEATURED
-        </div>
-      )}
     </div>
   );
 }

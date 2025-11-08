@@ -128,7 +128,38 @@ export default function PortfolioClient(): React.JSX.Element {
       
       const result = await response.json();
       console.log('Portfolio data fetched:', result);
-      setPortfolioItems(result.data || []);
+      
+      // Normalize data - ensure all array fields are arrays, not null
+      const normalizedData = (result.data || [])
+        .filter((item: any) => item && typeof item === 'object' && item.id) // Filter out invalid items
+        .map((item: PortfolioItem) => ({
+          ...item,
+          // Ensure required string fields are strings
+          song_title: item.song_title || 'Untitled',
+          genre: item.genre || 'Unknown',
+          // Ensure all array fields are arrays, not null
+          singer: Array.isArray(item.singer) ? item.singer.filter(s => s && typeof s === 'string') : [],
+          songwriter: Array.isArray(item.songwriter) ? item.songwriter.filter(s => s && typeof s === 'string') : [],
+          composer: Array.isArray(item.composer) ? item.composer.filter(s => s && typeof s === 'string') : [],
+          arranger: Array.isArray(item.arranger) ? item.arranger.filter(s => s && typeof s === 'string') : [],
+          producer: Array.isArray(item.producer) ? item.producer.filter(s => s && typeof s === 'string') : [],
+          mixing_engineer: Array.isArray(item.mixing_engineer) ? item.mixing_engineer.filter(s => s && typeof s === 'string') : [],
+          mastering_engineer: Array.isArray(item.mastering_engineer) ? item.mastering_engineer.filter(s => s && typeof s === 'string') : [],
+          publisher: Array.isArray(item.publisher) ? item.publisher.filter(s => s && typeof s === 'string') : [],
+          aggregator: Array.isArray(item.aggregator) ? item.aggregator.filter(s => s && typeof s === 'string') : [],
+          mood: Array.isArray(item.mood) ? item.mood.filter(s => s && typeof s === 'string') : [],
+          theme: Array.isArray(item.theme) ? item.theme.filter(s => s && typeof s === 'string') : [],
+          copyright_owner: Array.isArray(item.copyright_owner) ? item.copyright_owner.filter(s => s && typeof s === 'string') : [],
+          phonographic_copyright_owner: Array.isArray(item.phonographic_copyright_owner) ? item.phonographic_copyright_owner.filter(s => s && typeof s === 'string') : [],
+          collecting_society: Array.isArray(item.collecting_society) ? item.collecting_society.filter(s => s && typeof s === 'string') : [],
+          rights_holder: Array.isArray(item.rights_holder) ? item.rights_holder.filter(s => s && typeof s === 'string') : [],
+          distributor: Array.isArray(item.distributor) ? item.distributor.filter(s => s && typeof s === 'string') : [],
+          platforms: Array.isArray(item.platforms) ? item.platforms.filter(s => s && typeof s === 'string') : [],
+          release_country: Array.isArray(item.release_country) ? item.release_country.filter(s => s && typeof s === 'string') : [],
+        }));
+      
+      console.log('Normalized portfolio data:', normalizedData.length, 'items');
+      setPortfolioItems(normalizedData);
     } catch (error) {
       console.error('Error fetching portfolio:', error);
       setPortfolioItems([]);
@@ -140,12 +171,15 @@ export default function PortfolioClient(): React.JSX.Element {
   // Check if user is admin or owner
   const isAdmin = userRole === 'admin' || userRole === 'owner';
 
-  // Filter projects
+  // Filter projects with extra null safety
   const filteredProjects = portfolioItems.filter(item => {
+    // Skip items that are not properly initialized
+    if (!item || typeof item !== 'object') return false;
+    
     const matchesSearch = searchQuery === '' || 
-      item.song_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.singer.some(s => s.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      item.genre.toLowerCase().includes(searchQuery.toLowerCase());
+      (item.song_title && item.song_title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (Array.isArray(item.singer) && item.singer.some(s => s && typeof s === 'string' && s.toLowerCase().includes(searchQuery.toLowerCase()))) ||
+      (item.genre && item.genre.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesSearch;
   });
 
@@ -389,8 +423,16 @@ export default function PortfolioClient(): React.JSX.Element {
             >
               {[
                 { label: "Total Projects", value: portfolioItems.length.toString(), icon: Music },
-                { label: "Artists", value: new Set(portfolioItems.flatMap(p => p.singer)).size.toString(), icon: Users },
-                { label: "Genres", value: new Set(portfolioItems.map(p => p.genre)).size.toString(), icon: Headphones },
+                { 
+                  label: "Artists", 
+                  value: new Set(portfolioItems.flatMap(p => Array.isArray(p.singer) ? p.singer : [])).size.toString(), 
+                  icon: Users 
+                },
+                { 
+                  label: "Genres", 
+                  value: new Set(portfolioItems.map(p => p.genre).filter(Boolean)).size.toString(), 
+                  icon: Headphones 
+                },
                 { label: "Released", value: portfolioItems.filter(p => p.release_date_aggregator).length.toString(), icon: Award }
               ].map((stat, index) => (
                 <div key={index} className="text-center space-y-3">
@@ -769,8 +811,26 @@ function AddPortfolioModal({
               Links & Artwork
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Provide streaming links and artwork URL
+              Provide streaming links and artwork URL. <strong>Priority: Spotify artwork &gt; Apple Music &gt; YouTube auto-thumbnail</strong>
             </p>
+
+            {/* Artwork Link */}
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+              <label className="block text-sm font-semibold mb-2 text-green-800 dark:text-green-300">
+                🎨 Artwork URL <span className="text-xs font-normal">(Recommended: Spotify)</span>
+              </label>
+              <input
+                type="url"
+                name="artwork_link"
+                value={formData.artwork_link}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-green-300 dark:border-green-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder="https://i.scdn.co/image/... (right-click Spotify album art → Copy Image Address)"
+              />
+              <p className="text-xs text-green-700 dark:text-green-400 mt-2">
+                💡 <strong>How to get Spotify artwork:</strong> Open song in Spotify → Right-click album art → "Copy Image Address"
+              </p>
+            </div>
 
             {/* Spotify Link */}
             <div>
@@ -810,19 +870,6 @@ function AddPortfolioModal({
                 placeholder="https://music.apple.com/..."
               />
             </div>
-
-            {/* Artwork Link */}
-            <div>
-              <label className="block text-sm font-medium mb-2">Artwork URL</label>
-              <input
-                type="url"
-                name="artwork_link"
-                value={formData.artwork_link}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="https://example.com/artwork.jpg"
-              />
-            </div>
           </div>
 
           {/* Submit Buttons */}
@@ -854,20 +901,107 @@ const PortfolioCard = React.memo(function PortfolioCard({
 }: { 
   item: PortfolioItem;
 }): React.JSX.Element {
+  const [imgSrc, setImgSrc] = React.useState<string>('');
+  const [imgError, setImgError] = React.useState(false);
+
   const formatDate = (dateString: string | null): string => {
     if (!dateString) return 'TBA';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
-  // Artwork/Thumbnail logic with fallback priority: artwork_link > Default
-  const getArtwork = (): string => {
-    if (item.artwork_link) return item.artwork_link;
-    return "/img/logo/FMG-Universe-Flemmo-Music-Global.png";
+  // Extract YouTube video ID from URL
+  const getYouTubeVideoId = (url: string | null): string | null => {
+    if (!url) return null;
+    
+    // Match patterns:
+    // https://www.youtube.com/watch?v=VIDEO_ID
+    // https://youtu.be/VIDEO_ID
+    // https://youtube.com/watch?v=VIDEO_ID
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/,
+      /youtube\.com\/embed\/([^&\s]+)/,
+      /youtube\.com\/v\/([^&\s]+)/
+    ];
+    
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    
+    return null;
   };
 
-  const artwork = getArtwork();
-  const hasCustomArtwork = item.artwork_link;
+  // Extract Spotify track ID from URL (for potential future use)
+  const getSpotifyTrackId = (url: string | null): string | null => {
+    if (!url) return null;
+    // https://open.spotify.com/track/TRACK_ID
+    const match = url.match(/spotify\.com\/track\/([a-zA-Z0-9]+)/);
+    return match ? match[1] : null;
+  };
+
+  // Extract Apple Music ID from URL (for potential future use)
+  const getAppleMusicId = (url: string | null): string | null => {
+    if (!url) return null;
+    // https://music.apple.com/.../album-name/id123456789
+    const match = url.match(/\/id(\d+)/);
+    return match ? match[1] : null;
+  };
+
+  // Artwork/Thumbnail Priority System:
+  // 1. artwork_link (Preferred: Spotify artwork URL)
+  // 2. YouTube thumbnail (auto-extracted from youtube_link)
+  // 3. Default FMG logo
+  //
+  // BEST PRACTICE: Put Spotify artwork URL in artwork_link field
+  // Get Spotify artwork: Right-click album art → Copy Image Address
+  // Format: https://i.scdn.co/image/[hash]
+  React.useEffect(() => {
+    let thumbnailUrl = "/img/logo/FMG-Universe-Flemmo-Music-Global.png";
+    
+    // Priority 1: Custom artwork_link
+    // Recommended: Spotify artwork URL (best quality)
+    // Format: https://i.scdn.co/image/...
+    // Also accepts: Apple Music, YouTube, or any direct image URL
+    if (item.artwork_link) {
+      thumbnailUrl = item.artwork_link;
+    }
+    // Priority 2: YouTube thumbnail (auto-extracted)
+    else if (item.youtube_link) {
+      const videoId = getYouTubeVideoId(item.youtube_link);
+      if (videoId) {
+        // Try maxresdefault first (best quality)
+        thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+      }
+    }
+    // Priority 3: Default logo
+    
+    setImgSrc(thumbnailUrl);
+  }, [item.artwork_link, item.youtube_link]);
+
+  // Handle image error - fallback chain
+  const handleImageError = () => {
+    if (imgError) return; // Already tried fallback
+    
+    // If YouTube thumbnail failed, try lower quality
+    if (item.youtube_link) {
+      const videoId = getYouTubeVideoId(item.youtube_link);
+      if (videoId && imgSrc.includes('maxresdefault')) {
+        // Fallback to hqdefault (high quality default)
+        setImgSrc(`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`);
+        setImgError(true);
+        return;
+      }
+    }
+    
+    // Final fallback to default logo
+    setImgSrc("/img/logo/FMG-Universe-Flemmo-Music-Global.png");
+    setImgError(true);
+  };
+
+  const hasCustomArtwork = item.artwork_link || (item.youtube_link && getYouTubeVideoId(item.youtube_link));
 
   return (
     <motion.div
@@ -879,7 +1013,7 @@ const PortfolioCard = React.memo(function PortfolioCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
         
         <Image
-          src={artwork}
+          src={imgSrc}
           alt={item.song_title}
           fill
           loading="lazy"
@@ -888,6 +1022,7 @@ const PortfolioCard = React.memo(function PortfolioCard({
           className={`object-cover transition-transform duration-700 group-hover:scale-110 ${!hasCustomArtwork ? 'opacity-40' : ''}`}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           quality={75}
+          onError={handleImageError}
         />
 
         {/* Genre Badge */}
@@ -898,7 +1033,7 @@ const PortfolioCard = React.memo(function PortfolioCard({
         {/* Overlay Content */}
         <div className="absolute bottom-4 left-4 right-4 z-20 text-white">
           <h3 className="font-semibold text-lg mb-1 line-clamp-1">{item.song_title}</h3>
-          {item.singer.length > 0 && (
+          {Array.isArray(item.singer) && item.singer.length > 0 && (
             <p className="text-white/80 text-sm line-clamp-1">{item.singer.join(', ')}</p>
           )}
         </div>
@@ -924,25 +1059,25 @@ const PortfolioCard = React.memo(function PortfolioCard({
 
         {/* Credits Section */}
         <div className="space-y-2 text-xs">
-          {item.composer.length > 0 && (
+          {Array.isArray(item.composer) && item.composer.length > 0 && (
             <div>
               <span className="font-medium text-slate-700 dark:text-slate-300">Composer: </span>
               <span className="text-slate-600 dark:text-slate-400">{item.composer.join(', ')}</span>
             </div>
           )}
-          {item.producer.length > 0 && (
+          {Array.isArray(item.producer) && item.producer.length > 0 && (
             <div>
               <span className="font-medium text-slate-700 dark:text-slate-300">Producer: </span>
               <span className="text-slate-600 dark:text-slate-400">{item.producer.join(', ')}</span>
             </div>
           )}
-          {item.mixing_engineer.length > 0 && (
+          {Array.isArray(item.mixing_engineer) && item.mixing_engineer.length > 0 && (
             <div>
               <span className="font-medium text-slate-700 dark:text-slate-300">Mixing: </span>
               <span className="text-slate-600 dark:text-slate-400">{item.mixing_engineer.join(', ')}</span>
             </div>
           )}
-          {item.mastering_engineer.length > 0 && (
+          {Array.isArray(item.mastering_engineer) && item.mastering_engineer.length > 0 && (
             <div>
               <span className="font-medium text-slate-700 dark:text-slate-300">Mastering: </span>
               <span className="text-slate-600 dark:text-slate-400">{item.mastering_engineer.join(', ')}</span>
@@ -951,9 +1086,9 @@ const PortfolioCard = React.memo(function PortfolioCard({
         </div>
 
         {/* Publisher & Aggregator Tags */}
-        {(item.publisher.length > 0 || item.aggregator.length > 0) && (
+        {((Array.isArray(item.publisher) && item.publisher.length > 0) || (Array.isArray(item.aggregator) && item.aggregator.length > 0)) && (
           <div className="flex flex-wrap gap-2 pt-2">
-            {item.publisher.map((pub, index) => (
+            {Array.isArray(item.publisher) && item.publisher.map((pub, index) => (
               <span
                 key={`pub-${index}`}
                 className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-full"
@@ -961,7 +1096,7 @@ const PortfolioCard = React.memo(function PortfolioCard({
                 {pub}
               </span>
             ))}
-            {item.aggregator.map((agg, index) => (
+            {Array.isArray(item.aggregator) && item.aggregator.map((agg, index) => (
               <span
                 key={`agg-${index}`}
                 className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full"

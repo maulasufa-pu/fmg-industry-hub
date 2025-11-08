@@ -333,9 +333,19 @@ const fadeUp: Variants = {
   visible: (i: number = 0) => ({ opacity: 1, y: 0, transition: { delay: 0.06 * i, duration: 0.6, ease: "easeOut" } })
 };
 
+const staggerChildren: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
 /*************************
  * Generic Parallax Wrapper (instant response + ease-out)
- *************************/
+ *************************/ 
  type Axis = "y" | "x";
 function Parallax({
   children,
@@ -871,6 +881,13 @@ function Hero() {
                 Start My Project
               </MagneticButton>
               <Link
+                href="/portfolio"
+                className="group inline-flex items-center gap-2 rounded-2xl border border-black/10 bg-white/70 px-5 py-3 text-sm font-semibold shadow-sm backdrop-blur transition hover:bg-white dark:border-white/10 dark:bg-black/40 dark:hover:bg-black"
+              >
+                <Music className="h-5 w-5" /> View Portfolio
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+              <Link
                 href="#about"
                 className="group inline-flex items-center gap-2 rounded-2xl border border-black/10 bg-white/70 px-5 py-3 text-sm font-semibold shadow-sm backdrop-blur transition hover:bg-white dark:border-white/10 dark:bg-black/40 dark:hover:bg-black"
               >
@@ -1026,6 +1043,19 @@ function Features() {
           <motion.p variants={fadeUp} custom={1} className="mt-2 text-black/70 dark:text-white">
             End-to-end capabilities for modern music workflows.
           </motion.p>
+          <motion.div
+            variants={fadeUp}
+            custom={2}
+            className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800"
+          >
+            <Star className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            <span className="text-sm text-indigo-700 dark:text-indigo-300">
+              Want to see our work?{" "}
+              <Link href="/portfolio" className="font-semibold underline underline-offset-2 hover:text-indigo-900 dark:hover:text-indigo-100">
+                Check our Portfolio
+              </Link>
+            </span>
+          </motion.div>
         </motion.div>
       </Parallax>
 
@@ -1173,6 +1203,117 @@ function Numbers() {
             </li>
           ))}
         </ul>
+      </div>
+    </section>
+  );
+}
+
+/*************************
+ * Portfolio Showcase Preview
+ *************************/
+function PortfolioShowcase() {
+  return (
+    <section className="relative py-16 sm:py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <motion.div 
+          initial="hidden" 
+          whileInView="visible" 
+          viewport={{ once: true }}
+          className="text-center mb-12"
+        >
+          <motion.div
+            variants={fadeUp}
+            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 px-4 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 mb-4"
+          >
+            <Music className="h-4 w-4" />
+            Our Work
+          </motion.div>
+          <motion.h2 
+            variants={fadeUp}
+            custom={1}
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-slate-900 via-indigo-900 to-purple-900 dark:from-white dark:via-indigo-200 dark:to-purple-200 bg-clip-text text-transparent"
+          >
+            Featured Portfolio
+          </motion.h2>
+          <motion.p 
+            variants={fadeUp}
+            custom={2}
+            className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto"
+          >
+            Discover our latest releases and productions. From pop to EDM, jazz to orchestral arrangements.
+          </motion.p>
+        </motion.div>
+
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={staggerChildren}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12"
+        >
+          {/* Portfolio Preview Cards */}
+          {[
+            {
+              title: "Latest Releases",
+              desc: "New music from our talented artists",
+              icon: Music,
+              gradient: "from-pink-500 to-rose-500"
+            },
+            {
+              title: "Production Work",
+              desc: "Behind the scenes of our projects",
+              icon: Mic2,
+              gradient: "from-purple-500 to-indigo-500"
+            },
+            {
+              title: "Artist Collaborations",
+              desc: "Working with amazing talents",
+              icon: Users,
+              gradient: "from-blue-500 to-cyan-500"
+            }
+          ].map((item, idx) => (
+            <motion.div
+              key={idx}
+              variants={fadeUp}
+              custom={idx}
+              className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-700/50 p-6 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-300 hover:shadow-xl"
+            >
+              <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${item.gradient} opacity-10 rounded-full blur-3xl group-hover:opacity-20 transition-opacity`} />
+              <div className="relative">
+                <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${item.gradient} text-white mb-4`}>
+                  <item.icon className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                  {item.title}
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">
+                  {item.desc}
+                </p>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* CTA to Full Portfolio */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3 }}
+          className="text-center"
+        >
+          <Link
+            href="/portfolio"
+            className="group inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-4 text-base font-semibold text-white shadow-lg hover:shadow-xl hover:shadow-indigo-500/25 transition-all duration-300"
+          >
+            <Music className="h-5 w-5" />
+            Explore Full Portfolio
+            <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+          </Link>
+          <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+            View all our projects, releases, and collaborations
+          </p>
+        </motion.div>
       </div>
     </section>
   );
@@ -1922,6 +2063,7 @@ export default function LandingPage() {
       <Hero />
       <AboutFMG />
       <Features />
+      <PortfolioShowcase />
       <Numbers />
       
       <Testimonials />

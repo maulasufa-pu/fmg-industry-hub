@@ -779,7 +779,7 @@ export const HeaderSection = (): React.JSX.Element => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 xs:grid-cols-3 gap-2 text-sm mt-3">
+                  <div className="grid grid-cols-2 xs:grid-cols-4 gap-2 text-sm mt-3">
                     <Link
                       href="/#about"
                       onClick={() => setMobileOpen(false)}
@@ -800,6 +800,13 @@ export const HeaderSection = (): React.JSX.Element => {
                       className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2.5 text-center hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
                     >
                       Packages
+                    </Link>
+                    <Link
+                      href="/portfolio"
+                      onClick={() => setMobileOpen(false)}
+                      className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2.5 text-center hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
+                    >
+                      Portfolio
                     </Link>
                   </div>
 

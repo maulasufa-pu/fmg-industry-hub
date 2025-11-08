@@ -226,12 +226,12 @@ export default function PortfolioClient(): React.JSX.Element {
   };
 
   // Save Edit List changes to database
-  const saveEditListChanges = async () => {
+  const saveEditListChanges = async (itemsToSave: PortfolioItem[]) => {
     try {
       console.log('🔵 saveEditListChanges called');
-      console.log('Current editListItems:', editListItems.map((item, i) => `${i + 1}. ${item.song_title}`));
+      console.log('Received items to save:', itemsToSave.map((item, i) => `${i + 1}. ${item.song_title}`));
       
-      const updates = editListItems.map((item, index) => ({
+      const updates = itemsToSave.map((item, index) => ({
         id: item.id,
         priority_order: index + 1
       }));
@@ -261,13 +261,8 @@ export default function PortfolioClient(): React.JSX.Element {
       console.log(`✅ SUCCESS: ${result.message} (${result.duration})`);
       
       // Update local portfolioItems state with new order
-      const updatedPortfolioItems = editListItems.map((item, index) => ({
-        ...item,
-        priority_order: index + 1
-      }));
-      
       console.log('Updating portfolioItems state with new order...');
-      setPortfolioItems(updatedPortfolioItems);
+      setPortfolioItems(itemsToSave);
       
       // Close modal
       setIsEditListModalOpen(false);
@@ -2685,7 +2680,7 @@ function EditListModal({
   onClose: () => void;
   items: PortfolioItem[];
   onDragEnd: (event: DragEndEvent) => void;
-  onSave: () => void;
+  onSave: (updatedItems: PortfolioItem[]) => void;
   onUpdateItems: (items: PortfolioItem[]) => void;
 }) {
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
@@ -2817,23 +2812,22 @@ function EditListModal({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // First, sync localItems to parent's editListItems
-      // Update the priority_order for all items
+      // Prepare updated items with priority_order
       const updatedItems = localItems.map((item, index) => ({
         ...item,
         priority_order: index + 1
       }));
       
-      console.log('💾 Saving modal changes to parent state...');
+      console.log('💾 Saving modal changes...');
       console.log('Items to save:', updatedItems.map((item, i) => `${i + 1}. ${item.song_title} (priority: ${item.priority_order})`));
       
-      // Update parent state with reordered items
+      // Update parent state
       onUpdateItems(updatedItems);
       
-      console.log('✅ Parent state updated, now calling save function...');
+      console.log('✅ Parent state updated, now calling save function with updated data...');
       
-      // Then call the save function to persist to database
-      await onSave();
+      // Call save function with the updated items directly
+      await onSave(updatedItems);
     } catch (error) {
       console.error('Error saving:', error);
     } finally {

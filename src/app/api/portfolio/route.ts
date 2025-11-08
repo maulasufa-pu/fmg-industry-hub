@@ -74,11 +74,11 @@ export async function POST(request: NextRequest) {
       mastering_engineer,
       publisher,
       aggregator,
-      release_date,
+      release_date_aggregator,
+      spotify_link,
       youtube_link,
-      spotify_artwork,
-      youtube_thumbnail,
-      apple_music_artwork
+      apple_music_link,
+      artwork_link
     } = body;
 
     // Validate required fields
@@ -105,13 +105,11 @@ export async function POST(request: NextRequest) {
         mastering_engineer: mastering_engineer || [],
         publisher: publisher || [],
         aggregator: aggregator || [],
-        release_date: release_date || null,
+        release_date_aggregator: release_date_aggregator || null,
+        spotify_link: spotify_link || null,
         youtube_link: youtube_link || null,
-        spotify_artwork: spotify_artwork || null,
-        youtube_thumbnail: youtube_thumbnail || null,
-        apple_music_artwork: apple_music_artwork || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        apple_music_link: apple_music_link || null,
+        artwork_link: artwork_link || null
       })
       .select()
       .single();
@@ -175,7 +173,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase
       .from("portfolio")
       .select("*")
-      .order("release_date", { ascending: false, nullsFirst: false });
+      .order("release_date_aggregator", { ascending: false, nullsFirst: false });
 
     if (error) {
       console.error("Supabase fetch error:", error);

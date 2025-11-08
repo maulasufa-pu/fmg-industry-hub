@@ -39,13 +39,35 @@ interface PortfolioItem {
   mastering_engineer: string[];
   publisher: string[];
   aggregator: string[];
-  release_date: string | null;
+  release_date_aggregator: string | null;
+  spotify_link: string | null;
   youtube_link: string | null;
-  spotify_artwork: string | null;
-  youtube_thumbnail: string | null;
-  apple_music_artwork: string | null;
+  apple_music_link: string | null;
+  artwork_link: string | null;
   created_at: string;
-  updated_at: string;
+  isrc_code: string | null;
+  iswc_code: string | null;
+  upc_code: string | null;
+  duration_seconds: number | null;
+  bpm: number | null;
+  key_signature: string | null;
+  language: string | null;
+  explicit: boolean | null;
+  lyrics: string | null;
+  mood: string[] | null;
+  theme: string[] | null;
+  copyright_owner: string[] | null;
+  phonographic_copyright_owner: string[] | null;
+  collecting_society: string[] | null;
+  rights_holder: string[] | null;
+  licensing_info: string | null;
+  distributor: string[] | null;
+  platforms: string[] | null;
+  release_country: string[] | null;
+  release_type: string | null;
+  format: string | null;
+  registered_at: string;
+  last_updated: string;
 }
 
 // Animation variants
@@ -369,7 +391,7 @@ export default function PortfolioClient(): React.JSX.Element {
                 { label: "Total Projects", value: portfolioItems.length.toString(), icon: Music },
                 { label: "Artists", value: new Set(portfolioItems.flatMap(p => p.singer)).size.toString(), icon: Users },
                 { label: "Genres", value: new Set(portfolioItems.map(p => p.genre)).size.toString(), icon: Headphones },
-                { label: "Released", value: portfolioItems.filter(p => p.release_date).length.toString(), icon: Award }
+                { label: "Released", value: portfolioItems.filter(p => p.release_date_aggregator).length.toString(), icon: Award }
               ].map((stat, index) => (
                 <div key={index} className="text-center space-y-3">
                   <div className="w-12 h-12 mx-auto bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center">
@@ -474,11 +496,11 @@ function AddPortfolioModal({
     mastering_engineer: '',
     publisher: '',
     aggregator: '',
-    release_date: '',
+    release_date_aggregator: '',
+    spotify_link: '',
     youtube_link: '',
-    spotify_artwork: '',
-    youtube_thumbnail: '',
-    apple_music_artwork: ''
+    apple_music_link: '',
+    artwork_link: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -500,11 +522,11 @@ function AddPortfolioModal({
         mastering_engineer: formData.mastering_engineer.split(',').map(s => s.trim()).filter(Boolean),
         publisher: formData.publisher.split(',').map(s => s.trim()).filter(Boolean),
         aggregator: formData.aggregator.split(',').map(s => s.trim()).filter(Boolean),
-        release_date: formData.release_date || null,
+        release_date_aggregator: formData.release_date_aggregator || null,
+        spotify_link: formData.spotify_link || null,
         youtube_link: formData.youtube_link || null,
-        spotify_artwork: formData.spotify_artwork || null,
-        youtube_thumbnail: formData.youtube_thumbnail || null,
-        apple_music_artwork: formData.apple_music_artwork || null
+        apple_music_link: formData.apple_music_link || null,
+        artwork_link: formData.artwork_link || null
       };
 
       const response = await fetch('/api/portfolio', {
@@ -609,8 +631,8 @@ function AddPortfolioModal({
               <label className="block text-sm font-medium mb-2">Release Date</label>
               <input
                 type="date"
-                name="release_date"
-                value={formData.release_date}
+                name="release_date_aggregator"
+                value={formData.release_date_aggregator}
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
@@ -739,6 +761,29 @@ function AddPortfolioModal({
                 placeholder="Aggregator 1, Aggregator 2"
               />
             </div>
+          </div>
+
+          {/* Links & Artwork */}
+          <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Links & Artwork
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Provide streaming links and artwork URL
+            </p>
+
+            {/* Spotify Link */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Spotify Link</label>
+              <input
+                type="url"
+                name="spotify_link"
+                value={formData.spotify_link}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="https://open.spotify.com/track/..."
+              />
+            </div>
 
             {/* YouTube Link */}
             <div>
@@ -752,53 +797,30 @@ function AddPortfolioModal({
                 placeholder="https://youtube.com/watch?v=..."
               />
             </div>
-          </div>
 
-          {/* Artwork/Thumbnail URLs */}
-          <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-              Artwork & Thumbnails
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Provide artwork/thumbnail URLs from streaming platforms (at least one recommended)
-            </p>
-
-            {/* Spotify Artwork */}
+            {/* Apple Music Link */}
             <div>
-              <label className="block text-sm font-medium mb-2">Spotify Artwork URL</label>
+              <label className="block text-sm font-medium mb-2">Apple Music Link</label>
               <input
                 type="url"
-                name="spotify_artwork"
-                value={formData.spotify_artwork}
+                name="apple_music_link"
+                value={formData.apple_music_link}
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="https://i.scdn.co/image/..."
+                placeholder="https://music.apple.com/..."
               />
             </div>
 
-            {/* YouTube Thumbnail */}
+            {/* Artwork Link */}
             <div>
-              <label className="block text-sm font-medium mb-2">YouTube Thumbnail URL</label>
+              <label className="block text-sm font-medium mb-2">Artwork URL</label>
               <input
                 type="url"
-                name="youtube_thumbnail"
-                value={formData.youtube_thumbnail}
+                name="artwork_link"
+                value={formData.artwork_link}
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="https://i.ytimg.com/vi/..."
-              />
-            </div>
-
-            {/* Apple Music Artwork */}
-            <div>
-              <label className="block text-sm font-medium mb-2">Apple Music Artwork URL</label>
-              <input
-                type="url"
-                name="apple_music_artwork"
-                value={formData.apple_music_artwork}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="https://is1-ssl.mzstatic.com/image/..."
+                placeholder="https://example.com/artwork.jpg"
               />
             </div>
           </div>
@@ -838,16 +860,14 @@ const PortfolioCard = React.memo(function PortfolioCard({
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
-  // Artwork/Thumbnail logic with fallback priority: Spotify > YouTube > Apple Music > Default
+  // Artwork/Thumbnail logic with fallback priority: artwork_link > Default
   const getArtwork = (): string => {
-    if (item.spotify_artwork) return item.spotify_artwork;
-    if (item.youtube_thumbnail) return item.youtube_thumbnail;
-    if (item.apple_music_artwork) return item.apple_music_artwork;
+    if (item.artwork_link) return item.artwork_link;
     return "/img/logo/FMG-Universe-Flemmo-Music-Global.png";
   };
 
   const artwork = getArtwork();
-  const hasCustomArtwork = item.spotify_artwork || item.youtube_thumbnail || item.apple_music_artwork;
+  const hasCustomArtwork = item.artwork_link;
 
   return (
     <motion.div
@@ -894,10 +914,10 @@ const PortfolioCard = React.memo(function PortfolioCard({
               <span className="line-clamp-1">{item.album_title}</span>
             </div>
           )}
-          {item.release_date && (
+          {item.release_date_aggregator && (
             <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
               <Calendar className="w-4 h-4 flex-shrink-0" />
-              <span>{formatDate(item.release_date)}</span>
+              <span>{formatDate(item.release_date_aggregator)}</span>
             </div>
           )}
         </div>

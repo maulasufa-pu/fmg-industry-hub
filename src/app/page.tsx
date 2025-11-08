@@ -1278,10 +1278,10 @@ function PortfolioShowcase() {
               custom={idx}
               className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-700/50 p-6 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-300 hover:shadow-xl"
             >
-              <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${item.gradient} opacity-10 rounded-full blur-3xl group-hover:opacity-20 transition-opacity`} />
+              <div className={`absolute -top-16 -right-16 w-40 h-40 bg-gradient-to-br ${item.gradient} opacity-10 rounded-full blur-3xl group-hover:opacity-20 transition-opacity`} />
               <div className="relative">
-                <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${item.gradient} text-white mb-4`}>
-                  <item.icon className="w-6 h-6" />
+                <div className={`flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br ${item.gradient} text-white mb-4 shadow-lg`}>
+                  <item.icon className="w-7 h-7" strokeWidth={2} />
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
                   {item.title}

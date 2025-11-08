@@ -228,12 +228,16 @@ export default function PortfolioClient(): React.JSX.Element {
   // Save Edit List changes to database
   const saveEditListChanges = async () => {
     try {
+      console.log('🔵 saveEditListChanges called');
+      console.log('Current editListItems:', editListItems.map((item, i) => `${i + 1}. ${item.song_title}`));
+      
       const updates = editListItems.map((item, index) => ({
         id: item.id,
         priority_order: index + 1
       }));
 
       console.log(`⚡ Starting batch update for ${updates.length} items...`);
+      console.log('Updates payload:', updates.slice(0, 5), '... (showing first 5)');
       const startTime = Date.now();
 
       // Send batch update to server
@@ -256,16 +260,19 @@ export default function PortfolioClient(): React.JSX.Element {
 
       console.log(`✅ SUCCESS: ${result.message} (${result.duration})`);
       
-      // Update local state immediately for instant feedback
-      setPortfolioItems(editListItems);
+      // Update local portfolioItems state with new order
+      const updatedPortfolioItems = editListItems.map((item, index) => ({
+        ...item,
+        priority_order: index + 1
+      }));
+      
+      console.log('Updating portfolioItems state with new order...');
+      setPortfolioItems(updatedPortfolioItems);
       
       // Close modal
       setIsEditListModalOpen(false);
       
-      // Reload to get fresh data from server
-      setTimeout(() => {
-        window.location.reload();
-      }, 300);
+      console.log('✅ All done! No reload needed.');
       
     } catch (error) {
       console.error('Error updating order:', error);
@@ -2728,6 +2735,8 @@ function EditListModal({
 
     // Check if the dragged item is part of selected items
     if (selectedItems.includes(active.id as number) && selectedItems.length > 1) {
+      console.log(`🎯 Multi-select drag: Moving ${selectedItems.length} items`);
+      
       // Multi-select drag: move all selected items as a group
       const oldIndex = localItems.findIndex((item) => item.id === active.id);
       const newIndex = localItems.findIndex((item) => item.id === over.id);
@@ -2741,6 +2750,8 @@ function EditListModal({
         return indexA - indexB;
       });
 
+      console.log('Selected items (sorted):', sortedSelectedIds);
+
       // Get the items data
       const selectedItemsData = sortedSelectedIds.map(id => 
         localItems.find(item => item.id === id)!
@@ -2749,6 +2760,8 @@ function EditListModal({
       // Remove all selected items from the list
       const remainingItems = localItems.filter(item => !selectedItems.includes(item.id));
 
+      console.log('Remaining items count:', remainingItems.length);
+
       // Calculate where to insert the group
       // Find the target item in the remaining items
       const targetIndexInRemaining = remainingItems.findIndex(item => item.id === over.id);
@@ -2756,6 +2769,7 @@ function EditListModal({
       let insertIndex: number;
       if (targetIndexInRemaining === -1) {
         // Target was one of the selected items, don't move
+        console.log('⚠️ Target was selected item, aborting move');
         return;
       } else {
         // Determine if we're moving up or down
@@ -2770,6 +2784,8 @@ function EditListModal({
           insertIndex = targetIndexInRemaining;
         }
       }
+
+      console.log('Insert index in remaining:', insertIndex);
       
       // Insert selected items at the new position
       const reorderedItems = [
@@ -2778,9 +2794,13 @@ function EditListModal({
         ...remainingItems.slice(insertIndex)
       ];
 
+      console.log('Reordered items count:', reorderedItems.length);
+      console.log('New positions:', reorderedItems.map((item, i) => `${item.song_title}: ${i + 1}`));
+
       // ONLY update local state - don't sync with parent until Save is clicked
       setLocalItems(reorderedItems);
     } else {
+      console.log(`📌 Single item drag`);
       // Single item drag: update both local and parent state
       const oldIndex = localItems.findIndex((item) => item.id === active.id);
       const newIndex = localItems.findIndex((item) => item.id === over.id);
@@ -2804,8 +2824,13 @@ function EditListModal({
         priority_order: index + 1
       }));
       
+      console.log('💾 Saving modal changes to parent state...');
+      console.log('Items to save:', updatedItems.map((item, i) => `${i + 1}. ${item.song_title} (priority: ${item.priority_order})`));
+      
       // Update parent state with reordered items
       onUpdateItems(updatedItems);
+      
+      console.log('✅ Parent state updated, now calling save function...');
       
       // Then call the save function to persist to database
       await onSave();

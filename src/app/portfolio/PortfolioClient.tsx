@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState, useCallback, useRef, useLayoutEffect } from "react";
+import React, { useState, useCallback, useRef, useLayoutEffect, useEffect } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { getEffectiveRole } from "@/lib/roles/effective";
+import type { UserRole } from "@/lib/roles";
 import { 
   Play, 
   Pause, 
@@ -17,144 +19,34 @@ import {
   ChevronDown,
   Star,
   Headphones,
-  Mic2,
-  Radio,
-  Disc3
+  Plus
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-// Types
-type ProjectCategory = 'all' | 'production' | 'mixing' | 'mastering' | 'songwriting' | 'publishing';
-
-type ProjectStatus = 'released' | 'upcoming' | 'in-progress';
-
-interface Project {
-  id: string;
-  title: string;
-  artist: string;
-  category: ProjectCategory;
-  status: ProjectStatus;
-  releaseDate: string;
-  description: string;
-  imageUrl: string;
-  audioUrl?: string;
-  spotifyUrl?: string;
-  youtubeUrl?: string;
-  awards?: string[];
-  credits: string[];
-  stats: {
-    streams?: number;
-    awards?: number;
-    charts?: string[];
-  };
+// Types matching SQL portfolio table schema
+interface PortfolioItem {
+  id: number;
+  genre: string;
+  song_title: string;
+  album_title: string | null;
+  singer: string[];
+  songwriter: string[];
+  composer: string[];
+  arranger: string[];
+  producer: string[];
+  mixing_engineer: string[];
+  mastering_engineer: string[];
+  publisher: string[];
+  aggregator: string[];
+  release_date: string | null;
+  youtube_link: string | null;
+  spotify_artwork: string | null;
+  youtube_thumbnail: string | null;
+  apple_music_artwork: string | null;
+  created_at: string;
+  updated_at: string;
 }
-
-// Sample portfolio data
-const PORTFOLIO_PROJECTS: Project[] = [
-  {
-    id: "viokichi-you-are-enough",
-    title: "You Are Enough",
-    artist: "Viokichi",
-    category: "production",
-    status: "released",
-    releaseDate: "2024-03-15",
-    description: "A powerful pop ballad about self-acceptance and inner strength. Full production from concept to master.",
-    imageUrl: "/img/alfath-flemmo-founder-ceo-flemmo-music-global-publishing-fmg-universe.jpeg",
-    audioUrl: "/audio/previews/viokichi-you-are-enough-preview.mp3",
-    spotifyUrl: "https://open.spotify.com/track/example",
-    youtubeUrl: "https://youtube.com/watch?v=example",
-    credits: ["Production", "Arrangement", "Mixing", "Mastering"],
-    stats: {
-      streams: 250000,
-      charts: ["Indonesia Top 50", "Southeast Asia Viral"]
-    }
-  },
-  {
-    id: "nannouz-jazz-collection",
-    title: "Modern Jazz Collection",
-    artist: "Nannouz", 
-    category: "mixing",
-    status: "released",
-    releaseDate: "2024-01-20",
-    description: "Contemporary jazz album featuring orchestral arrangements and modern production techniques.",
-    imageUrl: "/img/logo/Flemmo-Music-Global-FMG-Publishing-logo.jpg",
-    credits: ["Mixing", "Additional Production"],
-    stats: {
-      streams: 180000,
-      awards: 1,
-      charts: ["Jazz Charts Indonesia"]
-    }
-  },
-  {
-    id: "besThree-electronic-dreams",
-    title: "Electronic Dreams EP",
-    artist: "BesThree",
-    category: "mastering", 
-    status: "released",
-    releaseDate: "2024-02-10",
-    description: "4-track electronic EP with cutting-edge sound design and crystal-clear masters.",
-    imageUrl: "/img/logo/FMG-Universe-Flemmo-Music-Global.png",
-    credits: ["Mastering", "Sound Design"],
-    stats: {
-      streams: 320000,
-      charts: ["Electronic Indonesia", "EDM Rising"]
-    }
-  },
-  {
-    id: "amandha-bossa-nova",
-    title: "Sunset Bossa",
-    artist: "Amandha Ayu",
-    category: "songwriting",
-    status: "released", 
-    releaseDate: "2023-11-05",
-    description: "Smooth bossa nova single with Portuguese and Indonesian lyrics.",
-    imageUrl: "/img/logo/Flemmo-Enterprise-Music-FEM-logo.jpg",
-    credits: ["Songwriting", "Arrangement", "Production"],
-    stats: {
-      streams: 150000,
-      charts: ["Bossa Nova Indonesia"]
-    }
-  },
-  {
-    id: "adilisius-pop-fusion",
-    title: "Cross Language",
-    artist: "Adilisius",
-    category: "publishing",
-    status: "released",
-    releaseDate: "2024-04-02", 
-    description: "Multilingual pop fusion track distributed across 150+ countries.",
-    imageUrl: "/img/alfath-flemmo-founder-ceo-flemmo-music-global-publishing-fmg-universe.jpeg",
-    credits: ["Publishing", "Distribution", "Rights Management"],
-    stats: {
-      streams: 280000,
-      charts: ["Global Indonesia", "World Music Charts"]
-    }
-  },
-  {
-    id: "anthem-boys-upcoming",
-    title: "New Horizons",
-    artist: "Anthem Boys",
-    category: "production",
-    status: "upcoming",
-    releaseDate: "2024-12-15",
-    description: "Highly anticipated pop-EDM collaboration featuring international artists.",
-    imageUrl: "/img/logo/Flemmo-Music-Global-FMG-Publishing-logo.jpg", 
-    credits: ["Production", "Arrangement", "Mixing"],
-    stats: {
-      streams: 0
-    }
-  }
-];
-
-const CATEGORIES = [
-  { id: 'all' as const, label: 'All Projects', icon: Disc3 },
-  { id: 'production' as const, label: 'Production', icon: Music },
-  { id: 'mixing' as const, label: 'Mixing', icon: Headphones },
-  { id: 'mastering' as const, label: 'Mastering', icon: Radio },
-  { id: 'songwriting' as const, label: 'Songwriting', icon: Mic2 },
-  { id: 'publishing' as const, label: 'Publishing', icon: Award }
-];
 
 // Animation variants
 const fadeUp = {
@@ -172,35 +64,69 @@ const stagger = {
 
 // Main Portfolio Component  
 export default function PortfolioClient(): React.JSX.Element {
-  const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<UserRole>('guest');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12; // Show 12 items per page
 
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollY } = useScroll();
   const heroY = useTransform(scrollY, [0, 500], [0, -150]);
   const heroOpacity = useTransform(scrollY, [0, 300], [1, 0.3]);
 
-  // Filter projects
-  const filteredProjects = PORTFOLIO_PROJECTS.filter(project => {
-    const matchesCategory = selectedCategory === 'all' || project.category === selectedCategory;
-    const matchesSearch = searchQuery === '' || 
-      project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.artist.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
-
-  // Audio controls
-  const toggleAudio = useCallback((projectId: string) => {
-    setPlayingAudio(current => current === projectId ? null : projectId);
+  // Check user role on mount
+  useEffect(() => {
+    getEffectiveRole().then(role => {
+      setUserRole(role);
+    });
   }, []);
 
-  const formatStreams = (streams: number): string => {
-    if (streams >= 1000000) return `${(streams / 1000000).toFixed(1)}M`;
-    if (streams >= 1000) return `${(streams / 1000).toFixed(1)}K`;
-    return streams.toString();
+  // Fetch portfolio data from API
+  useEffect(() => {
+    fetchPortfolioData();
+  }, []);
+
+  const fetchPortfolioData = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/portfolio');
+      if (!response.ok) throw new Error('Failed to fetch portfolio');
+      
+      const result = await response.json();
+      setPortfolioItems(result.data || []);
+    } catch (error) {
+      console.error('Error fetching portfolio:', error);
+      setPortfolioItems([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  // Check if user is admin or owner
+  const isAdmin = userRole === 'admin' || userRole === 'owner';
+
+  // Filter projects
+  const filteredProjects = portfolioItems.filter(item => {
+    const matchesSearch = searchQuery === '' || 
+      item.song_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.singer.some(s => s.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      item.genre.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = filteredProjects.slice(startIndex, endIndex);
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   return (
     <main className="relative min-h-screen bg-white text-black antialiased dark:bg-black dark:text-white">
@@ -275,37 +201,29 @@ export default function PortfolioClient(): React.JSX.Element {
       {/* Filter Section */}
       <section className="relative py-12 border-t border-slate-200/50 dark:border-slate-700/50">
         <div className="mx-auto max-w-6xl px-4">
-          <div className="flex flex-col lg:flex-row gap-6 lg:items-center lg:justify-between">
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
             {/* Search */}
-            <div className="relative flex-1 max-w-md">
+            <div className="relative flex-1 max-w-md w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search projects or artists..."
+                placeholder="Search by title, artist, or genre..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500"
               />
             </div>
 
-            {/* Category Filter */}
-            <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={[
-                    "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
-                    selectedCategory === category.id
-                      ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/25"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-                  ].join(" ")}
-                >
-                  <category.icon className="w-4 h-4" />
-                  {category.label}
-                </button>
-              ))}
-            </div>
+            {/* Add Portfolio Button (Admin Only) */}
+            {isAdmin && (
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4" />
+                Add Portfolio
+              </button>
+            )}
           </div>
         </div>
       </section>
@@ -313,28 +231,93 @@ export default function PortfolioClient(): React.JSX.Element {
       {/* Projects Grid */}
       <section className="relative py-12">
         <div className="mx-auto max-w-6xl px-4">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`${selectedCategory}-${searchQuery}`}
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              variants={stagger}
-              className="grid gap-8 md:gap-12 sm:grid-cols-2 lg:grid-cols-3"
-            >
-              {filteredProjects.map((project) => (
-                <ProjectCard 
-                  key={project.id}
-                  project={project}
-                  isPlaying={playingAudio === project.id}
-                  onToggleAudio={() => toggleAudio(project.id)}
-                />
-              ))}
-            </motion.div>
-          </AnimatePresence>
+          {/* Loading State */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 mx-auto border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+                <p className="text-slate-600 dark:text-slate-400">Loading portfolio...</p>
+              </div>
+            </div>
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={searchQuery}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                variants={stagger}
+                className="grid gap-8 md:gap-12 sm:grid-cols-2 lg:grid-cols-3"
+              >
+                {currentItems.map((item) => (
+                  <PortfolioCard 
+                    key={item.id}
+                    item={item}
+                  />
+                ))}
+              </motion.div>
+            </AnimatePresence>
+          )}
+
+          {/* Pagination Controls */}
+          {!isLoading && filteredProjects.length > itemsPerPage && (
+            <div className="flex items-center justify-center gap-2 mt-12">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              
+              <div className="flex items-center gap-2">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-10 h-10 rounded-lg font-medium transition-colors ${
+                        currentPage === pageNum
+                          ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          )}
+
+          {/* Results Info */}
+          {!isLoading && filteredProjects.length > 0 && (
+            <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
+              Showing {startIndex + 1}-{Math.min(endIndex, filteredProjects.length)} of {filteredProjects.length} projects
+            </p>
+          )}
 
           {/* No results */}
-          {filteredProjects.length === 0 && (
+          {!isLoading && filteredProjects.length === 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -373,10 +356,10 @@ export default function PortfolioClient(): React.JSX.Element {
               className="grid grid-cols-2 md:grid-cols-4 gap-8"
             >
               {[
-                { label: "Total Projects", value: "50+", icon: Music },
-                { label: "Artists Worked", value: "25+", icon: Users },
-                { label: "Total Streams", value: "10M+", icon: Headphones },
-                { label: "Awards Won", value: "15+", icon: Award }
+                { label: "Total Projects", value: portfolioItems.length.toString(), icon: Music },
+                { label: "Artists", value: new Set(portfolioItems.flatMap(p => p.singer)).size.toString(), icon: Users },
+                { label: "Genres", value: new Set(portfolioItems.map(p => p.genre)).size.toString(), icon: Headphones },
+                { label: "Released", value: portfolioItems.filter(p => p.release_date).length.toString(), icon: Award }
               ].map((stat, index) => (
                 <div key={index} className="text-center space-y-3">
                   <div className="w-12 h-12 mx-auto bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center">
@@ -444,148 +427,536 @@ export default function PortfolioClient(): React.JSX.Element {
           </motion.div>
         </div>
       </section>
+
+      {/* Add Portfolio Modal */}
+      {isAddModalOpen && (
+        <AddPortfolioModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onSuccess={fetchPortfolioData}
+        />
+      )}
     </main>
   );
 }
 
-// Project Card Component
-function ProjectCard({ 
-  project, 
-  isPlaying, 
-  onToggleAudio 
+// Add Portfolio Modal Component
+function AddPortfolioModal({ 
+  isOpen, 
+  onClose,
+  onSuccess
 }: { 
-  project: Project;
-  isPlaying: boolean;
-  onToggleAudio: () => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
 }): React.JSX.Element {
-  const formatStreams = (streams: number): string => {
-    if (streams >= 1000000) return `${(streams / 1000000).toFixed(1)}M`;
-    if (streams >= 1000) return `${(streams / 1000).toFixed(1)}K`;
-    return streams.toString();
-  };
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    genre: '',
+    song_title: '',
+    album_title: '',
+    singer: '',
+    songwriter: '',
+    composer: '',
+    arranger: '',
+    producer: '',
+    mixing_engineer: '',
+    mastering_engineer: '',
+    publisher: '',
+    aggregator: '',
+    release_date: '',
+    youtube_link: '',
+    spotify_artwork: '',
+    youtube_thumbnail: '',
+    apple_music_artwork: ''
+  });
 
-  const getStatusColor = (status: ProjectStatus): string => {
-    switch (status) {
-      case 'released': return 'bg-green-500';
-      case 'upcoming': return 'bg-blue-500'; 
-      case 'in-progress': return 'bg-amber-500';
-      default: return 'bg-slate-500';
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      // Convert comma-separated strings to arrays
+      const payload = {
+        genre: formData.genre,
+        song_title: formData.song_title,
+        album_title: formData.album_title || null,
+        singer: formData.singer.split(',').map(s => s.trim()).filter(Boolean),
+        songwriter: formData.songwriter.split(',').map(s => s.trim()).filter(Boolean),
+        composer: formData.composer.split(',').map(s => s.trim()).filter(Boolean),
+        arranger: formData.arranger.split(',').map(s => s.trim()).filter(Boolean),
+        producer: formData.producer.split(',').map(s => s.trim()).filter(Boolean),
+        mixing_engineer: formData.mixing_engineer.split(',').map(s => s.trim()).filter(Boolean),
+        mastering_engineer: formData.mastering_engineer.split(',').map(s => s.trim()).filter(Boolean),
+        publisher: formData.publisher.split(',').map(s => s.trim()).filter(Boolean),
+        aggregator: formData.aggregator.split(',').map(s => s.trim()).filter(Boolean),
+        release_date: formData.release_date || null,
+        youtube_link: formData.youtube_link || null,
+        spotify_artwork: formData.spotify_artwork || null,
+        youtube_thumbnail: formData.youtube_thumbnail || null,
+        apple_music_artwork: formData.apple_music_artwork || null
+      };
+
+      const response = await fetch('/api/portfolio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error('Failed to add portfolio');
+
+      alert('Portfolio added successfully!');
+      onSuccess(); // Refresh data
+      onClose();
+    } catch (error) {
+      console.error('Error adding portfolio:', error);
+      alert('Failed to add portfolio. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const getStatusLabel = (status: ProjectStatus): string => {
-    switch (status) {
-      case 'released': return 'Released';
-      case 'upcoming': return 'Upcoming';
-      case 'in-progress': return 'In Progress';
-      default: return 'Unknown';
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
   };
+
+  if (!isOpen) return <></>;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-2xl shadow-2xl"
+      >
+        {/* Header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+          <h2 className="text-2xl font-bold">Add New Portfolio</h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Genre */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Genre <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="genre"
+                required
+                value={formData.genre}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="e.g., Pop, Rock, Jazz"
+              />
+            </div>
+
+            {/* Song Title */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Song Title <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="song_title"
+                required
+                value={formData.song_title}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Song title"
+              />
+            </div>
+
+            {/* Album Title */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Album Title</label>
+              <input
+                type="text"
+                name="album_title"
+                value={formData.album_title}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Album name (optional)"
+              />
+            </div>
+
+            {/* Release Date */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Release Date</label>
+              <input
+                type="date"
+                name="release_date"
+                value={formData.release_date}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+
+          {/* Multi-value fields (comma-separated) */}
+          <div className="space-y-4">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              For multiple values, separate with commas (e.g., "John Doe, Jane Smith")
+            </p>
+
+            {/* Singer */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Singer(s)</label>
+              <input
+                type="text"
+                name="singer"
+                value={formData.singer}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Artist 1, Artist 2"
+              />
+            </div>
+
+            {/* Songwriter */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Songwriter(s)</label>
+              <input
+                type="text"
+                name="songwriter"
+                value={formData.songwriter}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Writer 1, Writer 2"
+              />
+            </div>
+
+            {/* Composer */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Composer(s)</label>
+              <input
+                type="text"
+                name="composer"
+                value={formData.composer}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Composer 1, Composer 2"
+              />
+            </div>
+
+            {/* Arranger */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Arranger(s)</label>
+              <input
+                type="text"
+                name="arranger"
+                value={formData.arranger}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Arranger 1, Arranger 2"
+              />
+            </div>
+
+            {/* Producer */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Producer(s)</label>
+              <input
+                type="text"
+                name="producer"
+                value={formData.producer}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Producer 1, Producer 2"
+              />
+            </div>
+
+            {/* Mixing Engineer */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Mixing Engineer(s)</label>
+              <input
+                type="text"
+                name="mixing_engineer"
+                value={formData.mixing_engineer}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Engineer 1, Engineer 2"
+              />
+            </div>
+
+            {/* Mastering Engineer */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Mastering Engineer(s)</label>
+              <input
+                type="text"
+                name="mastering_engineer"
+                value={formData.mastering_engineer}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Engineer 1, Engineer 2"
+              />
+            </div>
+
+            {/* Publisher */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Publisher(s)</label>
+              <input
+                type="text"
+                name="publisher"
+                value={formData.publisher}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Publisher 1, Publisher 2"
+              />
+            </div>
+
+            {/* Aggregator */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Aggregator(s)</label>
+              <input
+                type="text"
+                name="aggregator"
+                value={formData.aggregator}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Aggregator 1, Aggregator 2"
+              />
+            </div>
+
+            {/* YouTube Link */}
+            <div>
+              <label className="block text-sm font-medium mb-2">YouTube Link</label>
+              <input
+                type="url"
+                name="youtube_link"
+                value={formData.youtube_link}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="https://youtube.com/watch?v=..."
+              />
+            </div>
+          </div>
+
+          {/* Artwork/Thumbnail URLs */}
+          <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Artwork & Thumbnails
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Provide artwork/thumbnail URLs from streaming platforms (at least one recommended)
+            </p>
+
+            {/* Spotify Artwork */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Spotify Artwork URL</label>
+              <input
+                type="url"
+                name="spotify_artwork"
+                value={formData.spotify_artwork}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="https://i.scdn.co/image/..."
+              />
+            </div>
+
+            {/* YouTube Thumbnail */}
+            <div>
+              <label className="block text-sm font-medium mb-2">YouTube Thumbnail URL</label>
+              <input
+                type="url"
+                name="youtube_thumbnail"
+                value={formData.youtube_thumbnail}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="https://i.ytimg.com/vi/..."
+              />
+            </div>
+
+            {/* Apple Music Artwork */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Apple Music Artwork URL</label>
+              <input
+                type="url"
+                name="apple_music_artwork"
+                value={formData.apple_music_artwork}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="https://is1-ssl.mzstatic.com/image/..."
+              />
+            </div>
+          </div>
+
+          {/* Submit Buttons */}
+          <div className="flex gap-4 pt-4">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-indigo-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? 'Adding...' : 'Add Portfolio'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-3 border border-slate-300 dark:border-slate-600 font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
+
+// Portfolio Card Component for SQL data
+const PortfolioCard = React.memo(function PortfolioCard({ 
+  item
+}: { 
+  item: PortfolioItem;
+}): React.JSX.Element {
+  const formatDate = (dateString: string | null): string => {
+    if (!dateString) return 'TBA';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  // Artwork/Thumbnail logic with fallback priority: Spotify > YouTube > Apple Music > Default
+  const getArtwork = (): string => {
+    if (item.spotify_artwork) return item.spotify_artwork;
+    if (item.youtube_thumbnail) return item.youtube_thumbnail;
+    if (item.apple_music_artwork) return item.apple_music_artwork;
+    return "/img/logo/FMG-Universe-Flemmo-Music-Global.png";
+  };
+
+  const artwork = getArtwork();
+  const hasCustomArtwork = item.spotify_artwork || item.youtube_thumbnail || item.apple_music_artwork;
 
   return (
     <motion.div
       variants={fadeUp}
       className="group relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-xl transition-all duration-500"
     >
-      {/* Image */}
-      <div className="relative aspect-square overflow-hidden">
+      {/* Image Header */}
+      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-pink-500/20">
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
         
         <Image
-          src={project.imageUrl}
-          alt={`${project.title} by ${project.artist}`}
+          src={artwork}
+          alt={item.song_title}
           fill
-          className="object-cover transition-transform duration-700 group-hover:scale-110"
+          loading="lazy"
+          placeholder="blur"
+          blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzJhMmEzMiIvPjwvc3ZnPg=="
+          className={`object-cover transition-transform duration-700 group-hover:scale-110 ${!hasCustomArtwork ? 'opacity-40' : ''}`}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          quality={75}
         />
 
-        {/* Status Badge */}
-        <div className={`absolute top-4 right-4 z-20 ${getStatusColor(project.status)} text-white text-xs font-medium px-3 py-1 rounded-full`}>
-          {getStatusLabel(project.status)}
+        {/* Genre Badge */}
+        <div className="absolute top-4 right-4 z-20 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-medium px-3 py-1 rounded-full">
+          {item.genre}
         </div>
 
-        {/* Audio Control */}
-        {project.audioUrl && (
-          <button
-            onClick={onToggleAudio}
-            className="absolute bottom-4 right-4 z-20 w-12 h-12 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white dark:hover:bg-slate-800 transition-colors"
-          >
-            {isPlaying ? (
-              <Pause className="w-5 h-5 text-slate-700 dark:text-slate-300" />
-            ) : (
-              <Play className="w-5 h-5 text-slate-700 dark:text-slate-300 ml-0.5" />
-            )}
-          </button>
-        )}
-
         {/* Overlay Content */}
-        <div className="absolute bottom-4 left-4 z-20 text-white">
-          <h3 className="font-semibold text-lg mb-1">{project.title}</h3>
-          <p className="text-white/80 text-sm">{project.artist}</p>
+        <div className="absolute bottom-4 left-4 right-4 z-20 text-white">
+          <h3 className="font-semibold text-lg mb-1 line-clamp-1">{item.song_title}</h3>
+          {item.singer.length > 0 && (
+            <p className="text-white/80 text-sm line-clamp-1">{item.singer.join(', ')}</p>
+          )}
         </div>
       </div>
 
       {/* Content */}
       <div className="p-6 space-y-4">
-        <p className="text-slate-600 dark:text-slate-400 text-sm line-clamp-2">
-          {project.description}
-        </p>
-
-        {/* Credits */}
-        <div className="flex flex-wrap gap-2">
-          {project.credits.map((credit, index) => (
-            <span
-              key={index}
-              className="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs rounded-full"
-            >
-              {credit}
-            </span>
-          ))}
+        {/* Album & Release Date */}
+        <div className="space-y-2">
+          {item.album_title && (
+            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+              <Music className="w-4 h-4 flex-shrink-0" />
+              <span className="line-clamp-1">{item.album_title}</span>
+            </div>
+          )}
+          {item.release_date && (
+            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+              <Calendar className="w-4 h-4 flex-shrink-0" />
+              <span>{formatDate(item.release_date)}</span>
+            </div>
+          )}
         </div>
 
-        {/* Stats */}
-        {project.stats.streams && project.stats.streams > 0 && (
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-              <Headphones className="w-4 h-4" />
-              <span>{formatStreams(project.stats.streams)} streams</span>
+        {/* Credits Section */}
+        <div className="space-y-2 text-xs">
+          {item.composer.length > 0 && (
+            <div>
+              <span className="font-medium text-slate-700 dark:text-slate-300">Composer: </span>
+              <span className="text-slate-600 dark:text-slate-400">{item.composer.join(', ')}</span>
             </div>
-            
-            {project.stats.charts && project.stats.charts.length > 0 && (
-              <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 text-amber-500" />
-                <span className="text-amber-600 dark:text-amber-400 text-xs">
-                  {project.stats.charts.length} charts
-                </span>
-              </div>
-            )}
+          )}
+          {item.producer.length > 0 && (
+            <div>
+              <span className="font-medium text-slate-700 dark:text-slate-300">Producer: </span>
+              <span className="text-slate-600 dark:text-slate-400">{item.producer.join(', ')}</span>
+            </div>
+          )}
+          {item.mixing_engineer.length > 0 && (
+            <div>
+              <span className="font-medium text-slate-700 dark:text-slate-300">Mixing: </span>
+              <span className="text-slate-600 dark:text-slate-400">{item.mixing_engineer.join(', ')}</span>
+            </div>
+          )}
+          {item.mastering_engineer.length > 0 && (
+            <div>
+              <span className="font-medium text-slate-700 dark:text-slate-300">Mastering: </span>
+              <span className="text-slate-600 dark:text-slate-400">{item.mastering_engineer.join(', ')}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Publisher & Aggregator Tags */}
+        {(item.publisher.length > 0 || item.aggregator.length > 0) && (
+          <div className="flex flex-wrap gap-2 pt-2">
+            {item.publisher.map((pub, index) => (
+              <span
+                key={`pub-${index}`}
+                className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-full"
+              >
+                {pub}
+              </span>
+            ))}
+            {item.aggregator.map((agg, index) => (
+              <span
+                key={`agg-${index}`}
+                className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full"
+              >
+                {agg}
+              </span>
+            ))}
           </div>
         )}
 
-        {/* External Links */}
-        <div className="flex gap-2 pt-2">
-          {project.spotifyUrl && (
-            <Link
-              href={project.spotifyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 text-center py-2 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors"
-            >
-              Spotify
-            </Link>
-          )}
-          {project.youtubeUrl && (
-            <Link
-              href={project.youtubeUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 text-center py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors"
-            >
-              YouTube
-            </Link>
-          )}
-        </div>
+        {/* YouTube Link */}
+        {item.youtube_link && (
+          <Link
+            href={item.youtube_link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+            </svg>
+            Watch on YouTube
+          </Link>
+        )}
       </div>
     </motion.div>
   );
-}
+});

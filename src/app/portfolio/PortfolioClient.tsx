@@ -233,16 +233,24 @@ export default function PortfolioClient(): React.JSX.Element {
         priority_order: index + 1
       }));
 
-      // Send updates to server
-      await Promise.all(
-        updates.map(update =>
-          fetch('/api/portfolio', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(update),
-          })
-        )
-      );
+      console.log(`Saving ${updates.length} items with batch update...`);
+
+      // Send batch update to server
+      const response = await fetch('/api/portfolio/batch-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updates }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        console.error('Batch update failed:', result);
+        alert(`Failed to update order: ${result.message || result.error || 'Unknown error'}`);
+        return;
+      }
+
+      console.log('Batch update successful:', result.message);
       
       // Close modal and reload
       setIsEditListModalOpen(false);

@@ -23,10 +23,28 @@ import {
   MoreVertical,
   Edit,
   Trash2,
-  X
+  X,
+  GripVertical
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 // Types matching SQL portfolio table schema
 interface PortfolioItem {
@@ -112,6 +130,68 @@ export default function PortfolioClient(): React.JSX.Element {
   const { scrollY } = useScroll();
   const heroY = useTransform(scrollY, [0, 500], [0, -150]);
   const heroOpacity = useTransform(scrollY, [0, 300], [1, 0.3]);
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle drag end
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = currentItems.findIndex((item) => item.id === active.id);
+      const newIndex = currentItems.findIndex((item) => item.id === over.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const reorderedItems = arrayMove(currentItems, oldIndex, newIndex);
+        
+        // Update priority_order for all affected items
+        const updates = reorderedItems.map((item, index) => ({
+          id: item.id,
+          priority_order: (currentPage - 1) * itemsPerPage + index + 1
+        }));
+
+        // Optimistically update UI
+        const newPortfolioItems = [...portfolioItems];
+        updates.forEach(update => {
+          const itemIndex = newPortfolioItems.findIndex(item => item.id === update.id);
+          if (itemIndex !== -1) {
+            newPortfolioItems[itemIndex] = {
+              ...newPortfolioItems[itemIndex],
+              priority_order: update.priority_order
+            };
+          }
+        });
+        setPortfolioItems(newPortfolioItems);
+
+        // Send updates to server
+        try {
+          await Promise.all(
+            updates.map(update =>
+              fetch('/api/portfolio', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(update),
+              })
+            )
+          );
+        } catch (error) {
+          console.error('Error updating order:', error);
+          // Revert on error
+          fetchPortfolioData();
+        }
+      }
+    }
+  };
 
   // Close genre dropdown when clicking outside
   useEffect(() => {
@@ -553,22 +633,32 @@ export default function PortfolioClient(): React.JSX.Element {
               </div>
             </div>
           ) : (
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={searchQuery}
-                initial="hidden"
-                animate="visible"
-                exit="hidden"
-                variants={stagger}
-                className="grid gap-8 md:gap-12 sm:grid-cols-2 lg:grid-cols-3"
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={currentItems.map(item => item.id)}
+                strategy={verticalListSortingStrategy}
+                disabled={!isAdmin}
               >
-                {currentItems.map((item) => (
-                  <PortfolioCard
-                    key={item.id}
-                    item={item}
-                    userRole={userRole}
-                    openMenuId={openMenuId}
-                    setOpenMenuId={setOpenMenuId}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={searchQuery}
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
+                    variants={stagger}
+                    className="grid gap-8 md:gap-12 sm:grid-cols-2 lg:grid-cols-3"
+                  >
+                    {currentItems.map((item) => (
+                      <PortfolioCard
+                        key={item.id}
+                        item={item}
+                        userRole={userRole}
+                        openMenuId={openMenuId}
+                        setOpenMenuId={setOpenMenuId}
                     onEdit={() => {
                       setEditingItem(item);
                       setIsEditModalOpen(true);
@@ -613,6 +703,8 @@ export default function PortfolioClient(): React.JSX.Element {
                 ))}
               </motion.div>
             </AnimatePresence>
+          </SortableContext>
+        </DndContext>
           )}
 
           {/* Pagination Controls */}
@@ -1587,7 +1679,23 @@ const PortfolioCard = React.memo(function PortfolioCard({
   const [imgError, setImgError] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
   const showMenu = openMenuId === item.id;
+  const isAdmin = userRole === 'admin' || userRole === 'owner';
 
   // Close menu when clicking outside
   React.useEffect(() => {
@@ -1707,6 +1815,8 @@ const PortfolioCard = React.memo(function PortfolioCard({
 
   return (
     <motion.div
+      ref={setNodeRef}
+      style={style}
       variants={fadeUp}
       className="group relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-xl transition-all duration-500"
     >
@@ -1740,9 +1850,20 @@ const PortfolioCard = React.memo(function PortfolioCard({
           {item.genre}
         </div>
 
-        {/* Admin Menu */}
+        {/* Admin Menu & Drag Handle */}
         {(userRole === 'admin' || userRole === 'owner') && (
-          <div ref={menuRef} className="absolute top-4 left-4 z-40">
+          <div ref={menuRef} className="absolute top-4 left-4 z-40 flex items-center gap-2">
+            {/* Drag Handle */}
+            <button
+              {...attributes}
+              {...listeners}
+              className="w-8 h-8 flex items-center justify-center bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-full hover:bg-white dark:hover:bg-slate-700 transition-colors shadow-lg cursor-grab active:cursor-grabbing"
+              title="Drag to reorder"
+            >
+              <GripVertical className="w-4 h-4 text-slate-700 dark:text-slate-300" />
+            </button>
+
+            {/* Menu Button */}
             <button
               onClick={() => setOpenMenuId(showMenu ? null : item.id)}
               className="w-8 h-8 flex items-center justify-center bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-full hover:bg-white dark:hover:bg-slate-700 transition-colors shadow-lg"

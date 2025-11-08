@@ -141,6 +141,15 @@ export async function POST(request: NextRequest) {
 // GET endpoint to fetch all portfolio items
 export async function GET(request: NextRequest) {
   try {
+    // Log environment check
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error("Missing Supabase environment variables");
+      return NextResponse.json(
+        { error: "Server configuration error" },
+        { status: 500 }
+      );
+    }
+
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -166,21 +175,22 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase
       .from("portfolio")
       .select("*")
-      .order("release_date", { ascending: false });
+      .order("release_date", { ascending: false, nullsFirst: false });
 
     if (error) {
+      console.error("Supabase fetch error:", error);
       return NextResponse.json(
         { error: "Failed to fetch portfolio", details: error.message },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ success: true, data }, { status: 200 });
+    return NextResponse.json({ success: true, data: data || [] }, { status: 200 });
 
   } catch (error) {
     console.error("API error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Internal server error", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
     );
   }

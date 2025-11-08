@@ -93,9 +93,19 @@ export default function PortfolioClient(): React.JSX.Element {
     try {
       setIsLoading(true);
       const response = await fetch('/api/portfolio');
-      if (!response.ok) throw new Error('Failed to fetch portfolio');
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('API Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+        throw new Error(`Failed to fetch portfolio: ${response.status} - ${errorData.error || response.statusText}`);
+      }
       
       const result = await response.json();
+      console.log('Portfolio data fetched:', result);
       setPortfolioItems(result.data || []);
     } catch (error) {
       console.error('Error fetching portfolio:', error);

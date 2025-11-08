@@ -103,10 +103,12 @@ export default function PortfolioClient(): React.JSX.Element {
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const itemsPerPage = 12; // Show 12 items per page
 
   const heroRef = useRef<HTMLDivElement>(null);
   const genreDropdownRef = useRef<HTMLDivElement>(null);
+  const projectsGridRef = useRef<HTMLDivElement>(null);
   const { scrollY } = useScroll();
   const heroY = useTransform(scrollY, [0, 500], [0, -150]);
   const heroOpacity = useTransform(scrollY, [0, 300], [1, 0.3]);
@@ -277,6 +279,20 @@ export default function PortfolioClient(): React.JSX.Element {
     setCurrentPage(1);
   }, [searchQuery, selectedGenres, selectedWorkType]);
 
+  // Scroll to projects grid when page changes
+  useEffect(() => {
+    if (projectsGridRef.current && currentPage > 1) {
+      const yOffset = -100; // Offset untuk memberi jarak dari top
+      const element = projectsGridRef.current;
+      const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      
+      window.scrollTo({ 
+        top: y, 
+        behavior: 'smooth' 
+      });
+    }
+  }, [currentPage]);
+
   return (
     <main className="relative min-h-screen bg-white text-black antialiased dark:bg-black dark:text-white">
       {/* Background texture */}
@@ -337,10 +353,6 @@ export default function PortfolioClient(): React.JSX.Element {
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 <span>25+ Artists</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Award className="w-4 h-4" />
-                <span>10M+ Streams</span>
               </div>
             </motion.div>
           </motion.div>
@@ -530,7 +542,7 @@ export default function PortfolioClient(): React.JSX.Element {
       </section>
 
       {/* Projects Grid */}
-      <section className="relative py-12">
+      <section ref={projectsGridRef} className="relative py-12">
         <div className="mx-auto max-w-6xl px-4">
           {/* Loading State */}
           {isLoading ? (
@@ -555,6 +567,8 @@ export default function PortfolioClient(): React.JSX.Element {
                     key={item.id}
                     item={item}
                     userRole={userRole}
+                    openMenuId={openMenuId}
+                    setOpenMenuId={setOpenMenuId}
                     onEdit={() => {
                       setEditingItem(item);
                       setIsEditModalOpen(true);
@@ -1555,19 +1569,42 @@ function EditPortfolioModal({
 const PortfolioCard = React.memo(function PortfolioCard({ 
   item,
   userRole,
+  openMenuId,
+  setOpenMenuId,
   onEdit,
   onDelete,
   onToggleFeatured
 }: { 
   item: PortfolioItem;
   userRole: UserRole;
+  openMenuId: number | null;
+  setOpenMenuId: (id: number | null) => void;
   onEdit: () => void;
   onDelete: (id: number) => void;
   onToggleFeatured: (id: number, currentStatus: boolean) => void;
 }): React.JSX.Element {
   const [imgSrc, setImgSrc] = React.useState<string>('');
-  const [showMenu, setShowMenu] = React.useState(false);
   const [imgError, setImgError] = React.useState(false);
+  const menuRef = React.useRef<HTMLDivElement>(null);
+
+  const showMenu = openMenuId === item.id;
+
+  // Close menu when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMenu, setOpenMenuId]);
 
   const formatDate = (dateString: string | null): string => {
     if (!dateString) return 'TBA';
@@ -1705,20 +1742,20 @@ const PortfolioCard = React.memo(function PortfolioCard({
 
         {/* Admin Menu */}
         {(userRole === 'admin' || userRole === 'owner') && (
-          <div className="absolute top-4 left-4 z-20">
+          <div ref={menuRef} className="absolute top-4 left-4 z-40">
             <button
-              onClick={() => setShowMenu(!showMenu)}
+              onClick={() => setOpenMenuId(showMenu ? null : item.id)}
               className="w-8 h-8 flex items-center justify-center bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-full hover:bg-white dark:hover:bg-slate-700 transition-colors shadow-lg"
             >
               <MoreVertical className="w-4 h-4 text-slate-700 dark:text-slate-300" />
             </button>
             
             {showMenu && (
-              <div className="absolute top-10 left-0 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden min-w-[140px] z-30">
+              <div className="absolute top-10 left-0 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden min-w-[140px] z-50">
                 <button
                   onClick={() => {
                     onEdit();
-                    setShowMenu(false);
+                    setOpenMenuId(null);
                   }}
                   className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 text-slate-700 dark:text-slate-300"
                 >
@@ -1728,7 +1765,7 @@ const PortfolioCard = React.memo(function PortfolioCard({
                 <button
                   onClick={() => {
                     onToggleFeatured(item.id, item.is_featured || false);
-                    setShowMenu(false);
+                    setOpenMenuId(null);
                   }}
                   className={`w-full px-4 py-2 text-left text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 flex items-center gap-2 ${
                     item.is_featured 
@@ -1744,7 +1781,7 @@ const PortfolioCard = React.memo(function PortfolioCard({
                     if (confirm(`Delete "${item.song_title}"?`)) {
                       onDelete(item.id);
                     }
-                    setShowMenu(false);
+                    setOpenMenuId(null);
                   }}
                   className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 text-red-600 dark:text-red-400"
                 >
@@ -1767,18 +1804,18 @@ const PortfolioCard = React.memo(function PortfolioCard({
 
       {/* Content */}
       <div className="p-6 space-y-4">
-        {/* Album & Release Date */}
+        {/* Release Date & Songwriter */}
         <div className="space-y-2">
-          {item.album_title && (
-            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-              <Music className="w-4 h-4 flex-shrink-0" />
-              <span className="line-clamp-1">{item.album_title}</span>
-            </div>
-          )}
           {item.release_date_aggregator && (
             <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
               <Calendar className="w-4 h-4 flex-shrink-0" />
               <span>{formatDate(item.release_date_aggregator)}</span>
+            </div>
+          )}
+          {Array.isArray(item.songwriter) && item.songwriter.length > 0 && (
+            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+              <Users className="w-4 h-4 flex-shrink-0" />
+              <span className="line-clamp-1">Songwriter: {item.songwriter.join(', ')}</span>
             </div>
           )}
         </div>
@@ -1827,7 +1864,12 @@ const PortfolioCard = React.memo(function PortfolioCard({
 
         {/* Platform Links - Circular Buttons */}
         {(item.spotify_link || item.apple_music_link || item.youtube_link) && (
-          <div className="flex items-center justify-center gap-3 pt-2">
+          <div className="pt-4 space-y-3">
+            {/* Divider */}
+            <div className="w-full h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent" />
+
+            {/* Platform Buttons */}
+            <div className="flex items-center justify-center gap-3">
             {/* Spotify */}
             {item.spotify_link && (
               <Link
@@ -1872,6 +1914,7 @@ const PortfolioCard = React.memo(function PortfolioCard({
                 </svg>
               </Link>
             )}
+            </div>
           </div>
         )}
       </div>

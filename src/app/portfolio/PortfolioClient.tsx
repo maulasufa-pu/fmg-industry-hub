@@ -1109,6 +1109,7 @@ export default function PortfolioClient(): React.JSX.Element {
           items={editListItems}
           onDragEnd={handleEditListDragEnd}
           onSave={saveEditListChanges}
+          onUpdateItems={setEditListItems}
         />
       )}
     </main>
@@ -2715,12 +2716,14 @@ function EditListModal({
   items,
   onDragEnd,
   onSave,
+  onUpdateItems,
 }: {
   isOpen: boolean;
   onClose: () => void;
   items: PortfolioItem[];
   onDragEnd: (event: DragEndEvent) => void;
   onSave: () => void;
+  onUpdateItems: (items: PortfolioItem[]) => void;
 }) {
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -2782,22 +2785,35 @@ function EditListModal({
         return indexA - indexB;
       });
 
-      // Remove all selected items from the list
+      // Get the items data
       const selectedItemsData = sortedSelectedIds.map(id => 
         localItems.find(item => item.id === id)!
       );
+      
+      // Remove all selected items from the list
       const remainingItems = localItems.filter(item => !selectedItems.includes(item.id));
 
-      // Calculate the insertion index
-      let insertIndex = newIndex;
+      // Calculate where to insert the group
+      // Find the target item in the remaining items
+      const targetIndexInRemaining = remainingItems.findIndex(item => item.id === over.id);
       
-      // Adjust insert index based on how many selected items were before the target
-      const selectedBeforeTarget = sortedSelectedIds.filter(id => {
-        const idx = localItems.findIndex(item => item.id === id);
-        return idx < newIndex;
-      }).length;
-      
-      insertIndex = insertIndex - selectedBeforeTarget;
+      let insertIndex: number;
+      if (targetIndexInRemaining === -1) {
+        // Target was one of the selected items, don't move
+        return;
+      } else {
+        // Determine if we're moving up or down
+        const draggedCurrentIndex = localItems.findIndex(item => item.id === active.id);
+        const targetCurrentIndex = localItems.findIndex(item => item.id === over.id);
+        
+        if (draggedCurrentIndex < targetCurrentIndex) {
+          // Moving down: insert after target
+          insertIndex = targetIndexInRemaining + 1;
+        } else {
+          // Moving up: insert before target
+          insertIndex = targetIndexInRemaining;
+        }
+      }
       
       // Insert selected items at the new position
       const reorderedItems = [
@@ -2806,15 +2822,18 @@ function EditListModal({
         ...remainingItems.slice(insertIndex)
       ];
 
-      // Update local state, don't save yet
+      // ONLY update local state - don't sync with parent until Save is clicked
       setLocalItems(reorderedItems);
-      
-      // Also call onDragEnd to update parent state
-      onDragEnd(event);
     } else {
-      // Single item drag: use the original drag end handler
-      onDragEnd(event);
-      setLocalItems(items); // Sync with parent
+      // Single item drag: update both local and parent state
+      const oldIndex = localItems.findIndex((item) => item.id === active.id);
+      const newIndex = localItems.findIndex((item) => item.id === over.id);
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const reordered = arrayMove(localItems, oldIndex, newIndex);
+        setLocalItems(reordered);
+        onDragEnd(event); // Also update parent for single item
+      }
     }
   };
 
@@ -2822,6 +2841,17 @@ function EditListModal({
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      // First, sync localItems to parent's editListItems
+      // Update the priority_order for all items
+      const updatedItems = localItems.map((item, index) => ({
+        ...item,
+        priority_order: index + 1
+      }));
+      
+      // Update parent state with reordered items
+      onUpdateItems(updatedItems);
+      
+      // Then call the save function to persist to database
       await onSave();
     } catch (error) {
       console.error('Error saving:', error);

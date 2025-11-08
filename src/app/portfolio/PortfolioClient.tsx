@@ -610,7 +610,7 @@ function AddPortfolioModal({
           {/* Multi-value fields (comma-separated) */}
           <div className="space-y-4">
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              For multiple values, separate with commas (e.g., "John Doe, Jane Smith")
+              For multiple values, separate with commas (e.g., &ldquo;John Doe, Jane Smith&rdquo;)
             </p>
 
             {/* Singer */}

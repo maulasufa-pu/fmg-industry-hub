@@ -129,6 +129,8 @@ export default function PortfolioClient(): React.JSX.Element {
   const [isEditListModalOpen, setIsEditListModalOpen] = useState(false);
   const [editListItems, setEditListItems] = useState<PortfolioItem[]>([]);
   const [musicGenres, setMusicGenres] = useState<string[]>([]);
+  const [genreSubGenres, setGenreSubGenres] = useState<Record<string, string[]>>({});
+  const [expandedGenre, setExpandedGenre] = useState<string | null>(null);
   const itemsPerPage = 12; // Show 12 items per page
 
   const heroRef = useRef<HTMLDivElement>(null);
@@ -285,6 +287,7 @@ export default function PortfolioClient(): React.JSX.Element {
       if (response.ok) {
         const result = await response.json();
         setMusicGenres(result.data || []);
+        setGenreSubGenres(result.genreMap || {});
       }
     } catch (error) {
       console.error('Error fetching music genres:', error);
@@ -573,42 +576,111 @@ export default function PortfolioClient(): React.JSX.Element {
                   </svg>
                 </button>
 
-                {/* Genre Dropdown */}
+                {/* Genre Dropdown with Nested Sub-Genres */}
                 {showGenreDropdown && (
-                  <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 max-h-80 overflow-y-auto">
+                  <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
                     <div className="p-2 space-y-1">
                       {availableGenres.length > 0 ? (
                         availableGenres.map(genre => {
-                          const isSelected = selectedGenres.includes(genre);
+                          const isExpanded = expandedGenre === genre;
+                          const subGenres = genreSubGenres[genre] || [];
+                          const hasSubGenres = subGenres.length > 0;
+                          const isGenreSelected = selectedGenres.includes(genre);
+                          const selectedSubGenresCount = subGenres.filter(sub => selectedGenres.includes(sub)).length;
+                          
                           return (
-                            <label 
-                              key={genre} 
-                              className={`flex items-center gap-2 px-3 py-2 rounded cursor-pointer transition-colors ${
-                                isSelected 
-                                  ? 'bg-indigo-100 dark:bg-indigo-900/40 hover:bg-indigo-200 dark:hover:bg-indigo-900/60' 
-                                  : 'hover:bg-slate-50 dark:hover:bg-slate-700'
-                              }`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedGenres([...selectedGenres, genre]);
-                                  } else {
-                                    setSelectedGenres(selectedGenres.filter(g => g !== genre));
-                                  }
-                                }}
-                                className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-                              />
-                              <span className={`text-sm ${
-                                isSelected 
-                                  ? 'text-indigo-900 dark:text-indigo-100 font-medium' 
-                                  : 'text-slate-700 dark:text-slate-300'
-                              }`}>
-                                {genre}
-                              </span>
-                            </label>
+                            <div key={genre} className="relative">
+                              {/* Main Genre Item */}
+                              <div 
+                                className={`flex items-center gap-2 px-3 py-2 rounded transition-colors ${
+                                  isGenreSelected || selectedSubGenresCount > 0
+                                    ? 'bg-indigo-100 dark:bg-indigo-900/40' 
+                                    : 'hover:bg-slate-50 dark:hover:bg-slate-700'
+                                }`}
+                              >
+                                <label className="flex items-center gap-2 flex-1 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={isGenreSelected}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedGenres([...selectedGenres, genre]);
+                                      } else {
+                                        // Remove genre and all its sub-genres
+                                        setSelectedGenres(selectedGenres.filter(g => g !== genre && !subGenres.includes(g)));
+                                      }
+                                    }}
+                                    className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                                  />
+                                  <span className={`text-sm flex-1 ${
+                                    isGenreSelected || selectedSubGenresCount > 0
+                                      ? 'text-indigo-900 dark:text-indigo-100 font-medium' 
+                                      : 'text-slate-700 dark:text-slate-300'
+                                  }`}>
+                                    {genre}
+                                    {selectedSubGenresCount > 0 && !isGenreSelected && (
+                                      <span className="ml-2 px-1.5 py-0.5 bg-indigo-200 dark:bg-indigo-800 text-indigo-700 dark:text-indigo-300 rounded text-xs font-bold">
+                                        {selectedSubGenresCount}
+                                      </span>
+                                    )}
+                                  </span>
+                                </label>
+                                
+                                {/* Expand/Collapse Button for Sub-Genres */}
+                                {hasSubGenres && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setExpandedGenre(isExpanded ? null : genre);
+                                    }}
+                                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+                                    title={`${subGenres.length} sub-genres`}
+                                  >
+                                    <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Sub-Genres List */}
+                              {isExpanded && hasSubGenres && (
+                                <div className="ml-6 mt-1 space-y-1 border-l-2 border-indigo-200 dark:border-indigo-800 pl-2">
+                                  {subGenres.map(subGenre => {
+                                    const isSubSelected = selectedGenres.includes(subGenre);
+                                    return (
+                                      <label 
+                                        key={subGenre}
+                                        className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors text-xs ${
+                                          isSubSelected 
+                                            ? 'bg-indigo-50 dark:bg-indigo-900/20' 
+                                            : 'hover:bg-slate-50 dark:hover:bg-slate-700'
+                                        }`}
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={isSubSelected}
+                                          onChange={(e) => {
+                                            if (e.target.checked) {
+                                              // Add sub-genre, remove main genre if selected
+                                              setSelectedGenres([...selectedGenres.filter(g => g !== genre), subGenre]);
+                                            } else {
+                                              setSelectedGenres(selectedGenres.filter(g => g !== subGenre));
+                                            }
+                                          }}
+                                          className="w-3.5 h-3.5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                                        />
+                                        <span className={`${
+                                          isSubSelected 
+                                            ? 'text-indigo-900 dark:text-indigo-100 font-medium' 
+                                            : 'text-slate-600 dark:text-slate-400'
+                                        }`}>
+                                          {subGenre}
+                                        </span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
                           );
                         })
                       ) : (
@@ -620,10 +692,13 @@ export default function PortfolioClient(): React.JSX.Element {
                     {selectedGenres.length > 0 && (
                       <div className="border-t border-slate-200 dark:border-slate-700 p-2">
                         <button
-                          onClick={() => setSelectedGenres([])}
+                          onClick={() => {
+                            setSelectedGenres([]);
+                            setExpandedGenre(null);
+                          }}
                           className="w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                         >
-                          Clear All
+                          Clear All ({selectedGenres.length})
                         </button>
                       </div>
                     )}

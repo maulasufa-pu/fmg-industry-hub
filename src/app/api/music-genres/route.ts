@@ -9,11 +9,12 @@ const supabase = createClient(
 // GET - Fetch all unique genres from music_genres table
 export async function GET() {
   try {
-    // Get all unique genres sorted alphabetically
+    // Get all genres with their sub-genres
     const { data, error } = await supabase
       .from('music_genres')
-      .select('genre')
-      .order('genre', { ascending: true });
+      .select('genre, sub_genre')
+      .order('genre', { ascending: true })
+      .order('sub_genre', { ascending: true });
 
     if (error) {
       console.error('Supabase error:', error);
@@ -23,12 +24,22 @@ export async function GET() {
       );
     }
 
+    // Group sub-genres by genre
+    const genreMap: Record<string, string[]> = {};
+    data.forEach(item => {
+      if (!genreMap[item.genre]) {
+        genreMap[item.genre] = [];
+      }
+      genreMap[item.genre].push(item.sub_genre);
+    });
+
     // Get unique genres
-    const uniqueGenres = Array.from(new Set(data.map(item => item.genre)));
+    const uniqueGenres = Object.keys(genreMap).sort();
 
     return NextResponse.json({
       success: true,
       data: uniqueGenres,
+      genreMap: genreMap, // Include full mapping of genre -> sub-genres
       count: uniqueGenres.length
     });
   } catch (error) {

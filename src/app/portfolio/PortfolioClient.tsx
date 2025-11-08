@@ -228,17 +228,10 @@ export default function PortfolioClient(): React.JSX.Element {
   // Save Edit List changes to database
   const saveEditListChanges = async (itemsToSave: PortfolioItem[]) => {
     try {
-      console.log('🔵 saveEditListChanges called');
-      console.log('Received items to save:', itemsToSave.map((item, i) => `${i + 1}. ${item.song_title}`));
-      
       const updates = itemsToSave.map((item, index) => ({
         id: item.id,
         priority_order: index + 1
       }));
-
-      console.log(`⚡ Starting batch update for ${updates.length} items...`);
-      console.log('Updates payload:', updates.slice(0, 5), '... (showing first 5)');
-      const startTime = Date.now();
 
       // Send batch update to server
       const response = await fetch('/api/portfolio/batch-order', {
@@ -248,26 +241,18 @@ export default function PortfolioClient(): React.JSX.Element {
       });
 
       const result = await response.json();
-      const duration = Date.now() - startTime;
-
-      console.log(`Batch update completed in ${duration}ms:`, result);
 
       if (!response.ok || !result.success) {
         console.error('Batch update failed:', result);
         alert(`Failed to update order: ${result.message || result.error || 'Unknown error'}`);
         return;
       }
-
-      console.log(`✅ SUCCESS: ${result.message} (${result.duration})`);
       
       // Update local portfolioItems state with new order
-      console.log('Updating portfolioItems state with new order...');
       setPortfolioItems(itemsToSave);
       
       // Close modal
       setIsEditListModalOpen(false);
-      
-      console.log('✅ All done! No reload needed.');
       
     } catch (error) {
       console.error('Error updating order:', error);
@@ -334,7 +319,6 @@ export default function PortfolioClient(): React.JSX.Element {
       }
       
       const result = await response.json();
-      console.log('Portfolio data fetched:', result);
       
       // Normalize data - ensure all array fields are arrays, not null
       const normalizedData = (result.data || [])
@@ -365,7 +349,6 @@ export default function PortfolioClient(): React.JSX.Element {
           release_country: Array.isArray(item.release_country) ? item.release_country.filter(s => s && typeof s === 'string') : [],
         }));
       
-      console.log('Normalized portfolio data:', normalizedData.length, 'items');
       setPortfolioItems(normalizedData);
     } catch (error) {
       console.error('Error fetching portfolio:', error);
@@ -2251,36 +2234,52 @@ const PortfolioCard = React.memo(function PortfolioCard({
     return match ? match[1] : null;
   };
 
-  // Artwork/Thumbnail Priority System:
-  // 1. artwork_link (Preferred: Spotify artwork URL)
-  // 2. YouTube thumbnail (auto-extracted from youtube_link)
-  // 3. Default FMG logo
-  //
-  // BEST PRACTICE: Put Spotify artwork URL in artwork_link field
-  // Get Spotify artwork: Right-click album art → Copy Image Address
-  // Format: https://i.scdn.co/image/[hash]
-  React.useEffect(() => {
-    let thumbnailUrl = "/img/logo/FMG-Universe-Flemmo-Music-Global.png";
-    
-    // Priority 1: Custom artwork_link
-    // Recommended: Spotify artwork URL (best quality)
-    // Format: https://i.scdn.co/image/...
-    // Also accepts: Apple Music, YouTube, or any direct image URL
-    if (item.artwork_link) {
-      thumbnailUrl = item.artwork_link;
-    }
-    // Priority 2: YouTube thumbnail (auto-extracted)
-    else if (item.youtube_link) {
-      const videoId = getYouTubeVideoId(item.youtube_link);
-      if (videoId) {
-        // Try maxresdefault first (best quality)
-        thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+  // Get artwork URL with priority: Spotify > Apple Music > YouTube > Default
+  const getArtworkUrl = (): string => {
+    // Priority 1: Spotify - best quality
+    if (item.spotify_link) {
+      const spotifyId = getSpotifyTrackId(item.spotify_link);
+      if (spotifyId) {
+        // Use artwork_link if it's a Spotify image
+        if (item.artwork_link && item.artwork_link.includes('scdn.co')) {
+          return item.artwork_link;
+        }
       }
     }
-    // Priority 3: Default logo
     
-    setImgSrc(thumbnailUrl);
-  }, [item.artwork_link, item.youtube_link]);
+    // Priority 2: Apple Music
+    if (item.apple_music_link) {
+      if (item.artwork_link && item.artwork_link.includes('mzstatic.com')) {
+        return item.artwork_link;
+      }
+    }
+    
+    // Priority 3: YouTube thumbnail
+    if (item.youtube_link) {
+      const videoId = getYouTubeVideoId(item.youtube_link);
+      if (videoId) {
+        return `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+      }
+    }
+    
+    // Priority 4: Custom artwork_link (any other URL)
+    if (item.artwork_link) {
+      return item.artwork_link;
+    }
+    
+    // Priority 5: Default logo
+    return "/img/logo/FMG-Universe-Flemmo-Music-Global.png";
+  };
+
+  // Artwork/Thumbnail Priority System:
+  // 1. Spotify artwork (from spotify_link or artwork_link with scdn.co)
+  // 2. Apple Music artwork (from apple_music_link or artwork_link with mzstatic.com)
+  // 3. YouTube thumbnail (auto-extracted from youtube_link)
+  // 4. Custom artwork_link (any other direct image URL)
+  // 5. Default FMG logo
+  React.useEffect(() => {
+    setImgSrc(getArtworkUrl());
+  }, [item.artwork_link, item.spotify_link, item.apple_music_link, item.youtube_link]);
 
   // Handle image error - fallback chain
   const handleImageError = () => {
@@ -2304,155 +2303,148 @@ const PortfolioCard = React.memo(function PortfolioCard({
 
   const hasCustomArtwork = item.artwork_link || (item.youtube_link && getYouTubeVideoId(item.youtube_link));
 
-  // List View Layout
+  // List View Layout - Compact horizontal list
   if (viewMode === 'list') {
     return (
       <motion.div
         ref={setNodeRef}
         style={style}
         variants={fadeUp}
-        className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-lg transition-all duration-300"
+        className="group relative overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-700/50 hover:border-indigo-300 dark:hover:border-indigo-700 shadow-sm hover:shadow-md transition-all duration-300"
       >
-        <div className="flex flex-col sm:flex-row gap-4 p-4">
-          {/* Thumbnail */}
-          <div className="relative w-full sm:w-32 h-32 flex-shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-pink-500/20">
+        <div className="flex items-center gap-3 p-3">
+          {/* Compact Thumbnail - Small square */}
+          <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10">
             <Image
               src={imgSrc}
               alt={item.song_title}
               fill
               loading="lazy"
-              className={`object-cover ${!hasCustomArtwork ? 'opacity-40' : ''}`}
-              sizes="128px"
-              quality={75}
+              className={`object-cover ${!hasCustomArtwork ? 'opacity-50' : ''}`}
+              sizes="64px"
+              quality={70}
               onError={handleImageError}
             />
-            
-            {/* Genre Badge */}
-            <div className="absolute bottom-2 left-2 right-2 z-10 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-medium px-2 py-1 rounded text-center truncate">
-              {item.genre}
+          </div>
+
+          {/* Content - Title & Artist */}
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-base text-slate-900 dark:text-white truncate">
+              {item.song_title}
+            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-0.5">
+              {Array.isArray(item.singer) && item.singer.length > 0 && (
+                <p className="text-slate-600 dark:text-slate-400 text-sm truncate">
+                  {item.singer.join(', ')}
+                </p>
+              )}
+              <div className="flex items-center gap-2">
+                {Array.isArray(item.singer) && item.singer.length > 0 && (
+                  <span className="hidden sm:inline text-slate-400 dark:text-slate-600">•</span>
+                )}
+                <span className="text-xs px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full font-medium flex-shrink-0">
+                  {item.genre}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-lg text-slate-900 dark:text-white truncate">
-                  {item.song_title}
-                </h3>
-                {Array.isArray(item.singer) && item.singer.length > 0 && (
-                  <p className="text-slate-600 dark:text-slate-400 text-sm truncate">
-                    {item.singer.join(', ')}
-                  </p>
-                )}
-              </div>
-
-              {/* Admin Controls */}
-              {isAdmin && (
-                <div ref={menuRef} className="flex items-center gap-2 flex-shrink-0">
-                  {/* Drag Handle */}
-                  <button
-                    {...attributes}
-                    {...listeners}
-                    className="w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-grab active:cursor-grabbing"
-                    title="Drag to reorder"
-                  >
-                    <GripVertical className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  </button>
-
-                  {/* Menu Button */}
-                  <button
-                    onClick={() => setOpenMenuId(showMenu ? null : item.id)}
-                    className="w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                  >
-                    <MoreVertical className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  </button>
-                  
-                  {showMenu && (
-                    <div className="absolute top-12 right-4 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden min-w-[140px] z-50">
-                      <button
-                        onClick={() => {
-                          onEdit();
-                          setOpenMenuId(null);
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 text-slate-700 dark:text-slate-300"
-                      >
-                        <Edit className="w-4 h-4" />
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm(`Delete "${item.song_title}"?`)) {
-                            onDelete(item.id);
-                          }
-                          setOpenMenuId(null);
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 text-red-600 dark:text-red-400"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Metadata */}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600 dark:text-slate-400 mb-3">
-              {item.release_date_aggregator && (
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>{formatDate(item.release_date_aggregator)}</span>
-                </div>
-              )}
-              {Array.isArray(item.songwriter) && item.songwriter.length > 0 && (
-                <div className="flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5" />
-                  <span className="truncate">{item.songwriter.join(', ')}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Platform Buttons */}
-            {(item.spotify_link || item.apple_music_link || item.youtube_link) && (
-              <div className="flex flex-wrap gap-2">
-                {item.spotify_link && (
-                  <Link
-                    href={item.spotify_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1DB954] hover:bg-[#1ed760] text-white text-xs font-medium rounded-full transition-colors"
-                  >
-                    <Music className="w-3.5 h-3.5" />
-                    Spotify
-                  </Link>
-                )}
-                {item.apple_music_link && (
-                  <Link
-                    href={item.apple_music_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-[#FA233B] to-[#FB5C74] hover:from-[#FB2F45] hover:to-[#FC6D82] text-white text-xs font-medium rounded-full transition-all"
-                  >
-                    <Music className="w-3.5 h-3.5" />
-                    Apple Music
-                  </Link>
-                )}
-                {item.youtube_link && (
-                  <Link
-                    href={item.youtube_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FF0000] hover:bg-[#cc0000] text-white text-xs font-medium rounded-full transition-colors"
-                  >
-                    <Play className="w-3.5 h-3.5" />
-                    YouTube
-                  </Link>
-                )}
+          {/* Metadata Info */}
+          <div className="hidden md:flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400 flex-shrink-0">
+            {item.release_date_aggregator && (
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-4 h-4" />
+                <span>{formatDate(item.release_date_aggregator)}</span>
               </div>
             )}
           </div>
+
+          {/* Platform Links - Compact */}
+          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
+            {item.spotify_link && (
+              <Link
+                href={item.spotify_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 flex items-center justify-center bg-[#1DB954] hover:bg-[#1ed760] text-white rounded-full transition-colors"
+                title="Spotify"
+              >
+                <Music className="w-4 h-4" />
+              </Link>
+            )}
+            {item.apple_music_link && (
+              <Link
+                href={item.apple_music_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 flex items-center justify-center bg-gradient-to-r from-[#FA233B] to-[#FB5C74] hover:from-[#FB2F45] hover:to-[#FC6D82] text-white rounded-full transition-all"
+                title="Apple Music"
+              >
+                <Music className="w-4 h-4" />
+              </Link>
+            )}
+            {item.youtube_link && (
+              <Link
+                href={item.youtube_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 flex items-center justify-center bg-[#FF0000] hover:bg-[#cc0000] text-white rounded-full transition-colors"
+                title="YouTube"
+              >
+                <Play className="w-4 h-4" />
+              </Link>
+            )}
+          </div>
+
+          {/* Admin Controls */}
+          {isAdmin && (
+            <div ref={menuRef} className="flex items-center gap-2 flex-shrink-0">
+              {/* Drag Handle */}
+              <button
+                {...attributes}
+                {...listeners}
+                className="w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-grab active:cursor-grabbing"
+                title="Drag to reorder"
+              >
+                <GripVertical className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+              </button>
+
+              {/* Menu Button */}
+              <button
+                onClick={() => setOpenMenuId(showMenu ? null : item.id)}
+                className="w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                <MoreVertical className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+              </button>
+              
+              {showMenu && (
+                <div className="absolute top-12 right-4 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden min-w-[140px] z-50">
+                  <button
+                    onClick={() => {
+                      onEdit();
+                      setOpenMenuId(null);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 text-slate-700 dark:text-slate-300"
+                  >
+                    <Edit className="w-4 h-4" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm(`Delete "${item.song_title}"?`)) {
+                        onDelete(item.id);
+                      }
+                      setOpenMenuId(null);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 text-red-600 dark:text-red-400"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </motion.div>
     );
@@ -2730,8 +2722,6 @@ function EditListModal({
 
     // Check if the dragged item is part of selected items
     if (selectedItems.includes(active.id as number) && selectedItems.length > 1) {
-      console.log(`🎯 Multi-select drag: Moving ${selectedItems.length} items`);
-      
       // Multi-select drag: move all selected items as a group
       const oldIndex = localItems.findIndex((item) => item.id === active.id);
       const newIndex = localItems.findIndex((item) => item.id === over.id);
@@ -2745,8 +2735,6 @@ function EditListModal({
         return indexA - indexB;
       });
 
-      console.log('Selected items (sorted):', sortedSelectedIds);
-
       // Get the items data
       const selectedItemsData = sortedSelectedIds.map(id => 
         localItems.find(item => item.id === id)!
@@ -2755,8 +2743,6 @@ function EditListModal({
       // Remove all selected items from the list
       const remainingItems = localItems.filter(item => !selectedItems.includes(item.id));
 
-      console.log('Remaining items count:', remainingItems.length);
-
       // Calculate where to insert the group
       // Find the target item in the remaining items
       const targetIndexInRemaining = remainingItems.findIndex(item => item.id === over.id);
@@ -2764,7 +2750,6 @@ function EditListModal({
       let insertIndex: number;
       if (targetIndexInRemaining === -1) {
         // Target was one of the selected items, don't move
-        console.log('⚠️ Target was selected item, aborting move');
         return;
       } else {
         // Determine if we're moving up or down
@@ -2779,8 +2764,6 @@ function EditListModal({
           insertIndex = targetIndexInRemaining;
         }
       }
-
-      console.log('Insert index in remaining:', insertIndex);
       
       // Insert selected items at the new position
       const reorderedItems = [
@@ -2789,13 +2772,9 @@ function EditListModal({
         ...remainingItems.slice(insertIndex)
       ];
 
-      console.log('Reordered items count:', reorderedItems.length);
-      console.log('New positions:', reorderedItems.map((item, i) => `${item.song_title}: ${i + 1}`));
-
       // ONLY update local state - don't sync with parent until Save is clicked
       setLocalItems(reorderedItems);
     } else {
-      console.log(`📌 Single item drag`);
       // Single item drag: update both local and parent state
       const oldIndex = localItems.findIndex((item) => item.id === active.id);
       const newIndex = localItems.findIndex((item) => item.id === over.id);
@@ -2818,13 +2797,8 @@ function EditListModal({
         priority_order: index + 1
       }));
       
-      console.log('💾 Saving modal changes...');
-      console.log('Items to save:', updatedItems.map((item, i) => `${i + 1}. ${item.song_title} (priority: ${item.priority_order})`));
-      
       // Update parent state
       onUpdateItems(updatedItems);
-      
-      console.log('✅ Parent state updated, now calling save function with updated data...');
       
       // Call save function with the updated items directly
       await onSave(updatedItems);
@@ -2838,30 +2812,30 @@ function EditListModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
+        className="relative w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden"
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h2 className="text-2xl font-bold">Edit Portfolio Order</h2>
-              <p className="text-indigo-100 text-sm mt-1">
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-start sm:items-center justify-between mb-2 sm:mb-3 gap-2">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-2xl font-bold truncate">Edit Portfolio Order</h2>
+              <p className="text-indigo-100 text-xs sm:text-sm mt-1">
                 {selectedItems.length > 0 
-                  ? `${selectedItems.length} items selected`
-                  : `Total: ${items.length} items • Drag to reorder or use multi-select`
+                  ? `${selectedItems.length} selected`
+                  : `${items.length} items`
                 }
               </p>
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 flex items-center justify-center bg-white/20 hover:bg-white/30 rounded-full transition-colors"
+              className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white/20 hover:bg-white/30 rounded-full transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
 
@@ -2869,34 +2843,36 @@ function EditListModal({
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={selectedItems.length === items.length ? deselectAll : selectAll}
-              className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+              className="px-2 sm:px-3 py-1 sm:py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center gap-1 sm:gap-2"
             >
               {selectedItems.length === items.length ? (
                 <>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                  Deselect All
+                  <span className="hidden xs:inline">Deselect All</span>
+                  <span className="xs:hidden">Clear</span>
                 </>
               ) : (
                 <>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  Select All
+                  <span className="hidden xs:inline">Select All</span>
+                  <span className="xs:hidden">All</span>
                 </>
               )}
             </button>
 
             {selectedItems.length > 0 && (
               <>
-                <div className="w-px h-6 bg-white/20" />
-                <span className="text-sm text-indigo-100 px-2">
-                  Drag any selected item to move all {selectedItems.length} items together
+                <div className="hidden sm:block w-px h-6 bg-white/20" />
+                <span className="hidden md:block text-xs sm:text-sm text-indigo-100 px-2">
+                  Drag to move {selectedItems.length} items
                 </span>
                 <button
                   onClick={deselectAll}
-                  className="ml-auto px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-sm font-medium transition-colors"
+                  className="ml-auto px-2 sm:px-3 py-1 sm:py-1.5 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-xs sm:text-sm font-medium transition-colors"
                 >
                   Clear Selection
                 </button>
@@ -2906,7 +2882,7 @@ function EditListModal({
         </div>
 
         {/* Scrollable List */}
-        <div className="overflow-y-auto max-h-[calc(90vh-120px)] p-6">
+        <div className="overflow-y-auto max-h-[calc(95vh-140px)] sm:max-h-[calc(90vh-140px)] p-3 sm:p-6">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -2916,7 +2892,7 @@ function EditListModal({
               items={localItems.map(item => item.id)}
               strategy={verticalListSortingStrategy}
             >
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {localItems.map((item, index) => (
                   <EditListItem
                     key={item.id}
@@ -2932,22 +2908,22 @@ function EditListModal({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between gap-4">
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Arrange items then click Save Changes
+        <div className="sticky bottom-0 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-4">
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 text-center sm:text-left">
+            Arrange then save
           </p>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={onClose}
               disabled={isSaving}
-              className="px-6 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm sm:text-base font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm sm:text-base font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isSaving ? (
                 <>
@@ -2955,14 +2931,16 @@ function EditListModal({
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Saving...
+                  <span className="hidden xs:inline">Saving...</span>
+                  <span className="xs:hidden">...</span>
                 </>
               ) : (
                 <>
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  Save Changes
+                  <span className="hidden xs:inline">Save Changes</span>
+                  <span className="xs:hidden">Save</span>
                 </>
               )}
             </button>
@@ -3004,7 +2982,7 @@ function EditListItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`group relative flex items-center gap-4 p-4 rounded-xl hover:shadow-md transition-all ${
+      className={`group relative flex items-center gap-2 sm:gap-4 p-2 sm:p-4 rounded-lg sm:rounded-xl hover:shadow-md transition-all ${
         isSelected 
           ? 'bg-indigo-50 dark:bg-indigo-900/20 border-2 border-indigo-500' 
           : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700'
@@ -3016,7 +2994,7 @@ function EditListItem({
           type="checkbox"
           checked={isSelected}
           onChange={onToggleSelect}
-          className="w-5 h-5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer"
+          className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer"
         />
       </div>
 
@@ -3024,26 +3002,28 @@ function EditListItem({
       <button
         {...attributes}
         {...listeners}
-        className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors cursor-grab active:cursor-grabbing"
+        className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors cursor-grab active:cursor-grabbing touch-none"
       >
-        <GripVertical className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+        <GripVertical className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600 dark:text-slate-400" />
       </button>
 
       {/* Item Info */}
       <div className="flex-1 min-w-0">
-        <h3 className={`font-semibold truncate ${
+        <h3 className={`font-semibold text-sm sm:text-base truncate ${
           isSelected 
             ? 'text-indigo-900 dark:text-indigo-100' 
             : 'text-slate-900 dark:text-white'
         }`}>
           {item.song_title}
         </h3>
-        <div className="flex items-center gap-3 mt-1 text-sm text-slate-600 dark:text-slate-400">
+        <div className="flex items-center gap-2 sm:gap-3 mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400 flex-wrap">
           {Array.isArray(item.singer) && item.singer.length > 0 && (
-            <span className="truncate">{item.singer.join(', ')}</span>
+            <>
+              <span className="truncate max-w-[120px] sm:max-w-none">{item.singer.join(', ')}</span>
+              <span className="hidden xs:inline text-slate-400 dark:text-slate-500">•</span>
+            </>
           )}
-          <span className="text-slate-400 dark:text-slate-500">•</span>
-          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+          <span className={`px-1.5 sm:px-2 py-0.5 rounded text-xs font-medium flex-shrink-0 ${
             isSelected
               ? 'bg-indigo-200 dark:bg-indigo-800 text-indigo-700 dark:text-indigo-300'
               : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'

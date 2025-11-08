@@ -402,23 +402,39 @@ export default function PortfolioClient(): React.JSX.Element {
                   <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 max-h-80 overflow-y-auto">
                     <div className="p-2 space-y-1">
                       {availableGenres.length > 0 ? (
-                        availableGenres.map(genre => (
-                          <label key={genre} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={selectedGenres.includes(genre)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedGenres([...selectedGenres, genre]);
-                                } else {
-                                  setSelectedGenres(selectedGenres.filter(g => g !== genre));
-                                }
-                              }}
-                              className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-                            />
-                            <span className="text-sm text-slate-700 dark:text-slate-300">{genre}</span>
-                          </label>
-                        ))
+                        availableGenres.map(genre => {
+                          const isSelected = selectedGenres.includes(genre);
+                          return (
+                            <label 
+                              key={genre} 
+                              className={`flex items-center gap-2 px-3 py-2 rounded cursor-pointer transition-colors ${
+                                isSelected 
+                                  ? 'bg-indigo-100 dark:bg-indigo-900/40 hover:bg-indigo-200 dark:hover:bg-indigo-900/60' 
+                                  : 'hover:bg-slate-50 dark:hover:bg-slate-700'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedGenres([...selectedGenres, genre]);
+                                  } else {
+                                    setSelectedGenres(selectedGenres.filter(g => g !== genre));
+                                  }
+                                }}
+                                className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                              />
+                              <span className={`text-sm ${
+                                isSelected 
+                                  ? 'text-indigo-900 dark:text-indigo-100 font-medium' 
+                                  : 'text-slate-700 dark:text-slate-300'
+                              }`}>
+                                {genre}
+                              </span>
+                            </label>
+                          );
+                        })
                       ) : (
                         <div className="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">
                           No genres available

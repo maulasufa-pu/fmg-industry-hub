@@ -26,7 +26,8 @@ import {
   X,
   GripVertical,
   Grid3x3,
-  List
+  List,
+  ArrowUpDown
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -125,6 +126,8 @@ export default function PortfolioClient(): React.JSX.Element {
   const [currentPage, setCurrentPage] = useState(1);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'tiles' | 'list'>('tiles');
+  const [isEditListModalOpen, setIsEditListModalOpen] = useState(false);
+  const [editListItems, setEditListItems] = useState<PortfolioItem[]>([]);
   const itemsPerPage = 12; // Show 12 items per page
 
   const heroRef = useRef<HTMLDivElement>(null);
@@ -191,6 +194,55 @@ export default function PortfolioClient(): React.JSX.Element {
           console.error('Error updating order:', error);
           // Revert on error
           fetchPortfolioData();
+        }
+      }
+    }
+  };
+
+  // Handle drag end in Edit List Modal (all items without pagination)
+  const handleEditListDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = editListItems.findIndex((item) => item.id === active.id);
+      const newIndex = editListItems.findIndex((item) => item.id === over.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const reorderedItems = arrayMove(editListItems, oldIndex, newIndex);
+        
+        // Update priority_order for ALL items (1 to N)
+        const updates = reorderedItems.map((item, index) => ({
+          id: item.id,
+          priority_order: index + 1
+        }));
+
+        // Optimistically update UI
+        const itemsWithNewOrder = reorderedItems.map((item, index) => ({
+          ...item,
+          priority_order: index + 1
+        }));
+        setEditListItems(itemsWithNewOrder);
+
+        // Send updates to server
+        try {
+          await Promise.all(
+            updates.map(update =>
+              fetch('/api/portfolio', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(update),
+              })
+            )
+          );
+          
+          // Refresh main portfolio data
+          await fetchPortfolioData();
+        } catch (error) {
+          console.error('Error updating order:', error);
+          alert('Failed to update order. Please try again.');
+          // Reload data on error
+          fetchPortfolioData();
+          setIsEditListModalOpen(false);
         }
       }
     }
@@ -462,13 +514,26 @@ export default function PortfolioClient(): React.JSX.Element {
 
               {/* Add Portfolio Button (Admin Only) */}
               {isAdmin && (
-                <button
-                  onClick={() => setIsAddModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 whitespace-nowrap"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Portfolio
-                </button>
+                <>
+                  <button
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 whitespace-nowrap"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Portfolio
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      setEditListItems([...portfolioItems]);
+                      setIsEditListModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 whitespace-nowrap"
+                  >
+                    <ArrowUpDown className="w-4 h-4" />
+                    Edit List
+                  </button>
+                </>
               )}
             </div>
 
@@ -940,6 +1005,16 @@ export default function PortfolioClient(): React.JSX.Element {
           }}
           onSuccess={fetchPortfolioData}
           item={editingItem}
+        />
+      )}
+
+      {/* Edit List Modal - Full List Reordering */}
+      {isEditListModalOpen && (
+        <EditListModal
+          isOpen={isEditListModalOpen}
+          onClose={() => setIsEditListModalOpen(false)}
+          items={editListItems}
+          onDragEnd={handleEditListDragEnd}
         />
       )}
     </main>
@@ -2258,3 +2333,163 @@ const PortfolioCard = React.memo(function PortfolioCard({
     </motion.div>
   );
 });
+
+// Edit List Modal Component - Full Portfolio Reordering
+function EditListModal({
+  isOpen,
+  onClose,
+  items,
+  onDragEnd,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  items: PortfolioItem[];
+  onDragEnd: (event: DragEndEvent) => void;
+}) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
+      >
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">Edit Portfolio Order</h2>
+            <p className="text-indigo-100 text-sm mt-1">
+              Drag items to reorder • Total: {items.length} items
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-10 h-10 flex items-center justify-center bg-white/20 hover:bg-white/30 rounded-full transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Scrollable List */}
+        <div className="overflow-y-auto max-h-[calc(90vh-120px)] p-6">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={onDragEnd}
+          >
+            <SortableContext
+              items={items.map(item => item.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-3">
+                {items.map((item, index) => (
+                  <EditListItem
+                    key={item.id}
+                    item={item}
+                    index={index}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        </div>
+
+        {/* Footer */}
+        <div className="sticky bottom-0 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            Changes are saved automatically
+          </p>
+          <button
+            onClick={onClose}
+            className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors"
+          >
+            Done
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// Sortable List Item for Edit List Modal
+function EditListItem({
+  item,
+  index,
+}: {
+  item: PortfolioItem;
+  index: number;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="group relative flex items-center gap-4 p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:shadow-md transition-all"
+    >
+      {/* Order Number */}
+      <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg font-bold">
+        {index + 1}
+      </div>
+
+      {/* Drag Handle */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors cursor-grab active:cursor-grabbing"
+      >
+        <GripVertical className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+      </button>
+
+      {/* Item Info */}
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold text-slate-900 dark:text-white truncate">
+          {item.song_title}
+        </h3>
+        <div className="flex items-center gap-3 mt-1 text-sm text-slate-600 dark:text-slate-400">
+          {Array.isArray(item.singer) && item.singer.length > 0 && (
+            <span className="truncate">{item.singer.join(', ')}</span>
+          )}
+          <span className="text-slate-400 dark:text-slate-500">•</span>
+          <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded text-xs font-medium">
+            {item.genre}
+          </span>
+        </div>
+      </div>
+
+      {/* Featured Badge */}
+      {item.is_featured && (
+        <div className="flex-shrink-0 flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full text-xs font-bold">
+          <Star className="w-3 h-3 fill-amber-500" />
+          FEATURED
+        </div>
+      )}
+    </div>
+  );
+}

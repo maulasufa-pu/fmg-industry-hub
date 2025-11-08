@@ -131,6 +131,7 @@ export default function PortfolioClient(): React.JSX.Element {
   const [musicGenres, setMusicGenres] = useState<string[]>([]);
   const [genreSubGenres, setGenreSubGenres] = useState<Record<string, string[]>>({});
   const [expandedGenre, setExpandedGenre] = useState<string | null>(null);
+  const [detailModalItem, setDetailModalItem] = useState<PortfolioItem | null>(null);
   const itemsPerPage = 12; // Show 12 items per page
 
   const heroRef = useRef<HTMLDivElement>(null);
@@ -862,6 +863,7 @@ export default function PortfolioClient(): React.JSX.Element {
                         openMenuId={openMenuId}
                         setOpenMenuId={setOpenMenuId}
                         viewMode={viewMode}
+                        onShowDetail={(item) => setDetailModalItem(item)}
                     onEdit={() => {
                       setEditingItem(item);
                       setIsEditModalOpen(true);
@@ -1097,6 +1099,14 @@ export default function PortfolioClient(): React.JSX.Element {
           onDragEnd={handleEditListDragEnd}
           onSave={saveEditListChanges}
           onUpdateItems={setEditListItems}
+        />
+      )}
+
+      {/* Detail Modal - Mobile/Tablet View */}
+      {detailModalItem && (
+        <PortfolioDetailModal
+          item={detailModalItem}
+          onClose={() => setDetailModalItem(null)}
         />
       )}
     </main>
@@ -2139,7 +2149,8 @@ const PortfolioCard = React.memo(function PortfolioCard({
   setOpenMenuId,
   viewMode,
   onEdit,
-  onDelete
+  onDelete,
+  onShowDetail
 }: { 
   item: PortfolioItem;
   userRole: UserRole;
@@ -2148,6 +2159,7 @@ const PortfolioCard = React.memo(function PortfolioCard({
   viewMode: 'tiles' | 'list';
   onEdit: () => void;
   onDelete: (id: number) => void;
+  onShowDetail?: (item: PortfolioItem) => void;
 }): React.JSX.Element {
   const [imgSrc, setImgSrc] = React.useState<string>('');
   const [imgError, setImgError] = React.useState(false);
@@ -2310,7 +2322,13 @@ const PortfolioCard = React.memo(function PortfolioCard({
         ref={setNodeRef}
         style={style}
         variants={fadeUp}
-        className="group relative overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-700/50 hover:border-indigo-300 dark:hover:border-indigo-700 shadow-sm hover:shadow-md transition-all duration-300"
+        onClick={() => {
+          // Only open detail on mobile/tablet (not desktop), and not when clicking admin buttons
+          if (window.innerWidth < 1024 && onShowDetail) {
+            onShowDetail(item);
+          }
+        }}
+        className="group relative overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-700/50 hover:border-indigo-300 dark:hover:border-indigo-700 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer lg:cursor-default"
       >
         <div className="flex items-center gap-3 p-3">
           {/* Compact Thumbnail - Small square */}
@@ -2360,7 +2378,7 @@ const PortfolioCard = React.memo(function PortfolioCard({
           </div>
 
           {/* Platform Links - Compact */}
-          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
+          <div className="hidden lg:flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
             {item.spotify_link && (
               <Link
                 href={item.spotify_link}
@@ -2398,7 +2416,11 @@ const PortfolioCard = React.memo(function PortfolioCard({
 
           {/* Admin Controls */}
           {isAdmin && (
-            <div ref={menuRef} className="flex items-center gap-2 flex-shrink-0">
+            <div 
+              ref={menuRef} 
+              className="flex items-center gap-2 flex-shrink-0"
+              onClick={(e) => e.stopPropagation()}
+            >
               {/* Drag Handle */}
               <button
                 {...attributes}
@@ -3035,3 +3057,203 @@ function EditListItem({
     </div>
   );
 }
+
+// Portfolio Detail Modal Component - For Mobile/Tablet View
+function PortfolioDetailModal({
+  item,
+  onClose
+}: {
+  item: PortfolioItem;
+  onClose: () => void;
+}): React.JSX.Element {
+  const [imgSrc, setImgSrc] = React.useState<string>('');
+
+  // Extract YouTube video ID
+  const getYouTubeVideoId = (url: string | null): string | null => {
+    if (!url) return null;
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?\s]+)/,
+      /youtube\.com\/embed\/([^&?\s]+)/,
+      /youtube\.com\/v\/([^&?\s]+)/
+    ];
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) return match[1];
+    }
+    return null;
+  };
+
+  // Get artwork with priority
+  const getArtworkUrl = (): string => {
+    // Priority 1: Spotify
+    if (item.spotify_link && item.artwork_link && item.artwork_link.includes('scdn.co')) {
+      return item.artwork_link;
+    }
+    // Priority 2: Apple Music
+    if (item.apple_music_link && item.artwork_link && item.artwork_link.includes('mzstatic.com')) {
+      return item.artwork_link;
+    }
+    // Priority 3: YouTube thumbnail
+    if (item.youtube_link) {
+      const videoId = getYouTubeVideoId(item.youtube_link);
+      if (videoId) {
+        return `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+      }
+    }
+    // Priority 4: Custom artwork_link
+    if (item.artwork_link) {
+      return item.artwork_link;
+    }
+    // Priority 5: Default logo
+    return "/img/logo/FMG-Universe-Flemmo-Music-Global.png";
+  };
+
+  React.useEffect(() => {
+    setImgSrc(getArtworkUrl());
+  }, [item]);
+
+  const formatDate = (dateString: string | null): string => {
+    if (!dateString) return 'TBA';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <motion.div
+        initial={{ opacity: 0, y: 100 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 100 }}
+        className="relative w-full sm:max-w-2xl bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto"
+      >
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white dark:hover:bg-slate-800 transition-colors"
+        >
+          <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+        </button>
+
+        {/* Artwork Header */}
+        <div className="relative h-64 sm:h-80 overflow-hidden bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-pink-500/20">
+          <Image
+            src={imgSrc}
+            alt={item.song_title}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 100vw, 672px"
+            priority
+            onError={() => setImgSrc("/img/logo/FMG-Universe-Flemmo-Music-Global.png")}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* Title & Artist */}
+          <div className="space-y-2">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+              {item.song_title}
+            </h2>
+            {Array.isArray(item.singer) && item.singer.length > 0 && (
+              <p className="text-lg text-slate-600 dark:text-slate-400">
+                {item.singer.join(', ')}
+              </p>
+            )}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full text-sm font-medium">
+                <Music className="w-4 h-4" />
+                {item.genre}
+              </span>
+              {item.release_date_aggregator && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-full text-sm">
+                  <Calendar className="w-4 h-4" />
+                  {formatDate(item.release_date_aggregator)}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Platform Links */}
+          {(item.spotify_link || item.apple_music_link || item.youtube_link) && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                Listen Now
+              </h3>
+              <div className="grid gap-3">
+                {item.spotify_link && (
+                  <Link
+                    href={item.spotify_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 px-4 py-3 bg-[#1DB954] hover:bg-[#1ed760] text-white rounded-xl transition-colors font-medium"
+                  >
+                    <Music className="w-5 h-5" />
+                    <span>Play on Spotify</span>
+                    <ExternalLink className="w-4 h-4 ml-auto" />
+                  </Link>
+                )}
+                {item.apple_music_link && (
+                  <Link
+                    href={item.apple_music_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-[#FA233B] to-[#FB5C74] hover:from-[#FB2F45] hover:to-[#FC6D82] text-white rounded-xl transition-all font-medium"
+                  >
+                    <Music className="w-5 h-5" />
+                    <span>Play on Apple Music</span>
+                    <ExternalLink className="w-4 h-4 ml-auto" />
+                  </Link>
+                )}
+                {item.youtube_link && (
+                  <Link
+                    href={item.youtube_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 px-4 py-3 bg-[#FF0000] hover:bg-[#cc0000] text-white rounded-xl transition-colors font-medium"
+                  >
+                    <Play className="w-5 h-5" />
+                    <span>Watch on YouTube</span>
+                    <ExternalLink className="w-4 h-4 ml-auto" />
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Additional Info */}
+          <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+            {Array.isArray(item.songwriter) && item.songwriter.length > 0 && (
+              <div className="flex gap-3">
+                <Users className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Songwriter</p>
+                  <p className="text-slate-900 dark:text-white">{item.songwriter.join(', ')}</p>
+                </div>
+              </div>
+            )}
+            {Array.isArray(item.composer) && item.composer.length > 0 && (
+              <div className="flex gap-3">
+                <Music className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Composer</p>
+                  <p className="text-slate-900 dark:text-white">{item.composer.join(', ')}</p>
+                </div>
+              </div>
+            )}
+            {Array.isArray(item.producer) && item.producer.length > 0 && (
+              <div className="flex gap-3">
+                <Headphones className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Producer</p>
+                  <p className="text-slate-900 dark:text-white">{item.producer.join(', ')}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+

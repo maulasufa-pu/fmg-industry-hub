@@ -22,7 +22,8 @@ import {
   Plus,
   MoreVertical,
   Edit,
-  Trash2
+  Trash2,
+  X
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -47,6 +48,8 @@ interface PortfolioItem {
   youtube_link: string | null;
   apple_music_link: string | null;
   artwork_link: string | null;
+  is_featured: boolean | null;
+  priority_order: number | null;
   created_at: string;
   isrc_code: string | null;
   iswc_code: string | null;
@@ -90,6 +93,9 @@ const stagger = {
 // Main Portfolio Component  
 export default function PortfolioClient(): React.JSX.Element {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [selectedWorkType, setSelectedWorkType] = useState<string>('all');
+  const [showGenreDropdown, setShowGenreDropdown] = useState(false);
   const [userRole, setUserRole] = useState<UserRole>('guest');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -100,9 +106,27 @@ export default function PortfolioClient(): React.JSX.Element {
   const itemsPerPage = 12; // Show 12 items per page
 
   const heroRef = useRef<HTMLDivElement>(null);
+  const genreDropdownRef = useRef<HTMLDivElement>(null);
   const { scrollY } = useScroll();
   const heroY = useTransform(scrollY, [0, 500], [0, -150]);
   const heroOpacity = useTransform(scrollY, [0, 300], [1, 0.3]);
+
+  // Close genre dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (genreDropdownRef.current && !genreDropdownRef.current.contains(event.target as Node)) {
+        setShowGenreDropdown(false);
+      }
+    };
+
+    if (showGenreDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showGenreDropdown]);
 
   // Check user role on mount
   useEffect(() => {
@@ -176,17 +200,71 @@ export default function PortfolioClient(): React.JSX.Element {
   // Check if user is admin or owner
   const isAdmin = userRole === 'admin' || userRole === 'owner';
 
-  // Filter projects with extra null safety
-  const filteredProjects = portfolioItems.filter(item => {
-    // Skip items that are not properly initialized
-    if (!item || typeof item !== 'object') return false;
-    
-    const matchesSearch = searchQuery === '' || 
-      (item.song_title && item.song_title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (Array.isArray(item.singer) && item.singer.some(s => s && typeof s === 'string' && s.toLowerCase().includes(searchQuery.toLowerCase()))) ||
-      (item.genre && item.genre.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesSearch;
-  });
+  // Get unique genres from portfolio items
+  const availableGenres = Array.from(new Set(portfolioItems.map(item => item.genre).filter(Boolean))).sort();
+
+  // Filter and sort projects with advanced filters
+  const filteredProjects = portfolioItems
+    .filter(item => {
+      // Skip items that are not properly initialized
+      if (!item || typeof item !== 'object') return false;
+      
+      // Search query filter
+      const matchesSearch = searchQuery === '' || 
+        (item.song_title && item.song_title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (Array.isArray(item.singer) && item.singer.some(s => s && typeof s === 'string' && s.toLowerCase().includes(searchQuery.toLowerCase()))) ||
+        (item.genre && item.genre.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      if (!matchesSearch) return false;
+
+      // Genre filter
+      const matchesGenre = selectedGenres.length === 0 || selectedGenres.includes(item.genre);
+      if (!matchesGenre) return false;
+
+      // Work type filter
+      if (selectedWorkType !== 'all') {
+        const hasWorkType = (() => {
+          switch (selectedWorkType) {
+            case 'production':
+              return Array.isArray(item.producer) && item.producer.length > 0;
+            case 'mixing':
+              return Array.isArray(item.mixing_engineer) && item.mixing_engineer.length > 0;
+            case 'mastering':
+              return Array.isArray(item.mastering_engineer) && item.mastering_engineer.length > 0;
+            case 'songwriting':
+              return (Array.isArray(item.songwriter) && item.songwriter.length > 0) || 
+                     (Array.isArray(item.composer) && item.composer.length > 0);
+            default:
+              return true;
+          }
+        })();
+        
+        if (!hasWorkType) return false;
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      // Priority sorting:
+      // 1. Featured items first (is_featured = true)
+      // 2. Then by priority_order (lower number = higher priority)
+      // 3. Then by release date (newest first)
+      
+      // Check featured status
+      const aFeatured = a.is_featured ? 1 : 0;
+      const bFeatured = b.is_featured ? 1 : 0;
+      if (aFeatured !== bFeatured) return bFeatured - aFeatured;
+      
+      // Check priority order
+      const aPriority = a.priority_order ?? 999999;
+      const bPriority = b.priority_order ?? 999999;
+      if (aPriority !== bPriority) return aPriority - bPriority;
+      
+      // Fallback to release date
+      const aDate = a.release_date_aggregator ? new Date(a.release_date_aggregator).getTime() : 0;
+      const bDate = b.release_date_aggregator ? new Date(b.release_date_aggregator).getTime() : 0;
+      return bDate - aDate;
+    });
 
   // Pagination logic
   const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
@@ -194,10 +272,10 @@ export default function PortfolioClient(): React.JSX.Element {
   const endIndex = startIndex + itemsPerPage;
   const currentItems = filteredProjects.slice(startIndex, endIndex);
 
-  // Reset to page 1 when search changes
+  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, selectedGenres, selectedWorkType]);
 
   return (
     <main className="relative min-h-screen bg-white text-black antialiased dark:bg-black dark:text-white">
@@ -272,29 +350,165 @@ export default function PortfolioClient(): React.JSX.Element {
       {/* Filter Section */}
       <section className="relative py-12 border-t border-slate-200/50 dark:border-slate-700/50">
         <div className="mx-auto max-w-6xl px-4">
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-            {/* Search */}
-            <div className="relative flex-1 max-w-md w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search by title, artist, or genre..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500"
-              />
+          <div className="flex flex-col gap-4">
+            {/* Top Row: Search and Add Button */}
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+              {/* Search */}
+              <div className="relative flex-1 max-w-md w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search by title, artist, or genre..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Add Portfolio Button (Admin Only) */}
+              {isAdmin && (
+                <button
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 whitespace-nowrap"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Portfolio
+                </button>
+              )}
             </div>
 
-            {/* Add Portfolio Button (Admin Only) */}
-            {isAdmin && (
-              <button
-                onClick={() => setIsAddModalOpen(true)}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 whitespace-nowrap"
-              >
-                <Plus className="w-4 h-4" />
-                Add Portfolio
-              </button>
-            )}
+            {/* Advanced Filters Row */}
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+              {/* Genre Multi-Select Dropdown */}
+              <div ref={genreDropdownRef} className="relative">
+                <button
+                  onClick={() => setShowGenreDropdown(!showGenreDropdown)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <Filter className="w-4 h-4" />
+                  Genres
+                  {selectedGenres.length > 0 && (
+                    <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-semibold">
+                      {selectedGenres.length}
+                    </span>
+                  )}
+                  <svg className={`w-4 h-4 transition-transform ${showGenreDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Genre Dropdown */}
+                {showGenreDropdown && (
+                  <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 max-h-80 overflow-y-auto">
+                    <div className="p-2 space-y-1">
+                      {availableGenres.length > 0 ? (
+                        availableGenres.map(genre => (
+                          <label key={genre} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedGenres.includes(genre)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedGenres([...selectedGenres, genre]);
+                                } else {
+                                  setSelectedGenres(selectedGenres.filter(g => g !== genre));
+                                }
+                              }}
+                              className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                            />
+                            <span className="text-sm text-slate-700 dark:text-slate-300">{genre}</span>
+                          </label>
+                        ))
+                      ) : (
+                        <div className="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">
+                          No genres available
+                        </div>
+                      )}
+                    </div>
+                    {selectedGenres.length > 0 && (
+                      <div className="border-t border-slate-200 dark:border-slate-700 p-2">
+                        <button
+                          onClick={() => setSelectedGenres([])}
+                          className="w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                        >
+                          Clear All
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Work Type Filter */}
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={() => setSelectedWorkType('all')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    selectedWorkType === 'all'
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  All Projects
+                </button>
+                <button
+                  onClick={() => setSelectedWorkType('production')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    selectedWorkType === 'production'
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  Production
+                </button>
+                <button
+                  onClick={() => setSelectedWorkType('mixing')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    selectedWorkType === 'mixing'
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  Mixing
+                </button>
+                <button
+                  onClick={() => setSelectedWorkType('mastering')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    selectedWorkType === 'mastering'
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  Mastering
+                </button>
+                <button
+                  onClick={() => setSelectedWorkType('songwriting')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    selectedWorkType === 'songwriting'
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  Songwriting
+                </button>
+              </div>
+
+              {/* Clear All Filters Button */}
+              {(selectedGenres.length > 0 || selectedWorkType !== 'all' || searchQuery !== '') && (
+                <button
+                  onClick={() => {
+                    setSelectedGenres([]);
+                    setSelectedWorkType('all');
+                    setSearchQuery('');
+                    setCurrentPage(1);
+                  }}
+                  className="inline-flex items-center gap-1 px-3 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                  Clear Filters
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -580,7 +794,9 @@ function AddPortfolioModal({
     spotify_link: '',
     youtube_link: '',
     apple_music_link: '',
-    artwork_link: ''
+    artwork_link: '',
+    is_featured: false,
+    priority_order: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -606,7 +822,9 @@ function AddPortfolioModal({
         spotify_link: formData.spotify_link || null,
         youtube_link: formData.youtube_link || null,
         apple_music_link: formData.apple_music_link || null,
-        artwork_link: formData.artwork_link || null
+        artwork_link: formData.artwork_link || null,
+        is_featured: formData.is_featured,
+        priority_order: formData.priority_order ? parseInt(formData.priority_order) : null
       };
 
       const response = await fetch('/api/portfolio', {
@@ -716,6 +934,41 @@ function AddPortfolioModal({
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
+            </div>
+
+            {/* Priority Order */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Priority Order</label>
+              <input
+                type="number"
+                name="priority_order"
+                value={formData.priority_order}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="e.g., 1, 2, 3 (lower = higher priority)"
+                min="1"
+              />
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Lower number = appears first (1, 2, 3...)
+              </p>
+            </div>
+
+            {/* Featured Toggle */}
+            <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+              <input
+                type="checkbox"
+                name="is_featured"
+                id="is_featured"
+                checked={formData.is_featured}
+                onChange={(e) => setFormData(prev => ({ ...prev, is_featured: e.target.checked }))}
+                className="w-5 h-5 text-amber-600 bg-slate-100 border-amber-300 rounded focus:ring-amber-500"
+              />
+              <label htmlFor="is_featured" className="flex-1 cursor-pointer">
+                <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">⭐ Featured Item</span>
+                <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                  Featured items will always appear at the top
+                </p>
+              </label>
             </div>
           </div>
 
@@ -950,7 +1203,9 @@ function EditPortfolioModal({
     spotify_link: item.spotify_link || '',
     youtube_link: item.youtube_link || '',
     apple_music_link: item.apple_music_link || '',
-    artwork_link: item.artwork_link || ''
+    artwork_link: item.artwork_link || '',
+    is_featured: item.is_featured || false,
+    priority_order: item.priority_order?.toString() || ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -976,7 +1231,9 @@ function EditPortfolioModal({
         spotify_link: formData.spotify_link || null,
         youtube_link: formData.youtube_link || null,
         apple_music_link: formData.apple_music_link || null,
-        artwork_link: formData.artwork_link || null
+        artwork_link: formData.artwork_link || null,
+        is_featured: formData.is_featured,
+        priority_order: formData.priority_order ? parseInt(formData.priority_order) : null
       };
 
       const response = await fetch('/api/portfolio', {
@@ -1071,6 +1328,43 @@ function EditPortfolioModal({
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
+            </div>
+
+            {/* Priority Order */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Priority Order</label>
+              <input
+                type="number"
+                name="priority_order"
+                value={formData.priority_order}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="e.g., 1, 2, 3 (lower = higher priority)"
+                min="1"
+              />
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Lower number = appears first (1, 2, 3...)
+              </p>
+            </div>
+
+            {/* Featured Toggle */}
+            <div className="col-span-2">
+              <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                <input
+                  type="checkbox"
+                  name="is_featured"
+                  id="is_featured_edit"
+                  checked={formData.is_featured}
+                  onChange={(e) => setFormData(prev => ({ ...prev, is_featured: e.target.checked }))}
+                  className="w-5 h-5 text-amber-600 bg-slate-100 border-amber-300 rounded focus:ring-amber-500"
+                />
+                <label htmlFor="is_featured_edit" className="flex-1 cursor-pointer">
+                  <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">⭐ Featured Item</span>
+                  <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                    Featured items will always appear at the top
+                  </p>
+                </label>
+              </div>
             </div>
           </div>
 
@@ -1399,6 +1693,14 @@ const PortfolioCard = React.memo(function PortfolioCard({
           onError={handleImageError}
         />
 
+        {/* Featured Badge - Admin Only */}
+        {item.is_featured && (userRole === 'admin' || userRole === 'owner') && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
+            <span>⭐</span>
+            <span>FEATURED</span>
+          </div>
+        )}
+
         {/* Genre Badge */}
         <div className="absolute top-4 right-4 z-20 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-medium px-3 py-1 rounded-full">
           {item.genre}
@@ -1498,23 +1800,15 @@ const PortfolioCard = React.memo(function PortfolioCard({
           )}
         </div>
 
-        {/* Publisher & Aggregator Tags */}
-        {((Array.isArray(item.publisher) && item.publisher.length > 0) || (Array.isArray(item.aggregator) && item.aggregator.length > 0)) && (
+        {/* Publisher Tags */}
+        {Array.isArray(item.publisher) && item.publisher.length > 0 && (
           <div className="flex flex-wrap gap-2 pt-2">
-            {Array.isArray(item.publisher) && item.publisher.map((pub, index) => (
+            {item.publisher.map((pub, index) => (
               <span
                 key={`pub-${index}`}
                 className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-full"
               >
                 {pub}
-              </span>
-            ))}
-            {Array.isArray(item.aggregator) && item.aggregator.map((agg, index) => (
-              <span
-                key={`agg-${index}`}
-                className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full"
-              >
-                {agg}
               </span>
             ))}
           </div>

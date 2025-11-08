@@ -2717,6 +2717,8 @@ function EditListModal({
   items: PortfolioItem[];
   onDragEnd: (event: DragEndEvent) => void;
 }) {
+  const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -2727,6 +2729,124 @@ function EditListModal({
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  // Toggle item selection
+  const toggleItemSelection = (itemId: number) => {
+    setSelectedItems(prev => 
+      prev.includes(itemId) 
+        ? prev.filter(id => id !== itemId)
+        : [...prev, itemId]
+    );
+  };
+
+  // Select all items
+  const selectAll = () => {
+    setSelectedItems(items.map(item => item.id));
+  };
+
+  // Deselect all items
+  const deselectAll = () => {
+    setSelectedItems([]);
+  };
+
+  // Move selected items up
+  const moveSelectedUp = () => {
+    if (selectedItems.length === 0) return;
+    
+    // Sort selected items by their current index (ascending)
+    const sortedSelected = [...selectedItems].sort((a, b) => {
+      const indexA = items.findIndex(item => item.id === a);
+      const indexB = items.findIndex(item => item.id === b);
+      return indexA - indexB;
+    });
+
+    // Check if the first selected item is already at the top
+    const firstIndex = items.findIndex(item => item.id === sortedSelected[0]);
+    if (firstIndex === 0) return;
+
+    // Move each selected item up one position
+    let newItems = [...items];
+    sortedSelected.forEach(selectedId => {
+      const currentIndex = newItems.findIndex(item => item.id === selectedId);
+      if (currentIndex > 0) {
+        // Swap with the item above
+        [newItems[currentIndex - 1], newItems[currentIndex]] = [newItems[currentIndex], newItems[currentIndex - 1]];
+      }
+    });
+
+    // Trigger the drag end event with updated items
+    // Update priority_order for all items
+    const updates = newItems.map((item, index) => ({
+      id: item.id,
+      priority_order: index + 1
+    }));
+
+    // Send updates to server
+    Promise.all(
+      updates.map(update =>
+        fetch('/api/portfolio', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(update),
+        })
+      )
+    ).then(() => {
+      // Reload the page or trigger a refresh
+      window.location.reload();
+    }).catch(error => {
+      console.error('Error updating order:', error);
+      alert('Failed to update order. Please try again.');
+    });
+  };
+
+  // Move selected items down
+  const moveSelectedDown = () => {
+    if (selectedItems.length === 0) return;
+    
+    // Sort selected items by their current index (descending)
+    const sortedSelected = [...selectedItems].sort((a, b) => {
+      const indexA = items.findIndex(item => item.id === a);
+      const indexB = items.findIndex(item => item.id === b);
+      return indexB - indexA;
+    });
+
+    // Check if the last selected item is already at the bottom
+    const lastIndex = items.findIndex(item => item.id === sortedSelected[0]);
+    if (lastIndex === items.length - 1) return;
+
+    // Move each selected item down one position
+    let newItems = [...items];
+    sortedSelected.forEach(selectedId => {
+      const currentIndex = newItems.findIndex(item => item.id === selectedId);
+      if (currentIndex < newItems.length - 1) {
+        // Swap with the item below
+        [newItems[currentIndex], newItems[currentIndex + 1]] = [newItems[currentIndex + 1], newItems[currentIndex]];
+      }
+    });
+
+    // Update priority_order for all items
+    const updates = newItems.map((item, index) => ({
+      id: item.id,
+      priority_order: index + 1
+    }));
+
+    // Send updates to server
+    Promise.all(
+      updates.map(update =>
+        fetch('/api/portfolio', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(update),
+        })
+      )
+    ).then(() => {
+      // Reload the page or trigger a refresh
+      window.location.reload();
+    }).catch(error => {
+      console.error('Error updating order:', error);
+      alert('Failed to update order. Please try again.');
+    });
+  };
 
   if (!isOpen) return null;
 
@@ -2739,19 +2859,80 @@ function EditListModal({
         className="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold">Edit Portfolio Order</h2>
-            <p className="text-indigo-100 text-sm mt-1">
-              Drag items to reorder • Total: {items.length} items
-            </p>
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-2xl font-bold">Edit Portfolio Order</h2>
+              <p className="text-indigo-100 text-sm mt-1">
+                {selectedItems.length > 0 
+                  ? `${selectedItems.length} items selected`
+                  : `Total: ${items.length} items • Drag to reorder or use multi-select`
+                }
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-10 h-10 flex items-center justify-center bg-white/20 hover:bg-white/30 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="w-10 h-10 flex items-center justify-center bg-white/20 hover:bg-white/30 rounded-full transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+          {/* Multi-Select Controls */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={selectedItems.length === items.length ? deselectAll : selectAll}
+              className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+            >
+              {selectedItems.length === items.length ? (
+                <>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Deselect All
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Select All
+                </>
+              )}
+            </button>
+
+            {selectedItems.length > 0 && (
+              <>
+                <div className="w-px h-6 bg-white/20" />
+                <button
+                  onClick={moveSelectedUp}
+                  disabled={items.findIndex(item => item.id === selectedItems[0]) === 0}
+                  className="px-3 py-1.5 bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                  </svg>
+                  Move Up
+                </button>
+                <button
+                  onClick={moveSelectedDown}
+                  disabled={items.findIndex(item => item.id === selectedItems[selectedItems.length - 1]) === items.length - 1}
+                  className="px-3 py-1.5 bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                  Move Down
+                </button>
+                <button
+                  onClick={deselectAll}
+                  className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Clear Selection
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Scrollable List */}
@@ -2771,6 +2952,8 @@ function EditListModal({
                     key={item.id}
                     item={item}
                     index={index}
+                    isSelected={selectedItems.includes(item.id)}
+                    onToggleSelect={() => toggleItemSelection(item.id)}
                   />
                 ))}
               </div>
@@ -2799,9 +2982,13 @@ function EditListModal({
 function EditListItem({
   item,
   index,
+  isSelected,
+  onToggleSelect,
 }: {
   item: PortfolioItem;
   index: number;
+  isSelected: boolean;
+  onToggleSelect: () => void;
 }) {
   const {
     attributes,
@@ -2822,10 +3009,28 @@ function EditListItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="group relative flex items-center gap-4 p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:shadow-md transition-all"
+      className={`group relative flex items-center gap-4 p-4 rounded-xl hover:shadow-md transition-all ${
+        isSelected 
+          ? 'bg-indigo-50 dark:bg-indigo-900/20 border-2 border-indigo-500' 
+          : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700'
+      }`}
     >
+      {/* Checkbox */}
+      <div className="flex-shrink-0">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={onToggleSelect}
+          className="w-5 h-5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer"
+        />
+      </div>
+
       {/* Order Number */}
-      <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg font-bold">
+      <div className={`flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg font-bold ${
+        isSelected 
+          ? 'bg-indigo-200 dark:bg-indigo-800 text-indigo-700 dark:text-indigo-300'
+          : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+      }`}>
         {index + 1}
       </div>
 
@@ -2840,7 +3045,11 @@ function EditListItem({
 
       {/* Item Info */}
       <div className="flex-1 min-w-0">
-        <h3 className="font-semibold text-slate-900 dark:text-white truncate">
+        <h3 className={`font-semibold truncate ${
+          isSelected 
+            ? 'text-indigo-900 dark:text-indigo-100' 
+            : 'text-slate-900 dark:text-white'
+        }`}>
           {item.song_title}
         </h3>
         <div className="flex items-center gap-3 mt-1 text-sm text-slate-600 dark:text-slate-400">
@@ -2848,7 +3057,11 @@ function EditListItem({
             <span className="truncate">{item.singer.join(', ')}</span>
           )}
           <span className="text-slate-400 dark:text-slate-500">•</span>
-          <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded text-xs font-medium">
+          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+            isSelected
+              ? 'bg-indigo-200 dark:bg-indigo-800 text-indigo-700 dark:text-indigo-300'
+              : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+          }`}>
             {item.genre}
           </span>
         </div>

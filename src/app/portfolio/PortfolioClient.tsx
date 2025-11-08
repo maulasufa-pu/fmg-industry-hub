@@ -828,7 +828,7 @@ function AddPortfolioModal({
                 placeholder="https://i.scdn.co/image/... (right-click Spotify album art → Copy Image Address)"
               />
               <p className="text-xs text-green-700 dark:text-green-400 mt-2">
-                💡 <strong>How to get Spotify artwork:</strong> Open song in Spotify → Right-click album art → "Copy Image Address"
+                💡 <strong>How to get Spotify artwork:</strong> Open song in Spotify → Right-click album art → &quot;Copy Image Address&quot;
               </p>
             </div>
 

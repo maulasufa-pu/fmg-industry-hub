@@ -128,6 +128,7 @@ export default function PortfolioClient(): React.JSX.Element {
   const [viewMode, setViewMode] = useState<'tiles' | 'list'>('tiles');
   const [isEditListModalOpen, setIsEditListModalOpen] = useState(false);
   const [editListItems, setEditListItems] = useState<PortfolioItem[]>([]);
+  const [musicGenres, setMusicGenres] = useState<string[]>([]);
   const itemsPerPage = 12; // Show 12 items per page
 
   const heroRef = useRef<HTMLDivElement>(null);
@@ -275,7 +276,20 @@ export default function PortfolioClient(): React.JSX.Element {
   // Fetch portfolio data from API
   useEffect(() => {
     fetchPortfolioData();
+    fetchMusicGenres();
   }, []);
+
+  const fetchMusicGenres = async () => {
+    try {
+      const response = await fetch('/api/music-genres');
+      if (response.ok) {
+        const result = await response.json();
+        setMusicGenres(result.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching music genres:', error);
+    }
+  };
 
   const fetchPortfolioData = async () => {
     try {
@@ -337,8 +351,10 @@ export default function PortfolioClient(): React.JSX.Element {
   // Check if user is admin or owner
   const isAdmin = userRole === 'admin' || userRole === 'owner';
 
-  // Get unique genres from portfolio items
-  const availableGenres = Array.from(new Set(portfolioItems.map(item => item.genre).filter(Boolean))).sort();
+  // Get unique genres - prioritize musicGenres from database, fallback to portfolio items
+  const availableGenres = musicGenres.length > 0 
+    ? musicGenres 
+    : Array.from(new Set(portfolioItems.map(item => item.genre).filter(Boolean))).sort();
 
   // Filter and sort projects with advanced filters
   const filteredProjects = portfolioItems
@@ -1032,6 +1048,7 @@ function AddPortfolioModal({
   onSuccess: () => void;
 }): React.JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [musicGenres, setMusicGenres] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     genre: '',
     song_title: '',
@@ -1052,6 +1069,22 @@ function AddPortfolioModal({
     artwork_link: '',
     priority_order: ''
   });
+
+  // Fetch music genres on mount
+  useEffect(() => {
+    const fetchGenres = async () => {
+      try {
+        const response = await fetch('/api/music-genres');
+        if (response.ok) {
+          const result = await response.json();
+          setMusicGenres(result.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching genres:', error);
+      }
+    };
+    fetchGenres();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1141,11 +1174,20 @@ function AddPortfolioModal({
                 type="text"
                 name="genre"
                 required
+                list="genre-list"
                 value={formData.genre}
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="e.g., Pop, Rock, Jazz"
               />
+              <datalist id="genre-list">
+                {musicGenres.map((genre) => (
+                  <option key={genre} value={genre} />
+                ))}
+              </datalist>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {musicGenres.length} genres available - start typing to see suggestions
+              </p>
             </div>
 
             {/* Song Title */}
@@ -1421,6 +1463,7 @@ function EditPortfolioModal({
   item: PortfolioItem;
 }): React.JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [musicGenres, setMusicGenres] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     genre: item.genre || '',
     song_title: item.song_title || '',
@@ -1441,6 +1484,22 @@ function EditPortfolioModal({
     artwork_link: item.artwork_link || '',
     priority_order: item.priority_order?.toString() || ''
   });
+
+  // Fetch music genres on mount
+  useEffect(() => {
+    const fetchGenres = async () => {
+      try {
+        const response = await fetch('/api/music-genres');
+        if (response.ok) {
+          const result = await response.json();
+          setMusicGenres(result.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching genres:', error);
+      }
+    };
+    fetchGenres();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1520,11 +1579,20 @@ function EditPortfolioModal({
                 type="text"
                 name="genre"
                 required
+                list="edit-genre-list"
                 value={formData.genre}
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="Pop, Rock, EDM, etc."
               />
+              <datalist id="edit-genre-list">
+                {musicGenres.map((genre) => (
+                  <option key={genre} value={genre} />
+                ))}
+              </datalist>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {musicGenres.length} genres available - start typing to see suggestions
+              </p>
             </div>
 
             <div>

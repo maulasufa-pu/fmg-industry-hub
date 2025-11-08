@@ -1632,8 +1632,29 @@ function ArtworkSlider({ artworks }: { artworks: string[] }) {
           ))}
         </div>
       </div>
+
+      {/* CTA to Portfolio */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ delay: 0.3 }}
+        className="text-center mt-12"
+      >
+        <Link
+          href="/portfolio"
+          className="group inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-4 text-base font-semibold text-white shadow-lg hover:shadow-xl hover:shadow-indigo-500/25 transition-all duration-300"
+        >
+          <Music className="h-5 w-5" />
+          Open Full Portfolio
+          <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+        </Link>
+        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+          Discover all our releases, productions & collaborations
+        </p>
+      </motion.div>
     </section>
-  );
+  )
 }
 
 function Pricing3DCarousel({

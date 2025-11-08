@@ -531,9 +531,9 @@ export default function PortfolioClient(): React.JSX.Element {
                 />
               </div>
 
-              {/* Add Portfolio Button (Admin Only) */}
+              {/* Admin Buttons (Add Portfolio & Edit List) */}
               {isAdmin && (
-                <>
+                <div className="flex items-center gap-3">
                   <button
                     onClick={() => setIsAddModalOpen(true)}
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 whitespace-nowrap"
@@ -552,7 +552,7 @@ export default function PortfolioClient(): React.JSX.Element {
                     <ArrowUpDown className="w-4 h-4" />
                     Edit List
                   </button>
-                </>
+                </div>
               )}
             </div>
 
@@ -1124,6 +1124,10 @@ function AddPortfolioModal({
 }): React.JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [musicGenres, setMusicGenres] = useState<string[]>([]);
+  const [genreSubGenres, setGenreSubGenres] = useState<Record<string, string[]>>({});
+  const [showGenreDropdown, setShowGenreDropdown] = useState(false);
+  const [expandedGenre, setExpandedGenre] = useState<string | null>(null);
+  const genreDropdownRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState({
     genre: '',
     song_title: '',
@@ -1153,6 +1157,7 @@ function AddPortfolioModal({
         if (response.ok) {
           const result = await response.json();
           setMusicGenres(result.data || []);
+          setGenreSubGenres(result.genreMap || {});
         }
       } catch (error) {
         console.error('Error fetching genres:', error);
@@ -1160,6 +1165,23 @@ function AddPortfolioModal({
     };
     fetchGenres();
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (genreDropdownRef.current && !genreDropdownRef.current.contains(event.target as Node)) {
+        setShowGenreDropdown(false);
+      }
+    };
+
+    if (showGenreDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showGenreDropdown]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1245,23 +1267,115 @@ function AddPortfolioModal({
               <label className="block text-sm font-medium mb-2">
                 Genre <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                name="genre"
-                required
-                list="genre-list"
-                value={formData.genre}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="e.g., Pop, Rock, Jazz"
-              />
-              <datalist id="genre-list">
-                {musicGenres.map((genre) => (
-                  <option key={genre} value={genre} />
-                ))}
-              </datalist>
+              <div ref={genreDropdownRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowGenreDropdown(!showGenreDropdown)}
+                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-left flex items-center justify-between"
+                >
+                  <span className={formData.genre ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}>
+                    {formData.genre || 'Select genre...'}
+                  </span>
+                  <svg className={`w-4 h-4 transition-transform ${showGenreDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Genre Dropdown with Nested Sub-Genres */}
+                {showGenreDropdown && (
+                  <div className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
+                    <div className="p-2 space-y-1">
+                      {musicGenres.length > 0 ? (
+                        musicGenres.map(genre => {
+                          const isExpanded = expandedGenre === genre;
+                          const subGenres = genreSubGenres[genre] || [];
+                          const hasSubGenres = subGenres.length > 0;
+                          const isSelected = formData.genre === genre;
+                          
+                          return (
+                            <div key={genre} className="relative">
+                              {/* Main Genre Item */}
+                              <div 
+                                className={`flex items-center gap-2 px-3 py-2 rounded transition-colors ${
+                                  isSelected
+                                    ? 'bg-indigo-100 dark:bg-indigo-900/40' 
+                                    : 'hover:bg-slate-50 dark:hover:bg-slate-700'
+                                }`}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setFormData(prev => ({ ...prev, genre }));
+                                    setShowGenreDropdown(false);
+                                    setExpandedGenre(null);
+                                  }}
+                                  className="flex items-center gap-2 flex-1 text-left"
+                                >
+                                  <span className={`text-sm flex-1 ${
+                                    isSelected
+                                      ? 'text-indigo-900 dark:text-indigo-100 font-medium' 
+                                      : 'text-slate-700 dark:text-slate-300'
+                                  }`}>
+                                    {genre}
+                                  </span>
+                                </button>
+                                
+                                {/* Expand/Collapse Button for Sub-Genres */}
+                                {hasSubGenres && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setExpandedGenre(isExpanded ? null : genre);
+                                    }}
+                                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+                                    title={`${subGenres.length} sub-genres`}
+                                  >
+                                    <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Sub-Genres List */}
+                              {isExpanded && hasSubGenres && (
+                                <div className="ml-6 mt-1 space-y-1 border-l-2 border-indigo-200 dark:border-indigo-800 pl-2">
+                                  {subGenres.map(subGenre => {
+                                    const isSubSelected = formData.genre === subGenre;
+                                    return (
+                                      <button
+                                        key={subGenre}
+                                        type="button"
+                                        onClick={() => {
+                                          setFormData(prev => ({ ...prev, genre: subGenre }));
+                                          setShowGenreDropdown(false);
+                                          setExpandedGenre(null);
+                                        }}
+                                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors text-xs text-left ${
+                                          isSubSelected 
+                                            ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-900 dark:text-indigo-100 font-medium' 
+                                            : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400'
+                                        }`}
+                                      >
+                                        {subGenre}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">
+                          No genres available
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {musicGenres.length} genres available - start typing to see suggestions
+                {musicGenres.length} genres available with sub-genres
               </p>
             </div>
 
@@ -1539,6 +1653,10 @@ function EditPortfolioModal({
 }): React.JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [musicGenres, setMusicGenres] = useState<string[]>([]);
+  const [genreSubGenres, setGenreSubGenres] = useState<Record<string, string[]>>({});
+  const [showGenreDropdown, setShowGenreDropdown] = useState(false);
+  const [expandedGenre, setExpandedGenre] = useState<string | null>(null);
+  const genreDropdownRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState({
     genre: item.genre || '',
     song_title: item.song_title || '',
@@ -1568,6 +1686,7 @@ function EditPortfolioModal({
         if (response.ok) {
           const result = await response.json();
           setMusicGenres(result.data || []);
+          setGenreSubGenres(result.genreMap || {});
         }
       } catch (error) {
         console.error('Error fetching genres:', error);
@@ -1575,6 +1694,23 @@ function EditPortfolioModal({
     };
     fetchGenres();
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (genreDropdownRef.current && !genreDropdownRef.current.contains(event.target as Node)) {
+        setShowGenreDropdown(false);
+      }
+    };
+
+    if (showGenreDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showGenreDropdown]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1650,23 +1786,115 @@ function EditPortfolioModal({
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">Genre *</label>
-              <input
-                type="text"
-                name="genre"
-                required
-                list="edit-genre-list"
-                value={formData.genre}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Pop, Rock, EDM, etc."
-              />
-              <datalist id="edit-genre-list">
-                {musicGenres.map((genre) => (
-                  <option key={genre} value={genre} />
-                ))}
-              </datalist>
+              <div ref={genreDropdownRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowGenreDropdown(!showGenreDropdown)}
+                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-left flex items-center justify-between"
+                >
+                  <span className={formData.genre ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}>
+                    {formData.genre || 'Select genre...'}
+                  </span>
+                  <svg className={`w-4 h-4 transition-transform ${showGenreDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Genre Dropdown with Nested Sub-Genres */}
+                {showGenreDropdown && (
+                  <div className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
+                    <div className="p-2 space-y-1">
+                      {musicGenres.length > 0 ? (
+                        musicGenres.map(genre => {
+                          const isExpanded = expandedGenre === genre;
+                          const subGenres = genreSubGenres[genre] || [];
+                          const hasSubGenres = subGenres.length > 0;
+                          const isSelected = formData.genre === genre;
+                          
+                          return (
+                            <div key={genre} className="relative">
+                              {/* Main Genre Item */}
+                              <div 
+                                className={`flex items-center gap-2 px-3 py-2 rounded transition-colors ${
+                                  isSelected
+                                    ? 'bg-indigo-100 dark:bg-indigo-900/40' 
+                                    : 'hover:bg-slate-50 dark:hover:bg-slate-700'
+                                }`}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setFormData(prev => ({ ...prev, genre }));
+                                    setShowGenreDropdown(false);
+                                    setExpandedGenre(null);
+                                  }}
+                                  className="flex items-center gap-2 flex-1 text-left"
+                                >
+                                  <span className={`text-sm flex-1 ${
+                                    isSelected
+                                      ? 'text-indigo-900 dark:text-indigo-100 font-medium' 
+                                      : 'text-slate-700 dark:text-slate-300'
+                                  }`}>
+                                    {genre}
+                                  </span>
+                                </button>
+                                
+                                {/* Expand/Collapse Button for Sub-Genres */}
+                                {hasSubGenres && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setExpandedGenre(isExpanded ? null : genre);
+                                    }}
+                                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+                                    title={`${subGenres.length} sub-genres`}
+                                  >
+                                    <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Sub-Genres List */}
+                              {isExpanded && hasSubGenres && (
+                                <div className="ml-6 mt-1 space-y-1 border-l-2 border-indigo-200 dark:border-indigo-800 pl-2">
+                                  {subGenres.map(subGenre => {
+                                    const isSubSelected = formData.genre === subGenre;
+                                    return (
+                                      <button
+                                        key={subGenre}
+                                        type="button"
+                                        onClick={() => {
+                                          setFormData(prev => ({ ...prev, genre: subGenre }));
+                                          setShowGenreDropdown(false);
+                                          setExpandedGenre(null);
+                                        }}
+                                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors text-xs text-left ${
+                                          isSubSelected 
+                                            ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-900 dark:text-indigo-100 font-medium' 
+                                            : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400'
+                                        }`}
+                                      >
+                                        {subGenre}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">
+                          No genres available
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {musicGenres.length} genres available - start typing to see suggestions
+                {musicGenres.length} genres available with sub-genres
               </p>
             </div>
 

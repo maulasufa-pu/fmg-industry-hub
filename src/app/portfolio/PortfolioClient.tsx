@@ -203,7 +203,7 @@ export default function PortfolioClient(): React.JSX.Element {
   };
 
   // Handle drag end in Edit List Modal (all items without pagination)
-  const handleEditListDragEnd = async (event: DragEndEvent) => {
+  const handleEditListDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -214,40 +214,42 @@ export default function PortfolioClient(): React.JSX.Element {
         const reorderedItems = arrayMove(editListItems, oldIndex, newIndex);
         
         // Update priority_order for ALL items (1 to N)
-        const updates = reorderedItems.map((item, index) => ({
-          id: item.id,
-          priority_order: index + 1
-        }));
-
-        // Optimistically update UI
         const itemsWithNewOrder = reorderedItems.map((item, index) => ({
           ...item,
           priority_order: index + 1
         }));
+        
+        // Only update UI state, don't save to database yet
         setEditListItems(itemsWithNewOrder);
-
-        // Send updates to server
-        try {
-          await Promise.all(
-            updates.map(update =>
-              fetch('/api/portfolio', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(update),
-              })
-            )
-          );
-          
-          // Refresh main portfolio data
-          await fetchPortfolioData();
-        } catch (error) {
-          console.error('Error updating order:', error);
-          alert('Failed to update order. Please try again.');
-          // Reload data on error
-          fetchPortfolioData();
-          setIsEditListModalOpen(false);
-        }
       }
+    }
+  };
+
+  // Save Edit List changes to database
+  const saveEditListChanges = async () => {
+    try {
+      const updates = editListItems.map((item, index) => ({
+        id: item.id,
+        priority_order: index + 1
+      }));
+
+      // Send updates to server
+      await Promise.all(
+        updates.map(update =>
+          fetch('/api/portfolio', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(update),
+          })
+        )
+      );
+      
+      // Close modal and reload
+      setIsEditListModalOpen(false);
+      window.location.reload();
+    } catch (error) {
+      console.error('Error updating order:', error);
+      alert('Failed to update order. Please try again.');
     }
   };
 
@@ -1106,6 +1108,7 @@ export default function PortfolioClient(): React.JSX.Element {
           onClose={() => setIsEditListModalOpen(false)}
           items={editListItems}
           onDragEnd={handleEditListDragEnd}
+          onSave={saveEditListChanges}
         />
       )}
     </main>
@@ -2711,13 +2714,22 @@ function EditListModal({
   onClose,
   items,
   onDragEnd,
+  onSave,
 }: {
   isOpen: boolean;
   onClose: () => void;
   items: PortfolioItem[];
   onDragEnd: (event: DragEndEvent) => void;
+  onSave: () => void;
 }) {
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [localItems, setLocalItems] = useState(items);
+
+  // Update local items when props change
+  useEffect(() => {
+    setLocalItems(items);
+  }, [items]);
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -2741,7 +2753,7 @@ function EditListModal({
 
   // Select all items
   const selectAll = () => {
-    setSelectedItems(items.map(item => item.id));
+    setSelectedItems(localItems.map(item => item.id));
   };
 
   // Deselect all items
@@ -2749,103 +2761,73 @@ function EditListModal({
     setSelectedItems([]);
   };
 
-  // Move selected items up
-  const moveSelectedUp = () => {
-    if (selectedItems.length === 0) return;
-    
-    // Sort selected items by their current index (ascending)
-    const sortedSelected = [...selectedItems].sort((a, b) => {
-      const indexA = items.findIndex(item => item.id === a);
-      const indexB = items.findIndex(item => item.id === b);
-      return indexA - indexB;
-    });
+  // Custom drag end handler for multi-select
+  const handleMultiSelectDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
 
-    // Check if the first selected item is already at the top
-    const firstIndex = items.findIndex(item => item.id === sortedSelected[0]);
-    if (firstIndex === 0) return;
+    if (!over || active.id === over.id) return;
 
-    // Move each selected item up one position
-    let newItems = [...items];
-    sortedSelected.forEach(selectedId => {
-      const currentIndex = newItems.findIndex(item => item.id === selectedId);
-      if (currentIndex > 0) {
-        // Swap with the item above
-        [newItems[currentIndex - 1], newItems[currentIndex]] = [newItems[currentIndex], newItems[currentIndex - 1]];
-      }
-    });
+    // Check if the dragged item is part of selected items
+    if (selectedItems.includes(active.id as number) && selectedItems.length > 1) {
+      // Multi-select drag: move all selected items as a group
+      const oldIndex = localItems.findIndex((item) => item.id === active.id);
+      const newIndex = localItems.findIndex((item) => item.id === over.id);
 
-    // Trigger the drag end event with updated items
-    // Update priority_order for all items
-    const updates = newItems.map((item, index) => ({
-      id: item.id,
-      priority_order: index + 1
-    }));
+      if (oldIndex === -1 || newIndex === -1) return;
 
-    // Send updates to server
-    Promise.all(
-      updates.map(update =>
-        fetch('/api/portfolio', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(update),
-        })
-      )
-    ).then(() => {
-      // Reload the page or trigger a refresh
-      window.location.reload();
-    }).catch(error => {
-      console.error('Error updating order:', error);
-      alert('Failed to update order. Please try again.');
-    });
+      // Get all selected items sorted by their current position
+      const sortedSelectedIds = [...selectedItems].sort((a, b) => {
+        const indexA = localItems.findIndex(item => item.id === a);
+        const indexB = localItems.findIndex(item => item.id === b);
+        return indexA - indexB;
+      });
+
+      // Remove all selected items from the list
+      const selectedItemsData = sortedSelectedIds.map(id => 
+        localItems.find(item => item.id === id)!
+      );
+      const remainingItems = localItems.filter(item => !selectedItems.includes(item.id));
+
+      // Calculate the insertion index
+      let insertIndex = newIndex;
+      
+      // Adjust insert index based on how many selected items were before the target
+      const selectedBeforeTarget = sortedSelectedIds.filter(id => {
+        const idx = localItems.findIndex(item => item.id === id);
+        return idx < newIndex;
+      }).length;
+      
+      insertIndex = insertIndex - selectedBeforeTarget;
+      
+      // Insert selected items at the new position
+      const reorderedItems = [
+        ...remainingItems.slice(0, insertIndex),
+        ...selectedItemsData,
+        ...remainingItems.slice(insertIndex)
+      ];
+
+      // Update local state, don't save yet
+      setLocalItems(reorderedItems);
+      
+      // Also call onDragEnd to update parent state
+      onDragEnd(event);
+    } else {
+      // Single item drag: use the original drag end handler
+      onDragEnd(event);
+      setLocalItems(items); // Sync with parent
+    }
   };
 
-  // Move selected items down
-  const moveSelectedDown = () => {
-    if (selectedItems.length === 0) return;
-    
-    // Sort selected items by their current index (descending)
-    const sortedSelected = [...selectedItems].sort((a, b) => {
-      const indexA = items.findIndex(item => item.id === a);
-      const indexB = items.findIndex(item => item.id === b);
-      return indexB - indexA;
-    });
-
-    // Check if the last selected item is already at the bottom
-    const lastIndex = items.findIndex(item => item.id === sortedSelected[0]);
-    if (lastIndex === items.length - 1) return;
-
-    // Move each selected item down one position
-    let newItems = [...items];
-    sortedSelected.forEach(selectedId => {
-      const currentIndex = newItems.findIndex(item => item.id === selectedId);
-      if (currentIndex < newItems.length - 1) {
-        // Swap with the item below
-        [newItems[currentIndex], newItems[currentIndex + 1]] = [newItems[currentIndex + 1], newItems[currentIndex]];
-      }
-    });
-
-    // Update priority_order for all items
-    const updates = newItems.map((item, index) => ({
-      id: item.id,
-      priority_order: index + 1
-    }));
-
-    // Send updates to server
-    Promise.all(
-      updates.map(update =>
-        fetch('/api/portfolio', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(update),
-        })
-      )
-    ).then(() => {
-      // Reload the page or trigger a refresh
-      window.location.reload();
-    }).catch(error => {
-      console.error('Error updating order:', error);
-      alert('Failed to update order. Please try again.');
-    });
+  // Handle save button click
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave();
+    } catch (error) {
+      console.error('Error saving:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -2904,29 +2886,12 @@ function EditListModal({
             {selectedItems.length > 0 && (
               <>
                 <div className="w-px h-6 bg-white/20" />
-                <button
-                  onClick={moveSelectedUp}
-                  disabled={items.findIndex(item => item.id === selectedItems[0]) === 0}
-                  className="px-3 py-1.5 bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                  </svg>
-                  Move Up
-                </button>
-                <button
-                  onClick={moveSelectedDown}
-                  disabled={items.findIndex(item => item.id === selectedItems[selectedItems.length - 1]) === items.length - 1}
-                  className="px-3 py-1.5 bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                  </svg>
-                  Move Down
-                </button>
+                <span className="text-sm text-indigo-100 px-2">
+                  Drag any selected item to move all {selectedItems.length} items together
+                </span>
                 <button
                   onClick={deselectAll}
-                  className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-sm font-medium transition-colors"
+                  className="ml-auto px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-sm font-medium transition-colors"
                 >
                   Clear Selection
                 </button>
@@ -2940,14 +2905,14 @@ function EditListModal({
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
-            onDragEnd={onDragEnd}
+            onDragEnd={handleMultiSelectDragEnd}
           >
             <SortableContext
-              items={items.map(item => item.id)}
+              items={localItems.map(item => item.id)}
               strategy={verticalListSortingStrategy}
             >
               <div className="space-y-3">
-                {items.map((item, index) => (
+                {localItems.map((item, index) => (
                   <EditListItem
                     key={item.id}
                     item={item}
@@ -2962,16 +2927,41 @@ function EditListModal({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
+        <div className="sticky bottom-0 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between gap-4">
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Changes are saved automatically
+            Arrange items then click Save Changes
           </p>
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors"
-          >
-            Done
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onClose}
+              disabled={isSaving}
+              className="px-6 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isSaving ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Save Changes
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </motion.div>
     </div>

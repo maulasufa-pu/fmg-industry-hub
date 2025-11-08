@@ -551,7 +551,7 @@ export default function PortfolioClient(): React.JSX.Element {
                 className="grid gap-8 md:gap-12 sm:grid-cols-2 lg:grid-cols-3"
               >
                 {currentItems.map((item) => (
-                  <PortfolioCard 
+                  <PortfolioCard
                     key={item.id}
                     item={item}
                     userRole={userRole}
@@ -572,6 +572,27 @@ export default function PortfolioClient(): React.JSX.Element {
                       } catch (error) {
                         console.error('Error deleting portfolio:', error);
                         alert('Error deleting portfolio item');
+                      }
+                    }}
+                    onToggleFeatured={async (id, currentStatus) => {
+                      try {
+                        const response = await fetch(`/api/portfolio?id=${id}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            is_featured: !currentStatus
+                          }),
+                        });
+                        if (response.ok) {
+                          setPortfolioItems(prev => 
+                            prev.map(p => p.id === id ? { ...p, is_featured: !currentStatus } : p)
+                          );
+                        } else {
+                          alert('Failed to update featured status');
+                        }
+                      } catch (error) {
+                        console.error('Error updating featured status:', error);
+                        alert('Error updating featured status');
                       }
                     }}
                   />
@@ -811,7 +832,6 @@ function AddPortfolioModal({
     youtube_link: '',
     apple_music_link: '',
     artwork_link: '',
-    is_featured: false,
     priority_order: ''
   });
 
@@ -839,7 +859,6 @@ function AddPortfolioModal({
         youtube_link: formData.youtube_link || null,
         apple_music_link: formData.apple_music_link || null,
         artwork_link: formData.artwork_link || null,
-        is_featured: formData.is_featured,
         priority_order: formData.priority_order ? parseInt(formData.priority_order) : null
       };
 
@@ -967,24 +986,6 @@ function AddPortfolioModal({
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Lower number = appears first (1, 2, 3...)
               </p>
-            </div>
-
-            {/* Featured Toggle */}
-            <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-              <input
-                type="checkbox"
-                name="is_featured"
-                id="is_featured"
-                checked={formData.is_featured}
-                onChange={(e) => setFormData(prev => ({ ...prev, is_featured: e.target.checked }))}
-                className="w-5 h-5 text-amber-600 bg-slate-100 border-amber-300 rounded focus:ring-amber-500"
-              />
-              <label htmlFor="is_featured" className="flex-1 cursor-pointer">
-                <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">⭐ Featured Item</span>
-                <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
-                  Featured items will always appear at the top
-                </p>
-              </label>
             </div>
           </div>
 
@@ -1220,7 +1221,6 @@ function EditPortfolioModal({
     youtube_link: item.youtube_link || '',
     apple_music_link: item.apple_music_link || '',
     artwork_link: item.artwork_link || '',
-    is_featured: item.is_featured || false,
     priority_order: item.priority_order?.toString() || ''
   });
 
@@ -1248,7 +1248,6 @@ function EditPortfolioModal({
         youtube_link: formData.youtube_link || null,
         apple_music_link: formData.apple_music_link || null,
         artwork_link: formData.artwork_link || null,
-        is_featured: formData.is_featured,
         priority_order: formData.priority_order ? parseInt(formData.priority_order) : null
       };
 
@@ -1361,26 +1360,6 @@ function EditPortfolioModal({
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Lower number = appears first (1, 2, 3...)
               </p>
-            </div>
-
-            {/* Featured Toggle */}
-            <div className="col-span-2">
-              <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                <input
-                  type="checkbox"
-                  name="is_featured"
-                  id="is_featured_edit"
-                  checked={formData.is_featured}
-                  onChange={(e) => setFormData(prev => ({ ...prev, is_featured: e.target.checked }))}
-                  className="w-5 h-5 text-amber-600 bg-slate-100 border-amber-300 rounded focus:ring-amber-500"
-                />
-                <label htmlFor="is_featured_edit" className="flex-1 cursor-pointer">
-                  <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">⭐ Featured Item</span>
-                  <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
-                    Featured items will always appear at the top
-                  </p>
-                </label>
-              </div>
             </div>
           </div>
 
@@ -1577,12 +1556,14 @@ const PortfolioCard = React.memo(function PortfolioCard({
   item,
   userRole,
   onEdit,
-  onDelete
+  onDelete,
+  onToggleFeatured
 }: { 
   item: PortfolioItem;
   userRole: UserRole;
   onEdit: () => void;
   onDelete: (id: number) => void;
+  onToggleFeatured: (id: number, currentStatus: boolean) => void;
 }): React.JSX.Element {
   const [imgSrc, setImgSrc] = React.useState<string>('');
   const [showMenu, setShowMenu] = React.useState(false);
@@ -1743,6 +1724,20 @@ const PortfolioCard = React.memo(function PortfolioCard({
                 >
                   <Edit className="w-4 h-4" />
                   Edit
+                </button>
+                <button
+                  onClick={() => {
+                    onToggleFeatured(item.id, item.is_featured || false);
+                    setShowMenu(false);
+                  }}
+                  className={`w-full px-4 py-2 text-left text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 flex items-center gap-2 ${
+                    item.is_featured 
+                      ? 'text-amber-600 dark:text-amber-400' 
+                      : 'text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  <Star className={`w-4 h-4 ${item.is_featured ? 'fill-amber-500' : ''}`} />
+                  {item.is_featured ? 'Unfeatured' : 'Featured'}
                 </button>
                 <button
                   onClick={() => {

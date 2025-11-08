@@ -193,3 +193,183 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// PUT - Update portfolio item
+export async function PUT(request: NextRequest) {
+  try {
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              );
+            } catch {
+              // Ignore in Server Components
+            }
+          },
+        },
+      }
+    );
+
+    // Check authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is admin or owner
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("main_role, staff_role")
+      .eq("id", user.id)
+      .single();
+
+    const allRoles: string[] = [];
+    if (profile?.main_role) allRoles.push(profile.main_role);
+    if (profile?.staff_role) allRoles.push(...profile.staff_role);
+
+    const isAdmin = allRoles.includes("admin") || allRoles.includes("owner");
+    
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "Forbidden: Admin access required" },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const { id, ...updateData } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Portfolio ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await supabase
+      .from("portfolio")
+      .update(updateData)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Supabase update error:", error);
+      return NextResponse.json(
+        { error: "Failed to update portfolio", details: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true, data }, { status: 200 });
+
+  } catch (error) {
+    console.error("API error:", error);
+    return NextResponse.json(
+      { error: "Internal server error", details: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE - Delete portfolio item
+export async function DELETE(request: NextRequest) {
+  try {
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              );
+            } catch {
+              // Ignore in Server Components
+            }
+          },
+        },
+      }
+    );
+
+    // Check authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is admin or owner
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("main_role, staff_role")
+      .eq("id", user.id)
+      .single();
+
+    const allRoles: string[] = [];
+    if (profile?.main_role) allRoles.push(profile.main_role);
+    if (profile?.staff_role) allRoles.push(...profile.staff_role);
+
+    const isAdmin = allRoles.includes("admin") || allRoles.includes("owner");
+    
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "Forbidden: Admin access required" },
+        { status: 403 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Portfolio ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const { error } = await supabase
+      .from("portfolio")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Supabase delete error:", error);
+      return NextResponse.json(
+        { error: "Failed to delete portfolio", details: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true }, { status: 200 });
+
+  } catch (error) {
+    console.error("API error:", error);
+    return NextResponse.json(
+      { error: "Internal server error", details: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 }
+    );
+  }
+}

@@ -19,7 +19,10 @@ import {
   ChevronDown,
   Star,
   Headphones,
-  Plus
+  Plus,
+  MoreVertical,
+  Edit,
+  Trash2
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -89,6 +92,8 @@ export default function PortfolioClient(): React.JSX.Element {
   const [searchQuery, setSearchQuery] = useState('');
   const [userRole, setUserRole] = useState<UserRole>('guest');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -319,6 +324,26 @@ export default function PortfolioClient(): React.JSX.Element {
                   <PortfolioCard 
                     key={item.id}
                     item={item}
+                    userRole={userRole}
+                    onEdit={() => {
+                      setEditingItem(item);
+                      setIsEditModalOpen(true);
+                    }}
+                    onDelete={async (id) => {
+                      try {
+                        const response = await fetch(`/api/portfolio?id=${id}`, {
+                          method: 'DELETE',
+                        });
+                        if (response.ok) {
+                          setPortfolioItems(prev => prev.filter(p => p.id !== id));
+                        } else {
+                          alert('Failed to delete portfolio item');
+                        }
+                      } catch (error) {
+                        console.error('Error deleting portfolio:', error);
+                        alert('Error deleting portfolio item');
+                      }
+                    }}
                   />
                 ))}
               </motion.div>
@@ -508,6 +533,19 @@ export default function PortfolioClient(): React.JSX.Element {
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
           onSuccess={fetchPortfolioData}
+        />
+      )}
+
+      {/* Edit Portfolio Modal */}
+      {isEditModalOpen && editingItem && (
+        <EditPortfolioModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingItem(null);
+          }}
+          onSuccess={fetchPortfolioData}
+          item={editingItem}
         />
       )}
     </main>
@@ -790,19 +828,6 @@ function AddPortfolioModal({
                 placeholder="Publisher 1, Publisher 2"
               />
             </div>
-
-            {/* Aggregator */}
-            <div>
-              <label className="block text-sm font-medium mb-2">Aggregator(s)</label>
-              <input
-                type="text"
-                name="aggregator"
-                value={formData.aggregator}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Aggregator 1, Aggregator 2"
-              />
-            </div>
           </div>
 
           {/* Links & Artwork */}
@@ -895,13 +920,362 @@ function AddPortfolioModal({
   );
 }
 
-// Portfolio Card Component for SQL data
-const PortfolioCard = React.memo(function PortfolioCard({ 
+// Edit Portfolio Modal Component
+function EditPortfolioModal({ 
+  isOpen, 
+  onClose,
+  onSuccess,
   item
 }: { 
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
   item: PortfolioItem;
 }): React.JSX.Element {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    genre: item.genre || '',
+    song_title: item.song_title || '',
+    album_title: item.album_title || '',
+    singer: Array.isArray(item.singer) ? item.singer.join(', ') : '',
+    songwriter: Array.isArray(item.songwriter) ? item.songwriter.join(', ') : '',
+    composer: Array.isArray(item.composer) ? item.composer.join(', ') : '',
+    arranger: Array.isArray(item.arranger) ? item.arranger.join(', ') : '',
+    producer: Array.isArray(item.producer) ? item.producer.join(', ') : '',
+    mixing_engineer: Array.isArray(item.mixing_engineer) ? item.mixing_engineer.join(', ') : '',
+    mastering_engineer: Array.isArray(item.mastering_engineer) ? item.mastering_engineer.join(', ') : '',
+    publisher: Array.isArray(item.publisher) ? item.publisher.join(', ') : '',
+    aggregator: Array.isArray(item.aggregator) ? item.aggregator.join(', ') : '',
+    release_date_aggregator: item.release_date_aggregator || '',
+    spotify_link: item.spotify_link || '',
+    youtube_link: item.youtube_link || '',
+    apple_music_link: item.apple_music_link || '',
+    artwork_link: item.artwork_link || ''
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const payload = {
+        id: item.id,
+        genre: formData.genre,
+        song_title: formData.song_title,
+        album_title: formData.album_title || null,
+        singer: formData.singer.split(',').map(s => s.trim()).filter(Boolean),
+        songwriter: formData.songwriter.split(',').map(s => s.trim()).filter(Boolean),
+        composer: formData.composer.split(',').map(s => s.trim()).filter(Boolean),
+        arranger: formData.arranger.split(',').map(s => s.trim()).filter(Boolean),
+        producer: formData.producer.split(',').map(s => s.trim()).filter(Boolean),
+        mixing_engineer: formData.mixing_engineer.split(',').map(s => s.trim()).filter(Boolean),
+        mastering_engineer: formData.mastering_engineer.split(',').map(s => s.trim()).filter(Boolean),
+        publisher: formData.publisher.split(',').map(s => s.trim()).filter(Boolean),
+        aggregator: formData.aggregator.split(',').map(s => s.trim()).filter(Boolean),
+        release_date_aggregator: formData.release_date_aggregator || null,
+        spotify_link: formData.spotify_link || null,
+        youtube_link: formData.youtube_link || null,
+        apple_music_link: formData.apple_music_link || null,
+        artwork_link: formData.artwork_link || null
+      };
+
+      const response = await fetch('/api/portfolio', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        onSuccess();
+        onClose();
+      } else {
+        alert('Failed to update portfolio');
+      }
+    } catch (error) {
+      console.error('Error updating portfolio:', error);
+      alert('Error updating portfolio');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  if (!isOpen) return <></>;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full my-8 max-h-[90vh] overflow-y-auto"
+      >
+        <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-6 py-4 z-10">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            Edit Portfolio
+          </h2>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Genre *</label>
+              <input
+                type="text"
+                name="genre"
+                required
+                value={formData.genre}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Pop, Rock, EDM, etc."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Song Title *</label>
+              <input
+                type="text"
+                name="song_title"
+                required
+                value={formData.song_title}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Enter song title"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Album Title</label>
+              <input
+                type="text"
+                name="album_title"
+                value={formData.album_title}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Enter album title"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Release Date</label>
+              <input
+                type="date"
+                name="release_date_aggregator"
+                value={formData.release_date_aggregator}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Credits (separate multiple names with commas)
+            </h3>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Singer(s)</label>
+                <input
+                  type="text"
+                  name="singer"
+                  value={formData.singer}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Singer 1, Singer 2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Songwriter(s)</label>
+                <input
+                  type="text"
+                  name="songwriter"
+                  value={formData.songwriter}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Songwriter 1, Songwriter 2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Composer(s)</label>
+                <input
+                  type="text"
+                  name="composer"
+                  value={formData.composer}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Composer 1, Composer 2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Arranger(s)</label>
+                <input
+                  type="text"
+                  name="arranger"
+                  value={formData.arranger}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Arranger 1, Arranger 2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Producer(s)</label>
+                <input
+                  type="text"
+                  name="producer"
+                  value={formData.producer}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Producer 1, Producer 2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Mixing Engineer(s)</label>
+                <input
+                  type="text"
+                  name="mixing_engineer"
+                  value={formData.mixing_engineer}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Engineer 1, Engineer 2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Mastering Engineer(s)</label>
+                <input
+                  type="text"
+                  name="mastering_engineer"
+                  value={formData.mastering_engineer}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Engineer 1, Engineer 2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Publisher(s)</label>
+                <input
+                  type="text"
+                  name="publisher"
+                  value={formData.publisher}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Publisher 1, Publisher 2"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Links & Artwork
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Provide streaming links and artwork URL. <strong>Priority: Spotify artwork &gt; Apple Music &gt; YouTube auto-thumbnail</strong>
+            </p>
+
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+              <label className="block text-sm font-semibold mb-2 text-green-800 dark:text-green-300">
+                🎨 Artwork URL <span className="text-xs font-normal">(Recommended: Spotify)</span>
+              </label>
+              <input
+                type="url"
+                name="artwork_link"
+                value={formData.artwork_link}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-green-300 dark:border-green-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder="https://i.scdn.co/image/... (right-click Spotify album art → Copy Image Address)"
+              />
+              <p className="text-xs text-green-700 dark:text-green-400 mt-2">
+                💡 <strong>How to get Spotify artwork:</strong> Open song in Spotify → Right-click album art → &quot;Copy Image Address&quot;
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Spotify Link</label>
+              <input
+                type="url"
+                name="spotify_link"
+                value={formData.spotify_link}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="https://open.spotify.com/track/..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">YouTube Link</label>
+              <input
+                type="url"
+                name="youtube_link"
+                value={formData.youtube_link}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="https://youtube.com/watch?v=..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Apple Music Link</label>
+              <input
+                type="url"
+                name="apple_music_link"
+                value={formData.apple_music_link}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="https://music.apple.com/..."
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-4 pt-4">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-indigo-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? 'Updating...' : 'Update Portfolio'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-3 border border-slate-300 dark:border-slate-600 font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
+
+// Portfolio Card Component for SQL data
+const PortfolioCard = React.memo(function PortfolioCard({ 
+  item,
+  userRole,
+  onEdit,
+  onDelete
+}: { 
+  item: PortfolioItem;
+  userRole: UserRole;
+  onEdit: () => void;
+  onDelete: (id: number) => void;
+}): React.JSX.Element {
   const [imgSrc, setImgSrc] = React.useState<string>('');
+  const [showMenu, setShowMenu] = React.useState(false);
   const [imgError, setImgError] = React.useState(false);
 
   const formatDate = (dateString: string | null): string => {
@@ -919,9 +1293,9 @@ const PortfolioCard = React.memo(function PortfolioCard({
     // https://youtu.be/VIDEO_ID
     // https://youtube.com/watch?v=VIDEO_ID
     const patterns = [
-      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/,
-      /youtube\.com\/embed\/([^&\s]+)/,
-      /youtube\.com\/v\/([^&\s]+)/
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?\s]+)/,
+      /youtube\.com\/embed\/([^&?\s]+)/,
+      /youtube\.com\/v\/([^&?\s]+)/
     ];
     
     for (const pattern of patterns) {
@@ -1030,6 +1404,45 @@ const PortfolioCard = React.memo(function PortfolioCard({
           {item.genre}
         </div>
 
+        {/* Admin Menu */}
+        {(userRole === 'admin' || userRole === 'owner') && (
+          <div className="absolute top-4 left-4 z-20">
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="w-8 h-8 flex items-center justify-center bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-full hover:bg-white dark:hover:bg-slate-700 transition-colors shadow-lg"
+            >
+              <MoreVertical className="w-4 h-4 text-slate-700 dark:text-slate-300" />
+            </button>
+            
+            {showMenu && (
+              <div className="absolute top-10 left-0 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden min-w-[140px] z-30">
+                <button
+                  onClick={() => {
+                    onEdit();
+                    setShowMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 text-slate-700 dark:text-slate-300"
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm(`Delete "${item.song_title}"?`)) {
+                      onDelete(item.id);
+                    }
+                    setShowMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 text-red-600 dark:text-red-400"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Overlay Content */}
         <div className="absolute bottom-4 left-4 right-4 z-20 text-white">
           <h3 className="font-semibold text-lg mb-1 line-clamp-1">{item.song_title}</h3>
@@ -1107,19 +1520,54 @@ const PortfolioCard = React.memo(function PortfolioCard({
           </div>
         )}
 
-        {/* YouTube Link */}
-        {item.youtube_link && (
-          <Link
-            href={item.youtube_link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-            </svg>
-            Watch on YouTube
-          </Link>
+        {/* Platform Links - Circular Buttons */}
+        {(item.spotify_link || item.apple_music_link || item.youtube_link) && (
+          <div className="flex items-center justify-center gap-3 pt-2">
+            {/* Spotify */}
+            {item.spotify_link && (
+              <Link
+                href={item.spotify_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-12 h-12 flex items-center justify-center bg-[#1DB954] hover:bg-[#1ed760] text-white rounded-full transition-all hover:scale-110 shadow-lg"
+                title="Listen on Spotify"
+              >
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                </svg>
+              </Link>
+            )}
+
+            {/* Apple Music */}
+            {item.apple_music_link && (
+              <Link
+                href={item.apple_music_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-[#FA243C] to-[#FA5C7C] hover:from-[#ff2d47] hover:to-[#ff6d8c] text-white rounded-full transition-all hover:scale-110 shadow-lg"
+                title="Listen on Apple Music"
+              >
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M23.994 6.124a9.23 9.23 0 0 0-.24-2.19c-.317-1.31-1.062-2.31-2.18-3.043a5.022 5.022 0 0 0-1.595-.706 10.5 10.5 0 0 0-2.161-.2c-1.343-.015-2.686-.01-4.028-.004-.37 0-.74-.001-1.11.003-.54.006-1.08.003-1.62.004a5.77 5.77 0 0 0-2.16.245c-1.31.317-2.31 1.062-3.043 2.18a5.022 5.022 0 0 0-.706 1.595 10.5 10.5 0 0 0-.2 2.161c-.015 1.343-.01 2.686-.004 4.028 0 .37-.001.74.003 1.11.006.54.003 1.08.004 1.62.003.72.065 1.448.245 2.16.317 1.31 1.062 2.31 2.18 3.043a5.022 5.022 0 0 0 1.595.706c.673.138 1.362.193 2.052.199l4.028.004c.37 0 .74.001 1.11-.003.54-.006 1.08-.003 1.62-.004.72-.003 1.448-.065 2.16-.245 1.31-.317 2.31-1.062 3.043-2.18.426-.518.627-1.1.706-1.595.138-.673.193-1.362.199-2.052.015-1.343.01-2.686.004-4.028 0-.37.001-.74-.003-1.11-.006-.54-.003-1.08-.004-1.62zM8.23 17.187c-.248.227-.532.395-.86.5-.96.306-2.047.08-2.734-.572-.67-.637-.903-1.517-.59-2.416.206-.592.592-1.022 1.15-1.315.24-.126.498-.213.767-.268.574-.117 1.144-.095 1.695.127.472.19.86.49 1.15.903.433.616.522 1.31.288 2.014-.15.45-.43.828-.866 1.027zm7.79-5.83c-.002.387-.008.774-.005 1.16.004.387-.002.774-.002 1.16-.002 1.603-.007 3.205-.01 4.808-.002.66-.01 1.32-.02 1.98-.007.548-.02 1.096-.048 1.644-.03.58-.078 1.158-.21 1.725-.227 1.008-.683 1.87-1.462 2.513-.73.603-1.587.932-2.54 1.028-.823.082-1.638.054-2.448-.12-.712-.153-1.364-.43-1.95-.87-.586-.44-1.014-.996-1.29-1.65-.25-.59-.36-1.206-.39-1.84-.03-.638-.01-1.276-.01-1.914 0-.102.004-.204.008-.306.007-.202.018-.404.05-.604.052-.324.142-.637.296-.93.31-.586.77-1.018 1.39-1.275.62-.256 1.27-.31 1.93-.21.66.1 1.26.33 1.82.68.562.35 1.05.78 1.48 1.27.43.49.79 1.02 1.08 1.6.29.58.5 1.19.64 1.82.14.63.21 1.27.23 1.92.02.65.01 1.3.01 1.95 0 .1-.01.2-.01.3-.01.2-.02.4-.05.6-.05.32-.14.64-.3.93-.31.59-.77 1.02-1.39 1.28-.62.26-1.27.31-1.93.21-.66-.1-1.26-.33-1.82-.68-.562-.35-1.05-.78-1.48-1.27-.43-.49-.79-1.02-1.08-1.6-.29-.58-.5-1.19-.64-1.82-.14-.63-.21-1.27-.23-1.92-.02-.65-.01-1.3-.01-1.95 0-.1.01-.2.01-.3.01-.2.02-.4.05-.6.05-.32.14-.64.3-.93.31-.59.77-1.02 1.39-1.28.62-.26 1.27-.31 1.93-.21.66.1 1.26.33 1.82.68.562.35 1.05.78 1.48 1.27.43.49.79 1.02 1.08 1.6.29.58.5 1.19.64 1.82.14.63.21 1.27.23 1.92.02.65.01 1.3.01 1.95z"/>
+                </svg>
+              </Link>
+            )}
+
+            {/* YouTube */}
+            {item.youtube_link && (
+              <Link
+                href={item.youtube_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-12 h-12 flex items-center justify-center bg-[#FF0000] hover:bg-[#ff1a1a] text-white rounded-full transition-all hover:scale-110 shadow-lg"
+                title="Watch on YouTube"
+              >
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
+              </Link>
+            )}
+          </div>
         )}
       </div>
     </motion.div>

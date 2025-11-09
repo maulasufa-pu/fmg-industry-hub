@@ -2276,25 +2276,27 @@ const PortfolioCard = React.memo(function PortfolioCard({
 
   // Get artwork URL with priority: Spotify > Apple Music > YouTube > Default
   const getArtworkUrl = (): string => {
-    // Priority 1: Spotify - best quality
-    if (item.spotify_link) {
-      const spotifyId = getSpotifyTrackId(item.spotify_link);
-      if (spotifyId) {
-        // Use artwork_link if it's a Spotify image
-        if (item.artwork_link && item.artwork_link.includes('scdn.co')) {
-          return item.artwork_link;
-        }
-      }
+    // Check if artwork_link exists and from which platform
+    const hasSpotifyArtwork = item.artwork_link && item.artwork_link.includes('scdn.co');
+    const hasAppleMusicArtwork = item.artwork_link && item.artwork_link.includes('mzstatic.com');
+    const hasCustomArtwork = item.artwork_link && !hasSpotifyArtwork && !hasAppleMusicArtwork;
+    
+    // Priority 1: Spotify artwork (best quality)
+    if (hasSpotifyArtwork && item.artwork_link) {
+      return item.artwork_link;
     }
     
-    // Priority 2: Apple Music
-    if (item.apple_music_link) {
-      if (item.artwork_link && item.artwork_link.includes('mzstatic.com')) {
-        return item.artwork_link;
-      }
+    // Priority 2: Apple Music artwork
+    if (hasAppleMusicArtwork && item.artwork_link) {
+      return item.artwork_link;
     }
     
-    // Priority 3: YouTube thumbnail
+    // Priority 3: Custom artwork_link (user uploaded or other source)
+    if (hasCustomArtwork && item.artwork_link) {
+      return item.artwork_link;
+    }
+    
+    // Priority 4: YouTube thumbnail (auto-generated)
     if (item.youtube_link) {
       const videoId = getYouTubeVideoId(item.youtube_link);
       if (videoId) {
@@ -2302,12 +2304,7 @@ const PortfolioCard = React.memo(function PortfolioCard({
       }
     }
     
-    // Priority 4: Custom artwork_link (any other URL)
-    if (item.artwork_link) {
-      return item.artwork_link;
-    }
-    
-    // Priority 5: Default logo
+    // Priority 5: Default FMG logo
     return "/img/logo/FMG-Universe-Flemmo-Music-Global.png";
   };
 
@@ -3111,26 +3108,35 @@ function PortfolioDetailModal({
 
   // Get artwork with priority
   const getArtworkUrl = (): string => {
-    // Priority 1: Spotify
-    if (item.spotify_link && item.artwork_link && item.artwork_link.includes('scdn.co')) {
-      return item.artwork_link;
+    // Check if artwork_link exists and from which platform
+    const hasSpotifyArtwork = item.artwork_link && item.artwork_link.includes('scdn.co');
+    const hasAppleMusicArtwork = item.artwork_link && item.artwork_link.includes('mzstatic.com');
+    const hasCustomArtwork = item.artwork_link && !hasSpotifyArtwork && !hasAppleMusicArtwork;
+    
+    // Priority 1: Spotify artwork (best quality)
+    if (hasSpotifyArtwork && item.artwork_link) {
+      return item.artwork_link!;
     }
-    // Priority 2: Apple Music
-    if (item.apple_music_link && item.artwork_link && item.artwork_link.includes('mzstatic.com')) {
-      return item.artwork_link;
+    
+    // Priority 2: Apple Music artwork
+    if (hasAppleMusicArtwork && item.artwork_link) {
+      return item.artwork_link!;
     }
-    // Priority 3: YouTube thumbnail
+    
+    // Priority 3: Custom artwork_link (user uploaded or other source)
+    if (hasCustomArtwork && item.artwork_link) {
+      return item.artwork_link!;
+    }
+    
+    // Priority 4: YouTube thumbnail (auto-generated)
     if (item.youtube_link) {
       const videoId = getYouTubeVideoId(item.youtube_link);
       if (videoId) {
         return `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
       }
     }
-    // Priority 4: Custom artwork_link
-    if (item.artwork_link) {
-      return item.artwork_link;
-    }
-    // Priority 5: Default logo
+    
+    // Priority 5: Default FMG logo
     return "/img/logo/FMG-Universe-Flemmo-Music-Global.png";
   };
 

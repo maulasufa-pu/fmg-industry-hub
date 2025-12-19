@@ -26,11 +26,11 @@ export const metadata: Metadata = {
     "distribution",
   ],
   applicationName: siteConfig.name,
-  alternates: {
-    canonical: "/",
+    alternates: {
+    canonical: "https://flemmomusic.com/",
     languages: {
-      "en-US": "/",
-      "id-ID": "/id",
+      "en-US": "https://flemmomusic.com/",
+      "id-ID": "https://flemmomusic.com/id",
     },
   },
   openGraph: {

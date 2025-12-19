@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     "distribution",
   ],
   applicationName: siteConfig.name,
-    alternates: {
+  alternates: {
     canonical: "https://flemmomusic.com/",
     languages: {
       "en-US": "https://flemmomusic.com/",

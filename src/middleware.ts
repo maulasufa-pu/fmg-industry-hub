@@ -17,6 +17,12 @@ export async function middleware(req: NextRequest) {
   //   disableFlag: process.env.DISABLE_AUTH_DEBUG,
   //   port: req.nextUrl.port
   // });
+
+  if (req.nextUrl.hostname !== "flemmomusic.com") {
+    return NextResponse.next(); // biarkan redirect .vercel.app → flemmomusic.com berjalan dulu
+  }
+
+
   if (isLocalhost && process.env.NODE_ENV === 'development') {
     // console.log('🐛 FORCE DEBUG MODE: Bypassing ALL middleware auth for localhost:', pathname);
     if (pathname === "/admin") {

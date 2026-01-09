@@ -1,9 +1,7 @@
 {
-  "name": "Flemmo Music",
+  "name": "FMG Universe",
   "short_name": "FMG",
-  "description": "FMG Universe — Beyond Sound. Built-in Intelligence.",
   "start_url": "/",
-  "scope": "/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",

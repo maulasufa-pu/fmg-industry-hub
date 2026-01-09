@@ -56,70 +56,61 @@ const CSP_VALUE = cspParts.join("; ");
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'source.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'i.ytimg.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'img.youtube.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'i.vimeocdn.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'i.scdn.co',
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn.sndcdn.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'is1-ssl.mzstatic.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'is2-ssl.mzstatic.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'is3-ssl.mzstatic.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'is4-ssl.mzstatic.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'is5-ssl.mzstatic.com',
-      },
-      ...(supabaseHost ? [{
-        protocol: 'https' as const,
-        hostname: supabaseHost.replace('*.', ''),
-        pathname: '**',
-      }] : []),
+      { protocol: "https", hostname: "source.unsplash.com" },
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "i.ytimg.com" },
+      { protocol: "https", hostname: "img.youtube.com" },
+      { protocol: "https", hostname: "i.vimeocdn.com" },
+      { protocol: "https", hostname: "i.scdn.co" },
+      { protocol: "https", hostname: "cdn.sndcdn.com" },
+      { protocol: "https", hostname: "is1-ssl.mzstatic.com" },
+      { protocol: "https", hostname: "is2-ssl.mzstatic.com" },
+      { protocol: "https", hostname: "is3-ssl.mzstatic.com" },
+      { protocol: "https", hostname: "is4-ssl.mzstatic.com" },
+      { protocol: "https", hostname: "is5-ssl.mzstatic.com" },
+      ...(supabaseHost
+        ? [
+            {
+              protocol: "https" as const,
+              hostname: supabaseHost.replace("*.", ""),
+              pathname: "**",
+            },
+          ]
+        : []),
     ],
   },
+
   experimental: {
     forceSwcTransforms: true, // pakai SWC sesuai target browserslist
   },
+
   webpack(config) {
     config.module.rules.push({ test: /\.svg$/, use: ["@svgr/webpack"] });
     return config;
   },
+
+  // ✅ REDIRECT DOMAIN VERCEL → CUSTOM DOMAIN
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "host",
+            value: "fmg-industry-hub.vercel.app",
+          },
+        ],
+        destination: "https://flemmomusic.com/:path*",
+        permanent: true, // 301 redirect
+      },
+    ];
+  },
+
   async headers() {
-    const headers: { source: string; headers: { key: string; value: string }[] }[] = [];
+    const headers: {
+      source: string;
+      headers: { key: string; value: string }[];
+    }[] = [];
 
     // Cache immutable untuk file static Next.js
     headers.push({
@@ -146,7 +137,10 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: [
           { key: "Report-To", value: REPORT_TO_JSON },
-          { key: "Content-Security-Policy-Report-Only", value: `${CSP_VALUE}; report-to=csp-endpoint` },
+          {
+            key: "Content-Security-Policy-Report-Only",
+            value: `${CSP_VALUE}; report-to=csp-endpoint`,
+          },
         ],
       });
     } else {

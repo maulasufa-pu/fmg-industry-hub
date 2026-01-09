@@ -1,0 +1,10 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		}
+	],
+	"settings": {
+		"tailwindCSS.experimental.configFile": "tailwind.config.js"
+	}
+}

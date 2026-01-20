@@ -17,6 +17,7 @@ import type { PanInfo } from "framer-motion";
 import CinematicVideoHeroHLS from "@/components/CinematicVideoHeroHLS";
 // import Hero from "./ui/main_container/hero";
 /** urutan & “berat” ukuran: basic small, pro medium, ultimate large, custom largest */
+
 type Currency = "USD" | "IDR" | "EUR" | "JPY" | "GBP" | "AUD" | "CAD" | "SGD" | "KRW" | "VND" | "INR" | "PHP" | "THB" | "MYR";
 
 interface CurrencyOption {
@@ -1955,6 +1956,13 @@ function CTA() {
 /*************************
  * Page Component
  *************************/
+export const metadata = {
+  title: "FMG Universe — Beyond Sound. Built-in Intelligence.",
+  alternates: {
+    canonical: "https://flemmomusic.com/",
+  },
+};
+
 export default function LandingPage() {
   const [currency, setCurrency] = React.useState<Currency>("USD");
   const [rates, setRates] = React.useState<Record<string, number>>({ USD: 1 });

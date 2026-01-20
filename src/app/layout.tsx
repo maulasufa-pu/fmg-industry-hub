@@ -1,3 +1,4 @@
+//E:\FMGIH\fmg-industry-hub\src\app\layout.tsx
 import type { Metadata, Viewport } from "next";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
@@ -27,10 +28,8 @@ export const metadata: Metadata = {
   ],
   applicationName: siteConfig.name,
   alternates: {
-    canonical: "/",
     languages: {
       "en-US": "/",
-      "id-ID": "/id",
     },
   },
   openGraph: {

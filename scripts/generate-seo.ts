@@ -18,7 +18,6 @@ const STOP = new Set([
   "next","app","pages","internals","browser","static","chunks","node","modules","dist","null","light","dark"
 ]);
 
-
 function norm(txt: string | undefined | null): string {
   return (txt ?? "").replace(/\s+/g, " ").replace(/\u00A0/g, " ").trim();
 }
@@ -34,7 +33,7 @@ function pickFirstNonEmptyText(root: any, selector: string, minLen = 40): string
 
 function toRoute(appFile: string): `/${string}` | null {
   let rel = appFile.replace(/\\/g, "/").replace(/^src\/app\//, "");
-  rel = rel.replace(/(?:^|\/)page\.[tj]sx?$/, ""); // <-- FIX utamanya
+  rel = rel.replace(/(?:^|\/)page\.[tj]sx?$/, ""); // <-- FIX utama
   if (rel.includes("/api/")) return null;
   rel = rel.replace(/\(([^)]+)\)\//g, "");
   if (rel === "") return "/";               // root
@@ -75,6 +74,22 @@ function labelFromRoute(route: `/${string}`): string {
   return titleCaseWords(seg.replace(/[-_]+/g, " "));
 }
 
+/**
+ * Normalize an image URL into a path-only value.
+ * - Preserves pathname and search (query string) but removes origin.
+ * - Returns a safe default if input is missing or invalid.
+ */
+function normalizeImage(src: string | null | undefined): string {
+  if (!src) return "/og-default.jpg";
+  try {
+    // Use BASE_URL as base so relative URLs resolve properly
+    const u = new URL(src, BASE_URL);
+    return (u.pathname || "/") + (u.search || "");
+  } catch {
+    return "/og-default.jpg";
+  }
+}
+
 function extract(html: string, route: `/${string}`): SeoDoc {
   const root = parse(html);
 
@@ -105,8 +120,9 @@ function extract(html: string, route: `/${string}`): SeoDoc {
 
   const description = p1.length > 180 ? `${p1.slice(0, 177)}…` : p1;
 
-  // OG image (boleh sama di semua halaman — wajar)
-  const ogImg = norm(root.querySelector('meta[property="og:image"]')?.getAttribute("content")) || "/og-default.jpg";
+  // OG image (normalized to path only)
+  const rawOg = norm(root.querySelector('meta[property="og:image"]')?.getAttribute("content"));
+  const ogImg = normalizeImage(rawOg || "/og-default.jpg");
 
   // Keywords: ambil dari teks di <main> saja (hindari <script> dev noise)
   const forKw = norm(
@@ -151,21 +167,28 @@ async function main() {
   const dynConfig = await loadDynamicRouteSamples();
   const dynamicRoutes = Object.values(dynConfig).flat() as `/${string}`[];
 
-  // 3) filter publik
-  const routes = Array.from(new Set([...staticRoutes, ...dynamicRoutes])).filter((r) => {
-    return !(
-      // r.startsWith("/admin") ||
-      // r.startsWith("/client") ||
-      r.startsWith("/auth") ||
-      r.startsWith("/api")
-      // r.startsWith("/payments") ||
-      // r.startsWith("/profile") ||
-      // r.startsWith("/ui") ||
-      // r.startsWith("/debug")
-    );
-  });
+  // 3) filter publik — list prefix yang HARUS DIKECUALIKAN
+  const EXCLUDE_PREFIXES = [
+    "/admin",
+    "/client",
+    "/auth",
+    "/api",
+    "/login",
+    "/signup",
+    "/payments",
+    "/profile",
+    "/ui",
+    "/debug",
+  ];
+
+  const isPublicRoute = (r: string) => !EXCLUDE_PREFIXES.some((p) => r === p || r.startsWith(p + "/") || r.startsWith(p));
+
+  const routes = Array.from(new Set([...staticRoutes, ...dynamicRoutes])).filter((r) => isPublicRoute(r));
 
   console.log(`Crawling ${routes.length} routes from ${BASE_URL}`);
+  if (routes.length === 0) {
+    console.warn("No routes discovered — check your src/app pages or BASE_URL environment variable.");
+  }
 
   const db: SeoDB = {};
   for (const r of routes) {

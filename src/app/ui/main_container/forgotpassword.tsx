@@ -15,7 +15,7 @@ const getPublicOrigin = (): string => {
     "";
   const win = typeof window !== "undefined" ? window.location.origin : "";
   const base = (env || win || "").replace(/\/+$/, "");
-  return base || "https://fmg-industry-hub.vercel.app";
+  return base || "https://flemmomusic.com";
 };
 
 export default function ForgotPasswordPage(): React.JSX.Element {

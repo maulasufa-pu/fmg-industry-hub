@@ -3,8 +3,9 @@
 import React, { useEffect, useMemo, useRef, useState, useLayoutEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
-import { Close } from "@/icons";
+import { Close, Check } from "@/icons";
 import BrandMark from "@/app/ui/BrandMark"; 
+import { motion, AnimatePresence } from "framer-motion";
 import type {
   ServiceRow,
   BundleRow,
@@ -22,11 +23,60 @@ const SUBGENRES = [
 ];
 const MIN_DESC = 150;
 
+// Pricing Packages from PageClient - these become bundles
+const PRICING_PACKAGES = [
+  {
+    key: "basic",
+    label: "Basic Package (Single)",
+    priceUSD: 700,
+    includes: ["songwriting", "arrangement", "mixing", "mastering"],
+    features: [
+      "Original songwriting",
+      "Arrangement & production",
+      "Mixing & mastering",
+      "Publisher-ready metadata",
+    ],
+    accent: "blue" as const,
+    badge: undefined as string | undefined,
+  },
+  {
+    key: "pro",
+    label: "Pro Package (Single)",
+    priceUSD: 1000,
+    includes: ["songwriting", "arrangement", "mixing", "mastering", "vocal_directing", "multi_version"],
+    features: [
+      "Everything in Basic +",
+      "Multi-version deliverables",
+      "Advanced music production",
+      "Detailed mixing & mastering",
+      "Vocal directing & coaching",
+    ],
+    accent: "violet" as const,
+    badge: "Best seller" as string | undefined,
+  },
+  {
+    key: "ultimate",
+    label: "Ultimate Package (Single)",
+    priceUSD: 2000,
+    includes: ["songwriting", "arrangement", "mixing", "mastering", "vocal_directing", "multi_version", "music_video", "creative_direction"],
+    features: [
+      "Everything in Basic & Pro +",
+      "Music video direction & production",
+      "Advanced production workflow",
+      "Creative direction & talent assets",
+      "Release ops & distribution checks",
+      "Priority support",
+    ],
+    accent: "gold" as const,
+    badge: undefined as string | undefined,
+  },
+] as const;
+
 type ProjectStatus =
   | "requested" | "pending" | "in_progress" | "revision"
   | "approved" | "published" | "archived" | "cancelled" | "draft";
 
-import { formatPrice, Currency } from '@/lib/currency';
+import { formatPrice, Currency, CURRENCY_OPTIONS } from '@/lib/currency';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { CurrencyDropdown } from '@/components/CurrencyDropdown';
 
@@ -112,6 +162,252 @@ function clearCookie() {
   document.cookie = `${DRAFT_COOKIE_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
 }
 
+/** Enhanced Currency Dropdown matching PageClient style */
+function CurrencyDropdownEnhanced({
+  value,
+  onChange,
+  loading,
+}: {
+  value: Currency;
+  onChange: (currency: Currency) => void;
+  loading?: boolean;
+}) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const selectedOption = CURRENCY_OPTIONS.find(opt => opt.code === value);
+  
+  const filteredOptions = CURRENCY_OPTIONS.filter(option =>
+    option.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    option.code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const selectOption = (option: { code: Currency }) => {
+    onChange(option.code);
+    setIsOpen(false);
+    setSearchTerm("");
+  };
+
+  return (
+    <div className="relative">
+      <motion.button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        disabled={loading}
+        className="flex items-center justify-between gap-3 rounded-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-300 dark:border-slate-600 px-4 py-3 text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 min-w-[200px]"
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-lg">{selectedOption?.flag}</span>
+          <span className="text-slate-900 dark:text-white">{selectedOption?.code}</span>
+        </div>
+        <motion.svg
+          className="w-4 h-4 text-slate-500"
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </motion.svg>
+      </motion.button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOpen(false)}
+              className="fixed inset-0 z-[9998]"
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="absolute top-full mt-2 left-0 right-0 z-[9999] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-300 dark:border-slate-600 rounded-xl shadow-2xl max-h-80 overflow-hidden"
+            >
+              <div className="p-3 border-b border-slate-200 dark:border-slate-700">
+                <input
+                  type="text"
+                  placeholder="Search currency..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                  autoFocus
+                />
+              </div>
+
+              <div className="max-h-60 overflow-y-auto">
+                {filteredOptions.length > 0 ? (
+                  filteredOptions.map((option) => (
+                    <button
+                      key={option.code}
+                      type="button"
+                      onClick={() => selectOption(option)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${
+                        option.code === value ? 'bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400' : 'text-slate-900 dark:text-white'
+                      }`}
+                    >
+                      <span className="text-xl">{option.flag}</span>
+                      <div className="flex-1">
+                        <div className="font-medium">{option.code}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">{option.name}</div>
+                      </div>
+                      {option.code === value && <Check style={{ fontSize: 16 }} />}
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
+                    No currencies found
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/** Package Card Component */
+function PackageCard({
+  pkg,
+  currency,
+  rates,
+  selected,
+  onSelect,
+}: {
+  pkg: typeof PRICING_PACKAGES[number];
+  currency: Currency;
+  rates: Record<string, number>;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const accentColors = {
+    blue: {
+      border: "border-blue-400 dark:border-blue-500",
+      bg: "bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/40 dark:to-cyan-900/30",
+      badge: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+      check: "border-blue-500 bg-blue-500",
+      hover: "hover:border-blue-300 dark:hover:border-blue-500",
+    },
+    violet: {
+      border: "border-violet-400 dark:border-violet-500",
+      bg: "bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/40 dark:to-purple-900/30",
+      badge: "bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300",
+      check: "border-violet-500 bg-violet-500",
+      hover: "hover:border-violet-300 dark:hover:border-violet-500",
+    },
+    gold: {
+      border: "border-amber-400 dark:border-amber-500",
+      bg: "bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/40 dark:to-orange-900/30",
+      badge: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
+      check: "border-amber-500 bg-amber-500",
+      hover: "hover:border-amber-300 dark:hover:border-amber-500",
+    },
+  };
+
+  const colors = accentColors[pkg.accent];
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={[
+        "group relative flex flex-col gap-4 p-6 rounded-2xl border-2 text-left",
+        "transition-all duration-300 ease-out hover:scale-[1.02]",
+        selected
+          ? `${colors.border} ${colors.bg} shadow-xl`
+          : `border-slate-300 dark:border-slate-600 bg-white/95 dark:bg-slate-900/95 ${colors.hover}`,
+      ].join(" ")}
+      onMouseDown={(e) => e.preventDefault()}
+    >
+      {pkg.badge && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+          <span className={`px-3 py-1 text-xs font-bold rounded-full ${colors.badge}`}>
+            {pkg.badge}
+          </span>
+        </div>
+      )}
+
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1">
+          <h4 className="font-bold text-lg text-slate-900 dark:text-white mb-2">
+            {pkg.label}
+          </h4>
+          <p className="text-3xl font-bold text-slate-900 dark:text-white">
+            {formatPrice(pkg.priceUSD, currency, rates)}
+          </p>
+          {currency !== 'USD' && (
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              ${pkg.priceUSD}
+            </p>
+          )}
+        </div>
+        <div className="shrink-0">
+          <div className={[
+            "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all",
+            selected
+              ? colors.check
+              : "border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-900"
+          ].join(" ")}>
+            {selected && <Check className="text-white" style={{ fontSize: 16 }} />}
+          </div>
+        </div>
+      </div>
+
+      <ul className="space-y-2">
+        {pkg.features.map((feature, idx) => (
+          <li key={idx} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+            <Check className="text-green-600 dark:text-green-400 shrink-0 mt-0.5" style={{ fontSize: 16 }} />
+            <span>{feature}</span>
+          </li>
+        ))}
+      </ul>
+    </button>
+  );
+}
+
+/** Auto-resize Textarea Component */
+function AutoResizeTextarea({
+  value,
+  onChange,
+  minRows = 3,
+  ...props
+}: React.TextareaHTMLAttributes<HTMLTextAreaElement> & { minRows?: number }) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = 'auto';
+    
+    // Calculate the new height
+    const lineHeight = 24; // approximate line height in pixels
+    const minHeight = lineHeight * minRows;
+    const newHeight = Math.max(minHeight, textarea.scrollHeight);
+    
+    textarea.style.height = `${newHeight}px`;
+  }, [value, minRows]);
+
+  return (
+    <textarea
+      ref={textareaRef}
+      value={value}
+      onChange={onChange}
+      {...props}
+    />
+  );
+}
+
 export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitted }: Props): React.JSX.Element {
   const supabase = useMemo(() => getSupabaseClient(), []);
   const router = useRouter();
@@ -120,6 +416,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
 
   const [services, setServices] = useState<ServiceRow[]>([]);
   const [bundles, setBundles] = useState<BundleWithItems[]>([]);
+  const [pricingPackages] = useState(PRICING_PACKAGES);
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [saving, setSaving] = useState(false);
@@ -796,7 +1093,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                       Step {step} of 3
                     </div>
                     <div className="text-sm text-white/70 hidden md:block">
-                      {step === 1 ? "Project Details" : step === 2 ? "Services & Pricing" : "Review & Submit"}
+                      {step === 1 ? "Services & Pricing" : step === 2 ? "Project Details" : "Review & Submit"}
                     </div>
                   </div>
                 </div>
@@ -845,331 +1142,226 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
             "
           >
             {/* Content Container with Better Spacing */}
-            <div className="max-w-none space-y-10 pb-8">
+            <div className="max-w-none space-y-8 pb-8">
               {step === 1 && (
-                <div className="space-y-8">
-                  {/* Primary Information */}
-                  <div className="bg-gradient-to-br from-slate-50/90 to-slate-100/60 dark:from-slate-800/60 dark:to-slate-900/40 rounded-2xl p-8 border border-slate-200/80 dark:border-slate-700/80">
-                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
-                      <div className="w-3 h-3 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full"></div>
-                      Project Information
-                    </h3>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      <div className="lg:col-span-2">
-                        <label className="block text-base font-semibold text-slate-700 dark:text-slate-200 mb-3">
-                          Song Title *
-                        </label>
-                        <input
-                          value={songTitle}
-                          onChange={(e) => setSongTitle(e.target.value)}
-                          className="
-                            w-full px-5 py-4 rounded-xl text-base
-                            border-2 border-slate-300 dark:border-slate-600
-                            bg-white/95 dark:bg-slate-900/95
-                            text-slate-900 dark:text-slate-100
-                            focus:border-violet-500 dark:focus:border-violet-400
-                            focus:ring-4 focus:ring-violet-500/20
-                            transition-all duration-200
-                            placeholder:text-slate-400 dark:placeholder:text-slate-500
-                          "
-                          placeholder="e.g., 'Aurora', 'Midnight Dreams'"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-base font-semibold text-slate-700 dark:text-slate-200 mb-3">
-                          Album Title
-                        </label>
-                        <input
-                          value={albumTitle}
-                          onChange={(e) => setAlbumTitle(e.target.value)}
-                          className="
-                            w-full px-5 py-4 rounded-xl text-base
-                            border-2 border-slate-300 dark:border-slate-600
-                            bg-white/95 dark:bg-slate-900/95
-                            text-slate-900 dark:text-slate-100
-                            focus:border-violet-500 dark:focus:border-violet-400
-                            focus:ring-4 focus:ring-violet-500/20
-                            transition-all duration-200
-                            placeholder:text-slate-400 dark:placeholder:text-slate-500
-                          "
-                          placeholder="Optional album name"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-base font-semibold text-slate-700 dark:text-slate-200 mb-3">
-                          Artist Name *
-                        </label>
-                        <input
-                          value={artistName}
-                          onChange={(e) => setArtistName(e.target.value)}
-                          className="
-                            w-full px-5 py-4 rounded-xl text-base
-                            border-2 border-slate-300 dark:border-slate-600
-                            bg-white/95 dark:bg-slate-900/95
-                            text-slate-900 dark:text-slate-100
-                            focus:border-violet-500 dark:focus:border-violet-400
-                            focus:ring-4 focus:ring-violet-500/20
-                            transition-all duration-200
-                            placeholder:text-slate-400 dark:placeholder:text-slate-500
-                          "
-                          placeholder="Your artist name"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-base font-semibold text-slate-700 dark:text-slate-200 mb-3">
-                          Primary Genre
-                        </label>
-                        <select
-                          value={genre}
-                          onChange={(e) => setGenre(e.target.value)}
-                          className="
-                            w-full px-5 py-4 rounded-xl text-base
-                            border-2 border-slate-300 dark:border-slate-600
-                            bg-white/95 dark:bg-slate-900/95
-                            text-slate-900 dark:text-slate-100
-                            focus:border-violet-500 dark:focus:border-violet-400
-                            focus:ring-4 focus:ring-violet-500/20
-                            transition-all duration-200
-                          "
-                        >
-                          <option value="" disabled>Select primary genre</option>
-                          {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-base font-semibold text-slate-700 dark:text-slate-200 mb-3">
-                          Sub-genre
-                        </label>
-                        <select
-                          value={subGenre}
-                          onChange={(e) => setSubGenre(e.target.value)}
-                          className="
-                            w-full px-5 py-4 rounded-xl text-base
-                            border-2 border-slate-300 dark:border-slate-600
-                            bg-white/95 dark:bg-slate-900/95
-                            text-slate-900 dark:text-slate-100
-                            focus:border-violet-500 dark:focus:border-violet-400
-                            focus:ring-4 focus:ring-violet-500/20
-                            transition-all duration-200
-                          "
-                        >
-                          <option value="" disabled>Select sub-genre (optional)</option>
-                          {SUBGENRES.map((sg) => <option key={sg} value={sg}>{sg}</option>)}
-                        </select>
-                      </div>
-                    </div>
+                <div className="space-y-6">
+                  {/* Currency Selector - styled like PageClient */}
+                  <div className="flex justify-end">
+                    <CurrencyDropdownEnhanced
+                      value={currency as Currency}
+                      onChange={(c) => {
+                        // Currency is managed by CurrencyContext globally
+                      }}
+                      loading={ratesLoading}
+                    />
                   </div>
 
-                  {/* Currency Selection */}
-                  <div className="bg-gradient-to-br from-blue-50/90 to-indigo-50/60 dark:from-blue-900/30 dark:to-indigo-900/20 rounded-2xl p-8 border border-blue-200/60 dark:border-blue-700/50">
-                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
-                      <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"></div>
-                      Currency Preference
-                    </h3>
-                    <div className="space-y-6">
-                      <div>
-                        <label className="block text-base font-semibold text-slate-700 dark:text-slate-200 mb-3">
-                          Display Currency
-                        </label>
-                        <div className="bg-white/90 dark:bg-slate-900/90 rounded-xl p-3 border-2 border-slate-200/80 dark:border-slate-700/80">
-                          <CurrencyDropdown showStatus={false} />
-                        </div>
-                        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                          </svg>
-                          All prices are calculated from USD base rates • Select your preferred display currency
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Project Description */}
-                  <div className="bg-gradient-to-br from-violet-50/90 to-purple-50/60 dark:from-violet-900/30 dark:to-purple-900/20 rounded-2xl p-8 border border-violet-200/60 dark:border-violet-700/50">
-                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
-                      <div className="w-3 h-3 bg-gradient-to-r from-violet-500 to-purple-500 rounded-full"></div>
-                      Project Description
-                    </h3>
-                    <div className="space-y-6">
-                      <div>
-                        <label className="block text-base font-semibold text-slate-700 dark:text-slate-200 mb-3">
-                          Song Synopsis / Description *
-                        </label>
-                        <textarea
-                          value={description}
-                          onChange={(e) => setDescription(e.target.value)}
-                          rows={6}
-                          className={`
-                            w-full px-5 py-4 rounded-xl text-base
-                            border-2 transition-all duration-200
-                            text-slate-900 dark:text-slate-100
-                            ${description.trim().length < MIN_DESC
-                              ? "border-rose-300 dark:border-rose-600 focus:border-rose-500 dark:focus:border-rose-400 focus:ring-4 focus:ring-rose-500/20"
-                              : "border-slate-300 dark:border-slate-600 focus:border-violet-500 dark:focus:border-violet-400 focus:ring-4 focus:ring-violet-500/20"
+                  {/* Pricing Packages - Prominent Display */}
+                  <Section title="Pricing Packages">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                      {pricingPackages.map((pkg) => (
+                        <PackageCard
+                          key={pkg.key}
+                          pkg={pkg}
+                          currency={currency}
+                          rates={rates}
+                          selected={selectedBundleId === pkg.key}
+                          onSelect={() => {
+                            if (scrollRef.current) savedScrollTopRef.current = scrollRef.current.scrollTop;
+                            if (selectedBundleId === pkg.key) {
+                              setSelectedBundleId(null);
+                              // Deselect package services
+                              setSelectedServices(new Set());
+                            } else {
+                              setSelectedBundleId(pkg.key);
+                              // Auto-select included services
+                              setSelectedServices(new Set(pkg.includes));
                             }
-                            bg-white/95 dark:bg-slate-900/95
-                            placeholder:text-slate-400 dark:placeholder:text-slate-500
-                            resize-none
-                          `}
-                          placeholder={`Describe your project vision, style, mood, and any specific requirements (minimum ${MIN_DESC} characters)`}
+                          }}
                         />
-                        <div className="mt-4 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full ${description.trim().length < MIN_DESC ? 'bg-rose-400' : 'bg-green-400'}`}></div>
-                            <span className={`text-base font-medium ${description.trim().length < MIN_DESC ? "text-rose-600 dark:text-rose-300" : "text-green-600 dark:text-green-400"}`}>
-                              {description.trim().length}/{MIN_DESC} characters
-                            </span>
-                          </div>
-                          {description.trim().length < MIN_DESC && (
-                            <span className="text-sm text-rose-600 dark:text-rose-300 bg-rose-100 dark:bg-rose-900/30 px-3 py-1.5 rounded-full">
-                              {MIN_DESC - description.trim().length} more needed
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  </div>
+                  </Section>
+
+                  {/* Database Custom Bundles */}
+                  {bundles.length > 0 && (
+                    <Section title="Custom Bundles">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {bundles.map((b) => {
+                          const active = selectedBundleId === b.id;
+                          const sumNormal = b.items.reduce((acc, it) => acc + defaultPriceOf(it.service_key), 0);
+                          const saved = Math.max(sumNormal - Number(b.bundle_price), 0);
+
+                          return (
+                            <button
+                              type="button"
+                              key={b.id}
+                              onClick={() => setBundleWithPreserve(active ? null : b.id)}
+                              className={[
+                                "group relative flex flex-col gap-4 p-5 rounded-xl border-2 text-left",
+                                "transition-all duration-200",
+                                active
+                                  ? "border-indigo-400 bg-indigo-50/90 dark:bg-indigo-900/30 shadow-lg"
+                                  : "border-slate-300 dark:border-slate-600 bg-white/95 dark:bg-slate-900/95 hover:border-indigo-300",
+                              ].join(" ")}
+                              onMouseDown={(e) => e.preventDefault()}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-slate-900 dark:text-white mb-2">{b.label}</h4>
+                                  {b.note && <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{b.note}</p>}
+                                  <p className="text-xl font-bold text-slate-900 dark:text-white">
+                                    {formatPrice(Number(b.bundle_price), currency, rates)}
+                                  </p>
+                                  {currency !== 'USD' && (
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                                      (${Number(b.bundle_price)})
+                                    </p>
+                                  )}
+                                  <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">
+                                    Save {formatPrice(saved, currency, rates)}
+                                  </p>
+                                </div>
+                                <div className="shrink-0">
+                                  <div className={[
+                                    "w-5 h-5 rounded-lg border-2 flex items-center justify-center",
+                                    active
+                                      ? "border-indigo-500 bg-indigo-500"
+                                      : "border-slate-400 dark:border-slate-500"
+                                  ].join(" ")}>
+                                    {active && <Check className="text-white" style={{ fontSize: 14 }} />}
+                                  </div>
+                                </div>
+                              </div>
+                              {b.items.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                  {b.items.map((it) => (
+                                    <span
+                                      key={it.id}
+                                      className="px-2 py-1 text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded"
+                                    >
+                                      {it.label}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </Section>
+                  )}
+
+                  {/* Individual Services */}
+                  <Section title="Individual Services">
+                    <div className="space-y-3">
+                      {services.map((s) => (
+                        <ServiceCardFromDb key={s.id} s={s} />
+                      ))}
+                    </div>
+                  </Section>
                 </div>
               )}
 
               {step === 2 && (
-                <div className="space-y-8">
-                  {(["core","additional","business"] as const).map((grp) => (
-                    <Section
-                      key={grp}
-                      title={grp === "core" ? "Music Services" : grp === "additional" ? "Add-on Services" : "Artist Support Services"}
-                    >
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {services.filter(s => s.group_name === grp).map(s => (
-                          <ServiceCardFromDb key={s.id} s={s} />
-                        ))}
+                <div className="space-y-5">
+                  <Section title="Song Information">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="songTitle" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                          Song Title *
+                        </label>
+                        <input
+                          id="songTitle"
+                          type="text"
+                          value={songTitle}
+                          onChange={(e) => setSongTitle(e.target.value)}
+                          placeholder="Enter song title"
+                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white/95 dark:bg-slate-900/95 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                        />
                       </div>
-                    </Section>
-                  ))}
-
-                  <Section title="Bundles (Save More)">
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      {bundles.map((b) => {
-                        const active = selectedBundleId === b.id;
-                        const sumNormal = b.items.reduce((acc, it) => acc + defaultPriceOf(it.service_key), 0);
-                        const saved = Math.max(sumNormal - Number(b.bundle_price), 0);
-
-                        return (
-                          <button
-                            type="button"
-                            key={b.id}
-                            onClick={() => setBundleWithPreserve(active ? null : b.id)}
-                            className={[
-                              "rounded-xl border px-4 py-3 text-left transition",
-                              active
-                                ? "border-violet-500/80 bg-violet-50/80 dark:bg-violet-900/30 shadow-[0_6px_24px_rgba(139,92,246,0.2)]"
-                                : "border-slate-300 dark:border-slate-600 bg-white/95 dark:bg-slate-900/95 hover:bg-slate-50/80 dark:hover:bg-slate-800/80",
-                            ].join(" ")}
-                            onMouseDown={(e) => e.preventDefault()}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <div className="text-sm font-semibold text-slate-900 dark:text-white">{b.label}</div>
-                                {b.note && <div className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">{b.note}</div>}
-                                <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                  Includes: {b.items.map(it => it.label).join(", ")}
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm font-semibold text-slate-900 dark:text-white">
-                                  {formatPrice(Number(b.bundle_price), currency, rates)}
-                                </div>
-                                {currency !== 'USD' && (
-                                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                    (${Number(b.bundle_price)})
-                                  </div>
-                                )}
-                                <div className="text-xs text-emerald-600 dark:text-emerald-300 mt-1">
-                                  Save {formatPrice(saved, currency, rates)}
-                                </div>
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })}
+                      <div>
+                        <label htmlFor="artistName" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                          Artist Name *
+                        </label>
+                        <input
+                          id="artistName"
+                          type="text"
+                          value={artistName}
+                          onChange={(e) => setArtistName(e.target.value)}
+                          placeholder="Enter artist name"
+                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white/95 dark:bg-slate-900/95 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                        />
+                      </div>
                     </div>
                   </Section>
 
-                  {/* Custom Price Editor */}
-                  <Section title="Service Details">
-                    <div className="rounded-xl border border-slate-300 dark:border-slate-600">
-                      <div className="grid grid-cols-12 bg-slate-100/80 dark:bg-slate-800/80 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200">
-                        <div className="col-span-6">Service</div>
-                        <div className="col-span-2 text-right">Default</div>
-                        <div className="col-span-2 text-right">Premium</div>
-                        <div className="col-span-2 text-right">Amount</div>
+                  <Section title="Album & Genre">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label htmlFor="albumTitle" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                          Album Title
+                        </label>
+                        <input
+                          id="albumTitle"
+                          type="text"
+                          value={albumTitle}
+                          onChange={(e) => setAlbumTitle(e.target.value)}
+                          placeholder="Optional"
+                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white/95 dark:bg-slate-900/95 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                        />
                       </div>
                       <div>
-                        {Array.from(selectedServices).length === 0 ? (
-                          <div className="px-3 py-3 text-sm text-slate-500 dark:text-slate-400">Choose services first.</div>
-                        ) : (
-                          Array.from(selectedServices)
-                            .map(k => services.find(s => s.service_key === k))
-                            .filter((s): s is ServiceRow => !!s)
-                            .sort((a, b) => a.label.localeCompare(b.label))
-                            .map((s) => {
-                              const key = s.service_key;
-                              const def = Number(s.price);
-                              const inBundle = !!selectedBundle && selectedBundle.items.some(it => it.service_key === key);
-                              const custom = customPrices[key];
-                              const resolved = inBundle ? 0 : resolvedPriceOf(key);
-                              const isCustom = !inBundle && custom != null;
-
-                              return (
-                                <div key={key} className="grid grid-cols-12 items-center border-t border-slate-200 dark:border-slate-700 px-3 py-2 text-sm">
-                                  <div className="col-span-6">
-                                    <div className="font-medium text-slate-900 dark:text-slate-100">
-                                      {s.label}{s.is_subscription ? " • /mo" : ""}
-                                    </div>
-                                    {inBundle && (
-                                      <div className="text-[11px] text-violet-600 dark:text-violet-400">
-                                        Bundled — included in selected bundle
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="col-span-2 text-right text-slate-700 dark:text-slate-200">{idr(def)}</div>
-                                  <div className="col-span-2 text-right">
-                                    {inBundle ? (
-                                      <span className="text-xs text-slate-400">—</span>
-                                    ) : (
-                                      <input
-                                        type="number"
-                                        min={def}
-                                        step={1000}
-                                        inputMode="numeric"
-                                        value={priceDraft[key] ?? (custom != null ? String(custom) : String(def))}
-                                        onChange={(e) => {
-                                          const v = e.currentTarget.value;
-                                          setPriceDraft(p => ({ ...p, [key]: v }));
-                                        }}
-                                        onBlur={(e) => commitCustomPrice(key, e.currentTarget.value)}
-                                        className="w-32 rounded-md border border-slate-300 dark:border-slate-700 px-2 py-1 text-right text-sm outline-none focus:ring-2 focus:ring-violet-500/60"
-                                      />
-                                    )}
-                                  </div>
-                                  <div className="col-span-2 text-right">
-                                    {inBundle ? (
-                                      <span className="font-medium text-slate-900 dark:text-white">{idr(resolved)}</span>
-                                    ) : isCustom ? (
-                                      <span className="font-semibold text-slate-900 dark:text-white"><span aria-hidden>★ </span>{idr(resolved)}</span>
-                                    ) : (
-                                      <span className="font-medium text-slate-900 dark:text-white">{idr(resolved)}</span>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })
-                        )}
+                        <label htmlFor="genre" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                          Genre
+                        </label>
+                        <select
+                          id="genre"
+                          value={genre}
+                          onChange={(e) => setGenre(e.target.value)}
+                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white/95 dark:bg-slate-900/95 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                        >
+                          <option value="">Select...</option>
+                          {GENRES.map((g) => (
+                            <option key={g} value={g}>{g}</option>
+                          ))}
+                        </select>
                       </div>
+                      <div>
+                        <label htmlFor="subGenre" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                          Sub-genre
+                        </label>
+                        <select
+                          id="subGenre"
+                          value={subGenre}
+                          onChange={(e) => setSubGenre(e.target.value)}
+                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white/95 dark:bg-slate-900/95 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                        >
+                          <option value="">Select...</option>
+                          {SUBGENRES.map((sg) => (
+                            <option key={sg} value={sg}>{sg}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </Section>
+
+                  <Section title="Project Description">
+                    <div>
+                      <label htmlFor="description" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Description * (min {MIN_DESC} characters)
+                      </label>
+                      <AutoResizeTextarea
+                        id="description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Describe your project vision, references, style, mood, etc."
+                        minRows={4}
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white/95 dark:bg-slate-900/95 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 resize-none"
+                      />
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        {description.length} / {MIN_DESC} characters
+                      </p>
                     </div>
                   </Section>
                 </div>
@@ -1632,8 +1824,8 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                     onClick={() => goStep(step === 1 ? 2 : 3)}
                     disabled={
                       step === 1
-                        ? !(songTitle.trim() && description.trim().length >= MIN_DESC)
-                        : (selectedServices.size === 0 && !selectedBundleId)
+                        ? (selectedServices.size === 0 && !selectedBundleId)
+                        : !(songTitle.trim() && description.trim().length >= MIN_DESC)
                     }
                     className="
                       inline-flex items-center gap-2 px-6 py-2.5

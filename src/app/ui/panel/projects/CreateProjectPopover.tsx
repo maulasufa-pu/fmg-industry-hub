@@ -273,6 +273,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   const [services, setServices] = useState<ServiceRow[]>([]);
   const [bundles, setBundles] = useState<BundleWithItems[]>([]);
   const [individualServicesExpanded, setIndividualServicesExpanded] = useState(false);
+  const [showAllBundles, setShowAllBundles] = useState(false);
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [saving, setSaving] = useState(false);
@@ -372,7 +373,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
       return Number(selectedBundle.bundle_price) + outsideSum;
     }
     return Array.from(selectedServices).reduce((acc, k) => acc + resolvedPriceOf(k), 0);
-  }, [selectedBundle, selectedServices, customPrices]);
+  }, [selectedBundle, selectedServices, customPrices, resolvedPriceOf]);
 
   const buildPayload = (): SubmitPayload => {
     const chosenKeys = Array.from(selectedServices);
@@ -1028,7 +1029,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
 
                   {/* Bundles - Dynamic from Database */}
                   {bundles.length > 0 && (() => {
-                    const [showAllBundles, setShowAllBundles] = React.useState(false);
                     // Define service order according to user specification
                     const serviceOrder = [
                       'songwriting',

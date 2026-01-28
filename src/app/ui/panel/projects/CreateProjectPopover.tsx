@@ -305,6 +305,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   // Draft management
   const [draftId, setDraftId] = useState<string | null>(null);
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [agree, setAgree] = useState(false);
   const [ndaRequired, setNdaRequired] = useState(false);
   const [preferredEngineerId, setPreferredEngineerId] = useState<string>("");
@@ -321,7 +322,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   const setEngineerWithPreserve = withPreservedScroll((v: string) => setPreferredEngineerId(v));
   const setAgreeWithPreserve = withPreservedScroll((v: boolean) => setAgree(v));
 
-  // Debounced auto-save
+  // Debounced auto-save (cookie - fast)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const debouncedSave = useCallback(() => {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
@@ -417,6 +418,51 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
       total,
     };
   };
+
+  // Debounced auto-save to database (slower, more persistent)
+  const dbSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debouncedDbSave = useCallback(() => {
+    if (dbSaveTimeoutRef.current) clearTimeout(dbSaveTimeoutRef.current);
+    dbSaveTimeoutRef.current = setTimeout(async () => {
+      // Only save to database if we have minimum required data
+      if (!songTitle.trim() || selectedServices.size === 0) return;
+      
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const payload: SubmitPayload = { ...buildPayload(), status: "draft" };
+        
+        if (draftId) {
+          // Update existing draft
+          const response = await fetch("/api/projects/submit", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...payload, project_id: draftId }),
+          });
+          
+          if (response.ok) {
+            setLastSaved(new Date());
+          }
+        } else {
+          // Create new draft
+          const response = await fetch("/api/projects/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          
+          if (response.ok) {
+            const json = await response.json();
+            setDraftId(json.project_id);
+            setLastSaved(new Date());
+          }
+        }
+      } catch (err) {
+        // Silent fail for auto-save
+      }
+    }, 5000); // 5 seconds - less aggressive than cookie save
+  }, [songTitle, selectedServices, supabase, buildPayload, draftId]);
 
   type EngineerRow = { id: string; name: string | null };
   const [engineers, setEngineers] = useState<Array<{ id: string; name: string }>>([]);
@@ -531,6 +577,9 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
         if (draft.ndaRequired !== undefined) setNdaRequired(draft.ndaRequired);
         if (draft.preferredEngineerId) setPreferredEngineerId(draft.preferredEngineerId);
         if (draft.currentStep) setStep(draft.currentStep as 1 | 2 | 3);
+        
+        // Set lastSaved to indicate draft was restored
+        setLastSaved(new Date());
       }
     } catch (err) {
       //console.warn('Failed to load draft:', err);
@@ -539,16 +588,23 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     }
   }, [open]);
 
-  // Auto-save to cookie when data changes
+  // Auto-save to cookie when data changes (fast, local)
   useEffect(() => {
     if (!open || isLoadingDraft) return;
     debouncedSave();
   }, [open, isLoadingDraft, debouncedSave]);
 
+  // Auto-save to database when data changes (slower, persistent)
+  useEffect(() => {
+    if (!open || isLoadingDraft) return;
+    debouncedDbSave();
+  }, [open, isLoadingDraft, debouncedDbSave]);
+
   // Clear draft on successful submit
   const clearDraft = useCallback(() => {
     clearCookie();
     setDraftId(null);
+    setLastSaved(null);
   }, []);
 
   // Close on ESC
@@ -977,7 +1033,17 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
             {/* Enhanced Progress Bar */}
             <div className="mt-6 space-y-3">
               <div className="flex justify-between text-sm text-white/80">
-                <span>Progress</span>
+                <div className="flex items-center gap-3">
+                  <span>Progress</span>
+                  {lastSaved && (
+                    <span className="flex items-center gap-1.5 text-xs text-white/60">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Draft saved {new Date().getTime() - lastSaved.getTime() < 5000 ? 'just now' : 'automatically'}
+                    </span>
+                  )}
+                </div>
                 <span>{Math.round(progress)}% Complete</span>
               </div>
               <div className="h-2.5 w-full rounded-full bg-white/20 overflow-hidden shadow-inner">
@@ -1024,7 +1090,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                       'composition',
                       'arrangement',
                       'editing',
-                      'digital_audio_production',
+                      'digital_production',
                       'mixing',
                       'mastering',
                       'vocal_directing',
@@ -1032,7 +1098,8 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                       'music_video_directing',
                       'distribution_administration',
                       'artist_management',
-                      'social_media_management'
+                      'social_media_management',
+                      'music_marketing'
                     ];
                     // Sort services according to custom order
                     const sortedServices = [...services].sort((a, b) => {

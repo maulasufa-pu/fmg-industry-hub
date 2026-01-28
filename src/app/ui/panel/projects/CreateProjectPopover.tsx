@@ -212,7 +212,9 @@ function PackageCard({
             return (
               <div key={service.id} className="flex items-center gap-2 text-sm">
                 {isIncluded ? (
-                  <Check className="text-green-600 dark:text-green-400 shrink-0" style={{ fontSize: 16 }} />
+                  <svg className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
                 ) : (
                   <svg className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -952,19 +954,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                     <div className="text-sm text-white/70 hidden md:block">
                       {step === 1 ? "Services & Pricing" : step === 2 ? "Project Details" : "Review & Submit"}
                     </div>
-                    {step === 1 && (
-                      <div className="hidden sm:block">
-                        <CurrencyDropdownAdvanced
-                          value={currency as Currency}
-                          onChange={(c) => {
-                            setCurrency(c);
-                          }}
-                          loading={ratesLoading}
-                          variant="minimal"
-                          size="sm"
-                        />
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -1058,7 +1047,20 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                     const hasMoreServices = services.length > 10;
                     
                     return (
-                      <Section title="Bundles">
+                      <Section title={
+                        <div className="flex items-center justify-between">
+                          <span>Bundles</span>
+                          <CurrencyDropdownAdvanced
+                            value={currency as Currency}
+                            onChange={(c) => {
+                              setCurrency(c);
+                            }}
+                            loading={ratesLoading}
+                            variant="compact"
+                            size="sm"
+                          />
+                        </div>
+                      }>
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                           {bundles.map((bundle) => (
                             <PackageCard

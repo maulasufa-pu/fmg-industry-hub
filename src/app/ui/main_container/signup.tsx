@@ -112,7 +112,7 @@ export function SignUpSection(): React.JSX.Element {
 
   const buildRedirect = (flow: "signup" | "login") => {
     const origin =
-      (typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || "")
+      (typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || "https://flemmomusic.com")
         .replace(/\/+$/, "");
     return `${origin}/auth/callback`;
   };
@@ -154,12 +154,15 @@ export function SignUpSection(): React.JSX.Element {
       }
 
       const supabase = getSupabaseClient();
+      const redirectUrl = buildRedirect("signup");
+      console.log("📧 Email redirect URL:", redirectUrl);
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: { first_name: firstName, last_name: lastName },
-          emailRedirectTo: buildRedirect("signup"),
+          emailRedirectTo: redirectUrl,
           captchaToken: captchaToken ?? undefined, 
         },
       });

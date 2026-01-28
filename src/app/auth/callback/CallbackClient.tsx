@@ -110,6 +110,9 @@ export default function CallbackClient() {
     stripHash(flowType ? `type=${flowType}` : undefined);
     if (flowType === "recovery") {
         window.location.replace(RECOVERY_DEST);     
+    } else if (flowType === "signup") {
+        // Email verification successful - redirect to verified page
+        window.location.replace("/auth/verified");
     } else {
         const rawNext = sp.get("next") || sp.get("redirectedFrom") || "";
         const dest = rawNext.startsWith("/") ? rawNext : "/client/dashboard";

@@ -17,6 +17,7 @@ import {
   Loader2,
   ShieldCheck,
   RefreshCcw,
+  Check,
 } from "lucide-react";
 
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -59,6 +60,7 @@ export function SignUpSection(): React.JSX.Element {
   const [loading, setLoading] = useState<boolean>(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState<boolean>(false); // Track if confirmation email was sent
 
   const sp = useSearchParams();
 
@@ -164,8 +166,7 @@ export function SignUpSection(): React.JSX.Element {
       if (error) throw error;
 
       if (!data.session) {
-        setMsg("We’ve sent a confirmation link to your email. Please verify to continue.");
-        resetCaptcha(); 
+        setMsg("We’ve sent a confirmation link to your email. Please verify to continue.");        setEmailSent(true); // Mark email as sent        resetCaptcha(); 
         return;
       }
 
@@ -253,6 +254,170 @@ export function SignUpSection(): React.JSX.Element {
   const emailInvalid = touched.email && !!errors.email;
   const passInvalid = touched.password && !!errors.password;
   const agreeInvalid = touched.agree && !!errors.agree;
+
+  // If email confirmation was sent, show dedicated resend UI
+  if (emailSent) {
+    return (
+      <section className="relative w-full px-4 sm:px-6 lg:px-8 py-10">
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-500/10 via-transparent to-transparent" />
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="mx-auto w-full max-w-md sm:max-w-lg"
+        >
+          <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-black/40 backdrop-blur-xl shadow-[0_20px_60px_-20px_rgba(0,0,0,0.35)] overflow-hidden">
+            
+            {/* Header */}
+            <div className="px-6 sm:px-8 pt-8 pb-6 text-center border-b border-black/5 dark:border-white/5">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200 }}
+                className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 shadow-lg shadow-indigo-500/30 mb-4"
+              >
+                <Mail className="w-8 h-8 text-white" />
+              </motion.div>
+              
+              <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-white mb-2">
+                Check your email
+              </h1>
+              <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                We've sent a confirmation link to
+              </p>
+              <p className="text-base font-semibold text-indigo-600 dark:text-indigo-400 mt-1">
+                {email}
+              </p>
+            </div>
+
+            {/* Content */}
+            <div className="px-6 sm:px-8 py-6">
+              {/* Success Message */}
+              {msg && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-5 p-4 rounded-xl bg-green-50/70 dark:bg-green-950/30 border border-green-200 dark:border-green-900/50"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center mt-0.5">
+                      <Check className="w-3 h-3 text-white" />
+                    </div>
+                    <p className="text-sm text-green-700 dark:text-green-300 flex-1">
+                      {msg}
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Error Message */}
+              {err && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-5 p-4 rounded-xl bg-red-50/70 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50"
+                >
+                  <p className="text-sm text-red-700 dark:text-red-300">
+                    {err}
+                  </p>
+                </motion.div>
+              )}
+
+              {/* Instructions */}
+              <div className="space-y-3 mb-6">
+                <div className="flex items-start gap-3 text-sm text-neutral-700 dark:text-neutral-300">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-semibold text-xs mt-0.5">
+                    1
+                  </div>
+                  <p>Open your email inbox</p>
+                </div>
+                <div className="flex items-start gap-3 text-sm text-neutral-700 dark:text-neutral-300">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-semibold text-xs mt-0.5">
+                    2
+                  </div>
+                  <p>Click the verification link in the email</p>
+                </div>
+                <div className="flex items-start gap-3 text-sm text-neutral-700 dark:text-neutral-300">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-semibold text-xs mt-0.5">
+                    3
+                  </div>
+                  <p>You'll be redirected to login</p>
+                </div>
+              </div>
+
+              {/* Captcha */}
+              <div className="mb-5 flex justify-center">
+                <HCaptcha
+                  key={captchaKey}
+                  sitekey={siteKey}
+                  onVerify={(token) => setCaptchaToken(token)}
+                  onExpire={() => setCaptchaToken(null)}
+                  onError={() => {
+                    setCaptchaToken(null);
+                    setErr("Captcha error. Please reload.");
+                  }}
+                />
+              </div>
+
+              {/* Resend Button */}
+              <motion.button
+                type="button"
+                onClick={handleResend}
+                disabled={resendLoading || resendCooldown > 0 || !captchaToken}
+                whileHover={resendCooldown === 0 && captchaToken ? { y: -1 } : {}}
+                whileTap={resendCooldown === 0 && captchaToken ? { scale: 0.98 } : {}}
+                className="
+                  group relative w-full inline-flex items-center justify-center gap-2
+                  rounded-xl px-5 py-3.5 text-[15px] font-semibold
+                  bg-gradient-to-r from-indigo-600 to-violet-600
+                  text-white shadow-lg shadow-indigo-500/30
+                  transition-all duration-200
+                  hover:shadow-xl hover:shadow-indigo-500/40
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/50
+                  disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:shadow-lg
+                "
+              >
+                {resendLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCcw className="h-4 w-4" />
+                )}
+                <span>
+                  {resendLoading
+                    ? "Sending..."
+                    : resendCooldown > 0
+                      ? `Resend in ${resendCooldown}s`
+                      : "Resend confirmation email"}
+                </span>
+              </motion.button>
+
+              {/* Helper Text */}
+              <p className="mt-4 text-center text-xs text-neutral-500 dark:text-neutral-400">
+                Didn't receive the email? Check your spam folder or click resend.
+              </p>
+
+              {/* Divider */}
+              <div className="my-6 flex items-center gap-3">
+                <div className="h-px flex-1 bg-black/10 dark:bg-white/10" />
+                <span className="text-xs text-neutral-500">Need help?</span>
+                <div className="h-px flex-1 bg-black/10 dark:bg-white/10" />
+              </div>
+
+              {/* Back to Signup */}
+              <button
+                type="button"
+                onClick={() => setEmailSent(false)}
+                className="w-full text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+              >
+                ← Back to sign up form
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </section>
+    );
+  }
 
   return (
     <section className="relative w-full px-4 sm:px-6 lg:px-8 py-10">

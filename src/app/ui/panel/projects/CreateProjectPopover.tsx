@@ -364,8 +364,8 @@ function PackageCard({
 
       <ul className="space-y-2">
         {pkg.features.map((feature, idx) => (
-          <li key={idx} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
-            <Check className="text-green-600 dark:text-green-400 shrink-0 mt-0.5" style={{ fontSize: 16 }} />
+          <li key={idx} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+            <Check className="text-green-600 dark:text-green-400 shrink-0" style={{ fontSize: 16 }} />
             <span>{feature}</span>
           </li>
         ))}
@@ -1254,8 +1254,13 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
 
                   {/* Individual Services */}
                   <Section title="Individual Services">
-                    <div className="space-y-3">
-                      {services.map((s) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {services.filter((s) => {
+                        // Filter out services that are included in the selected bundle
+                        if (!selectedBundle) return true;
+                        const bundleServiceKeys = selectedBundle.items.map(it => it.service_key);
+                        return !bundleServiceKeys.includes(s.service_key);
+                      }).map((s) => (
                         <ServiceCardFromDb key={s.id} s={s} />
                       ))}
                     </div>

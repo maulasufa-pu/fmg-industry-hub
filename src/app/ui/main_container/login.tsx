@@ -380,7 +380,7 @@ export const LoginSection = (): React.JSX.Element => {
                 "
               >
                 <span className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-indigo-600/0 via-violet-600/0 to-fuchsia-600/0 opacity-0 transition-opacity duration-200 group-hover:opacity-10" />
-                <Google className="h-5 w-5 transition-transform duration-200 group-hover:scale-110 group-active:scale-95" />
+                <Google className="transition-transform duration-200 group-hover:scale-110 group-active:scale-95" />
                 Continue with Google
               </motion.button>
             </div>

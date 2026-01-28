@@ -23,62 +23,15 @@ const SUBGENRES = [
 ];
 const MIN_DESC = 150;
 
-// Pricing Packages from PageClient - these become bundles
-const PRICING_PACKAGES = [
-  {
-    key: "basic",
-    label: "Basic Package (Single)",
-    priceUSD: 700,
-    includes: ["songwriting", "arrangement", "mixing", "mastering"],
-    features: [
-      "Original songwriting",
-      "Arrangement & production",
-      "Mixing & mastering",
-      "Publisher-ready metadata",
-    ],
-    accent: "blue" as const,
-    badge: undefined as string | undefined,
-  },
-  {
-    key: "pro",
-    label: "Pro Package (Single)",
-    priceUSD: 1000,
-    includes: ["songwriting", "arrangement", "mixing", "mastering", "vocal_directing", "multi_version"],
-    features: [
-      "Everything in Basic +",
-      "Multi-version deliverables",
-      "Advanced music production",
-      "Detailed mixing & mastering",
-      "Vocal directing & coaching",
-    ],
-    accent: "violet" as const,
-    badge: "Best seller" as string | undefined,
-  },
-  {
-    key: "ultimate",
-    label: "Ultimate Package (Single)",
-    priceUSD: 2000,
-    includes: ["songwriting", "arrangement", "mixing", "mastering", "vocal_directing", "multi_version", "music_video", "creative_direction"],
-    features: [
-      "Everything in Basic & Pro +",
-      "Music video direction & production",
-      "Advanced production workflow",
-      "Creative direction & talent assets",
-      "Release ops & distribution checks",
-      "Priority support",
-    ],
-    accent: "gold" as const,
-    badge: undefined as string | undefined,
-  },
-] as const;
+// Bundles will use bundles from database
 
 type ProjectStatus =
   | "requested" | "pending" | "in_progress" | "revision"
   | "approved" | "published" | "archived" | "cancelled" | "draft";
 
-import { formatPrice, Currency, CURRENCY_OPTIONS } from '@/lib/currency';
+import { formatPrice, CURRENCY_OPTIONS } from '@/lib/currency';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { CurrencyDropdown } from '@/components/CurrencyDropdown';
+import { CurrencyDropdownAdvanced, type Currency } from '@/components/CurrencyDropdownAdvanced';
 
 const idr = (n: number) => `IDR ${Math.round(n).toLocaleString("id-ID")}`;
 
@@ -162,215 +115,145 @@ function clearCookie() {
   document.cookie = `${DRAFT_COOKIE_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
 }
 
-/** Enhanced Currency Dropdown matching PageClient style */
-function CurrencyDropdownEnhanced({
-  value,
-  onChange,
-  loading,
-}: {
-  value: Currency;
-  onChange: (currency: Currency) => void;
-  loading?: boolean;
-}) {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const [searchTerm, setSearchTerm] = React.useState("");
-  const selectedOption = CURRENCY_OPTIONS.find(opt => opt.code === value);
-  
-  const filteredOptions = CURRENCY_OPTIONS.filter(option =>
-    option.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    option.code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const selectOption = (option: { code: Currency }) => {
-    onChange(option.code);
-    setIsOpen(false);
-    setSearchTerm("");
-  };
-
-  return (
-    <div className="relative">
-      <motion.button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        disabled={loading}
-        className="flex items-center justify-between gap-3 rounded-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-300 dark:border-slate-600 px-4 py-3 text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 min-w-[200px]"
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-lg">{selectedOption?.flag}</span>
-          <span className="text-slate-900 dark:text-white">{selectedOption?.code}</span>
-        </div>
-        <motion.svg
-          className="w-4 h-4 text-slate-500"
-          animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </motion.svg>
-      </motion.button>
-
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
-              className="fixed inset-0 z-[9998]"
-            />
-            
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="absolute top-full mt-2 left-0 right-0 z-[9999] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-300 dark:border-slate-600 rounded-xl shadow-2xl max-h-80 overflow-hidden"
-            >
-              <div className="p-3 border-b border-slate-200 dark:border-slate-700">
-                <input
-                  type="text"
-                  placeholder="Search currency..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
-                  autoFocus
-                />
-              </div>
-
-              <div className="max-h-60 overflow-y-auto">
-                {filteredOptions.length > 0 ? (
-                  filteredOptions.map((option) => (
-                    <button
-                      key={option.code}
-                      type="button"
-                      onClick={() => selectOption(option)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${
-                        option.code === value ? 'bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400' : 'text-slate-900 dark:text-white'
-                      }`}
-                    >
-                      <span className="text-xl">{option.flag}</span>
-                      <div className="flex-1">
-                        <div className="font-medium">{option.code}</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">{option.name}</div>
-                      </div>
-                      {option.code === value && <Check style={{ fontSize: 16 }} />}
-                    </button>
-                  ))
-                ) : (
-                  <div className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
-                    No currencies found
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-/** Package Card Component */
+/** Package Card Component - Dynamic from Database */
 function PackageCard({
-  pkg,
+  bundle,
+  allServices,
   currency,
   rates,
   selected,
   onSelect,
 }: {
-  pkg: typeof PRICING_PACKAGES[number];
+  bundle: BundleWithItems;
+  allServices: ServiceRow[];
   currency: Currency;
   rates: Record<string, number>;
   selected: boolean;
   onSelect: () => void;
 }) {
+  const [showAll, setShowAll] = React.useState(false);
+  const bundleServiceKeys = new Set(bundle.items.map(it => it.service_key));
+  
+  // Get accent color based on bundle position (rotating colors)
+  const accents = ['violet', 'blue', 'amber'] as const;
+  const accentIdx = Math.abs(bundle.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % accents.length;
+  const accent = accents[accentIdx];
+  
   const accentColors = {
     blue: {
       border: "border-blue-400 dark:border-blue-500",
       bg: "bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/40 dark:to-cyan-900/30",
-      badge: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
       check: "border-blue-500 bg-blue-500",
       hover: "hover:border-blue-300 dark:hover:border-blue-500",
     },
     violet: {
       border: "border-violet-400 dark:border-violet-500",
       bg: "bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/40 dark:to-purple-900/30",
-      badge: "bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300",
       check: "border-violet-500 bg-violet-500",
       hover: "hover:border-violet-300 dark:hover:border-violet-500",
     },
-    gold: {
+    amber: {
       border: "border-amber-400 dark:border-amber-500",
       bg: "bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/40 dark:to-orange-900/30",
-      badge: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
       check: "border-amber-500 bg-amber-500",
       hover: "hover:border-amber-300 dark:hover:border-amber-500",
     },
   };
 
-  const colors = accentColors[pkg.accent];
+  const colors = accentColors[accent];
+  
+  // Display services: show first 5 or all
+  const displayedServices = showAll ? allServices : allServices.slice(0, 5);
+  const hasMore = allServices.length > 5;
 
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={[
-        "group relative flex flex-col gap-4 p-6 rounded-2xl border-2 text-left",
-        "transition-all duration-300 ease-out hover:scale-[1.02]",
-        selected
-          ? `${colors.border} ${colors.bg} shadow-xl`
-          : `border-slate-300 dark:border-slate-600 bg-white/95 dark:bg-slate-900/95 ${colors.hover}`,
-      ].join(" ")}
-      onMouseDown={(e) => e.preventDefault()}
-    >
-      {pkg.badge && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className={`px-3 py-1 text-xs font-bold rounded-full ${colors.badge}`}>
-            {pkg.badge}
-          </span>
-        </div>
-      )}
-
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1">
-          <h4 className="font-bold text-lg text-slate-900 dark:text-white mb-2">
-            {pkg.label}
-          </h4>
-          <p className="text-3xl font-bold text-slate-900 dark:text-white">
-            {formatPrice(pkg.priceUSD, currency, rates)}
-          </p>
-          {currency !== 'USD' && (
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              ${pkg.priceUSD}
+    <div className="flex flex-col">
+      <button
+        type="button"
+        onClick={onSelect}
+        className={[
+          "group relative flex flex-col gap-4 p-6 rounded-2xl border-2 text-left",
+          "transition-all duration-300 ease-out hover:scale-[1.02]",
+          selected
+            ? `${colors.border} ${colors.bg} shadow-xl`
+            : `border-slate-300 dark:border-slate-600 bg-white/95 dark:bg-slate-900/95 ${colors.hover}`,
+        ].join(" ")}
+        onMouseDown={(e) => e.preventDefault()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1">
+            <h4 className="font-bold text-lg text-slate-900 dark:text-white mb-2">
+              {bundle.label}
+            </h4>
+            <p className="text-3xl font-bold text-slate-900 dark:text-white">
+              {formatPrice(Number(bundle.bundle_price), currency, rates)}
             </p>
-          )}
-        </div>
-        <div className="shrink-0">
-          <div className={[
-            "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all",
-            selected
-              ? colors.check
-              : "border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-900"
-          ].join(" ")}>
-            {selected && <Check className="text-white" style={{ fontSize: 16 }} />}
+            {currency !== 'USD' && (
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                ${Number(bundle.bundle_price)}
+              </p>
+            )}
+          </div>
+          <div className="shrink-0">
+            <div className={[
+              "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all",
+              selected
+                ? colors.check
+                : "border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-900"
+            ].join(" ")}>
+              {selected && <Check className="text-white" style={{ fontSize: 16 }} />}
+            </div>
           </div>
         </div>
-      </div>
 
-      <ul className="space-y-2">
-        {pkg.features.map((feature, idx) => (
-          <li key={idx} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-            <Check className="text-green-600 dark:text-green-400 shrink-0" style={{ fontSize: 16 }} />
-            <span>{feature}</span>
-          </li>
-        ))}
-      </ul>
-    </button>
+        <div className="space-y-1.5">
+          {displayedServices.map((service) => {
+            const isIncluded = bundleServiceKeys.has(service.service_key);
+            return (
+              <div key={service.id} className="flex items-center gap-2 text-sm">
+                {isIncluded ? (
+                  <Check className="text-green-600 dark:text-green-400 shrink-0" style={{ fontSize: 16 }} />
+                ) : (
+                  <svg className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                )}
+                <span className={isIncluded ? "text-slate-700 dark:text-slate-300" : "text-slate-400 dark:text-slate-500"}>
+                  {service.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </button>
+      
+      {hasMore && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowAll(!showAll);
+          }}
+          className="mt-2 text-sm text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 font-medium flex items-center justify-center gap-1 transition-colors"
+        >
+          {showAll ? (
+            <>
+              Show less
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              </svg>
+            </>
+          ) : (
+            <>
+              Show more ({allServices.length - 5} more)
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </>
+          )}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -416,7 +299,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
 
   const [services, setServices] = useState<ServiceRow[]>([]);
   const [bundles, setBundles] = useState<BundleWithItems[]>([]);
-  const [pricingPackages] = useState(PRICING_PACKAGES);
+  const [individualServicesExpanded, setIndividualServicesExpanded] = useState(false);
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [saving, setSaving] = useState(false);
@@ -893,7 +776,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   };
 
   /** ---------- UI SMALL PARTS ---------- */
-  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  const Section = ({ title, children }: { title: string | React.ReactNode; children: React.ReactNode }) => (
     <section className="space-y-2">
       <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{title}</h3>
       {children}
@@ -1147,123 +1030,90 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                 <div className="space-y-6">
                   {/* Currency Selector - styled like PageClient */}
                   <div className="flex justify-end">
-                    <CurrencyDropdownEnhanced
+                    <CurrencyDropdownAdvanced
                       value={currency as Currency}
                       onChange={(c) => {
                         // Currency is managed by CurrencyContext globally
                       }}
                       loading={ratesLoading}
+                      variant="compact"
                     />
                   </div>
 
-                  {/* Pricing Packages - Prominent Display */}
-                  <Section title="Pricing Packages">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                      {pricingPackages.map((pkg) => (
-                        <PackageCard
-                          key={pkg.key}
-                          pkg={pkg}
-                          currency={currency}
-                          rates={rates}
-                          selected={selectedBundleId === pkg.key}
-                          onSelect={() => {
-                            if (scrollRef.current) savedScrollTopRef.current = scrollRef.current.scrollTop;
-                            if (selectedBundleId === pkg.key) {
-                              setSelectedBundleId(null);
-                              // Deselect package services
-                              setSelectedServices(new Set());
-                            } else {
-                              setSelectedBundleId(pkg.key);
-                              // Auto-select included services
-                              setSelectedServices(new Set(pkg.includes));
-                            }
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </Section>
-
-                  {/* Database Custom Bundles */}
+                  {/* Bundles - Dynamic from Database */}
                   {bundles.length > 0 && (
-                    <Section title="Custom Bundles">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {bundles.map((b) => {
-                          const active = selectedBundleId === b.id;
-                          const sumNormal = b.items.reduce((acc, it) => acc + defaultPriceOf(it.service_key), 0);
-                          const saved = Math.max(sumNormal - Number(b.bundle_price), 0);
-
-                          return (
-                            <button
-                              type="button"
-                              key={b.id}
-                              onClick={() => setBundleWithPreserve(active ? null : b.id)}
-                              className={[
-                                "group relative flex flex-col gap-4 p-5 rounded-xl border-2 text-left",
-                                "transition-all duration-200",
-                                active
-                                  ? "border-indigo-400 bg-indigo-50/90 dark:bg-indigo-900/30 shadow-lg"
-                                  : "border-slate-300 dark:border-slate-600 bg-white/95 dark:bg-slate-900/95 hover:border-indigo-300",
-                              ].join(" ")}
-                              onMouseDown={(e) => e.preventDefault()}
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="flex-1">
-                                  <h4 className="font-semibold text-slate-900 dark:text-white mb-2">{b.label}</h4>
-                                  {b.note && <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{b.note}</p>}
-                                  <p className="text-xl font-bold text-slate-900 dark:text-white">
-                                    {formatPrice(Number(b.bundle_price), currency, rates)}
-                                  </p>
-                                  {currency !== 'USD' && (
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                                      (${Number(b.bundle_price)})
-                                    </p>
-                                  )}
-                                  <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">
-                                    Save {formatPrice(saved, currency, rates)}
-                                  </p>
-                                </div>
-                                <div className="shrink-0">
-                                  <div className={[
-                                    "w-5 h-5 rounded-lg border-2 flex items-center justify-center",
-                                    active
-                                      ? "border-indigo-500 bg-indigo-500"
-                                      : "border-slate-400 dark:border-slate-500"
-                                  ].join(" ")}>
-                                    {active && <Check className="text-white" style={{ fontSize: 14 }} />}
-                                  </div>
-                                </div>
-                              </div>
-                              {b.items.length > 0 && (
-                                <div className="flex flex-wrap gap-2">
-                                  {b.items.map((it) => (
-                                    <span
-                                      key={it.id}
-                                      className="px-2 py-1 text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded"
-                                    >
-                                      {it.label}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                            </button>
-                          );
-                        })}
+                    <Section title="Bundles">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        {bundles.map((bundle) => (
+                          <PackageCard
+                            key={bundle.id}
+                            bundle={bundle}
+                            allServices={services}
+                            currency={currency}
+                            rates={rates}
+                            selected={selectedBundleId === bundle.id}
+                            onSelect={() => {
+                              if (scrollRef.current) savedScrollTopRef.current = scrollRef.current.scrollTop;
+                              if (selectedBundleId === bundle.id) {
+                                setSelectedBundleId(null);
+                                setSelectedServices(new Set());
+                              } else {
+                                setSelectedBundleId(bundle.id);
+                                // Auto-select included services
+                                const serviceKeys = bundle.items.map(it => it.service_key);
+                                setSelectedServices(new Set(serviceKeys));
+                              }
+                            }}
+                          />
+                        ))}
                       </div>
                     </Section>
                   )}
 
-                  {/* Individual Services */}
-                  <Section title="Individual Services">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {services.filter((s) => {
-                        // Filter out services that are included in the selected bundle
-                        if (!selectedBundle) return true;
-                        const bundleServiceKeys = selectedBundle.items.map(it => it.service_key);
-                        return !bundleServiceKeys.includes(s.service_key);
-                      }).map((s) => (
-                        <ServiceCardFromDb key={s.id} s={s} />
-                      ))}
-                    </div>
+                  {/* Individual Services - Collapsible */}
+                  <Section 
+                    title={
+                      <button
+                        type="button"
+                        onClick={() => setIndividualServicesExpanded(!individualServicesExpanded)}
+                        className="flex items-center justify-between w-full group"
+                      >
+                        <span>Individual Services</span>
+                        <motion.svg
+                          className="w-5 h-5 text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300"
+                          animate={{ rotate: individualServicesExpanded ? 180 : 0 }}
+                          transition={{ duration: 0.2 }}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </motion.svg>
+                      </button>
+                    }
+                  >
+                    <AnimatePresence>
+                      {individualServicesExpanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">
+                            {services.filter((s) => {
+                              // Filter out services that are included in the selected bundle
+                              if (!selectedBundle) return true;
+                              const bundleServiceKeys = selectedBundle.items.map(it => it.service_key);
+                              return !bundleServiceKeys.includes(s.service_key);
+                            }).map((s) => (
+                              <ServiceCardFromDb key={s.id} s={s} />
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </Section>
                 </div>
               )}

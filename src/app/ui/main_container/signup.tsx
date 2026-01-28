@@ -164,7 +164,13 @@ export function SignUpSection(): React.JSX.Element {
           captchaToken: captchaToken ?? undefined, 
         },
       });
-      if (error) throw error;
+      if (error) {
+        // Handle specific error for existing user
+        if (error.message.includes('already registered') || error.message.includes('already exists')) {
+          throw new Error('This email is already registered. Please login instead.');
+        }
+        throw error;
+      }
 
       if (!data.session) {
         setMsg("We’ve sent a confirmation link to your email. Please verify to continue.");        setEmailSent(true); // Mark email as sent        resetCaptcha(); 
@@ -689,53 +695,8 @@ export function SignUpSection(): React.JSX.Element {
               </div>
             )}
 
-            {emailRe.test(email) && (
-              <motion.button
-                type="button"
-                onClick={handleResend}
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.98 }}
-                disabled={resendLoading || resendCooldown > 0}
-                aria-disabled={resendLoading || resendCooldown > 0}
-                className="
-                  relative group mt-3 inline-flex w-full items-center justify-center gap-2
-                  rounded-2xl border border-black/10 dark:border-white/10
-                  bg-white/90 dark:bg-white/[0.06]
-                  px-4 py-3 text-[15px] font-semibold
-                  text-neutral-900 dark:text-white
-                  shadow-sm transition-all
-                  hover:bg-white hover:shadow-[0_12px_30px_-12px_rgba(0,0,0,0.35)]
-                  focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/50
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                "
-              >
-                <span
-                  className="pointer-events-none absolute inset-0 rounded-2xl
-                            bg-gradient-to-r from-indigo-600/0 via-violet-600/0 to-fuchsia-600/0
-                            opacity-0 transition-opacity duration-200 group-hover:opacity-10"
-                />
-                {resendLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCcw className="h-4 w-4" />
-                )}
-                <span className="relative z-10">
-                  {resendLoading
-                    ? "Sending..."
-                    : resendCooldown > 0
-                      ? `Resend in ${resendCooldown}s`
-                      : "Resend confirmation email"}
-                </span>
-              </motion.button>
-            )}
-
-            {emailRe.test(email) && (
-              <p className="mt-2 text-center text-[12px] text-neutral-600 dark:text-neutral-400">
-                We’ll send it to <span className="font-medium">{email}</span>.
-              </p>
-            )}
-
             <div className="mt-6 flex items-center gap-3">
+
               <div className="h-px flex-1 bg-black/10 dark:bg-white/10" />
               <span className="text-[12px] text-neutral-500 whitespace-nowrap">
                 or continue with
@@ -767,12 +728,24 @@ export function SignUpSection(): React.JSX.Element {
               </motion.button>
             </div>
 
-            <p className="mt-6 text-center text-[13px] text-neutral-700 dark:text-neutral-300">
-              Already have an account?{" "}
-              <a href="/login" className="font-semibold text-indigo-700 hover:text-indigo-800 dark:text-indigo-300 dark:hover:text-indigo-200 underline">
-                Log in
-              </a>
-            </p>
+            <div className="mt-6 space-y-2">
+              <p className="text-center text-[13px] text-neutral-700 dark:text-neutral-300">
+                Already have an account?{" "}
+                <a href="/login" className="font-semibold text-indigo-700 hover:text-indigo-800 dark:text-indigo-300 dark:hover:text-indigo-200 underline">
+                  Log in
+                </a>
+              </p>
+              <p className="text-center text-[11px] text-neutral-500 dark:text-neutral-400">
+                Didn&apos;t receive confirmation email?{" "}
+                <button
+                  type="button"
+                  onClick={() => setEmailSent(true)}
+                  className="font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 underline"
+                >
+                  Resend here
+                </button>
+              </p>
+            </div>
           </form>
         </div>
       </motion.div>

@@ -284,7 +284,7 @@ export function SignUpSection(): React.JSX.Element {
                 Check your email
               </h1>
               <p className="text-sm text-neutral-600 dark:text-neutral-300">
-                We've sent a confirmation link to
+                We&apos;ve sent a confirmation link to
               </p>
               <p className="text-base font-semibold text-indigo-600 dark:text-indigo-400 mt-1">
                 {email}
@@ -342,7 +342,7 @@ export function SignUpSection(): React.JSX.Element {
                   <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-semibold text-xs mt-0.5">
                     3
                   </div>
-                  <p>You'll be redirected to login</p>
+                  <p>You&apos;ll be redirected to login</p>
                 </div>
               </div>
 
@@ -394,7 +394,7 @@ export function SignUpSection(): React.JSX.Element {
 
               {/* Helper Text */}
               <p className="mt-4 text-center text-xs text-neutral-500 dark:text-neutral-400">
-                Didn't receive the email? Check your spam folder or click resend.
+                Didn&apos;t receive the email? Check your spam folder or click resend.
               </p>
 
               {/* Divider */}

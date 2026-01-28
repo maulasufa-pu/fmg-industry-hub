@@ -123,6 +123,7 @@ function PackageCard({
   rates,
   selected,
   onSelect,
+  showAll,
 }: {
   bundle: BundleWithItems;
   allServices: ServiceRow[];
@@ -130,8 +131,8 @@ function PackageCard({
   rates: Record<string, number>;
   selected: boolean;
   onSelect: () => void;
+  showAll: boolean;
 }) {
-  const [showAll, setShowAll] = React.useState(false);
   const bundleServiceKeys = new Set(bundle.items.map(it => it.service_key));
   
   // Get accent color based on bundle position (rotating colors)
@@ -162,9 +163,8 @@ function PackageCard({
 
   const colors = accentColors[accent];
   
-  // Display services: show first 5 or all
-  const displayedServices = showAll ? allServices : allServices.slice(0, 5);
-  const hasMore = allServices.length > 5;
+  // Display services: show first 10 or all
+  const displayedServices = showAll ? allServices : allServices.slice(0, 10);
 
   return (
     <div className="flex flex-col">
@@ -206,7 +206,7 @@ function PackageCard({
           </div>
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           {displayedServices.map((service) => {
             const isIncluded = bundleServiceKeys.has(service.service_key);
             return (
@@ -226,33 +226,6 @@ function PackageCard({
           })}
         </div>
       </button>
-      
-      {hasMore && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowAll(!showAll);
-          }}
-          className="mt-2 text-sm text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 font-medium flex items-center justify-center gap-1 transition-colors"
-        >
-          {showAll ? (
-            <>
-              Show less
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-              </svg>
-            </>
-          ) : (
-            <>
-              Show more ({allServices.length - 5} more)
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </>
-          )}
-        </button>
-      )}
     </div>
   );
 }
@@ -295,7 +268,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   const supabase = useMemo(() => getSupabaseClient(), []);
   const router = useRouter();
   const mountedRef = useRef<boolean>(true);
-  const { currency, rates, loading: ratesLoading } = useCurrency();
+  const { currency, setCurrency, rates, loading: ratesLoading } = useCurrency();
 
   const [services, setServices] = useState<ServiceRow[]>([]);
   const [bundles, setBundles] = useState<BundleWithItems[]>([]);
@@ -909,7 +882,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
       <div className="w-full max-w-none sm:max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-2 sm:mx-0">
         <div
           className={[
-            "transform transition-all duration-500 ease-out",
+            "transform transition-opacity transition-transform duration-500 ease-out",
             open 
               ? "translate-y-0 scale-100 opacity-100" 
               : "translate-y-8 sm:translate-y-0 scale-95 sm:scale-95 opacity-0",
@@ -978,6 +951,19 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                     <div className="text-sm text-white/70 hidden md:block">
                       {step === 1 ? "Services & Pricing" : step === 2 ? "Project Details" : "Review & Submit"}
                     </div>
+                    {step === 1 && (
+                      <div className="hidden sm:block">
+                        <CurrencyDropdownAdvanced
+                          value={currency as Currency}
+                          onChange={(c) => {
+                            setCurrency(c);
+                          }}
+                          loading={ratesLoading}
+                          variant="minimal"
+                          size="sm"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1028,12 +1014,12 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
             <div className="max-w-none space-y-8 pb-8">
               {step === 1 && (
                 <div className="space-y-6">
-                  {/* Currency Selector - styled like PageClient */}
-                  <div className="flex justify-end">
+                  {/* Mobile Currency Dropdown */}
+                  <div className="flex justify-end sm:hidden">
                     <CurrencyDropdownAdvanced
                       value={currency as Currency}
                       onChange={(c) => {
-                        // Currency is managed by CurrencyContext globally
+                        setCurrency(c);
                       }}
                       loading={ratesLoading}
                       variant="compact"
@@ -1041,34 +1027,91 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                   </div>
 
                   {/* Bundles - Dynamic from Database */}
-                  {bundles.length > 0 && (
-                    <Section title="Bundles">
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        {bundles.map((bundle) => (
-                          <PackageCard
-                            key={bundle.id}
-                            bundle={bundle}
-                            allServices={services}
-                            currency={currency}
-                            rates={rates}
-                            selected={selectedBundleId === bundle.id}
-                            onSelect={() => {
-                              if (scrollRef.current) savedScrollTopRef.current = scrollRef.current.scrollTop;
-                              if (selectedBundleId === bundle.id) {
-                                setSelectedBundleId(null);
-                                setSelectedServices(new Set());
-                              } else {
-                                setSelectedBundleId(bundle.id);
-                                // Auto-select included services
-                                const serviceKeys = bundle.items.map(it => it.service_key);
-                                setSelectedServices(new Set(serviceKeys));
-                              }
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </Section>
-                  )}
+                  {bundles.length > 0 && (() => {
+                    const [showAllBundles, setShowAllBundles] = React.useState(false);
+                    // Define service order according to user specification
+                    const serviceOrder = [
+                      'songwriting',
+                      'composition',
+                      'arrangement',
+                      'editing',
+                      'digital_audio_production',
+                      'mixing',
+                      'mastering',
+                      'vocal_directing',
+                      'recording_studio',
+                      'music_video_directing',
+                      'distribution_administration',
+                      'artist_management',
+                      'social_media_management'
+                    ];
+                    // Sort services according to custom order
+                    const sortedServices = [...services].sort((a, b) => {
+                      const indexA = serviceOrder.indexOf(a.service_key);
+                      const indexB = serviceOrder.indexOf(b.service_key);
+                      // If not in order list, push to end
+                      if (indexA === -1 && indexB === -1) return 0;
+                      if (indexA === -1) return 1;
+                      if (indexB === -1) return -1;
+                      return indexA - indexB;
+                    });
+                    const hasMoreServices = services.length > 10;
+                    
+                    return (
+                      <Section title="Bundles">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                          {bundles.map((bundle) => (
+                            <PackageCard
+                              key={bundle.id}
+                              bundle={bundle}
+                              allServices={sortedServices}
+                              currency={currency}
+                              rates={rates}
+                              selected={selectedBundleId === bundle.id}
+                              showAll={showAllBundles}
+                              onSelect={() => {
+                                if (scrollRef.current) savedScrollTopRef.current = scrollRef.current.scrollTop;
+                                if (selectedBundleId === bundle.id) {
+                                  setSelectedBundleId(null);
+                                  setSelectedServices(new Set());
+                                } else {
+                                  setSelectedBundleId(bundle.id);
+                                  // Auto-select included services
+                                  const serviceKeys = bundle.items.map(it => it.service_key);
+                                  setSelectedServices(new Set(serviceKeys));
+                                }
+                              }}
+                            />
+                          ))}
+                        </div>
+                        {hasMoreServices && (
+                          <div className="flex justify-center mt-4">
+                            <button
+                              type="button"
+                              onClick={() => setShowAllBundles(!showAllBundles)}
+                              className="text-sm text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 font-medium flex items-center gap-1 transition-colors"
+                            >
+                              {showAllBundles ? (
+                                <>
+                                  Show less
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                </>
+                              ) : (
+                                <>
+                                  Show {services.length - 10} more
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
+                      </Section>
+                    );
+                  })()}
 
                   {/* Individual Services - Collapsible */}
                   <Section 

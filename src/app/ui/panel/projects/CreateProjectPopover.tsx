@@ -348,7 +348,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
         currency
       };
       saveToCookie(draftData);
-      console.log('Draft saved to cookie:', draftData);
     }, 1000); 
   }, [songTitle, artistName, albumTitle, genre, subGenre, description, startDate, deadline, deliveryFormat, referenceLinks, selectedServices, selectedBundleId, customPrices, paymentPlan, ndaRequired, preferredEngineerId, step, currency]);
 
@@ -559,7 +558,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     
     try {
       const draft = loadFromCookie();
-      console.log('Loading draft from cookie:', draft);
       
       if (Object.keys(draft).length > 0) {
         // Load form data from cookie
@@ -584,12 +582,9 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
         
         // Set lastSaved to indicate draft was restored
         setLastSaved(new Date());
-        console.log('Draft restored successfully');
-      } else {
-        console.log('No draft found in cookie');
       }
     } catch (err) {
-      console.error('Failed to load draft:', err);
+      //console.warn('Failed to load draft:', err);
     } finally {
       setIsLoadingDraft(false);
     }
@@ -599,13 +594,13 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   useEffect(() => {
     if (!open || isLoadingDraft) return;
     debouncedSave();
-  }, [open, isLoadingDraft, debouncedSave]);
+  }, [open, isLoadingDraft, debouncedSave, songTitle, artistName, albumTitle, genre, subGenre, description, startDate, deadline, deliveryFormat, referenceLinks, selectedServices, selectedBundleId, customPrices, paymentPlan, ndaRequired, preferredEngineerId, step, currency]);
 
   // Auto-save to database when data changes (slower, persistent)
   useEffect(() => {
     if (!open || isLoadingDraft) return;
     debouncedDbSave();
-  }, [open, isLoadingDraft, debouncedDbSave]);
+  }, [open, isLoadingDraft, debouncedDbSave, songTitle, artistName, selectedServices, selectedBundleId, description, startDate, deadline, paymentPlan]);
 
   // Clear draft on successful submit
   const clearDraft = useCallback(() => {

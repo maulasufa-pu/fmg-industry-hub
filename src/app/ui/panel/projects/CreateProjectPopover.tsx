@@ -348,6 +348,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
         currency
       };
       saveToCookie(draftData);
+      console.log('Draft saved to cookie:', draftData);
     }, 1000); 
   }, [songTitle, artistName, albumTitle, genre, subGenre, description, startDate, deadline, deliveryFormat, referenceLinks, selectedServices, selectedBundleId, customPrices, paymentPlan, ndaRequired, preferredEngineerId, step, currency]);
 
@@ -558,6 +559,8 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     
     try {
       const draft = loadFromCookie();
+      console.log('Loading draft from cookie:', draft);
+      
       if (Object.keys(draft).length > 0) {
         // Load form data from cookie
         if (draft.songTitle) setSongTitle(draft.songTitle);
@@ -577,16 +580,20 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
         if (draft.ndaRequired !== undefined) setNdaRequired(draft.ndaRequired);
         if (draft.preferredEngineerId) setPreferredEngineerId(draft.preferredEngineerId);
         if (draft.currentStep) setStep(draft.currentStep as 1 | 2 | 3);
+        if (draft.currency) setCurrency(draft.currency as Currency);
         
         // Set lastSaved to indicate draft was restored
         setLastSaved(new Date());
+        console.log('Draft restored successfully');
+      } else {
+        console.log('No draft found in cookie');
       }
     } catch (err) {
-      //console.warn('Failed to load draft:', err);
+      console.error('Failed to load draft:', err);
     } finally {
       setIsLoadingDraft(false);
     }
-  }, [open]);
+  }, [open, setCurrency]);
 
   // Auto-save to cookie when data changes (fast, local)
   useEffect(() => {

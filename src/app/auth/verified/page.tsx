@@ -110,7 +110,7 @@ export default function EmailVerifiedPage() {
                 </div>
                 <div className="flex-1 text-sm">
                   <p className="font-medium text-neutral-900 dark:text-white mb-1">
-                    You're all set!
+                    You&apos;re all set!
                   </p>
                   <p className="text-neutral-600 dark:text-neutral-400">
                     You can now access all features of your account and start creating amazing music.

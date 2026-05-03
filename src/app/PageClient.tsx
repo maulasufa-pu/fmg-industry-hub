@@ -331,22 +331,25 @@ const wordVariants: Variants = {
 
 function SplitHeadline({ text }: { text: string }) {
   const words = React.useMemo(() => text.split(" "), [text]);
+
   return (
     <h1 className="mx-auto max-w-5xl text-balance text-center text-5xl font-bold leading-tight tracking-tight sm:text-6xl">
       {words.map((w, i) => (
-        <motion.span
-          key={i}
-          className="inline-block"
-          variants={wordVariants}
-          custom={i}
-          initial={false}            // <— penting agar SSR & client snapshot sama
-          whileInView="visible"
-          viewport={{ once: true, margin: "-10%" }}
-        >
-          <span className="mr-2 inline-block bg-gradient-to-br from-black via-indigo-700 to-indigo-400 bg-clip-text text-transparent dark:from-white dark:via-indigo-300 dark:to-indigo-500">
-            {w}
-          </span>
-        </motion.span>
+        <React.Fragment key={`${w}-${i}`}>
+          <motion.span
+            className="inline-block"
+            variants={wordVariants}
+            custom={i}
+            initial={false} // penting agar SSR & client snapshot sama
+            whileInView="visible"
+            viewport={{ once: true, margin: "-10%" }}
+          >
+            <span className="inline-block bg-gradient-to-br from-black via-indigo-700 to-indigo-400 bg-clip-text text-transparent dark:from-white dark:via-indigo-300 dark:to-indigo-500">
+              {w}
+            </span>
+          </motion.span>
+          {i < words.length - 1 ? " " : null}
+        </React.Fragment>
       ))}
     </h1>
   );
@@ -652,6 +655,19 @@ function Hero() {
 
           <Parallax speed={0.12}>
             <SplitHeadline text="Beyond Sound. Built-in Intelligence." />
+          </Parallax>
+
+          <Parallax speed={0.13}>
+            <motion.p
+              variants={fadeUp}
+              custom={3}
+              initial={false}
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="mt-4 max-w-xl text-center text-balance text-lg font-medium leading-relaxed text-black dark:text-white"
+            >
+              We help you create professional songs from start to release.
+            </motion.p>
           </Parallax>
 
           {/* Deskripsi */}

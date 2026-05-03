@@ -63,9 +63,16 @@ function TitleArtLayer(): React.JSX.Element {
 }
 
 function SplitHeadline({ text }: { text: string }): React.JSX.Element {
+  const words = text.split(" ");
+
   return (
     <h1 className="text-center text-3xl font-extrabold leading-tight tracking-tight text-black dark:text-white sm:text-4xl md:text-5xl">
-      {text}
+      {words.map((word, index) => (
+        <React.Fragment key={`${word}-${index}`}>
+          <span className="inline-block">{word}</span>
+          {index < words.length - 1 ? " " : null}
+        </React.Fragment>
+      ))}
     </h1>
   );
 }
@@ -110,6 +117,14 @@ export default function Hero(): React.JSX.Element {
           <motion.p
             variants={fadeUp}
             custom={2}
+            className="mt-3 max-w-xl text-center text-balance text-lg font-medium leading-relaxed text-black dark:text-white"
+          >
+            We help you create professional songs from start to release.
+          </motion.p>
+
+          <motion.p
+            variants={fadeUp}
+            custom={3}
             className="mt-5 max-w-2xl text-center text-balance text-base leading-relaxed text-black dark:text-white"
           >
             <b>FMG Universe</b> is a creative-technology ecosystem born from <b>Flemmo Music Global (FMG) Publishing</b>.

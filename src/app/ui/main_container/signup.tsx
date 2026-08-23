@@ -88,17 +88,6 @@ export function SignUpSection(): React.JSX.Element {
   const [captchaKey, setCaptchaKey] = useState<number>(0); // force re-mount on reset
   const siteKey: string = process.env.NEXT_PUBLIC_HCAPTCHA_SITEKEY ?? "";
 
-  const verifyCaptcha = async (token: string): Promise<boolean> => {
-    const res = await fetch("/api/verify-hcaptcha", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
-    });
-    if (!res.ok) return false;
-    const json: { ok: boolean } = await res.json();
-    return json.ok === true;
-  };
-
   const resetCaptcha = (): void => {
     setCaptchaToken(null);
     setCaptchaKey((k) => k + 1);
@@ -150,12 +139,6 @@ export function SignUpSection(): React.JSX.Element {
 
     setLoading(true);
     try {
-      const ok = await verifyCaptcha(captchaToken);
-      if (!ok) {
-        resetCaptcha();
-        throw new Error("Captcha verification failed. Please try again.");
-      }
-
       const supabase = getSupabaseClient();
       
       const { data, error } = await supabase.auth.signUp({
@@ -199,7 +182,7 @@ export function SignUpSection(): React.JSX.Element {
         throw new Error(m);
       }
 
-      router.replace(nextPath);
+      window.location.replace(withNext("/login", nextPath));
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Sign up failed");
       resetCaptcha();
@@ -220,9 +203,6 @@ export function SignUpSection(): React.JSX.Element {
 
     setResendLoading(true);
     try {
-      const ok = await verifyCaptcha(captchaToken);
-      if (!ok) throw new Error("Captcha verification failed. Please try again.");
-
       const supabase = getSupabaseClient();
       const { error } = await supabase.auth.resend({
         type: "signup",

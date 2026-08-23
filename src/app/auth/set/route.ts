@@ -30,7 +30,10 @@ export async function POST(req: NextRequest) {
     return resErr;
   }
 
-  const resOk = NextResponse.json({ ok: true });
+  const resOk = NextResponse.json(
+    { ok: true },
+    { headers: { "Cache-Control": "no-store, max-age=0" } },
+  );
   pending.forEach(c => resOk.cookies.set(c.name, c.value, c.options));
   return resOk;
 }

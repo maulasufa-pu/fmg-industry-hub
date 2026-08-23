@@ -16,7 +16,7 @@ type HashTokens = {
 };
 
 const DEBUG_PKCE = true;
-const RECOVERY_DEST = "/auth/callback?type=recovery"; 
+const RECOVERY_DEST = "/reset-password";
 
 function parseHash(): HashTokens {
   const raw = typeof window !== "undefined" ? window.location.hash : "";
@@ -80,9 +80,8 @@ export default function CallbackClient() {
     void (async () => {
       const supabase = getSupabaseClient();
       const url = new URL(window.location.href);
-      const next = safeInternalPath(
-        searchParams.get("next") || searchParams.get("redirectedFrom"),
-      );
+      const requestedNext = searchParams.get("next") || searchParams.get("redirectedFrom");
+      const next = safeInternalPath(requestedNext);
       const code = url.searchParams.get("code");
       const hash = parseHash();
       const flowType = url.searchParams.get("type") || hash.type;
@@ -120,7 +119,7 @@ export default function CallbackClient() {
         stripHash(flowType ? `type=${flowType}` : undefined);
         if (flowType === "recovery") window.location.replace(RECOVERY_DEST);
         else if (flowType === "signup") window.location.replace("/auth/verified");
-        else window.location.replace(next);
+        else window.location.replace(requestedNext ? withNext("/login", next) : "/login");
         return;
       }
 
@@ -130,7 +129,7 @@ export default function CallbackClient() {
       }
 
       dumpPkce("before-exchange");
-      const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
       if (error || !data.session) {
         fail("oauth");
         return;
@@ -151,7 +150,14 @@ export default function CallbackClient() {
         return;
       }
       stripHash();
-      window.location.replace(next);
+      const completedFlow = flowType || (data as typeof data & { redirectType?: string | null }).redirectType;
+      if (completedFlow === "recovery") {
+        window.location.replace(RECOVERY_DEST);
+      } else if (completedFlow === "signup") {
+        window.location.replace("/auth/verified");
+      } else {
+        window.location.replace(requestedNext ? withNext("/login", next) : "/login");
+      }
     })();
   }, [searchParams]);
 

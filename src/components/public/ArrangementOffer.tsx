@@ -4,9 +4,9 @@ import { ARRANGEMENT_ORDER_PATH, ARRANGEMENT_PORTFOLIO_PATH } from "@/lib/arrang
 
 const INCLUDED = [
   "Arrangement shaped around your melody, brief, genre, and references",
-  "Stereo preview, final WAV/MP3, instrumental, and consolidated stems",
-  "Two structured revision rounds within the agreed arrangement scope",
-  "Typical turnaround: 7–14 business days after brief and payment are confirmed",
+  "Preview, revision allowance, and final files stated in the approved scope",
+  "Timeline confirmed after FMG reviews the song and production requirements",
+  "Price taken from the selected service or package—not a promotional placeholder",
 ];
 
 export default function ArrangementOffer({ showInquiryLink = true }: { showInquiryLink?: boolean }) {
@@ -20,9 +20,9 @@ export default function ArrangementOffer({ showInquiryLink = true }: { showInqui
             <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-300">You bring the song, melody, chords, or voice-note guidance. FMG builds the musical structure and production direction. This is a paid service—we do not buy or scout your song through this flow.</p>
           </div>
           <div className="rounded-3xl border border-violet-200 bg-violet-50 p-6 dark:border-violet-800 dark:bg-violet-950/30">
-            <p className="text-sm text-slate-600 dark:text-slate-300">Arrangement starts at</p>
-            <p className="mt-1 text-4xl font-bold">USD 350</p>
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Final scope and IDR invoice are confirmed before production starts.</p>
+            <p className="text-sm text-slate-600 dark:text-slate-300">Arrangement pricing</p>
+            <p className="mt-1 text-3xl font-bold">Based on your selected service or package</p>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">You can review the catalog price before submitting. FMG confirms the final scope and invoice before production starts.</p>
           </div>
         </div>
 
@@ -49,9 +49,9 @@ export default function ArrangementOffer({ showInquiryLink = true }: { showInqui
 
         <section className="mt-16 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
           {[
-            [Clock3, "Timeline", "7–14 business days for a standard arrangement; complex/live instrumentation is quoted separately."],
-            [RefreshCw, "Revisions", "Two structured rounds are included. A direction change or new scope is re-quoted."],
-            [FileAudio, "Deliverables", "Final stereo WAV/MP3, instrumental, and consolidated stems unless the quote states otherwise."],
+            [Clock3, "Timeline", "The schedule is confirmed after FMG reviews the brief, instrumentation, and delivery needs."],
+            [RefreshCw, "Revisions", "The included revision allowance is stated in the selected service or approved scope."],
+            [FileAudio, "Deliverables", "Every final file and format is listed in the approved scope before production starts."],
             [WalletCards, "Payment", "Scope is reviewed first. Production starts after the issued invoice reaches the agreed payment milestone."],
           ].map(([Icon, title, copy]) => {
             const IconComponent = Icon as typeof Clock3;

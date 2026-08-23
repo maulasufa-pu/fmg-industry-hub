@@ -30,17 +30,6 @@ export default function ForgotPasswordPage(): React.JSX.Element {
 
   const valid = useMemo(() => emailRe.test(email), [email]);
 
-  const verifyCaptchaLocally = async (token: string): Promise<boolean> => {
-    const res = await fetch("/api/verify-hcaptcha", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
-    });
-    if (!res.ok) return false;
-    const json: { ok: boolean } = await res.json();
-    return json.ok === true;
-  };
-
   const resetCaptcha = () => {
     setCaptchaToken(null);
     setCaptchaKey((k) => k + 1); 
@@ -62,14 +51,8 @@ export default function ForgotPasswordPage(): React.JSX.Element {
 
     setLoading(true);
     try {
-      const localOk = await verifyCaptchaLocally(captchaToken);
-      if (!localOk) {
-        resetCaptcha();
-        throw new Error("Captcha verification failed. Please try again.");
-      }
-
       const supabase = getSupabaseClient();
-      const redirectTo = `${getPublicOrigin()}/auth/callback`;
+      const redirectTo = `${getPublicOrigin()}/auth/callback?type=recovery`;
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo,

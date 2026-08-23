@@ -35,7 +35,7 @@ export async function proxy(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   let isAdmin = false;
-  if (user && pathname.startsWith("/admin")) {
+  if (user && (pathname.startsWith("/admin") || pathname === "/login")) {
     const ownerEmails = (process.env.OWNER_EMAILS ?? "")
       .split(",")
       .map((email) => email.trim().toLowerCase())
@@ -93,12 +93,15 @@ export async function proxy(req: NextRequest) {
 
   if (pathname === "/login" && user) {
     const nextParam = req.nextUrl.searchParams.get("next") ?? "";
-    if (nextParam.startsWith("/client") || nextParam.startsWith("/admin")) {
+    if (nextParam.startsWith("/admin") && !isAdmin) {
+      return withCookies(NextResponse.redirect(new URL("/client/dashboard?error=forbidden", origin)));
+    }
+    if (nextParam.startsWith("/client") || (isAdmin && nextParam.startsWith("/admin"))) {
       try {
         return withCookies(NextResponse.redirect(new URL(nextParam, origin)));
       } catch { }
     }
-    return withCookies(NextResponse.redirect(new URL("/client/dashboard", origin)));
+    return withCookies(NextResponse.redirect(new URL(isAdmin ? "/admin/dashboard" : "/client/dashboard", origin)));
   }
 
   return withCookies(NextResponse.next());

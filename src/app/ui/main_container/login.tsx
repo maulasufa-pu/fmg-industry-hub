@@ -51,9 +51,23 @@ export const LoginSection = (): React.JSX.Element => {
 
   const router = useRouter();
   const qp = useSearchParams();
-  const nextPath = safeInternalPath(qp.get("next") || qp.get("redirectedFrom"));
+  const requestedNext = qp.get("next") || qp.get("redirectedFrom");
+  const nextPath = safeInternalPath(requestedNext);
   const msg = qp.get("m");
-  const [, setSocialLoading] = useState(false);
+  const callbackError = qp.get("err");
+  const [socialLoading, setSocialLoading] = useState(false);
+
+  useEffect(() => {
+    if (!callbackError) return;
+    const messages: Record<string, string> = {
+      oauth: "Google sign-in could not be completed. Please try again.",
+      setcookie: "Your account was verified, but the session could not be saved. Please try again.",
+      "hash-setsession": "This sign-in link is invalid or has expired.",
+      "hash-setcookie": "Your account was verified, but the session could not be saved. Please try again.",
+      nocode: "This sign-in link is invalid or has expired.",
+    };
+    setErr(messages[callbackError] ?? "Sign-in could not be completed. Please try again.");
+  }, [callbackError]);
 
   useEffect(() => {
     const saved = typeof window !== "undefined" ? localStorage.getItem("remember_email") : null;
@@ -108,7 +122,7 @@ export const LoginSection = (): React.JSX.Element => {
 
       const resp = await fetch("/auth/set", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
         body: JSON.stringify({
           access_token: session.access_token,
           refresh_token: session.refresh_token,
@@ -123,7 +137,7 @@ export const LoginSection = (): React.JSX.Element => {
       if (rememberMe) localStorage.setItem("remember_email", email);
       else localStorage.removeItem("remember_email");
 
-      router.replace(nextPath);
+      window.location.replace(requestedNext ? withNext("/login", nextPath) : "/login");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Login failed");
       resetCaptcha();
@@ -353,6 +367,7 @@ export const LoginSection = (): React.JSX.Element => {
               <motion.button
                 type="button"
                 onClick={() => handleSocialLogin("google")}
+                disabled={socialLoading}
                 aria-label="Log in with Google"
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.98 }}
@@ -368,8 +383,12 @@ export const LoginSection = (): React.JSX.Element => {
                 "
               >
                 <span className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-indigo-600/0 via-violet-600/0 to-fuchsia-600/0 opacity-0 transition-opacity duration-200 group-hover:opacity-10" />
-                <Google className="transition-transform duration-200 group-hover:scale-110 group-active:scale-95" />
-                Continue with Google
+                {socialLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Google className="transition-transform duration-200 group-hover:scale-110 group-active:scale-95" />
+                )}
+                {socialLoading ? "Connecting to Google…" : "Continue with Google"}
               </motion.button>
             </div>
 

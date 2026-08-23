@@ -22,7 +22,7 @@ test("public sales routes, consent, accessibility, and hydration stay healthy", 
   await expect(page.getByRole("heading", { name: /not found/i })).toBeVisible();
 
   await page.goto("/portfolio?work=arrangement");
-  await expect(page.getByRole("heading", { name: /arrangement case studies/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /our portfolio/i })).toBeVisible();
   await page.goto("/contact");
   await expect(page.getByRole("heading").first()).toBeVisible();
 });

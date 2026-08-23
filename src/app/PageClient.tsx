@@ -677,7 +677,7 @@ function Hero() {
               viewport={{ once: true }}
               className="mt-5 max-w-2xl text-center text-balance text-base leading-relaxed text-black dark:text-white"
             >
-              Arrangement starts at <b>USD 350</b>, typically takes <b>7–14 business days</b>, and includes <b>two structured revision rounds</b>. This is a paid creative service: FMG does not buy or acquire your song through this order.
+              This is a paid arrangement service—not a song submission. Price, timeline, revisions, and final files follow the service or package you select and are confirmed before production starts.
             </motion.p>
           </Parallax>
 
@@ -720,10 +720,10 @@ function Hero() {
 
 function ArrangementSalesIntro() {
   const facts = [
-    ["Starting price", "USD 350"],
-    ["Typical timeline", "7–14 business days"],
-    ["Included revisions", "2 structured rounds"],
-    ["Final delivery", "WAV/MP3, instrumental & stems"],
+    ["Price", "Shown from the service catalog"],
+    ["Timeline", "Confirmed for your project scope"],
+    ["Revisions", "Defined before production starts"],
+    ["Final delivery", "Listed in the approved scope"],
   ];
   return (
     <section className="mx-auto max-w-6xl px-4 py-14 sm:py-20">
@@ -1896,7 +1896,6 @@ export default function LandingPage() {
     provider: { "@type": "Organization", name: siteConfig.name, url: siteConfig.url },
     areaServed: { "@type": "Country", name: "Indonesia" },
     availableChannel: { "@type": "ServiceChannel", serviceUrl: `${siteConfig.url}${ARRANGEMENT_ORDER_PATH}` },
-    offers: { "@type": "Offer", priceCurrency: "USD", price: "700", url: `${siteConfig.url}${ARRANGEMENT_ORDER_PATH}` },
   };
 
   return (

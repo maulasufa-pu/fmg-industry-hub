@@ -29,6 +29,7 @@ module.exports = {
     "/login",
     "/payments/**",
     "/profile/**",
+    "/reset-password",
     "/signup",
     "/ui/**",
   ],

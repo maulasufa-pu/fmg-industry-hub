@@ -13,7 +13,7 @@ const PortfolioInput = z.object({
   genre:z.string().trim().min(1).max(120), song_title:z.string().trim().min(1).max(240), album_title:z.string().trim().max(240).nullable().optional(),
   singer:personList, arranger:personList, producer:personList, mixing_engineer:personList, mastering_engineer:personList, songwriter:personList, composer:personList, publisher:personList, aggregator:personList,
   release_date_aggregator:z.iso.date().nullable().optional(), spotify_link:optionalUrl, youtube_link:optionalUrl, apple_music_link:optionalUrl, artwork_link:optionalUrl,
-  priority_order:z.number().int().min(0).max(1_000_000).nullable().optional(), is_featured:z.boolean().nullable().optional(), work_type:z.array(WorkType).min(1).max(7),
+  priority_order:z.number().int().min(0).max(1_000_000).nullable().optional(), is_featured:z.boolean().nullable().optional(), work_type:z.array(WorkType).min(1).max(7).default(["release"]),
   client_brief:nullableText, challenge:nullableText, arrangement_solution:nullableText, before_url:optionalUrl, after_url:optionalUrl,
   turnaround_days:z.number().int().min(1).max(365).nullable().optional(), revision_count:z.number().int().min(0).max(50).nullable().optional(), deliverables:z.array(z.string().trim().min(1).max(240)).max(30).default([]),
   testimonial_quote:nullableText, testimonial_name:z.string().trim().max(160).nullable().optional(),
@@ -24,7 +24,7 @@ export async function GET(request:NextRequest) {
   const admin=getSupabaseAdminClient();
   if(!admin) return NextResponse.json({error:"Portfolio service is not configured"},{status:503});
   const page=Math.max(1,Number(request.nextUrl.searchParams.get("page"))||1);
-  const limit=Math.min(24,Math.max(1,Number(request.nextUrl.searchParams.get("limit"))||12));
+  const limit=Math.min(100,Math.max(1,Number(request.nextUrl.searchParams.get("limit"))||100));
   const work=request.nextUrl.searchParams.get("work")||"all";
   const q=cleanSearch(request.nextUrl.searchParams.get("q")||"");
   const genres=(request.nextUrl.searchParams.get("genres")||"").split("|").map(v=>v.trim()).filter(Boolean).slice(0,12);

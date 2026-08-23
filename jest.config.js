@@ -7,6 +7,7 @@ module.exports = createJestConfig({
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   testPathIgnorePatterns: ["<rootDir>/e2e/", "<rootDir>/node_modules/"],
   clearMocks: true,
+  moduleNameMapper: { "^@/(.*)$": "<rootDir>/src/$1" },
   collectCoverageFrom: [
     "src/lib/safe-next.ts",
     "src/lib/arrangement.ts",

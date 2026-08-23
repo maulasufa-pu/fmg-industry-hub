@@ -1,13 +1,14 @@
 // E:\FMGIH\fmg-industry-hub\src\app\ui\panel\invoices\page.tsx
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { NewInvoiceDialog } from "./components/NewInvoiceDialog";
 import { formatIDRCurrency, isOverdue, nextStatusColor } from "@/lib/invoices/utils";
 import type { User } from "@supabase/supabase-js";
+import { notify } from "@/components/ui/FeedbackHost";
 import {
   Search, X, Loader2, BellRing, CheckCircle2, XCircle, CreditCard,
   Link2, RefreshCw, ExternalLink, Wallet, AlertTriangle
@@ -297,6 +298,7 @@ export default function InvoicesPage(): React.JSX.Element {
   const [q, setQ] = useState("");
   const [rows, setRows] = useState<InvoiceWithItems[]>([]);
   const [openNew, setOpenNew] = useState(false);
+  const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
 
   const [me, setMe] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
@@ -333,12 +335,11 @@ export default function InvoicesPage(): React.JSX.Element {
     return () => { cancelled = true; };
   }, [sb]);
 
-  const load = async (): Promise<void> => {
+  const load = useCallback(async (): Promise<void> => {
     if (!authReady) return;
     setLoading(true);
 
-    let qb = sb.from("invoices").select(SELECT_INVOICES) as
-      unknown as import("@supabase/postgrest-js").PostgrestFilterBuilder<any, any, InvoiceWithItems[], "invoices", unknown>;
+    let qb = sb.from("invoices").select(SELECT_INVOICES);
     if (tab !== "all") qb = qb.eq("status", tab);
     if (q.trim()) {
       const like = `%${q.trim()}%`;
@@ -353,11 +354,14 @@ export default function InvoicesPage(): React.JSX.Element {
       .order("created_at", { ascending: false })
       .order("position", { ascending: true, foreignTable: "invoice_items" });
 
-    if (!error) setRows((data ?? []).filter((r) => isAdmin || r.client_id === me?.id));
+    if (!error) {
+      const invoices = (data ?? []) as unknown as InvoiceWithItems[];
+      setRows(invoices.filter((r) => isAdmin || r.client_id === me?.id));
+    }
     setLoading(false);
-  };
+  }, [authReady, isAdmin, me, q, sb, tab]);
 
-  useEffect(() => { void load(); /* eslint-disable-next-line */ }, [authReady, tab, q, isAdmin, me?.id]);
+  useEffect(() => { void load(); }, [load]);
 
   useEffect(() => {
     if (!authReady) return;
@@ -374,8 +378,7 @@ export default function InvoicesPage(): React.JSX.Element {
     }
     const sub = ch.subscribe();
     return () => { void sb.removeChannel(sub); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sb, authReady, isAdmin, me?.id, tab, q]);
+  }, [sb, authReady, isAdmin, me?.id, load]);
 
   const markPaid = async (id: string): Promise<void> => {
     if (!isAdmin) return;
@@ -430,7 +433,7 @@ export default function InvoicesPage(): React.JSX.Element {
       await load();
     } catch (e) {
       //console.error("refresh link error", e);
-      alert("Failed to refresh payment link");
+      notify("Failed to refresh payment link", "error");
     } finally {
       setBusy(null);
     }
@@ -439,14 +442,13 @@ export default function InvoicesPage(): React.JSX.Element {
   const sendReminder = async (id: string): Promise<void> => {
     if (!isAdmin) return;
     setBusy({ id, type: "remind" });
-    const { error } = await sb.functions.invoke("send_invoice_reminder", { body: { invoiceId: id } });
+    setNotice(null);
+    const response = await fetch(`/api/invoices/${id}/reminders`, { method: "POST" });
+    const body = await response.json().catch(() => ({}));
     setBusy(null);
-    if (error) {
-      //console.error("send reminder error", error);
-      alert("Failed to send reminder.");
-    } else {
-      alert("Reminder sent.");
-    }
+    setNotice(response.ok
+      ? { tone: "ok", text: `Reminder delivered${body.attempts > 1 ? ` after ${body.attempts} attempts` : ""}.` }
+      : { tone: "error", text: typeof body.error === "string" ? body.error : "Failed to send reminder." });
   };
 
   const Tabs: Array<{ key: InvoiceStatus | "all"; label: string }> = [
@@ -464,6 +466,7 @@ export default function InvoicesPage(): React.JSX.Element {
 
   return (
     <div className="relative min-h-screen p-4 sm:p-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors overflow-hidden">
+      {notice && <div role="status" className={`mb-4 rounded-xl border px-4 py-3 text-sm ${notice.tone === "ok" ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200" : "border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-200"}`}>{notice.text}</div>}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-32 -left-28 h-[40rem] w-[40rem] rounded-full bg-gradient-to-br from-indigo-600/10 via-fuchsia-500/8 to-sky-500/6 dark:from-indigo-600/20 dark:via-fuchsia-500/15 dark:to-sky-500/10 blur-3xl" />
         <div className="absolute -bottom-40 -right-32 h-[36rem] w-[36rem] rounded-full bg-gradient-to-tr from-emerald-500/10 via-teal-400/8 to-cyan-400/6 dark:from-emerald-500/20 dark:via-teal-400/15 dark:to-cyan-400/10 blur-3xl" />

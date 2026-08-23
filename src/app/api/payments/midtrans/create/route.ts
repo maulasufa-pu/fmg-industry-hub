@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { apiAuthErrorResponse, requireAuthenticatedRequest } from "@/lib/auth/server";
+import { consumeRateLimit, isSameOriginRequest } from "@/lib/security/request";
+import midtransClient from "midtrans-client";
 
 type InvoiceStatus = "draft" | "unpaid" | "paid" | "cancelled";
 type InvoiceRow = {
@@ -11,12 +14,11 @@ type InvoiceRow = {
   currency: string | null;
   status: InvoiceStatus;
   payment_url: string | null;
+  client_id: string | null;
 };
 
 export const runtime = "nodejs";        
 export const dynamic = "force-dynamic"; 
-const midtransClient = require("midtrans-client");
-
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY!;
@@ -24,10 +26,14 @@ const MIDTRANS_IS_PRODUCTION =
   (process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION ?? "false") === "true";
 
 const COLS =
-  "id,invoice_no,client_name,client_email,amount_total,currency,status,payment_url";
+  "id,invoice_no,client_id,client_name,client_email,amount_total,currency,status,payment_url";
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
+    if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
+    const actor = await requireAuthenticatedRequest(req);
+    const rate = consumeRateLimit(req, "midtrans-create", 10, 60_000, actor.user.id);
+    if (!rate.allowed) return NextResponse.json({ error: "Too many payment requests" }, { status: 429, headers: { "Retry-After": String(rate.retryAfter) } });
     const { invoiceId } = (await req.json()) as { invoiceId?: string };
     if (!invoiceId) {
       return NextResponse.json({ error: "Missing invoiceId" }, { status: 400 });
@@ -60,8 +66,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (!inv) {
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
+    if (!actor.isAdmin && inv.client_id !== actor.user.id) {
+      return NextResponse.json({ error: "Invoice access denied" }, { status: 403 });
+    }
     if (inv.status !== "unpaid") {
       return NextResponse.json({ error: "Invoice not unpaid" }, { status: 400 });
+    }
+    if ((inv.currency ?? "").toUpperCase() !== "IDR") {
+      return NextResponse.json({ error: "Midtrans payments require an IDR invoice" }, { status: 400 });
     }
 
     const gross = Math.round(Number(inv.amount_total ?? 0));
@@ -94,7 +106,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         ],
         credit_card: { secure: true },
         callbacks: {
-          finish: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/admin/invoices/${inv.id}`,
+          finish: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/${actor.isAdmin ? "admin" : "client"}/invoices/${inv.id}`,
         },
       });
 
@@ -121,6 +133,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: msg }, { status: 500 });
     }
   } catch (err: any) {
+    const authResponse = apiAuthErrorResponse(err);
+    if (authResponse) return authResponse;
     //console.error("[payments/midtrans/create] fatal:", err);
     return NextResponse.json(
       { error: err?.message ?? "Internal error" },

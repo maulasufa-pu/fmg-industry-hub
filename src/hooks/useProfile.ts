@@ -13,21 +13,6 @@ type Role =
   | "producer"
   | "publisher";
 
-type ProfileData = {
-  id: string;
-  first_name?: string;
-  last_name?: string;
-  name?: string;
-  artist_name?: string;
-  email?: string;
-  main_role?: string;
-  staff_role?: string[];
-  avatar_path?: string;
-  avatar_url?: string;
-  location?: string;
-  phone_number?: string;
-};
-
 type ProfileInfo = {
   id: string;
   fullName: string;

@@ -1,140 +1,47 @@
-# FMG Industry Hub 🎵
+# FMG Industry Hub
 
-**Beyond Sound. Built-in Intelligence.**
+Website penjualan jasa aransemen musik dan portal operasional client/admin FMG Universe. Public flow membawa calon client dari penjelasan layanan dan portfolio ke inquiry atau order; authenticated flow menangani project, draft, diskusi, invoice, meeting, dan publishing.
 
-A comprehensive music industry platform connecting artists, labels, and music professionals with Flemmo Music Global's end-to-end services. From creation to distribution, we provide one operating system for the entire music business.
+## Stack
 
-![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
-![Supabase](https://img.shields.io/badge/Supabase-Backend-green?logo=supabase)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?logo=tailwind-css)
+- Next.js 16 App Router, React 19, TypeScript, Tailwind CSS
+- Supabase PostgreSQL, Auth, Storage, dan RLS
+- Midtrans untuk pembayaran
+- Resend untuk email contact dan invoice reminder
+- Jest serta Playwright untuk unit, mobile, accessibility, dan browser smoke tests
 
-## ✨ Features
-
-### 🎼 **Music Production Services**
-- Songwriting, composition, and arrangement
-- Professional recording, mixing, and mastering
-- Audio post-production for film, ads, and games
-- Remote and in-studio workflow management
-
-### 📄 **Publishing & Distribution**
-- Copyright registration and licensing
-- Digital distribution to all major DSPs
-- Metadata optimization and quality control
-- Rights management and royalty tracking
-
-### 💼 **Business Development**
-- Marketing and promotional campaigns
-- Artist branding and image development
-- Partnership and sponsorship opportunities
-- Data-driven monetization strategies
-
-### 🛠 **Technology Stack**
-- **Frontend**: Next.js 14, TypeScript, Tailwind CSS
-- **Backend**: Supabase (PostgreSQL + Auth)
-- **Deployment**: Vercel-ready with edge functions
-- **Payments**: Multi-currency support (USD, IDR, EUR, GBP)
-- **Real-time**: Chat system and live collaboration tools
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+ and npm
-- Supabase account
-- Git
-
-### Installation
+## Local setup
 
 ```bash
-# Clone the repository
-git clone https://github.com/maulasufa-pu/fmg-industry-hub.git
-cd fmg-industry-hub
-
-# Install dependencies
-npm install
-
-# Set up environment variables
-cp .env.example .env.local
-# Edit .env.local with your Supabase credentials
-
-# Run the development server
+npm ci
+copy .env.example .env.local
+npm run validate:env
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the application.
+Jalankan migration berurutan dari `supabase/migrations`, lalu `supabase/seed.sql`. `supabase/schema.sql` adalah snapshot schema project yang sedang terhubung untuk audit dan pemulihan; migration tetap menjadi perubahan yang harus diaplikasikan berurutan. Environment produksi wajib menggunakan kredensial Supabase, Midtrans, captcha, dan email milik FMG sendiri.
 
-## 📖 Documentation
+## Quality commands
 
-- **[📋 Installation Guide](INSTALLER_GUIDE.md)** - Complete setup and deployment instructions
-- **[📚 User Manual](USER_MANUAL.md)** - End-user documentation and feature guides
-
-## 🏗 Project Structure
-
-```
-src/
-├── app/                 # Next.js app router
-│   ├── admin/          # Admin dashboard pages
-│   ├── client/         # Client dashboard pages
-│   ├── api/            # API routes
-│   └── ui/             # Shared UI components
-├── components/         # Reusable React components
-├── lib/                # Utility libraries and configurations
-├── hooks/              # Custom React hooks
-└── utils/              # Helper functions
-```
-
-## 🔐 User Roles
-
-- **Client**: Project creation, service access, file management
-- **Admin**: User management, project oversight, analytics
-- **Owner**: Full system access, configuration, security
-
-## 🌍 Multi-Currency Support
-
-- USD (United States Dollar)
-- IDR (Indonesian Rupiah)
-- EUR (Euro)
-- GBP (British Pound Sterling)
-
-## 🛡 Security Features
-
-- Row Level Security (RLS) with Supabase
-- Role-based access control
-- Secure file upload/download
-- Audit logging and activity tracking
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
 ```bash
-npm i -g vercel
-vercel login
-vercel --prod
+npm run lint
+npm run typecheck
+npm run test:ci
+npm run build
+npm run perf:budget
+npm run test:e2e
+npm run db:check
+npm audit --audit-level=high
 ```
 
-### Manual Deployment
-See [INSTALLER_GUIDE.md](INSTALLER_GUIDE.md) for detailed instructions.
+`npm run db:types` memperbarui TypeScript types dari project Supabase yang terhubung. `npm run db:schema:export` menyegarkan snapshot schema tanpa menyimpan atau mencetak password database. Jalankan keduanya setelah migration produksi diterapkan. Build tidak lagi mengambil role dari database hidup sehingga hasil build deterministik.
 
-## 🤝 Contributing
+## Operations
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+- Health check: `/api/health`
+- Security policy: [SECURITY.md](SECURITY.md)
+- Deployment, staging, rollback, backup, dan incident response: [docs/operations](docs/operations)
+- P2 privacy migration: `supabase/migrations/202608230002_p2_privacy_and_reliability.sql`
+- P2 RLS/RPC hardening: `supabase/migrations/202608230003_core_rls_hardening.sql`
 
-## 📞 Support
-
-- **Email**: hello@flemmomusic.com
-- **Documentation**: Check our user manual and installation guide
-- **Issues**: Report bugs via GitHub Issues
-
-## 📄 License
-
-This project is proprietary software owned by Flemmo Music Global (FMG Universe).
-
----
-
-**Flemmo Music Global Universe** - Uniting creation, talent, distribution, publishing, and education into one connected pipeline.
-
-*Built with ❤️ for the global music community*
+Pembayaran yang benar-benar terpasang adalah Midtrans. Sentry, Stripe, PayPal, dan virus scanning tidak diklaim sebagai fitur aktif.

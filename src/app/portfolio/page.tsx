@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import PortfolioClient from "@/app/portfolio/PortfolioClient";
+import { JsonLd } from "@/components/JsonLd";
+import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Portfolio — FMG Universe",
+  title: "Portfolio",
   description: "Explore our portfolio of successful music projects, artist collaborations, and creative productions. Discover the quality and creativity that defines Flemmo Music Global.",
+  alternates: { canonical: "/portfolio", languages: { "id-ID": "/portfolio", "x-default": "/portfolio" } },
   keywords: [
     "music portfolio",
     "music production",
@@ -15,11 +19,11 @@ export const metadata: Metadata = {
     "music showcase"
   ],
   openGraph: {
-    title: "Portfolio — FMG Universe",
+    title: "Portfolio aransemen dan produksi musik — FMG Universe",
     description: "Explore our portfolio of successful music projects, artist collaborations, and creative productions.",
     images: [
       {
-        url: "/img/portfolio-og.jpg",
+        url: "/portfolio/opengraph-image",
         width: 1200,
         height: 630,
         alt: "FMG Universe Portfolio"
@@ -28,12 +32,17 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Portfolio — FMG Universe", 
+    title: "Portfolio aransemen dan produksi musik — FMG Universe",
     description: "Explore our portfolio of successful music projects, artist collaborations, and creative productions.",
-    images: ["/img/portfolio-og.jpg"],
+    images: ["/portfolio/opengraph-image"],
   },
 };
 
 export default function PortfolioPage() {
-  return <PortfolioClient />;
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-white dark:bg-black" />}>
+      <PortfolioClient />
+      <JsonLd id="portfolio-collection" data={{ "@context": "https://schema.org", "@type": "CollectionPage", name: "FMG music arrangement portfolio", url: `${siteConfig.url}/portfolio`, description: "Selected music arrangement, production, mixing, publishing, and release work by FMG." }} />
+    </Suspense>
+  );
 }

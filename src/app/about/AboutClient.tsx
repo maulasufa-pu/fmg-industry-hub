@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   motion,
   useAnimation,
@@ -16,19 +17,13 @@ import {
   Sparkles,
   Globe2,
   Music,
-  Mic2,
-  Zap,
   ShieldCheck,
-  Building2,
   LineChart,
-  Trophy,
   Users,
   Rocket,
   BookOpen,
   Star,
   Handshake,
-  Newspaper,
-  Briefcase,
 } from "lucide-react";
 
 const cn = (...classes: Array<string | false | null | undefined>) =>
@@ -213,11 +208,12 @@ function FounderCard() {
       <div className="grid grid-cols-1 gap-6 overflow-hidden rounded-3xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black sm:grid-cols-[220px_1fr]">
         {/* Foto Parallax */}
         <div className="relative aspect-square w-full overflow-hidden rounded-2xl">
-          <img
+          <Image
             src="/img/alfath-flemmo-founder-ceo-flemmo-music-global-publishing-fmg-universe.jpeg"
             alt="Alfath Flemmo - Founder & CEO Flemmo Music Global Publishing (FMG Universe)"
-            className="absolute inset-0 h-full w-full object-cover"
-            loading="lazy"
+            fill
+            sizes="(min-width: 640px) 220px, 100vw"
+            className="object-cover"
           />
         </div>
 
@@ -256,26 +252,6 @@ function FounderCard() {
         </div>
       </div>
     </Parallax>
-  );
-}
-
-function TimelineItem({
-  year,
-  title,
-  desc,
-}: {
-  year: string;
-  title: string;
-  desc: string;
-}) {
-  return (
-    <li className="relative pl-8">
-      <span className="absolute left-0 top-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-white">
-        {year.slice(-2)}
-      </span>
-      <h4 className="text-sm font-semibold">{title}</h4>
-      <p className="mt-1 text-sm text-black/70 dark:text-white/70">{desc}</p>
-    </li>
   );
 }
 
@@ -448,7 +424,7 @@ export default function AboutClientV2() {
 
           <ul>
             <li>
-              <strong>End-to-end workflow:</strong> One partner from demo to
+              <strong>End-to-end workflow:</strong> One partner from first idea to
               release to growth.
             </li>
             <li>
@@ -495,7 +471,7 @@ export default function AboutClientV2() {
           <h2 className="mt-12">Leadership</h2>
           <FounderCard />
 
-          <h2 className="mt-12">Global footprint</h2>
+          <h2 className="mt-12">Remote collaboration coverage</h2>
           <p>
             We collaborate with clients across Asia, North America, and Europe.
             Remote-first, with studio partners as needed.
@@ -607,9 +583,9 @@ export default function AboutClientV2() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
-                <MagneticButton href="#">Upload brief</MagneticButton>
+                <MagneticButton href="/services/inquiry">Share arrangement brief</MagneticButton>
                 <Link
-                  href="#"
+                  href="/contact"
                   className="inline-flex items-center gap-2 rounded-2xl border border-black/10 px-5 py-3 text-sm font-semibold hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
                 >
                   Book a call <ArrowRight className="h-4 w-4" />

@@ -9,6 +9,8 @@ import {
   useTransform,
   useMotionValue,
   useSpring,
+  useInView,
+  useReducedMotion,
 } from "framer-motion";
 import { Volume2, VolumeX, ArrowRight } from "lucide-react";
 
@@ -21,6 +23,7 @@ type Props = {
   // HLS
   m3u8?: string;
   mp4Fallback?: string;
+  mobileMp4?: string;
   poster?: string;
 
   // YouTube
@@ -73,8 +76,11 @@ function extractYouTubeId(input?: string | null): string | null {
   return null;
 }
 
+let youtubeApiPromise: Promise<any> | null = null;
+
 function loadYouTubeAPI(): Promise<any> {
-  return new Promise((resolve) => {
+  if (youtubeApiPromise) return youtubeApiPromise;
+  youtubeApiPromise = new Promise((resolve) => {
     if (typeof window === "undefined") return;
     if (window.YT && window.YT.Player) return resolve(window.YT);
     const prev = window.onYouTubeIframeAPIReady;
@@ -82,18 +88,22 @@ function loadYouTubeAPI(): Promise<any> {
       prev?.();
       resolve(window.YT);
     };
-    const s = document.createElement("script");
-    s.src = "https://www.youtube.com/iframe_api";
-    s.async = true;
-    document.head.appendChild(s);
+    if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+      const script = document.createElement("script");
+      script.src = "https://www.youtube.com/iframe_api";
+      script.async = true;
+      document.head.appendChild(script);
+    }
   });
+  return youtubeApiPromise;
 }
 
 export default function CinematicVideoHeroHLS({
   // HLS
-  m3u8 = "/videos/vaa/index.m3u8",
-  mp4Fallback,
-  poster,
+  m3u8 = "/videos/hero/master.m3u8",
+  mp4Fallback = "/videos/hero/fallback.mp4",
+  mobileMp4 = "/videos/hero/mobile.mp4",
+  poster = "/videos/hero/poster.webp",
 
   // YouTube
   youtubeId,
@@ -121,6 +131,14 @@ export default function CinematicVideoHeroHLS({
   mobileCopyPosition = "below",
 }: Props) {
   const sectionRef = useRef<HTMLDivElement | null>(null);
+  const isNearViewport = useInView(sectionRef, { margin: "200px 0px", once: true });
+  const isVisible = useInView(sectionRef, { margin: "-10% 0px" });
+  const reduceMotion = useReducedMotion();
+  const visibleRef = useRef(false);
+
+  useEffect(() => {
+    visibleRef.current = isVisible;
+  }, [isVisible]);
 
   // ----- mode detection
   const ytId = extractYouTubeId(youtubeId || youtubeUrl);
@@ -171,6 +189,7 @@ export default function CinematicVideoHeroHLS({
 
   // ------- HLS init (only if NOT YouTube)
   useEffect(() => {
+    if (!isNearViewport) return;
     if (useYouTube) {
       const t = setTimeout(() => setShowCopy(false), revealDelayMs);
       return () => clearTimeout(t);
@@ -182,7 +201,7 @@ export default function CinematicVideoHeroHLS({
     let localHls: import("hls.js").default | null = null;
 
     const onPause: EventListener = () => {
-      if (document.visibilityState === "visible") void v.play();
+      if (document.visibilityState === "visible" && visibleRef.current) void v.play();
     };
     const onClick: EventListener = () => { void v.play(); };
     const onMeta = (): void => {
@@ -198,7 +217,12 @@ export default function CinematicVideoHeroHLS({
 
     (async () => {
       if (cancelled) return;
-      if (m3u8) {
+      const prefersMobileAsset = window.matchMedia("(max-width: 767px)").matches;
+      const saveData = Boolean((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData);
+
+      if ((prefersMobileAsset || saveData) && mobileMp4) {
+        v.src = mobileMp4;
+      } else if (m3u8) {
         if (v.canPlayType("application/vnd.apple.mpegurl")) {
           v.src = m3u8;
         } else {
@@ -231,12 +255,42 @@ export default function CinematicVideoHeroHLS({
       try { localHls?.destroy(); } catch {}
       hlsRef.current = null;
     };
-  }, [useYouTube, m3u8, mp4Fallback, forceAspect, revealDelayMs]);
+  }, [isNearViewport, useYouTube, m3u8, mp4Fallback, mobileMp4, forceAspect, revealDelayMs]);
 
   // ------- YouTube init (only if YouTube)
   useEffect(() => {
-    if (!useYouTube || !ytId) return;
+    if (!isNearViewport || !useYouTube || !ytId) return;
     let destroyed = false;
+    let resizeHandler: (() => void) | null = null;
+    let settleTimer: ReturnType<typeof setTimeout> | null = null;
+    let copyTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const styleYouTubeIframe = () => {
+      const iframe = ytBoxRef.current?.querySelector("iframe") as HTMLIFrameElement | null;
+      if (!iframe) return;
+
+      const sourceRatio = 16 / 9;
+      const isPhone = window.matchMedia("(max-width: 767px)").matches;
+      const containerRatio = isPhone ? 1 : (forceAspect ?? 2.39);
+      const zoom = isPhone ? mobileZoom : 1;
+
+      Object.assign(iframe.style, {
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        border: "0",
+        transformOrigin: "center center",
+      } as CSSStyleDeclaration);
+
+      if (containerRatio > sourceRatio) {
+        iframe.style.width = "100%";
+        iframe.style.height = `${(containerRatio / sourceRatio) * 100}%`;
+      } else {
+        iframe.style.height = "100%";
+        iframe.style.width = `${(sourceRatio / containerRatio) * 100}%`;
+      }
+      iframe.style.transform = `translate(-50%, -50%) scale(${zoom})`;
+    };
 
     (async () => {
       const YT = await loadYouTubeAPI();
@@ -265,74 +319,62 @@ export default function CinematicVideoHeroHLS({
         events: {
           onReady: (e: any) => {
             try {
-              e.target.mute(); // start muted
-              e.target.playVideo();
+              e.target.mute();
+              if (visibleRef.current) e.target.playVideo();
+              else e.target.pauseVideo();
             } catch {}
-            styleYouTubeIframe(); // sizing pertama
-            // rerun sebentar lagi untuk jaga-jaga setelah iframe settle
-            setTimeout(styleYouTubeIframe, 150);
+            styleYouTubeIframe();
+            settleTimer = setTimeout(styleYouTubeIframe, 150);
           },
         },
       });
 
       // sembunyikan copy setelah delay
-      const t = setTimeout(() => setShowCopy(false), revealDelayMs);
-      (ytPlayerRef.current as any).__fmgtimer = t;
+      copyTimer = setTimeout(() => setShowCopy(false), revealDelayMs);
 
-      // update sizing saat resize/orientasi
-      const onResize = () => styleYouTubeIframe();
-      window.addEventListener("resize", onResize);
-      window.addEventListener("orientationchange", onResize);
-
-      function styleYouTubeIframe() {
-        const iframe = ytBoxRef.current?.querySelector("iframe") as HTMLIFrameElement | null;
-        if (!iframe) return;
-
-        const rv = 16 / 9;                              // rasio asli frame YT
-        const isPhone = window.matchMedia("(max-width: 767px)").matches;
-        const rContainer = isPhone ? 1 : (forceAspect ?? 2.39); // HP = 1:1, desktop = anamorphic
-        const zoom = isPhone ? mobileZoom : 1;          // ← ZOOM khusus HP biar benar-benar 1:1 full
-
-        Object.assign(iframe.style, {
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          border: "0",
-          transformOrigin: "center center",
-          willChange: "transform",
-        } as CSSStyleDeclaration);
-
-        if (rContainer > rv) {
-          // container lebih lebar (2.39) → width 100%, height > 100%
-          iframe.style.width = "100%";
-          iframe.style.height = `${(rContainer / rv) * 100}%`;
-        } else {
-          // container lebih sempit (HP 1:1) → height 100%, width > 100%
-          iframe.style.height = "100%";
-          iframe.style.width = `${(rv / rContainer) * 100}%`; // ≈177.78% saat 1:1
-        }
-
-        // terapkan zoom (hilangkan letterbox bawaan video 2.39 di dalam 16:9)
-        iframe.style.transform = `translate(-50%, -50%) scale(${zoom})`;
-      }
-
-      // cleanup
-      return () => {
-        window.removeEventListener("resize", onResize);
-        window.removeEventListener("orientationchange", onResize);
-      };
+      resizeHandler = styleYouTubeIframe;
+      window.addEventListener("resize", resizeHandler, { passive: true });
+      window.addEventListener("orientationchange", resizeHandler, { passive: true });
     })();
 
     return () => {
       destroyed = true;
+      if (resizeHandler) {
+        window.removeEventListener("resize", resizeHandler);
+        window.removeEventListener("orientationchange", resizeHandler);
+      }
+      if (settleTimer) clearTimeout(settleTimer);
+      if (copyTimer) clearTimeout(copyTimer);
       try {
         const p = ytPlayerRef.current;
-        if (p && (p as any).__fmgtimer) clearTimeout((p as any).__fmgtimer);
         p?.destroy?.();
       } catch {}
       ytPlayerRef.current = null;
     };
-  }, [useYouTube, ytId, loop, revealDelayMs, forceAspect, mobileZoom]);
+  }, [isNearViewport, useYouTube, ytId, loop, revealDelayMs, forceAspect, mobileZoom]);
+
+  useEffect(() => {
+    if (!isNearViewport) return;
+    const syncPlayback = () => {
+      if (useYouTube) {
+        const player = ytPlayerRef.current;
+        try {
+          if (isVisible && !document.hidden) player?.playVideo?.();
+          else player?.pauseVideo?.();
+        } catch {}
+        return;
+      }
+
+      const video = videoRef.current;
+      if (!video) return;
+      if (isVisible && !document.hidden) void video.play().catch(() => {});
+      else video.pause();
+    };
+
+    syncPlayback();
+    document.addEventListener("visibilitychange", syncPlayback);
+    return () => document.removeEventListener("visibilitychange", syncPlayback);
+  }, [isNearViewport, isVisible, useYouTube]);
 
   // ----- mute toggle (HLS & YouTube)
   useEffect(() => {
@@ -353,12 +395,11 @@ export default function CinematicVideoHeroHLS({
 
   // mouse tilt
   const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (reduceMotion || isMobile || window.matchMedia("(hover: none)").matches) return;
     const r = e.currentTarget.getBoundingClientRect();
     mvX.set((e.clientX - r.left) / r.width);
     mvY.set((e.clientY - r.top) / r.height);
-  };
-
-  const aspectNumber = (isMobile ? 1 : (forceAspect ?? aspect ?? 2.39)); // mobile 1:1, desktop anamorphic
+  }; // mobile 1:1, desktop anamorphic
 
   const alignCls =
     align === "center" ? "items-center text-center"
@@ -370,7 +411,7 @@ export default function CinematicVideoHeroHLS({
       <motion.span
         initial={{ x: "-120%" }}
         animate={{ x: "120%" }}
-        transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 2.6, repeat: reduceMotion ? 0 : Infinity, ease: "easeInOut" }}
         className="absolute top-0 h-full w-[30%] bg-gradient-to-r from-transparent via-white/25 to-transparent dark:via-white/15"
         style={{ filter: "blur(6px)" }}
       />
@@ -425,7 +466,7 @@ export default function CinematicVideoHeroHLS({
 
       <div className={`mx-auto w-full ${maxWidthClass}`}>
         <motion.div
-          style={{ y, scale: parallaxScale, rotateX, rotateY }}
+          style={reduceMotion ? undefined : { y, scale: parallaxScale, rotateX, rotateY }}
           onMouseMove={onMouseMove}
           onPointerEnter={() => setHover(true)}
           onPointerLeave={() => setHover(false)}
@@ -448,6 +489,11 @@ export default function CinematicVideoHeroHLS({
                   <div
                     ref={ytBoxRef}
                     className="absolute inset-0 h-full w-full bg-black overflow-hidden"
+                    style={!isNearViewport && ytId ? {
+                      backgroundImage: `url(https://i.ytimg.com/vi/${ytId}/maxresdefault.jpg)`,
+                      backgroundPosition: "center",
+                      backgroundSize: "cover",
+                    } : undefined}
                   />
                 ) : (
                   <video
@@ -462,7 +508,7 @@ export default function CinematicVideoHeroHLS({
                     controlsList="nodownload noplaybackrate noremoteplayback"
                     disablePictureInPicture
                     poster={poster}
-                    preload="auto"
+                    preload="metadata"
                     crossOrigin="anonymous"
                     onContextMenu={(e) => e.preventDefault()}
                     onError={() => {
@@ -498,7 +544,7 @@ export default function CinematicVideoHeroHLS({
                 flex h-10 w-10 items-center justify-center
                 rounded-full bg-white/85 text-neutral-900 ring-1 ring-black/10
                 backdrop-blur-md shadow-lg
-                transition-transform duration-200 will-change-transform
+                transition-transform duration-200
                 md:group-hover:-translate-y-8
                 hover:bg-white
                 dark:bg-zinc-900/80 dark:text-white dark:ring-white/15
@@ -527,7 +573,7 @@ export default function CinematicVideoHeroHLS({
                     <h2 className="relative text-3xl lg:text-5xl font-semibold leading-tight text-white">
                       <span className="relative inline-block">
                         {heading}
-                        {showLightSweep ? <Sweep /> : null}
+                        {showLightSweep && isVisible && !reduceMotion ? <Sweep /> : null}
                       </span>
                     </h2>
                     {subheading && (

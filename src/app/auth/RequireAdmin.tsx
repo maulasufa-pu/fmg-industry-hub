@@ -26,14 +26,6 @@ export default function RequireAdmin({ children }: { children: React.ReactNode }
         return;
       }
 
-      const raw = process.env.NEXT_PUBLIC_OWNER_EMAILS || "";
-      const allow = raw.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
-      const email = (session.user.email || "").toLowerCase();
-      if (allow.length && allow.includes(email)) {
-        if (mountedRef.current) setState("ok");
-        return;
-      }
-
       const { data: prof, error } = await supabase
         .from("profiles")
         .select("main_role, staff_role")

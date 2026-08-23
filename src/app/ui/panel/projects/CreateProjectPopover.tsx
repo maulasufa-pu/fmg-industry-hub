@@ -1,7 +1,6 @@
 // src/app/client/projects/CreateProjectPopover.tsx
 "use client";
 import React, { useEffect, useMemo, useRef, useState, useLayoutEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { Close, Check } from "@/icons";
 import BrandMark from "@/app/ui/BrandMark"; 
@@ -29,11 +28,9 @@ type ProjectStatus =
   | "requested" | "pending" | "in_progress" | "revision"
   | "approved" | "published" | "archived" | "cancelled" | "draft";
 
-import { formatPrice, CURRENCY_OPTIONS } from '@/lib/currency';
+import { formatPrice } from '@/lib/currency';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { CurrencyDropdownAdvanced, type Currency } from '@/components/CurrencyDropdownAdvanced';
-
-const idr = (n: number) => `IDR ${Math.round(n).toLocaleString("id-ID")}`;
 
 type Props = {
   open: boolean;
@@ -42,16 +39,19 @@ type Props = {
   onSubmitted?: (info: { projectId: string | null; paymentPlan: "upfront" | "half" | "milestone" }) => void;
   anchorRef?: React.RefObject<HTMLElement | null>;
   width?: number;
+  initialServiceKeys?: readonly string[];
+  requestIntent?: "arrangement";
 };
 
 type SubmitPayload = {
   songTitle: string;
   artistName: string;
+  albumTitle?: string;
   genre?: string;
   subGenre?: string;
   description?: string;
   selectedServices: { key: string; price: number; label: string; isSubscription?: boolean }[];
-  bundle?: { label: string; bundlePrice: number; includes: string[] } | null;
+  bundle?: { key: string; label: string; bundlePrice: number; includes: string[] } | null;
   startDate?: string | null;
   deadline?: string | null;
   deliveryFormat?: string[];
@@ -63,7 +63,7 @@ type SubmitPayload = {
   status?: ProjectStatus;
 };
 
-const DRAFT_COOKIE_KEY = 'fmg_project_draft';
+const DRAFT_STORAGE_KEY = 'fmg_project_draft';
 
 interface ProjectDraftData {
   songTitle: string;
@@ -90,9 +90,7 @@ function saveToCookie(data: Partial<ProjectDraftData>) {
   try {
     const existing = loadFromCookie();
     const updated = { ...existing, ...data };
-    const expires = new Date();
-    expires.setDate(expires.getDate() + 7); 
-    document.cookie = `${DRAFT_COOKIE_KEY}=${encodeURIComponent(JSON.stringify(updated))}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+    window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(updated));
   } catch (err) {
     //console.warn('Failed to save draft to cookie:', err);
   }
@@ -100,11 +98,9 @@ function saveToCookie(data: Partial<ProjectDraftData>) {
 
 function loadFromCookie(): Partial<ProjectDraftData> {
   try {
-    const cookies = document.cookie.split(';');
-    const draftCookie = cookies.find(c => c.trim().startsWith(`${DRAFT_COOKIE_KEY}=`));
-    if (!draftCookie) return {};
-    const value = draftCookie.split('=')[1];
-    return JSON.parse(decodeURIComponent(value));
+    if (typeof window === "undefined") return {};
+    const value = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+    return value ? JSON.parse(value) : {};
   } catch (err) {
     //console.warn('Failed to load draft from cookie:', err);
     return {};
@@ -112,7 +108,7 @@ function loadFromCookie(): Partial<ProjectDraftData> {
 }
 
 function clearCookie() {
-  document.cookie = `${DRAFT_COOKIE_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  window.localStorage.removeItem(DRAFT_STORAGE_KEY);
 }
 
 /** Package Card Component - Dynamic from Database */
@@ -266,9 +262,15 @@ function AutoResizeTextarea({
   );
 }
 
-export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitted }: Props): React.JSX.Element {
+export default function CreateProjectPopover({
+  open,
+  onClose,
+  onSaved,
+  onSubmitted,
+  initialServiceKeys = [],
+  requestIntent,
+}: Props): React.JSX.Element {
   const supabase = useMemo(() => getSupabaseClient(), []);
-  const router = useRouter();
   const mountedRef = useRef<boolean>(true);
   const { currency, setCurrency, rates, loading: ratesLoading } = useCurrency();
 
@@ -299,11 +301,10 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   const [deadline, setDeadline] = useState("");
   const [deliveryFormat, setDeliveryFormat] = useState<string[]>([]);
   const [referenceLinks, setReferenceLinks] = useState<string>("");
-  const [refLinksDraft, setRefLinksDraft] = useState<string>("");
   const [paymentPlan, setPaymentPlan] = useState<"upfront" | "half" | "milestone">("half");
 
   // Draft management
-  const [draftId, setDraftId] = useState<string | null>(null);
+  const idempotencyKeyRef = useRef<string | null>(null);
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [agree, setAgree] = useState(false);
@@ -356,17 +357,17 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     [selectedBundleId, bundles]
   );
 
-  const defaultPriceOf = (serviceKey: string): number => {
+  const defaultPriceOf = useCallback((serviceKey: string): number => {
     const s = services.find(x => x.service_key === serviceKey);
     return s ? Number(s.price) : 0;
-  };
+  }, [services]);
 
-  const resolvedPriceOf = (serviceKey: string): number => {
+  const resolvedPriceOf = useCallback((serviceKey: string): number => {
     const def = defaultPriceOf(serviceKey);
     const cus = customPrices[serviceKey];
     if (cus == null || Number.isNaN(cus)) return def;
     return Math.max(def, Math.round(cus));
-  };
+  }, [customPrices, defaultPriceOf]);
 
   const total = useMemo(() => {
     if (selectedBundle) {
@@ -376,12 +377,13 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
       return Number(selectedBundle.bundle_price) + outsideSum;
     }
     return Array.from(selectedServices).reduce((acc, k) => acc + resolvedPriceOf(k), 0);
-  }, [selectedBundle, selectedServices, customPrices, resolvedPriceOf]);
+  }, [selectedBundle, selectedServices, resolvedPriceOf]);
 
   const buildPayload = (): SubmitPayload => {
     const chosenKeys = Array.from(selectedServices);
     const selectedBundleObj = selectedBundle
       ? {
+          key: selectedBundle.bundle_key,
           label: selectedBundle.label,
           bundlePrice: Number(selectedBundle.bundle_price),
           includes: selectedBundle.items.map(it => it.service_key),
@@ -403,6 +405,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     return {
       songTitle,
       artistName,
+      albumTitle,
       genre,
       subGenre,
       description,
@@ -419,52 +422,13 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     };
   };
 
-  // Debounced auto-save to database (slower, more persistent)
-  const dbSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Drafts stay local until the client explicitly submits a request. This keeps
+  // incomplete briefs out of cookies and prevents draft autosave from creating
+  // projects, milestones, schedules, or invoices.
   const debouncedDbSave = useCallback(() => {
-    if (dbSaveTimeoutRef.current) clearTimeout(dbSaveTimeoutRef.current);
-    dbSaveTimeoutRef.current = setTimeout(async () => {
-      // Only save to database if we have minimum required data
-      if (!songTitle.trim() || selectedServices.size === 0) return;
-      
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-
-        const payload: SubmitPayload = { ...buildPayload(), status: "draft" };
-        
-        if (draftId) {
-          // Update existing draft
-          const response = await fetch("/api/projects/submit", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...payload, project_id: draftId }),
-          });
-          
-          if (response.ok) {
-            setLastSaved(new Date());
-          }
-        } else {
-          // Create new draft
-          const response = await fetch("/api/projects/submit", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-          
-          if (response.ok) {
-            const json = await response.json();
-            setDraftId(json.project_id);
-            setLastSaved(new Date());
-          }
-        }
-      } catch (err) {
-        // Silent fail for auto-save
-      }
-    }, 5000); // 5 seconds - less aggressive than cookie save
-  }, [songTitle, selectedServices, supabase, buildPayload, draftId]);
-
-  type EngineerRow = { id: string; name: string | null };
+    if (!songTitle.trim()) return;
+    debouncedSave();
+  }, [songTitle, debouncedSave]);
   const [engineers, setEngineers] = useState<Array<{ id: string; name: string }>>([]);
 
   /** ---------- LOAD CATALOG (services & bundles) ---------- */
@@ -605,7 +569,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   // Clear draft on successful submit
   const clearDraft = useCallback(() => {
     clearCookie();
-    setDraftId(null);
     setLastSaved(null);
   }, []);
 
@@ -622,15 +585,19 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
   useEffect(() => {
     if (open && !firstOpenRef.current) {
       firstOpenRef.current = true;
-      setStep(1); setSaving(false); setError(null);
-      setSongTitle(""); setAlbumTitle(""); setArtistName("");
-      setGenre(""); setSubGenre(""); setDescription("");
-      setSelectedServices(new Set()); setSelectedBundleId(null);
-      setCustomPrices({});
-      setStartDate(""); setDeadline(""); setDeliveryFormat([]);
-      setReferenceLinks("");
-      setPaymentPlan("half"); setAgree(false);
-      setNdaRequired(false); setPreferredEngineerId("");
+      setSaving(false); setError(null);
+      const hasSavedDraft = Object.keys(loadFromCookie()).length > 0;
+      if (!hasSavedDraft) {
+        setStep(1);
+        setSongTitle(""); setAlbumTitle(""); setArtistName("");
+        setGenre(""); setSubGenre(""); setDescription("");
+        setSelectedServices(new Set()); setSelectedBundleId(null);
+        setCustomPrices({});
+        setStartDate(""); setDeadline(""); setDeliveryFormat([]);
+        setReferenceLinks("");
+        setPaymentPlan("half"); setAgree(false);
+        setNdaRequired(false); setPreferredEngineerId("");
+      }
     }
     if (!open) firstOpenRef.current = false;
   }, [open]);
@@ -660,11 +627,26 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     }
   }, []);
 
-  const [priceDraft, setPriceDraft] = useState<Partial<Record<string, string>>>({});
+  const intentSignature = initialServiceKeys.join("|");
+  const appliedIntentRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (step === 3) setRefLinksDraft(referenceLinks ?? "");
-  }, [step, referenceLinks]);
+    if (!open) {
+      appliedIntentRef.current = null;
+      return;
+    }
+    if (!intentSignature || isLoadingDraft || services.length === 0) return;
+    if (appliedIntentRef.current === intentSignature) return;
+
+    const availableKeys = initialServiceKeys.filter((key) =>
+      services.some((service) => service.service_key === key),
+    );
+    if (availableKeys.length > 0) {
+      setSelectedServices((previous) => new Set([...previous, ...availableKeys]));
+      setIndividualServicesExpanded(true);
+    }
+    appliedIntentRef.current = intentSignature;
+  }, [initialServiceKeys, intentSignature, isLoadingDraft, open, services]);
 
   /** ---------- HANDLERS ---------- */
   const toggleService = withPreservedScroll((serviceKey: string) => {
@@ -683,77 +665,18 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
     });
   });
 
-  const setBundleWithPreserve = withPreservedScroll((b: string | null) => {
-    setSelectedBundleId(b);
-  });
-
-  const toggleFormat = withPreservedScroll((fmt: string) => {
-    setDeliveryFormat(prev => prev.includes(fmt) ? prev.filter(f => f !== fmt) : [...prev, fmt]);
-  });
-
   const setPlanWithPreserve = withPreservedScroll((val: "upfront" | "half" | "milestone") => {
     setPaymentPlan(val);
   });
 
   const goStep = withPreservedScroll((next: 1 | 2 | 3) => setStep(next));
 
-  const commitCustomPrice = (serviceKey: string, raw: string) => {
-    const def = defaultPriceOf(serviceKey);
-    const n = Number(raw);
-    if (!Number.isFinite(n)) {
-      setCustomPrices(p => {
-        const { [serviceKey]: _omit, ...rest } = p;
-        return rest;
-      });
-    } else {
-      const clamped = Math.max(def, Math.round(n));
-      setCustomPrices(p => ({ ...p, [serviceKey]: clamped }));
-    }
-    setPriceDraft(p => {
-      const { [serviceKey]: _omit, ...rest } = p;
-      return rest;
-    });
-  };
-
   const setRefsWithPreserve = withPreservedScroll((v: string) => setReferenceLinks(v));
 
   /** ---------- DRAFT SAVE ---------- */
   const saveDraftToDatabase = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return null;
-
-      const payload: SubmitPayload = { ...buildPayload(), status: "draft" };
-      
-      if (draftId) {
-        // Update existing draft
-        const response = await fetch("/api/projects/submit", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...payload, project_id: draftId }),
-        });
-        
-        if (response.ok) {
-          const json = await response.json();
-          return json.project_id;
-        }
-      } else {
-        // Create new draft
-        const response = await fetch("/api/projects/submit", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        
-        if (response.ok) {
-          const json = await response.json();
-          setDraftId(json.project_id);
-          return json.project_id;
-        }
-      }
-    } catch (err) {
-      //console.warn('Failed to save draft to database:', err);
-    }
+    debouncedSave();
+    setLastSaved(new Date());
     return null;
   };
 
@@ -764,6 +687,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
       setError(null);
 
       if (!songTitle.trim()) throw new Error("Song title is required");
+      if (!artistName.trim()) throw new Error("Artist name is required");
       if (description.trim().length < MIN_DESC) {
         throw new Error(`Description must be at least ${MIN_DESC} characters`);
       }
@@ -777,10 +701,16 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
       if (!user) throw new Error("Not authenticated");
 
       const payload: SubmitPayload = { ...buildPayload(), status: "requested" };
+      const idempotencyKey = idempotencyKeyRef.current ?? crypto.randomUUID();
+      idempotencyKeyRef.current = idempotencyKey;
 
       const res = await fetch("/api/projects/submit", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+          "Idempotency-Key": idempotencyKey,
+        },
         credentials: "include",
         body: JSON.stringify(payload),
       });
@@ -792,14 +722,12 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
 
       const newProjectId = json.project_id ?? null;
 
-      if (json.project_id) {
-        await supabase.from("projects").update({ status: "requested" }).eq("project_id", json.project_id);
-      }
       onSaved?.();
       onSubmitted?.({ projectId: newProjectId, paymentPlan });
       
       // Clear draft on successful submission
       clearDraft();
+      idempotencyKeyRef.current = null;
       
       onClose();
     } catch (e: unknown) {
@@ -816,35 +744,6 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
       {children}
     </section>
   );
-
-  function FancyCheckbox({
-    id,
-    checked,
-    onChange,
-  }: {
-    id: string;
-    checked: boolean;
-    onChange: (v: boolean) => void;
-  }) {
-    return (
-      <button
-        type="button"
-        id={id}
-        onClick={() => onChange(!checked)}
-        className="w-5 h-5 flex items-center justify-center border border-slate-400 dark:border-slate-500 rounded-md bg-white/95 dark:bg-slate-900/95"
-      >
-        {checked && (
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-violet-500">
-            <path
-              fillRule="evenodd"
-              d="M16.707 5.293a1 1 0 010 1.414l-8.25 8.25a1 1 0 01-1.414 0l-4.25-4.25a1 1 0 111.414-1.414L8 12.586l7.543-7.543a1 1 0 011.414 0z"
-              clipRule="evenodd"
-            />
-          </svg>
-        )}
-      </button>
-    );
-  }
 
   function ServiceCardFromDb({ s }: { s: ServiceRow }) {
     const active = selectedServices.has(s.service_key);
@@ -1003,7 +902,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
 
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 min-w-0">
                   <h2 className="text-xl sm:text-2xl font-bold leading-tight tracking-tight">
-                    Request New Project
+                    {requestIntent === "arrangement" ? "Order Music Arrangement" : "Request New Project"}
                   </h2>
                   <div className="flex items-center gap-3">
                     <div className="px-3 py-1.5 bg-white/15 rounded-full text-sm font-medium backdrop-blur-sm">
@@ -1070,6 +969,14 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
           >
             {/* Content Container with Better Spacing */}
             <div className="max-w-none space-y-8 pb-8">
+              {requestIntent === "arrangement" && (
+                <div className="rounded-2xl border border-violet-200 bg-violet-50/80 p-4 text-sm leading-relaxed text-violet-950 dark:border-violet-700/60 dark:bg-violet-950/30 dark:text-violet-100">
+                  <p className="font-semibold">Music arrangement service selected.</p>
+                  <p className="mt-1">
+                    We arrange your existing composition from your brief and guidance recording. This is a paid production service—not a song submission, purchase, or rights-acquisition process.
+                  </p>
+                </div>
+              )}
               {step === 1 && (
                 <div className="space-y-6">
                   {/* Mobile Currency Dropdown */}
@@ -1333,6 +1240,25 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                       </p>
                     </div>
                   </Section>
+
+                  <Section title="Guidance Recording & References">
+                    <div>
+                      <label htmlFor="referenceLinks" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Shareable links (optional)
+                      </label>
+                      <AutoResizeTextarea
+                        id="referenceLinks"
+                        value={referenceLinks}
+                        onChange={(e) => setRefsWithPreserve(e.target.value)}
+                        placeholder={"One link per line\nhttps://drive.google.com/...\nhttps://youtube.com/..."}
+                        minRows={3}
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white/95 dark:bg-slate-900/95 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 resize-none"
+                      />
+                      <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                        Add one accessible link per line for your guidance recording, mood, or song references. These files guide the work only; FMG is not buying or acquiring your song.
+                      </p>
+                    </div>
+                  </Section>
                 </div>
               )}
 
@@ -1423,6 +1349,19 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                           </h4>
                           <div className="p-4 bg-white/60 dark:bg-slate-800/40 rounded-lg">
                             <div className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">{description}</div>
+                          </div>
+                        </div>
+                      )}
+                      {referenceLinks.trim() && (
+                        <div>
+                          <h4 className="text-lg font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                            <div className="w-2 h-2 bg-slate-500 dark:bg-slate-400 rounded-full"></div>
+                            Guidance Recording & References
+                          </h4>
+                          <div className="space-y-2 p-4 bg-white/60 dark:bg-slate-800/40 rounded-lg">
+                            {referenceLinks.split(/\r?\n/).map((link) => link.trim()).filter(Boolean).map((link) => (
+                              <div key={link} className="break-all text-sm text-violet-700 dark:text-violet-300">{link}</div>
+                            ))}
                           </div>
                         </div>
                       )}
@@ -1704,7 +1643,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
               {/* Price Summary */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 <div className="text-sm text-slate-700 dark:text-slate-200">
-                  <span className="font-medium">Project Total:</span>{" "}
+                  <span className="font-medium">Catalog estimate:</span>{" "}
                   <span className="text-xl font-bold text-slate-900 dark:text-white bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
                     {formatPrice(total, currency, rates)}
                   </span>
@@ -1763,7 +1702,7 @@ export default function CreateProjectPopover({ open, onClose, onSaved, onSubmitt
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                   </svg>
-                  {draftId ? "Update Draft" : "Save Draft"}
+                  Save Draft Locally
                 </button>
 
                 {step > 1 && (

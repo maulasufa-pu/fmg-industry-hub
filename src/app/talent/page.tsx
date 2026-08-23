@@ -27,23 +27,6 @@ function useIsMobile(breakpoint = 768) {
   return isMobile;
 }
 
-function TopBar(): React.JSX.Element {
-  return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex h-14 items-center justify-between px-4 sm:px-8">
-      <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-neutral-900/60 px-3 py-1.5 text-white backdrop-blur-md dark:bg-white/10">
-        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-[11px] font-bold leading-none">
-          FMG
-        </span>
-        <span className="text-xs tracking-wide opacity-90">Universe • Talent</span>
-      </div>
-      <div className="pointer-events-auto hidden sm:inline-flex items-center gap-2 rounded-full bg-neutral-900/60 px-3 py-1.5 text-[12px] text-white backdrop-blur-md dark:bg-white/10">
-        <span className="opacity-80">Scroll</span>
-        <ArrowDown className="h-3.5 w-3.5" />
-      </div>
-    </div>
-  );
-}
-
 function ParallaxField({ container }: { container: React.RefObject<HTMLDivElement | null> }): React.JSX.Element {
   const reduce = useReducedMotion();
   const isMobile = useIsMobile();
@@ -391,10 +374,10 @@ export default function TalentPage(): React.JSX.Element {
               Explore pillars
             </a>
             <a
-              href="/talent/apply"
+              href="/contact"
               className="inline-flex items-center justify-center rounded-xl border border-neutral-900/30 px-4 py-2 text-sm font-semibold text-neutral-900 hover:bg-neutral-900/5 dark:border-white/40 dark:text-white dark:hover:bg-white/10"
             >
-              Submit demo
+              Discuss artist development
             </a>
           </>
         ),
@@ -421,7 +404,7 @@ export default function TalentPage(): React.JSX.Element {
         description:
           "Stage-gated A&R with clear briefs, reference boards, and iterative sessions. We align on sound, story, and audience before greenlighting.",
         bullets: [
-          "Brief → Demo → Iterations → Pre-pro → Recording → Post",
+          "Brief → Creative direction → Iterations → Pre-pro → Recording → Post",
           "Reference boards & mood maps for a creative north star",
           "Weekly check-ins, versioning, and decision logs",
           "Go/No-Go gates tied to milestones & budget",
@@ -511,6 +494,15 @@ export default function TalentPage(): React.JSX.Element {
     return () => obs.disconnect();
   }, []);
 
+  const jump = useCallback(
+    (i: number) => {
+      const last = slides.length;
+      const idx = Math.max(0, Math.min(last, i));
+      sectionRefs.current[idx]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    },
+    [slides.length]
+  );
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowDown") {
@@ -523,16 +515,7 @@ export default function TalentPage(): React.JSX.Element {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [active]);
-
-  const jump = useCallback(
-    (i: number) => {
-      const last = slides.length; 
-      const idx = Math.max(0, Math.min(last, i));
-      sectionRefs.current[idx]?.scrollIntoView({ behavior: "smooth", block: "start" });
-    },
-    [slides.length]
-  );
+  }, [active, jump]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -624,10 +607,10 @@ export default function TalentPage(): React.JSX.Element {
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <a
-                href="/talent/apply"
+                href="/contact"
                 className="inline-flex items-center justify-center rounded-xl bg-neutral-900 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-neutral-800 dark:bg-white dark:text-neutral-900"
               >
-                Submit demo
+                Discuss artist development
               </a>
               <a
                 href="/contact"

@@ -1,21 +1,21 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef } from "react";
 import Link from "next/link";
-import { motion, useAnimation, useInView, useMotionValue, useSpring, useTransform, useScroll, Variants, AnimatePresence } from "framer-motion";
+import { motion, useInView, useMotionValue, useSpring, useTransform, useScroll, useReducedMotion, Variants } from "framer-motion";
 import type { MotionValue } from "framer-motion";
 // di baris import icon lucide, tambahkan MessageCircle
-import { ArrowRight, Star, Check, CheckCircle2, Rocket, Music, ShieldCheck, Zap, Sparkles, PlayCircle, LineChart, Mic2, MessageCircle } from "lucide-react";
+import { ArrowRight, Star, Check, CheckCircle2, Music, Sparkles, Mic2, MessageCircle } from "lucide-react";
 import { Users, Share2, Cpu, BookOpen, Calendar, GraduationCap, type LucideIcon } from "lucide-react";
 import { JsonLd } from "@/components/JsonLd";
 import { siteConfig } from "@/lib/site";
 import { compact } from "@/lib/arrays";
-import BrandMark from "./ui/BrandMark";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import InnovationBadge from "./ui/InnovationBadge";
 import type { PanInfo } from "framer-motion";
-import CinematicVideoHeroHLS from "@/components/CinematicVideoHeroHLS";
 import { CurrencyDropdownAdvanced, type Currency } from "@/components/CurrencyDropdownAdvanced";
+import { ARRANGEMENT_ORDER_PATH, ARRANGEMENT_PORTFOLIO_PATH } from "@/lib/arrangement";
 // import Hero from "./ui/main_container/hero";
 /** urutan & “berat” ukuran: basic small, pro medium, ultimate large, custom largest */
 
@@ -26,6 +26,35 @@ import { CurrencyDropdownAdvanced, type Currency } from "@/components/CurrencyDr
 
 
 type PlanKey = "basic" | "pro" | "ultimate" | "custom";
+
+const CinematicVideoHeroHLS = dynamic(
+  () => import("@/components/CinematicVideoHeroHLS"),
+  { ssr: false },
+);
+
+function LazyCinematicVideoHero(): React.JSX.Element {
+  const ref = React.useRef<HTMLDivElement | null>(null);
+  const shouldMount = useInView(ref, { margin: "200px 0px", once: true });
+
+  return (
+    <div ref={ref}>
+      {shouldMount ? (
+        <CinematicVideoHeroHLS
+          shape="rounded"
+          m3u8="/videos/hero/master.m3u8"
+          mp4Fallback="/videos/hero/fallback.mp4"
+          mobileMp4="/videos/hero/mobile.mp4"
+          poster="/videos/hero/poster.webp"
+          maxWidthClass="max-w-7xl"
+        />
+      ) : (
+        <div className="mx-auto mt-12 mb-10 w-[calc(100%-2rem)] max-w-7xl overflow-hidden rounded-[20px] border border-white/10 bg-gradient-to-br from-indigo-950 via-black to-violet-950 shadow-xl md:mt-20 md:mb-14 md:min-h-[320px] md:rounded-[24px]" aria-hidden>
+          <div className="aspect-square animate-pulse-soft bg-[radial-gradient(circle_at_50%_40%,rgba(99,102,241,0.28),transparent_55%)] md:aspect-[2.39/1]" />
+        </div>
+      )}
+    </div>
+  );
+}
 type Weight = 0 | 1 | 2 | 3;
 
 type Plan = {
@@ -56,7 +85,7 @@ const PLANS: readonly Plan[] = [
       name: "Basic (Single)",
       priceUSDNumber: 700,
       cta: "Start My Project",
-      ctaHref: "/client/dashboard",
+      ctaHref: ARRANGEMENT_ORDER_PATH,
       features: [
         "Original songwriting",
         "Arrangement & production",
@@ -73,7 +102,7 @@ const PLANS: readonly Plan[] = [
       name: "Pro (Single)",
       priceUSDNumber: 1000,
       cta: "Start My Project",
-      ctaHref: "/client/dashboard",
+      ctaHref: ARRANGEMENT_ORDER_PATH,
       features: [
         "Everything in Basic +",
         "Multi-version deliverables (original/acoustic/remix/instrumental)",
@@ -92,7 +121,7 @@ const PLANS: readonly Plan[] = [
       name: "Ultimate (Single)",
       priceUSDNumber: 2000,
       cta: "Start My Project",
-      ctaHref: "/client/dashboard",
+      ctaHref: ARRANGEMENT_ORDER_PATH,
       features: [
         "Everything in Basic & Pro +",
         "Music video direction & production",
@@ -112,7 +141,7 @@ const PLANS: readonly Plan[] = [
       priceUSDNumber: 0, // ditampilkan sebagai "Custom"
       period: "project",
       cta: "Start My Project",
-      ctaHref: "/client/dashboard",
+      ctaHref: ARRANGEMENT_ORDER_PATH,
       features: [
         "Scope-based pricing",
         "Pick any combination of services",
@@ -123,10 +152,6 @@ const PLANS: readonly Plan[] = [
     },
   },
 ];
-
-const clamp = (n: number, min: number, max: number): number => Math.min(Math.max(n, min), max);
-const mod = (n: number, m: number): number => ((n % m) + m) % m;
-
 type Division = { icon: LucideIcon; title: string; desc: string };
 
 const DIVISIONS: ReadonlyArray<Division> = [
@@ -137,20 +162,6 @@ const DIVISIONS: ReadonlyArray<Division> = [
   { icon: BookOpen, title: "Publishing", desc: "Music rights management, sync licensing, catalog reissues, publishing administration." },
   { icon: Calendar, title: "Event & Festival", desc: "Live shows, showcases, tour operations, and brand activations with measurable impact." },
   { icon: GraduationCap, title: "Academy", desc: "Training, mentorship, and industry-ready skills that ship real work and careers." },
-];
-
-/*************************
- * Data untuk Numbers
- *************************/
-const STATS: ReadonlyArray<{ label: string; value: number }> = [
-  { label: "Clients", value: 300 },
-  { label: "Projects shipped", value: 1050 },
-  { label: "Songs delivered", value: 1500 },
-  { label: "On-time delivery (%)", value: 99 },
-  { label: "Countries reached", value: 30 },
-  { label: "DSPs & Platforms", value: 35 },
-  { label: "Catalog managed (tracks)", value: 3000 },
-  { label: "Avg. turnarounds (days)", value: 14 },
 ];
 
 /*************************
@@ -210,6 +221,9 @@ function Parallax({
   className?: string;
 }) {
   const ref = React.useRef<HTMLDivElement | null>(null);
+  const reduceMotion = useReducedMotion();
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "end start"],
@@ -221,15 +235,16 @@ function Parallax({
   // 0 -> 0.5 -> 1  ==>  +px -> 0 -> -px
   const raw = useTransform(scrollYProgress, [0, 0.5, 1], [px, 0, -px]);
   const mv = useSpring(raw, { stiffness: 300, damping: 30, mass: 0.28 });
-  const style: { y?: MotionValue<number>; x?: MotionValue<number> } =
-    axis === "y" ? { y: mv } : { x: mv };
+  const style: { y?: MotionValue<number>; x?: MotionValue<number> } | undefined = reduceMotion || !mounted
+    ? undefined
+    : axis === "y" ? { y: mv } : { x: mv };
 
   return (
     <motion.div
       ref={ref}
       initial={false}
       style={style}                         // SSR: style ada tapi nilainya stabil → aman
-      className={cn("transform-gpu will-change-transform", className)}
+      className={cn("relative transform-gpu", className)}
     >
       {children}
     </motion.div>
@@ -258,8 +273,10 @@ function MagneticButton({
   const y = useMotionValue(0);
   const xSpring = useSpring(x, { stiffness: 100, damping: 30 });
   const ySpring = useSpring(y, { stiffness: 100, damping: 30 });
+  const reduceMotion = useReducedMotion();
 
   const onMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (reduceMotion || window.matchMedia("(hover: none)").matches) return;
     const el = ref.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
@@ -379,11 +396,18 @@ function SplitHeadline({ text }: { text: string }) {
  * Marquee (keywords)
  *************************/
 function MarqueeRow({ items, speed = 50 }: { items: ReadonlyArray<React.ReactNode>; speed?: number }) {
+  const ref = React.useRef<HTMLDivElement | null>(null);
+  const inView = useInView(ref, { margin: "200px 0px" });
+  const reduceMotion = useReducedMotion();
   const transition = { duration: 20_000 / speed, ease: "linear", repeat: Infinity } as const;
   return (
     <Parallax speed={0.04}>
-      <div className="relative flex overflow-hidden">
-        <motion.div className="flex min-w-max gap-12 pr-12" animate={{ x: ["0%", "-50%"] }} transition={transition}>
+      <div ref={ref} className="relative flex overflow-hidden">
+        <motion.div
+          className="flex min-w-max gap-12 pr-12 transform-gpu"
+          animate={!reduceMotion && inView ? { x: ["0%", "-50%"] } : { x: "0%" }}
+          transition={transition}
+        >
           {[...items, ...items].map((it, i) => (
             <div key={i} className="flex items-center gap-3 text-black/60 dark:text-white/100">
               <div className="inline-flex h-9 w-9 items:center justify-center rounded-full bg-black/5 ring-1 ring-black/10 dark:bg-white/10 dark:ring-white/10">
@@ -395,26 +419,6 @@ function MarqueeRow({ items, speed = 50 }: { items: ReadonlyArray<React.ReactNod
         </motion.div>
         <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-white to-transparent dark:from-black" />
         <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-white to-transparent dark:from-black" />
-      </div>
-    </Parallax>
-  );
-}
-
-/*************************
- * Stat Counter
- *************************/
-function Stat({ label, value }: { label: string; value: number }) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const inView = useInView(ref, { margin: "-20% 0px -20% 0px", once: true });
-  const mv = useMotionValue(0);
-  const val = useSpring(mv, { stiffness: 120, damping: 20 });
-  useEffect(() => { if (inView) mv.set(value); }, [inView, mv, value]);
-  const rounded = useTransform(val, (v) => Math.round(v).toString());
-  return (
-    <Parallax speed={0.06}>
-      <div ref={ref} className="rounded-2xl bg-white/70 p-6 text-center shadow-sm ring-1 ring-black/5 backdrop-blur dark:bg-black/30 dark:ring-white/10">
-        <motion.div className="text-4xl font-extrabold tracking-tight" aria-label={`${value}`}>{rounded}</motion.div>
-        <div className="mt-1 text-sm text-black/60 dark:text-white/60">{label}</div>
       </div>
     </Parallax>
   );
@@ -517,8 +521,7 @@ function PricingCard({
       : "Custom";
 
   // Auto-resize font based on price length to keep it on single line
-  const getPriceFontSize = (price: string) => {
-    const totalLength = price.length; // Total character count including symbols
+  const getPriceFontSize = (price: string) => { // Total character count including symbols
     const digitCount = price.replace(/[^\d]/g, '').length; // Count only digits
     
     // Mobile-first approach with aggressive scaling for very long prices
@@ -636,12 +639,6 @@ function PricingCard({
   );
 }
 
-function Checkmark() { return (
-  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 6L9 17l-5-5" />
-  </svg>
-);} 
-
 function Hero() {
   return (
     <section className="relative overflow-hidden pt-12 sm:pt-12">
@@ -654,7 +651,7 @@ function Hero() {
           <InnovationBadge />
 
           <Parallax speed={0.12}>
-            <SplitHeadline text="Beyond Sound. Built-in Intelligence." />
+            <SplitHeadline text="Professional Music Arrangement for Your Song." />
           </Parallax>
 
           <Parallax speed={0.13}>
@@ -666,7 +663,7 @@ function Hero() {
               viewport={{ once: true }}
               className="mt-4 max-w-xl text-center text-balance text-lg font-medium leading-relaxed text-black dark:text-white"
             >
-              We help you create professional songs from start to release.
+              Bring your melody, chords, or voice-note guidance. FMG turns it into a structured, production-ready arrangement.
             </motion.p>
           </Parallax>
 
@@ -680,56 +677,8 @@ function Hero() {
               viewport={{ once: true }}
               className="mt-5 max-w-2xl text-center text-balance text-base leading-relaxed text-black dark:text-white"
             >
-              <b>FMG Universe</b> is a creative-technology ecosystem and
-              solution, born from{" "}
-              <b>Flemmo Music Global (FMG) Publishing</b> established since 2018, and later evolved
-              into a holding in 2025 that spans music, technology, and digital
-              innovation. <b>Beyond Sound. Built-in Intelligence</b>. We’re
-              building one integrated operating system for music, rights-first,
-              advanced technology platform that unites songwriting, composition,
-              end-to-end music production (A-Z: Recording, Studio, Sound Design,
-              Mixing and Mastering), audio-visual content creation (film, video,
-              and sound) talent, distribution & media, artist & repertoire
-              (A&R), <b> AI research & development (R&D)</b>, publishing, live
-              event, music academy, and musician community development—with
-              worldwide collaboration as the connective layer. By embedding
-              intelligence into real workflows,{" "}
-              <b>we help artists, labels, and brands</b> to scout smarter,
-              produce faster, own rights, grow royalties, and scale catalogs
-              into lasting equity—ready for shaping positive impact for the next
-              generation in the future.
+              Arrangement starts at <b>USD 350</b>, typically takes <b>7–14 business days</b>, and includes <b>two structured revision rounds</b>. This is a paid creative service: FMG does not buy or acquire your song through this order.
             </motion.p>
-          </Parallax>
-
-          {/* Vision & Mission */}
-          <Parallax speed={0.15}>
-            <motion.div
-              variants={fadeUp}
-              custom={5}
-              initial={false}
-              whileInView="visible" 
-              viewport={{ once: true }}
-              className="mt-10 grid gap-8 text-center"
-            >
-              <div>
-                <h3 className="text-3xl sm:text-4xl font-bold tracking-widest text-black dark:text-white">
-                  Our Vision
-                </h3>
-                <p className="mt-3 max-w-xl mx-auto text-base leading-relaxed text-black/90 dark:text-white/100">
-                  Empowering the future of music through innovation,
-                  technology, and intelligence.
-                </p>
-              </div>
-              <div>
-                <h3 className="text-3xl sm:text-4xl font-bold tracking-widest text-black dark:text-white">
-                  Our Mission
-                </h3>
-                <p className="mt-3 max-w-xl mx-auto text-base leading-relaxed text-black/90 dark:text-white/100">
-                  To unite creativity and technology in one ecosystem—helping
-                  artists and brands create, own, and grow lasting value.
-                </p>
-              </div>
-            </motion.div>
           </Parallax>
 
           {/* CTA Buttons */}
@@ -742,32 +691,51 @@ function Hero() {
               viewport={{ once: true }}
               className="mt-12 flex flex-wrap items-center justify-center gap-3"
             >
-              <MagneticButton href="/client/dashboard">
-                Start My Project
+              <MagneticButton href={ARRANGEMENT_ORDER_PATH}>
+                Order Music Arrangement
               </MagneticButton>
               <Link
-                href="/portfolio"
+                href={ARRANGEMENT_PORTFOLIO_PATH}
                 className="group inline-flex items-center gap-2 rounded-2xl border border-black/10 bg-white/70 px-5 py-3 text-sm font-semibold shadow-sm backdrop-blur transition hover:bg-white dark:border-white/10 dark:bg-black/40 dark:hover:bg-black"
               >
-                <Music className="h-5 w-5" /> View Portfolio
+                <Music className="h-5 w-5" /> View Arrangement Work
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
               <Link
-                href="#about"
+                href="/services/inquiry"
                 className="group inline-flex items-center gap-2 rounded-2xl border border-black/10 bg-white/70 px-5 py-3 text-sm font-semibold shadow-sm backdrop-blur transition hover:bg-white dark:border-white/10 dark:bg-black/40 dark:hover:bg-black"
               >
-                <PlayCircle className="h-5 w-5" /> Learn about FMG
+                <MessageCircle className="h-5 w-5" /> Ask Before Ordering
               </Link>
             </motion.div>
           </Parallax>
 
-          <CinematicVideoHeroHLS
-            shape="rounded"
-            youtubeUrl="https://youtu.be/3zI-HFaUevg"
-            maxWidthClass="max-w-7xl"
-          />
+          <LazyCinematicVideoHero />
         </div>
       </motion.div>
+    </section>
+  );
+}
+
+
+function ArrangementSalesIntro() {
+  const facts = [
+    ["Starting price", "USD 350"],
+    ["Typical timeline", "7–14 business days"],
+    ["Included revisions", "2 structured rounds"],
+    ["Final delivery", "WAV/MP3, instrumental & stems"],
+  ];
+  return (
+    <section className="mx-auto max-w-6xl px-4 py-14 sm:py-20">
+      <div className="grid gap-8 rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-indigo-50 p-6 shadow-xl shadow-violet-500/10 dark:border-violet-900 dark:from-violet-950/35 dark:via-black dark:to-indigo-950/35 sm:p-9 lg:grid-cols-[1fr_0.9fr]">
+        <div>
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-violet-700 dark:text-violet-300">A service for song owners</p>
+          <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Three steps. One clear arrangement order.</h2>
+          <ol className="mt-6 space-y-4">{["Send your song brief and accessible guidance links.","Approve the confirmed scope, timing, and IDR invoice.","Review previews in the client portal and receive final files."].map((item,index)=><li key={item} className="flex items-start gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-violet-600 text-sm font-bold text-white">{index+1}</span><span className="pt-0.5 leading-6">{item}</span></li>)}</ol>
+          <div className="mt-7 flex flex-wrap gap-3"><Link href={ARRANGEMENT_ORDER_PATH} className="rounded-xl bg-violet-600 px-5 py-3 font-semibold text-white hover:bg-violet-700">Order arrangement</Link><Link href="/services/inquiry" className="rounded-xl border border-slate-300 px-5 py-3 font-semibold hover:bg-white dark:border-white/20 dark:hover:bg-white/10">Ask without an account</Link></div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">{facts.map(([label,value])=><div key={label} className="rounded-2xl border border-black/5 bg-white/80 p-5 dark:border-white/10 dark:bg-white/5"><p className="text-xs uppercase tracking-wider text-slate-500">{label}</p><p className="mt-2 font-bold">{value}</p></div>)}<div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 sm:col-span-2 dark:border-emerald-900 dark:bg-emerald-950/30"><p className="font-semibold">Ownership is stated before work starts.</p><p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">Ordering arrangement does not transfer your composition to FMG. Credits, licenses, session assets, and delivery rights follow the approved scope and terms.</p></div></div>
+      </div>
     </section>
   );
 }
@@ -779,12 +747,10 @@ function Hero() {
  *************************/
 function Features() {
   const COUNT = DIVISIONS.length;
-  const extended = React.useMemo(
-    () => [DIVISIONS[COUNT - 1], ...DIVISIONS, DIVISIONS[0]],
-    []
-  );
 
   const railRef = React.useRef<HTMLDivElement | null>(null);
+  const carouselInView = useInView(railRef, { margin: "200px 0px" });
+  const reduceMotion = useReducedMotion();
   const pausedRef = React.useRef(false);          // pause karena hover/touch
   const idxRef = React.useRef(1);                 // index extended, mulai dari item "real" pertama
   const scrollEndTimer = React.useRef<number | null>(null);
@@ -843,6 +809,7 @@ function Features() {
 
   // === Auto-step tiap 3s, tapi hormati pause hover/touch & pause 10s manual ===
   React.useEffect(() => {
+    if (!carouselInView || reduceMotion) return;
     let timer: number;
     const tick = () => {
       const now = Date.now();
@@ -854,7 +821,7 @@ function Features() {
     };
     timer = window.setTimeout(tick, 3000);
     return () => window.clearTimeout(timer);
-  }, [scrollToIndex]);
+  }, [carouselInView, reduceMotion, scrollToIndex]);
 
   const onScroll = React.useCallback(() => {
     if (scrollEndTimer.current) window.clearTimeout(scrollEndTimer.current);
@@ -924,13 +891,67 @@ function Features() {
         </motion.div>
       </Parallax>
 
+      <Parallax speed={0.08}>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-10%" }}
+          className="mt-10 overflow-hidden rounded-3xl border border-violet-200/80 bg-gradient-to-br from-indigo-50 via-white to-violet-50 p-6 shadow-xl shadow-violet-500/10 dark:border-violet-800/70 dark:from-indigo-950/50 dark:via-black dark:to-violet-950/50 sm:p-8"
+        >
+          <div className="grid items-center gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-violet-700 dark:bg-violet-900/40 dark:text-violet-200">
+                <Music className="h-4 w-4" /> Professional Service
+              </div>
+              <h3 className="mt-4 text-2xl font-bold sm:text-3xl">Music Arrangement for Your Song</h3>
+              <p className="mt-3 max-w-2xl leading-relaxed text-black/70 dark:text-white/75">
+                Already have a melody, chords, or a guidance recording? We turn your musical idea into a structured arrangement built around your brief, genre, and references.
+              </p>
+              <p className="mt-3 text-sm font-medium text-violet-800 dark:text-violet-200">
+                This is a paid arrangement service. FMG does not buy, scout, or acquire your song through this order.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <MagneticButton href={ARRANGEMENT_ORDER_PATH}>Order Music Arrangement</MagneticButton>
+                <Link
+                  href={ARRANGEMENT_PORTFOLIO_PATH}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-black/10 bg-white/70 px-5 py-3 text-sm font-semibold transition hover:bg-white dark:border-white/10 dark:bg-black/30 dark:hover:bg-black/50"
+                >
+                  View Arrangement Work <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+            <div className="grid gap-3">
+              {[
+                "Choose Arrangement in the service catalog",
+                "Add your brief and shareable guidance links",
+                "Review the price and payment plan before submitting",
+                "Track the request, invoice, and project in your client portal",
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-3 rounded-2xl border border-black/5 bg-white/75 p-4 text-sm dark:border-white/10 dark:bg-white/5">
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-violet-600 dark:text-violet-300" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      </Parallax>
+
       {/* MOBILE carousel */}
       <Parallax speed={0.08}>
-        <div className="mt-12 sm:hidden relative">
+        <div
+          className="mt-12 sm:hidden relative"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+          onTouchStart={() => setPaused(true)}
+          onTouchEnd={() => { setPaused(false); requestPause(10000); }}
+        >
           <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-white to-transparent dark:from-black" />
           <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent dark:from-black" />
 
           <div
+            ref={railRef}
+            onScroll={onScroll}
             className="
               flex gap-4 overflow-x-auto overflow-y-visible scroll-smooth
               snap-x snap-mandatory
@@ -968,107 +989,13 @@ function Features() {
             const centerLastClass = centerLast ? "lg:col-start-2" : "";
             const href = `/${slugFromDivisionTitle(d.title)}`;
             return (
-              <div key={d.title} className={cn("transform-gpu will-change-transform", wingShift, centerLastClass)}>
+              <div key={d.title} className={cn("transform-gpu", wingShift, centerLastClass)}>
                 <FeatureCard icon={d.icon} title={d.title} desc={d.desc} href={href} />
               </div>
             );
           })}
         </motion.div>
       </Parallax>
-    </section>
-  );
-}
-
-
-/*************************
- * Numbers / Social Proof (REPLACED)
- *************************/
-function Numbers() {
-  const viewportRef = React.useRef<HTMLDivElement | null>(null);
-  const contentRef = React.useRef<HTMLUListElement | null>(null);
-  const [paused, setPaused] = React.useState(false);
-
-  // auto-scroll (idle)
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
-    if (reduce) return;
-
-    const el = viewportRef.current;
-    const list = contentRef.current;
-    if (!el || !list) return;
-
-    let raf: number | null = null;
-    let last = performance.now();
-    const speedPxPerMs = 0.08; // ~80px/s
-
-    const tick = (now: number) => {
-      if (!el || !list) return;
-      const dt = now - last;
-      last = now;
-
-      if (!paused) {
-        const half = list.scrollWidth / 2; // karena kita render 2x
-        el.scrollLeft += speedPxPerMs * dt;
-        // loop mulus
-        if (el.scrollLeft >= half) el.scrollLeft -= half;
-        if (el.scrollLeft < 0) el.scrollLeft += half;
-      }
-      raf = requestAnimationFrame(tick);
-    };
-
-    raf = requestAnimationFrame(tick);
-
-    const onVis = () => { if (document.hidden) setPaused(true); };
-    document.addEventListener("visibilitychange", onVis);
-
-    return () => {
-      if (raf) cancelAnimationFrame(raf);
-      document.removeEventListener("visibilitychange", onVis);
-    };
-  }, [paused]);
-
-  return (
-    <section className="relative border-y border-black/10 bg-gradient-to-b from-white to-indigo-50/40 py-15 dark:border-white/10 dark:from-black dark:to-indigo-950/20">
-      <Parallax speed={0.03}>
-        <div className="mx-auto max-w-6xl px-4 text-center">
-          <h2 className="text-pretty text-3xl font-bold sm:text-4xl">Numbers that matter</h2>
-          <p className="mt-2 text-black/70 dark:text-white">Proof of scale, reliability, and global reach.</p>
-        </div>
-      </Parallax>
-
-      <div
-        ref={viewportRef}
-        className="relative mx-auto mt-10 w-full max-w-6xl overflow-x-auto px-4 [scrollbar-width:none] [-ms-overflow-style:none]"
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-        onTouchStart={() => setPaused(true)}
-        onTouchEnd={() => setPaused(false)}
-        aria-label="FMG key numbers carousel"
-      >
-        {/* hide scrollbar in webkit */}
-        <style>{`
-          [data-hide-scrollbar]::-webkit-scrollbar { display: none; }
-        `}</style>
-
-        {/* kiri/kanan fade */}
-        <div className="pointer-events-none absolute left-0 top-0 h-full w-10 bg-gradient-to-r from-white to-transparent dark:from-black" />
-        <div className="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-white to-transparent dark:from-black" />
-
-        <ul
-          ref={contentRef}
-          data-hide-scrollbar
-          className="flex select-none gap-6 py-1"
-          role="list"
-        >
-          {/* render 2x */}
-          {[...STATS, ...STATS].map((s, i) => (
-            <li key={`${s.label}-${i}`} className="min-w-[220px] sm:min-w-[240px] lg:min-w-[260px]">
-              <Stat label={s.label} value={s.value} />
-            </li>
-          ))}
-        </ul>
-      </div>
     </section>
   );
 }
@@ -1212,18 +1139,20 @@ function AboutFMG() {
 }
 
 function Testimonials() {
-  const items = [
+  const items = React.useMemo(() => [
     { quote:"The team quickly grasped the song’s direction. Communication was clear, and the final result still feels like me.", name:"Viokichi", role:"Artist — Pop/R&B" },
-    { quote:"My bossa nova single went from demo to release without hassle. Administration and delivery to DSPs were handled smoothly.", name:"Amandha Ayu", role:"Artist — Jazz/Bossa Nova" },
+    { quote:"My bossa nova single went from the first idea to release without hassle. Administration and delivery to DSPs were handled smoothly.", name:"Amandha Ayu", role:"Artist — Jazz/Bossa Nova" },
     { quote:"Arrangement, tracking, through to release—everything in one workflow. Progress was always clear and on schedule.", name:"Nannouz", role:"Artist — Pop, Orchestra, Jazz, Rock" },
     { quote:"Cross-language project ran smoothly. Technical direction was precise, distribution was fast, and the result was professional.", name:"Adilisius", role:"Artist — Pop/EDM" },
     { quote:"They turned a rough idea into a record. Stems were organized, milestones were clear, and mix notes were laser-specific.", name:"BesThree", role:"Artist — Pop/EDM" },
     { quote:"One workspace for creative in the music industry—clear notes, fast decisions, release-ready delivery", name:"Anthem Boys", role:"Artist — Pop/EDM" },
-  ];
+  ], []);
   const COUNT = items.length;
   const extended = React.useMemo(() => [items[COUNT - 1], ...items, items[0]], [items, COUNT]);
 
   const railRef = React.useRef<HTMLDivElement | null>(null);
+  const carouselInView = useInView(railRef, { margin: "200px 0px" });
+  const reduceMotion = useReducedMotion();
   const pausedRef = React.useRef(false);
   const idxRef = React.useRef(1);
   const scrollEndTimer = React.useRef<number | null>(null);
@@ -1271,6 +1200,7 @@ function Testimonials() {
   }, [jumpToIndex]);
 
   React.useEffect(() => {
+    if (!carouselInView || reduceMotion) return;
     let timer: number;
     const tick = () => {
       const now = Date.now();
@@ -1281,7 +1211,7 @@ function Testimonials() {
     };
     timer = window.setTimeout(tick, 3000);
     return () => window.clearTimeout(timer);
-  }, [scrollToIndex]);
+  }, [carouselInView, reduceMotion, scrollToIndex]);
 
   const onScroll = React.useCallback(() => {
     if (scrollEndTimer.current) window.clearTimeout(scrollEndTimer.current);
@@ -1341,6 +1271,8 @@ function Testimonials() {
               px-1
             "
             style={{ WebkitOverflowScrolling: "touch" }}
+            role="region"
+            tabIndex={0}
             aria-label="Testimonials carousel"
           >
             <style>{`[data-hide-scrollbar]::-webkit-scrollbar{display:none}`}</style>
@@ -1370,14 +1302,6 @@ function Testimonials() {
   );
 }
 
-
-/** offset circular terpendek dari i ke center */
-function circularOffset(i: number, center: number, len: number): number {
-  const raw = i - center;
-  const pos = mod(raw, len);
-  return pos > len / 2 ? pos - len : pos; // range kira2 (-len/2 .. +len/2]
-}
-
 const SPRING = { type: "spring", stiffness: 240, damping: 28, mass: 0.65 } as const;
 // sebaran slot – boleh kamu tweak 0.26 -> 0.28 kalau mau lebih jauh
 const slotGap = (w: number) => Math.max(200, Math.min(360, Math.round(w * 0.26)));
@@ -1395,6 +1319,8 @@ function ArtworkSlider({ artworks }: { artworks: string[] }) {
   const railRef = React.useRef<HTMLDivElement | null>(null);
   const pausedRef = React.useRef(false);
   const resumeAtRef = React.useRef(0);
+  const carouselInView = useInView(railRef, { margin: "200px 0px" });
+  const reduceMotion = useReducedMotion();
 
   const requestPause = React.useCallback((ms = 10000) => {
     resumeAtRef.current = Date.now() + ms;
@@ -1402,10 +1328,11 @@ function ArtworkSlider({ artworks }: { artworks: string[] }) {
   const setPaused = (v: boolean) => { pausedRef.current = v; };
 
   // Gandakan item supaya "tak terbatas"
-  const LOOP = 20; // ulang 20x biar jauh
+  const showcaseArtworks = React.useMemo(() => artworks.slice(0, 12), [artworks]);
+  const LOOP = 3;
   const repeated = React.useMemo(
-    () => Array.from({ length: LOOP }, () => artworks).flat(),
-    [artworks]
+    () => Array.from({ length: LOOP }, () => showcaseArtworks).flat(),
+    [showcaseArtworks]
   );
 
   // waktu mount, scroll ke tengah (supaya ada ruang kiri-kanan)
@@ -1420,6 +1347,7 @@ function ArtworkSlider({ artworks }: { artworks: string[] }) {
 
   // auto scroll step
   React.useEffect(() => {
+    if (!carouselInView || reduceMotion) return;
     let timer: number;
     const tick = () => {
       const now = Date.now();
@@ -1431,7 +1359,7 @@ function ArtworkSlider({ artworks }: { artworks: string[] }) {
     };
     timer = window.setTimeout(tick, 3000);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [carouselInView, reduceMotion]);
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-20">
@@ -1479,6 +1407,8 @@ function ArtworkSlider({ artworks }: { artworks: string[] }) {
             px-1
           "
           style={{ WebkitOverflowScrolling: "touch" }}
+          role="region"
+          tabIndex={0}
           aria-label="Artwork carousel"
         >
           <style>{`[data-hide-scrollbar]::-webkit-scrollbar{display:none}`}</style>
@@ -1487,11 +1417,14 @@ function ArtworkSlider({ artworks }: { artworks: string[] }) {
               key={i}
               className="snap-center shrink-0 w-[260px] h-[260px] rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5"
             >
-              <img
+              <Image
                 src={src}
-                alt={`Artwork ${i % artworks.length}`}
+                alt={`Artwork ${(i % Math.max(showcaseArtworks.length, 1)) + 1}`}
                 className="h-full w-full object-cover"
                 loading="lazy"
+                width={260}
+                height={260}
+                sizes="260px"
               />
             </div>
           ))}
@@ -1780,7 +1713,7 @@ function CTA() {
             Tell us your vision — we&#39;ll craft the sound and handle publishing & distribution.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <MagneticButton href="/client/dashboard">Start My Project</MagneticButton>
+            <MagneticButton href={ARRANGEMENT_ORDER_PATH}>Order Music Arrangement</MagneticButton>
             <Link
               href="https://wa.me/6282298288188"
               className="inline-flex items-center gap-2 rounded-2xl border border-black/10 px-5 py-3 text-sm font-semibold hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
@@ -1799,11 +1732,12 @@ function CTA() {
             transition={{ duration: 0.6 }}
             className="relative aspect-[16/10] w-full overflow-hidden rounded-3xl border border-black/10 shadow-xl dark:border-white/10"
           >
-            <img
+            <Image
               src="/img/alfath-flemmo-founder-ceo-flemmo-music-global-publishing-fmg-universe.jpeg"
               alt="Alfath Flemmo - Founder & CEO Flemmo Music Global Publishing (FMG Universe)"
-              className="absolute inset-0 h-full w-full object-cover"
-              loading="lazy"
+              fill
+              sizes="(min-width: 768px) 50vw, 100vw"
+              className="object-cover"
             />
             <div className="absolute bottom-2 left-2/3 translate-x-[-40px] rounded-lg bg-black/50 px-2 py-1 text-center text-[9px] sm:text-sm font-medium text-white backdrop-blur-md shadow-md">
               <p>Alfath Flemmo</p>
@@ -1880,28 +1814,52 @@ export default function LandingPage() {
         //console.error('Exchange rate fetch failed:', errorMessage);
         
         // Only set fallback if we don't have any rates yet
-        if (Object.keys(rates).length <= 1) {
-          //console.warn('Using emergency fallback rates');
-          setRates({ USD: 1 }); // Minimal fallback - will show "Custom" for other currencies
-        }
+        setRates((current) => Object.keys(current).length <= 1 ? { USD: 1 } : current);
       } finally {
         setRatesLoading(false);
       }
     };
 
-    fetchRates();
+    let interval: ReturnType<typeof setInterval> | null = null;
+    const start = () => {
+      void fetchRates();
+      interval = setInterval(fetchRates, 60 * 60 * 1000);
+    };
 
-    // Auto-refresh rates every hour
-    const interval = setInterval(fetchRates, 60 * 60 * 1000);
-    return () => clearInterval(interval);
+    const idleId = window.requestIdleCallback
+      ? window.requestIdleCallback(start, { timeout: 1800 })
+      : window.setTimeout(start, 800);
+
+    return () => {
+      if (window.cancelIdleCallback) window.cancelIdleCallback(idleId);
+      else window.clearTimeout(idleId);
+      if (interval) clearInterval(interval);
+    };
   }, []);
 
   const [artworks, setArtworks] = React.useState<string[]>([]);
 
   React.useEffect(() => {
-    fetch("/api/artworks")
-      .then((res) => res.json())
-      .then((data: string[]) => setArtworks(data));
+    const controller = new AbortController();
+    const loadArtworks = () => {
+      fetch("/api/artworks", { signal: controller.signal })
+        .then((res) => res.json())
+        .then((data: string[]) => setArtworks(data.slice(0, 12)))
+        .catch((error: unknown) => {
+          if (!(error instanceof DOMException && error.name === "AbortError")) {
+            setArtworks([]);
+          }
+        });
+    };
+    const idleId = window.requestIdleCallback
+      ? window.requestIdleCallback(loadArtworks, { timeout: 2500 })
+      : window.setTimeout(loadArtworks, 1200);
+
+    return () => {
+      controller.abort();
+      if (window.cancelIdleCallback) window.cancelIdleCallback(idleId);
+      else window.clearTimeout(idleId);
+    };
   }, []);
 
   // const artworks = getArtworks();
@@ -1928,17 +1886,23 @@ export default function LandingPage() {
     "@type": "WebSite",
     url: siteConfig.url,
     name: `${siteConfig.name} — ${siteConfig.tagline}`,
-    potentialAction: {
-      "@type": "SearchAction",
-      target: `${siteConfig.url}/search?q={search_term_string}`,
-      "query-input": "required name=search_term_string",
-    },
+  };
+
+  const arrangementService = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: "Jasa aransemen musik profesional",
+    serviceType: "Music arrangement and production",
+    provider: { "@type": "Organization", name: siteConfig.name, url: siteConfig.url },
+    areaServed: { "@type": "Country", name: "Indonesia" },
+    availableChannel: { "@type": "ServiceChannel", serviceUrl: `${siteConfig.url}${ARRANGEMENT_ORDER_PATH}` },
+    offers: { "@type": "Offer", priceCurrency: "USD", price: "700", url: `${siteConfig.url}${ARRANGEMENT_ORDER_PATH}` },
   };
 
   return (
-    <main className="relative min-h-screen bg-white text-black antialiased dark:bg-black dark:text-white">
+    <main data-performance-page className="relative min-h-screen bg-white text-black antialiased dark:bg-black dark:text-white">
       {/* subtle noise overlay */}
-      <div className="pointer-events-none fixed inset-0 z-[-1] opacity-[0.06] mix-blend-soft-light" aria-hidden>
+      <div className="pointer-events-none fixed inset-0 z-[-1] hidden opacity-[0.045] mix-blend-soft-light md:block" aria-hidden>
         <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
           <filter id="noiseFilter">
             <feTurbulence type="fractalNoise" baseFrequency="0.80" numOctaves="4" stitchTiles="stitch" />
@@ -1949,11 +1913,8 @@ export default function LandingPage() {
       </div>
 
       <Hero />
-      <AboutFMG />
-      <Features />
+      <ArrangementSalesIntro />
       <PortfolioShowcase />
-      <Numbers />
-      
       <Testimonials />
       <Pricing 
         currency={currency} 
@@ -1965,9 +1926,12 @@ export default function LandingPage() {
       />
       <ArtworkSlider artworks={artworks} />;
       <CTA />
+      <AboutFMG />
+      <Features />
       {/* <Footer /> */}
       <JsonLd id="org" data={org} />
       <JsonLd id="website" data={website} />
+      <JsonLd id="arrangement-service" data={arrangementService} />
       <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:py-12">
         <h2 className="mb-6 text-center text-xl font-semibold tracking-tight text-neutral-800 dark:text-neutral-100 sm:mb-10 sm:text-2xl">
           FMG Universe Brand Lockups

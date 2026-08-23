@@ -15,6 +15,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import HCaptcha from '@hcaptcha/react-hcaptcha'
+import { safeInternalPath, withNext } from "@/lib/safe-next";
 
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -50,9 +51,9 @@ export const LoginSection = (): React.JSX.Element => {
 
   const router = useRouter();
   const qp = useSearchParams();
-  const redirectedFrom = qp.get("redirectedFrom") || "/client/dashboard";
+  const nextPath = safeInternalPath(qp.get("next") || qp.get("redirectedFrom"));
   const msg = qp.get("m");
-  const [socialLoading, setSocialLoading] = useState(false);
+  const [, setSocialLoading] = useState(false);
 
   useEffect(() => {
     const saved = typeof window !== "undefined" ? localStorage.getItem("remember_email") : null;
@@ -66,17 +67,6 @@ export const LoginSection = (): React.JSX.Element => {
     const v = validate({ email, password });
     return Object.keys(v).length === 0 && !!captchaToken && !loading;
   }, [email, password, loading, captchaToken]);
-
-  const verifyCaptcha = async (token: string): Promise<boolean> => {
-    const res = await fetch("/api/verify-hcaptcha", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
-    });
-    if (!res.ok) return false;
-    const json: { ok: boolean } = await res.json();
-    return json.ok === true;
-  };
 
   const resetCaptcha = (): void => {
     setCaptchaToken(null);
@@ -133,9 +123,7 @@ export const LoginSection = (): React.JSX.Element => {
       if (rememberMe) localStorage.setItem("remember_email", email);
       else localStorage.removeItem("remember_email");
 
-      const rawNext = qp.get("next") || qp.get("redirectedFrom") || "";
-      const dest = rawNext.startsWith("/") ? rawNext : "/client/dashboard";
-      router.replace(dest);
+      router.replace(nextPath);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Login failed");
       resetCaptcha();
@@ -150,7 +138,7 @@ export const LoginSection = (): React.JSX.Element => {
     try {
       const supabase = getSupabaseClient();
 
-      const redirectTo = `${window.location.origin}/auth/callback`;
+      const redirectTo = `${window.location.origin}${withNext("/auth/callback", nextPath)}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
@@ -389,7 +377,7 @@ export const LoginSection = (): React.JSX.Element => {
               No account yet?{" "}
               <button
                 type="button"
-                onClick={() => router.push("/signup")}
+                onClick={() => router.push(withNext("/signup", nextPath))}
                 className="font-semibold text-indigo-700 hover:text-indigo-800 dark:text-indigo-300 dark:hover:text-indigo-200"
               >
                 Sign up

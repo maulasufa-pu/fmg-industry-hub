@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Cookie, ShieldCheck, Globe, Settings2, ExternalLink, Info, Languages, Clock, Lock, Network, FileText, Undo2, CircleCheck } from "lucide-react";
+import { OPEN_CONSENT_EVENT, SET_CONSENT_EVENT } from "@/components/privacy/ConsentManager";
 
 function classNames(...xs: Array<string | false | null | undefined>): string {
   return xs.filter(Boolean).join(" ");
 }
 
-const LAST_UPDATED = "August 24, 2025"; 
+const LAST_UPDATED = "August 23, 2026";
 const SECTIONS = [
   { id: "overview", label: "Overview" },
   { id: "what-are-cookies", label: "What Are Cookies & Similar Tech" },
@@ -115,16 +116,13 @@ function Pill({ children }: { children: React.ReactNode }) {
 
 function manageCookiePreferences() {
   if (typeof window === "undefined") return;
-  (window as any).OneTrust?.ToggleInfoDisplay?.();
-  (window as any).Cookiebot?.show?.();
-  (window as any).__cmp?.("showConsentTool");
-  (window as any).klaro?.show?.();
+  window.dispatchEvent(new Event(OPEN_CONSENT_EVENT));
 }
 
 function setConsentCookie(value: "accept_all" | "reject_non_essential") {
-  if (typeof document === "undefined") return;
-  const expires = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toUTCString(); // 180 days
-  document.cookie = `fmg_cookie_consent=${value}; Path=/; SameSite=Lax; Expires=${expires}`;
+  if (typeof window === "undefined") return;
+  const enabled = value === "accept_all";
+  window.dispatchEvent(new CustomEvent(SET_CONSENT_EVENT, { detail: { analytics: enabled, embeds: enabled } }));
 }
 
 export default function CookiesPolicyPage(): React.JSX.Element {
@@ -312,7 +310,7 @@ export default function CookiesPolicyPage(): React.JSX.Element {
           <SectionCard id={SECTIONS[13].id} title={SECTIONS[13].label} icon={Info}>
             <p>Questions about this Cookies Notice or our use of cookies?</p>
             <ul className="list-none pl-0">
-              <li>Email: <a href="mailto:legal@fmguniverse.com" className="underline underline-offset-4">legal@fmguniverse.com</a></li>
+              <li>Email: <a href="mailto:legal@flemmomusic.com" className="underline underline-offset-4">legal@flemmomusic.com</a></li>
               <li>Postal: FMG Universe — Legal, Jakarta, Indonesia (or your local FMG entity)</li>
             </ul>
           </SectionCard>

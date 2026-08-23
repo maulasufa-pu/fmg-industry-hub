@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ProjectList, {
   type TabKey as ClientTabKey,
   type ProjectRow as ClientProjectRow,
@@ -32,7 +32,6 @@ type Props = {
 
 export default function ClientProjectsController(props: Props) {
   const router = useRouter();
-  const pathname = usePathname();
   const sp = useSearchParams();
 
   const push = (next: Record<string, string | number | undefined>) => {

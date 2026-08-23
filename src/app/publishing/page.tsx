@@ -32,23 +32,6 @@ function useIsMobile(breakpoint = 768) {
   return isMobile;
 }
 
-function TopBar(): React.JSX.Element {
-  return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex h-14 items-center justify-between px-4 sm:px-8">
-      <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-neutral-900/60 px-3 py-1.5 text-white backdrop-blur-md dark:bg-white/10">
-        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-[11px] font-bold leading-none">
-          FMG
-        </span>
-        <span className="text-xs tracking-wide opacity-90">Universe • Publishing</span>
-      </div>
-      <div className="pointer-events-auto hidden sm:inline-flex items-center gap-2 rounded-full bg-neutral-900/60 px-3 py-1.5 text-[12px] text-white backdrop-blur-md dark:bg-white/10">
-        <span className="opacity-80">Scroll</span>
-        <ArrowDown className="h-3.5 w-3.5" />
-      </div>
-    </div>
-  );
-}
-
 function ParallaxField({ container }: { container: React.RefObject<HTMLDivElement | null> }): React.JSX.Element {
   const reduce = useReducedMotion();
   const isMobile = useIsMobile();
@@ -468,6 +451,15 @@ export default function PublishingPage(): React.JSX.Element {
     return () => obs.disconnect();
   }, []);
 
+  const jump = useCallback(
+    (i: number) => {
+      const last = slides.length;
+      const idx = Math.max(0, Math.min(last, i));
+      sectionRefs.current[idx]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    },
+    [slides.length]
+  );
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowDown") {
@@ -480,16 +472,7 @@ export default function PublishingPage(): React.JSX.Element {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [active]);
-
-  const jump = useCallback(
-    (i: number) => {
-      const last = slides.length; 
-      const idx = Math.max(0, Math.min(last, i));
-      sectionRefs.current[idx]?.scrollIntoView({ behavior: "smooth", block: "start" });
-    },
-    [slides.length]
-  );
+  }, [active, jump]);
 
   useEffect(() => {
     const el = containerRef.current;

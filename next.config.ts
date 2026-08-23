@@ -8,13 +8,8 @@ const supabaseHost = supabaseUrl ? supabaseUrl.host : "*.supabase.co";
 const supabaseWs = supabaseUrl ? supabaseUrl.origin.replace("https://", "wss://") : "wss://*.supabase.co";
 
 const isDev = process.env.NODE_ENV !== "production";
-const cspReportOnly = isDev || process.env.CSP_REPORT_ONLY === "1";
-
-const REPORT_TO_JSON = JSON.stringify({
-  group: "csp-endpoint",
-  max_age: 10886400,
-  endpoints: [{ url: "https://your-report-collector.example.com/csp" }],
-});
+const cspReportOnly = process.env.CSP_REPORT_ONLY === "1";
+const cspReportUri = process.env.CSP_REPORT_URI?.trim();
 
 const devConnect = isDev
   ? " http://localhost:54321 http://127.0.0.1:54321 ws://localhost:54321 ws://127.0.0.1:54321"
@@ -34,7 +29,7 @@ const scriptSrcParts = [
 const cspParts = [
   "default-src 'self'",
   "base-uri 'self'",
-  "frame-ancestors 'self'",
+  "frame-ancestors 'none'",
   `frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://w.soundcloud.com https://soundcloud.com https://open.spotify.com https://embed.spotify.com https://www.google.com https://maps.google.com https://calendar.google.com https://app.midtrans.com https://app.sandbox.midtrans.com https://hcaptcha.com https://*.hcaptcha.com`,
   `script-src ${scriptSrcParts.join(" ")} 'unsafe-inline'`,
   `connect-src 'self' ${supabaseOrigin} ${supabaseWs} https://app.midtrans.com https://app.sandbox.midtrans.com https://api.midtrans.com https://api.sandbox.midtrans.com https://hcaptcha.com https://*.hcaptcha.com${devConnect}`,
@@ -54,6 +49,11 @@ const cspParts = [
 const CSP_VALUE = cspParts.join("; ");
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    rules: {
+      "*.svg": { loaders: ["@svgr/webpack"], as: "*.js" },
+    },
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "source.unsplash.com" },
@@ -78,10 +78,6 @@ const nextConfig: NextConfig = {
           ]
         : []),
     ],
-  },
-
-  experimental: {
-    forceSwcTransforms: true, // pakai SWC sesuai target browserslist
   },
 
   webpack(config) {
@@ -112,14 +108,6 @@ const nextConfig: NextConfig = {
       headers: { key: string; value: string }[];
     }[] = [];
 
-    // Cache immutable untuk file static Next.js
-    headers.push({
-      source: "/_next/static/:path*",
-      headers: [
-        { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
-      ],
-    });
-
     // Cache untuk file video
     headers.push({
       source: "/videos/:path*",
@@ -132,14 +120,13 @@ const nextConfig: NextConfig = {
     });
 
     // CSP
-    if (cspReportOnly) {
+    if (cspReportOnly && cspReportUri) {
       headers.push({
         source: "/(.*)",
         headers: [
-          { key: "Report-To", value: REPORT_TO_JSON },
           {
             key: "Content-Security-Policy-Report-Only",
-            value: `${CSP_VALUE}; report-to=csp-endpoint`,
+            value: `${CSP_VALUE}; report-uri ${cspReportUri}`,
           },
         ],
       });

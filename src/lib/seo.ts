@@ -18,8 +18,9 @@ export function seo(input: SeoInput = {}): Metadata {
   const img = abs(input.image ?? "/og-default.jpg");
 
   return {
+    title: { absolute: t },
     description: d,
-    alternates: { canonical: p },
+    alternates: { canonical: p, languages: { "id-ID": p, "x-default": p } },
     openGraph: {
       type: "website",
       url: abs(p),
@@ -37,6 +38,6 @@ export function seo(input: SeoInput = {}): Metadata {
       description: d,
       images: [img],
     },
-    robots: input.noIndex ? { index: false, follow: false } : undefined,
+    robots: input.noIndex || /^(\/admin|\/client|\/auth|\/profile|\/login|\/signup|\/forgot-password|\/payments)/.test(p) ? { index: false, follow: false } : undefined,
   };
 }

@@ -60,7 +60,6 @@ export function formatCurrency(
   
   try {
     const currencyOption = CURRENCY_OPTIONS.find(opt => opt.code === currency);
-    const symbol = currencyOption?.symbol || currency;
     
     // Handle currency-specific decimal places
     let maximumFractionDigits = 2;

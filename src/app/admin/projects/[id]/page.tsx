@@ -5,6 +5,7 @@ import { motion, Variants } from "framer-motion";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { notify } from "@/components/ui/FeedbackHost";
 
 import type {
   ProjectSummary,
@@ -40,10 +41,6 @@ const pageVariants: Variants = {
   }
 };
 
-const ROLES = ["anr", "composer", "producer", "engineer", "publisher"] as const;
-const orFilter = ROLES.map((r) => `staff_role.cs.{${r}}`).join(",");
-
-type RoleKey = "anr" | "composer" | "producer" | "engineer" | "publisher";
 const ASSIGNABLE_ROLES = ["anr", "composer", "producer", "engineer", "publisher"] as const;
 
 export default function AdminProjectDetailPage() {
@@ -54,7 +51,7 @@ export default function AdminProjectDetailPage() {
   const [project, setProject] = useState<ProjectSummary | null>(null);
   const [userAccess, setUserAccess] = useState<UserAccess | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
-  const [assignmentsLoading, setAssignmentsLoading] = useState<boolean>(true); // ← optional
+  const [, setAssignmentsLoading] = useState<boolean>(true); // ← optional
   
   const [accessChecked, setAccessChecked] = useState(false);
   const [projectChecked, setProjectChecked] = useState(false);
@@ -89,7 +86,7 @@ export default function AdminProjectDetailPage() {
   });
 
   const [drafts, setDrafts] = useState<any[] | null>(null);
-  const [revisions, setRevisions] = useState<any[] | null>(null);
+  const [revisions, ] = useState<any[] | null>(null);
   const [links, setLinks] = useState<any[] | null>(null);
   const [messages, setMessages] = useState<any[] | null>(null);
   const [meetings, setMeetings] = useState<any[] | null>(null);
@@ -147,44 +144,6 @@ export default function AdminProjectDetailPage() {
 
     return null;
   };
-
-  const assignOne = async (projectId: string, role: "anr" | "composer" | "producer" | "engineer", userId: string) => {
-    const { error: e1 } = await supabase
-      .from("assignments")
-      .update({ active: false, unassigned_at: new Date().toISOString() })
-      .eq("project_id", projectId)
-      .eq("role", role)
-      .eq("active", true);
-    if (e1) throw e1;
-
-    const { error: e2 } = await supabase.from("assignments").insert({
-      assignment_id: (globalThis.crypto as Crypto | undefined)?.randomUUID?.() ?? undefined,
-      project_id: projectId,
-      role,
-      user_id: userId,
-      assigned_by: (await supabase.auth.getUser()).data.user?.id ?? null,
-      assigned_at: new Date().toISOString(),
-      active: true,
-    });
-    if (e2) throw e2;
-  };
-
-  const getDisplayNameById = (
-    profiles: Array<{ id: string; first_name: string | null; last_name: string | null; email: string | null }>,
-    id: string | null
-  ) => {
-    if (!id) return "";
-    const p = profiles.find((x) => x.id === id);
-    if (!p) return "";
-    const full = [p.first_name ?? "", p.last_name ?? ""].filter(Boolean).join(" ");
-    return full || p.email || "";
-  };
-
-  const raceWithTimeout = <T,>(promise: PromiseLike<T>, ms = 8000, errorMessage = "Request timed out"): Promise<T> =>
-    Promise.race([
-      Promise.resolve(promise),
-      new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`${errorMessage} (${ms}ms)`)), ms)),
-    ]);
 
   useEffect(() => {
     let mounted = true;
@@ -375,8 +334,7 @@ export default function AdminProjectDetailPage() {
       }),
     });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
+    if (!res.ok) {await res.json().catch(() => ({}));
       //console.error("Save assignments failed:", err?.error || `HTTP ${res.status}`);
       return;
     }
@@ -393,8 +351,7 @@ export default function AdminProjectDetailPage() {
           method: "DELETE",
           signal: AbortSignal.timeout(8000),
         });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
+        if (!res.ok) {await res.json().catch(() => ({}));
           //console.error(`Failed to remove ${role}:`, err?.error || `HTTP ${res.status}`);
         }
       }
@@ -410,14 +367,14 @@ export default function AdminProjectDetailPage() {
 
     setProject(p => (p ? { ...p, status: "in_progress", stage: "awaiting_payment" } : p));
 
-    const { data, error } = await supabase.rpc("accept_project", {
+    const { error } = await supabase.rpc("accept_project", {
       p_project_id: project.project_id,
     });
 
     if (error) {
       setProject(p => (p ? { ...p, ...prev } : p));
       //console.error("[Accept] RPC error:", error);
-      alert(`Accept gagal: ${error.message}`);
+      notify(`Accept gagal: ${error.message}`, "error");
       return;
     }
 
@@ -430,14 +387,14 @@ export default function AdminProjectDetailPage() {
 
     setProject(p => (p ? { ...p, status: "on_hold" } : p));
 
-    const { data, error } = await supabase.rpc("put_project_on_hold", {
+    const { error } = await supabase.rpc("put_project_on_hold", {
       p_project_id: project.project_id,
     });
 
     if (error) {
       setProject(p => (p ? { ...p, ...prev } : p));
       //console.error("[Hold] RPC error:", error);
-      alert(`Put on Hold gagal: ${error.message}`);
+      notify(`Put on Hold gagal: ${error.message}`, "error");
       return;
     }
 
@@ -450,14 +407,14 @@ export default function AdminProjectDetailPage() {
 
     setProject(p => (p ? { ...p, status: "in_progress" } : p));
 
-    const { data, error } = await supabase.rpc("resume_project", {
+    const { error } = await supabase.rpc("resume_project", {
       p_project_id: project.project_id,
     });
 
     if (error) {
       setProject(p => (p ? { ...p, ...prev } : p));
       //console.error("[Continue] RPC error:", error);
-      alert(`Continue gagal: ${error.message}`);
+      notify(`Continue gagal: ${error.message}`, "error");
       return;
     }
 

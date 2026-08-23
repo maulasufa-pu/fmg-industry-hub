@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/test-results
+/.codex-tmp
 
 # next.js
 /.next/

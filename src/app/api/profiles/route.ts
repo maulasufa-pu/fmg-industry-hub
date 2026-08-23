@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { apiAuthErrorResponse, requireAdminRequest } from "@/lib/auth/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(request: Request) {
   try {
+    await requireAdminRequest(request);
     const url = new URL(request.url);
     const mode = url.searchParams.get('mode');
-    
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = getSupabaseAdminClient();
+    if (!supabase) return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
     
     if (mode === 'admin') {
       const { data, error } = await supabase
@@ -19,7 +18,7 @@ export async function GET(request: Request) {
 
       if (error) {
         //console.error("Database error:", error);
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        return NextResponse.json({ success: false, error: "Unable to load profiles" }, { status: 500 });
       }
 
       return NextResponse.json({ success: true, data: data || [] });
@@ -32,7 +31,7 @@ export async function GET(request: Request) {
 
     if (error) {
       //console.error("Database error:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "Unable to load profiles" }, { status: 500 });
     }
 
     const roleOptions: any = {
@@ -46,7 +45,7 @@ export async function GET(request: Request) {
     data?.forEach((profile: any) => {
       if (!profile.staff_role) return;
 
-      let roles = Array.isArray(profile.staff_role) ? profile.staff_role : [profile.staff_role];
+      const roles = Array.isArray(profile.staff_role) ? profile.staff_role : [profile.staff_role];
 
       const member = {
         id: profile.id,
@@ -68,6 +67,8 @@ export async function GET(request: Request) {
 
     return NextResponse.json(roleOptions);
   } catch (error) {
+    const authResponse = apiAuthErrorResponse(error);
+    if (authResponse) return authResponse;
     //console.error("API error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

@@ -80,8 +80,6 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
     return i === -1 ? { dir: "", name: p } : { dir: p.slice(0, i), name: p.slice(i + 1) };
   };
 
-  const progress = useMemo(() => (duration > 0 ? time / duration : 0), [time, duration]);
-  
   const colors = useMemo(() => ({
     wave: "rgba(148,163,184,0.28)",
     progress: "rgba(168,85,247,0.95)",
@@ -246,19 +244,14 @@ export default function WaveformPlayer({ src, title = "Preview", initialVolume =
   const toggle = () => {
     const ws = wsRef.current;
     if (!ws || !ready || !duration) return;
-    ws.isPlaying() ? ws.pause() : ws.play();
+    if (ws.isPlaying()) ws.pause();
+    else ws.play();
   };
 
     const volumeStyle: CSSVarStyle = {
     '--val': volume,
     '--track-fill': colors.trackFill,
     '--track-bg': colors.trackBg,
-    };
-
-    const seekStyle: CSSVarStyle = {
-    '--val': progress,
-    '--track-fill': colors.progress,
-    '--track-bg': colors.wave,
     };
 
   return (

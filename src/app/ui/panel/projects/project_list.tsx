@@ -158,6 +158,9 @@ type Props = {
   onOpen: (id: string) => void;
   onBulkAssignPIC: (ids: string[], pic: string | null) => Promise<void>;
   onBulkMarkFinished: (ids: string[]) => Promise<void>;
+  initiallyOpenRequest?: boolean;
+  initialServiceKeys?: readonly string[];
+  requestIntent?: "arrangement";
 };
 
 /** ===== Role-aware table headers ===== */
@@ -212,6 +215,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
     filterOptions,
     loading, rows, totalCount, currentPage, pageSize, onPageChange,
     onOpen, onBulkAssignPIC, onBulkMarkFinished,
+    initiallyOpenRequest = false, initialServiceKeys = [], requestIntent,
   } = props;
 
   /** ===== Get effective role (client-side) ===== */
@@ -235,7 +239,12 @@ export default function ProjectList(props: Props): React.JSX.Element {
   }, []);
 
   const isClient = role === "client";
+  const canSelect = roleLoaded && !isClient;
   const headers = useMemo(() => buildHeaders(isClient ? "client" : "admin"), [isClient]);
+
+  useEffect(() => {
+    if (roleLoaded && isClient && initiallyOpenRequest) setOpenRequest(true);
+  }, [initiallyOpenRequest, isClient, roleLoaded]);
 
   const tabs: TabKey[] = useMemo(
     () =>
@@ -496,7 +505,6 @@ export default function ProjectList(props: Props): React.JSX.Element {
                 { value: filterStage, onChange: onFilterStage, options: filterOptions.stageOptions, prefix: "Stage", icon: Target },
                 { value: filterStatus, onChange: onFilterStatus, options: filterOptions.statusOptions, prefix: "Status", icon: BarChart3 },
               ].map((filter, index) => {
-                const IconComponent = filter.icon;
                 return (
                   <motion.div key={index} className="relative" whileHover={{ scale: 1.01 }}>
                     <motion.select
@@ -535,7 +543,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
 
       {/* Bulk Action Bar */}
       <AnimatePresence>
-        {anySelected && (
+        {canSelect && anySelected && (
           <motion.div
             className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4 rounded-lg sm:rounded-xl border border-indigo-300 dark:border-purple-400/30 bg-gradient-to-r from-blue-50/80 via-indigo-50/80 to-purple-50/80 dark:from-slate-800/80 dark:via-purple-900/20 dark:to-violet-900/20 backdrop-blur-sm p-3 sm:p-4 shadow-lg"
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
@@ -632,13 +640,15 @@ export default function ProjectList(props: Props): React.JSX.Element {
                   >
                     {/* Top line: checkbox + title + progress */}
                     <div className="flex items-start gap-3">
-                      <button
-                        onClick={() => toggleRow(r.project_id)}
-                        aria-label={`Select ${r.title}`}
-                        className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selected.has(r.project_id) ? "bg-green-500 border-green-500" : "border-slate-500/60 bg-slate-900/40"}`}
-                      >
-                        {selected.has(r.project_id) && <Check className="w-3 h-3 text-white stroke-[3]" />}
-                      </button>
+                      {canSelect && (
+                        <button
+                          onClick={() => toggleRow(r.project_id)}
+                          aria-label={`Select ${r.title}`}
+                          className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selected.has(r.project_id) ? "bg-green-500 border-green-500" : "border-slate-500/60 bg-slate-900/40"}`}
+                        >
+                          {selected.has(r.project_id) && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                        </button>
+                      )}
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
@@ -755,7 +765,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
               <table className="w-full border-collapse md:min-w-[1000px]">
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-slate-800 dark:to-slate-700 border-b border-gray-200 dark:border-purple-400/20">
                   <tr className="h-12 md:h-16 text-left">
-                    <th className="w-12 p-4 text-center">
+                    {canSelect && <th className="w-12 p-4 text-center">
                       <div className="flex justify-center">
                         <div
                           onClick={toggleAll}
@@ -765,7 +775,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
                           {selectAll && <Check className="w-3 h-3 text-white stroke-[3]" />}
                         </div>
                       </div>
-                    </th>
+                    </th>}
                     {headers.map((h) => (
                       <th key={h.key as string} className="px-6 py-4">
                         <div className="flex items-center gap-2">
@@ -780,7 +790,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
                 <tbody>
                   {rows.map((r, index) => {
                     const isExpanded = expanded.has(r.project_id);
-                    const expandedColSpan = headers.length + 2;
+                    const expandedColSpan = headers.length + (canSelect ? 2 : 1);
                     return (
                       <React.Fragment key={r.project_id}>
                         <motion.tr
@@ -798,7 +808,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
                           whileHover={{ scale: 1.001, y: -1, transition: { duration: 0.15, ease: "easeOut" } }}
                           whileTap={{ scale: 0.999, transition: { duration: 0.1 } }}
                         >
-                          <td className="p-4 text-center">
+                          {canSelect && <td className="p-4 text-center">
                             <div className="flex justify-center">
                               <div
                                 onClick={(e) => { e.stopPropagation(); toggleRow(r.project_id); }}
@@ -808,7 +818,7 @@ export default function ProjectList(props: Props): React.JSX.Element {
                                 {selected.has(r.project_id) && <Check className="w-3 h-3 text-white stroke-[3]" />}
                               </div>
                             </div>
-                          </td>
+                          </td>}
 
                           {/* Client Name */}
                           <td className="px-6 py-4">
@@ -1087,6 +1097,8 @@ export default function ProjectList(props: Props): React.JSX.Element {
         onClose={() => setOpenRequest(false)}
         anchorRef={requestBtnRef as unknown as React.RefObject<HTMLElement>}
         width={520}
+        initialServiceKeys={initialServiceKeys}
+        requestIntent={requestIntent}
       />
     </motion.div>
   );

@@ -36,13 +36,6 @@ const iconSizes = {
   xl: 24,
 };
 
-const textSizes = {
-  sm: "text-xs",
-  md: "text-sm", 
-  lg: "text-base",
-  xl: "text-lg",
-};
-
 export default function ProfileAvatar({
   avatarUrl,
   fullName = "User",
@@ -55,7 +48,6 @@ export default function ProfileAvatar({
   const sizeClass = sizeClasses[size];
   const sizeValue = sizeValues[size];
   const iconSize = iconSizes[size];
-  const textSize = textSizes[size];
   const isClickable = Boolean(onClick);
 
   const containerProps = {

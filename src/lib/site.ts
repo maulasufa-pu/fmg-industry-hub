@@ -28,8 +28,8 @@ export const siteConfig: SiteConfig = {
   description:
     "FMG Universe is a global music company & platform—uniting creation, distribution, publishing, media, R&D, live, and education. We help artists, labels, and brands produce faster, grow royalties, and scale catalogs with technology.",
   url: APP_URL,
-  localeDefault: "en-US",
-  locales: ["en-US", "id-ID"] as const, // English default, Indonesian secondary
+  localeDefault: "id-ID",
+  locales: ["id-ID"] as const,
   social: {
     twitter: "@fmg_universe",
     instagram: "https://instagram.com/fmg_universe",

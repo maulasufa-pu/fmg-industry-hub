@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useReducedMotion, motion, useScroll, useTransform } from "framer-motion";
-import { ShieldCheck, FileText, ArrowDown, Printer, Download, ExternalLink } from "lucide-react";
+import { ShieldCheck, FileText, Printer } from "lucide-react";
 
 function useIsMobile(breakpoint = 768): boolean {
   const [isMobile, setIsMobile] = useState(false);
@@ -72,7 +72,6 @@ const SECTIONS = [
 export default function TermsPage(): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [active, setActive] = useState<string>(SECTIONS[0].id);
-  const reduce = useReducedMotion();
 
   useEffect(() => {
     const el = containerRef.current;
@@ -91,14 +90,7 @@ export default function TermsPage(): React.JSX.Element {
     return () => obs.disconnect();
   }, []);
 
-  const effectiveDate = useMemo(() => {
-    try {
-      const d = new Date();
-      return d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
-    } catch {
-      return "";
-    }
-  }, []);
+  const effectiveDate = "August 23, 2026";
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-white text-neutral-900 dark:bg-neutral-950 dark:text-white">
@@ -311,7 +303,7 @@ export default function TermsPage(): React.JSX.Element {
           <section id="contact" className="rounded-2xl border border-neutral-900/10 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             <h2 className="text-xl font-semibold">Contact</h2>
             <p className="mt-3 text-neutral-800 dark:text-white/85">
-              Questions about these Terms? Contact us via the <a href="/contact" className="underline underline-offset-4">Contact page</a> or email <a className="underline underline-offset-4" href="mailto:admin@flemmomusic.com">admin@flemmomusic.com</a>.
+              Questions about these Terms? Contact us via the <a href="/contact" className="underline underline-offset-4">Contact page</a> or email <a className="underline underline-offset-4" href="mailto:legal@flemmomusic.com">legal@flemmomusic.com</a>.
             </p>
           </section>
         </article>

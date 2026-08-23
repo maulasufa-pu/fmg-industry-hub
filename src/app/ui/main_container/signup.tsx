@@ -6,7 +6,9 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
+import { safeInternalPath, withNext } from "@/lib/safe-next";
 import { Google } from "@/icons";
+import { TERMS_CONSENT_STORAGE_KEY, TERMS_VERSION } from "@/lib/legal";
 import {
   User,
   Mail,
@@ -63,6 +65,7 @@ export function SignUpSection(): React.JSX.Element {
   const [emailSent, setEmailSent] = useState<boolean>(false); // Track if confirmation email was sent
 
   const sp = useSearchParams();
+  const nextPath = safeInternalPath(sp.get("next") || sp.get("redirectedFrom"));
 
   const [errors, setErrors] = useState<FieldErrors>({});
   const [touched, setTouched] = useState<{
@@ -110,11 +113,11 @@ export function SignUpSection(): React.JSX.Element {
     return () => clearInterval(t);
   }, [resendCooldown]);
 
-  const buildRedirect = (flow: "signup" | "login") => {
+  const buildRedirect = () => {
     const origin =
       (typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || "https://flemmomusic.com")
         .replace(/\/+$/, "");
-    return `${origin}/auth/callback`;
+    return `${origin}${withNext("/auth/callback", nextPath)}`;
   };
 
   const canSubmit = useMemo(() => {
@@ -159,8 +162,13 @@ export function SignUpSection(): React.JSX.Element {
         email,
         password,
         options: {
-          data: { first_name: firstName, last_name: lastName },
-          emailRedirectTo: "https://flemmomusic.com/auth/callback",
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            terms_version: TERMS_VERSION,
+            terms_accepted_at: new Date().toISOString(),
+          },
+          emailRedirectTo: buildRedirect(),
           captchaToken: captchaToken ?? undefined, 
         },
       });
@@ -191,9 +199,7 @@ export function SignUpSection(): React.JSX.Element {
         throw new Error(m);
       }
 
-      const rawNext = sp.get("next") || sp.get("redirectedFrom") || "";
-      const dest = rawNext.startsWith("/") ? rawNext : "/client/dashboard";
-      router.replace(dest);
+      router.replace(nextPath);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Sign up failed");
       resetCaptcha();
@@ -222,7 +228,7 @@ export function SignUpSection(): React.JSX.Element {
         type: "signup",
         email,
         options: {
-          emailRedirectTo: "https://flemmomusic.com/auth/callback",
+          emailRedirectTo: buildRedirect(),
           captchaToken: captchaToken ?? undefined, 
         },
       });
@@ -239,14 +245,21 @@ export function SignUpSection(): React.JSX.Element {
     }
   };
 
-  const [oauthLoading, setOauthLoading] = useState<null | "google">(null);
+  const [, setOauthLoading] = useState<null | "google">(null);
 
   const handleOAuth = async (provider: "google") => {
     setErr(null); setMsg(null);
+    if (!agree) {
+      setTouched((current) => ({ ...current, agree: true }));
+      setErr("You must accept the Terms & Conditions before continuing.");
+      agreeRef.current?.focus();
+      return;
+    }
     setOauthLoading(provider);
     try {
       const supabase = getSupabaseClient();
-      const redirectTo = buildRedirect("signup");
+      const redirectTo = buildRedirect();
+      window.localStorage.setItem(TERMS_CONSENT_STORAGE_KEY, JSON.stringify({ version: TERMS_VERSION, acceptedAt: new Date().toISOString() }));
       const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } });
       if (error) setErr(error.message);
     } catch (e) {
@@ -634,7 +647,7 @@ export function SignUpSection(): React.JSX.Element {
                 />
                 <span className="text-[13px] text-neutral-800 dark:text-neutral-200">
                   I accept the{" "}
-                  <a href="/terms" className="font-medium text-indigo-700 hover:text-indigo-800 dark:text-indigo-300 dark:hover:text-indigo-200 underline">
+                  <a href="/legal/terms" className="font-medium text-indigo-700 hover:text-indigo-800 dark:text-indigo-300 dark:hover:text-indigo-200 underline">
                     Terms & Conditions
                   </a>
                 </span>
@@ -731,7 +744,7 @@ export function SignUpSection(): React.JSX.Element {
             <div className="mt-6 space-y-2">
               <p className="text-center text-[13px] text-neutral-700 dark:text-neutral-300">
                 Already have an account?{" "}
-                <a href="/login" className="font-semibold text-indigo-700 hover:text-indigo-800 dark:text-indigo-300 dark:hover:text-indigo-200 underline">
+                <a href={withNext("/login", nextPath)} className="font-semibold text-indigo-700 hover:text-indigo-800 dark:text-indigo-300 dark:hover:text-indigo-200 underline">
                   Log in
                 </a>
               </p>

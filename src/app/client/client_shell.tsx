@@ -57,8 +57,6 @@ export default function ClientShell({ role, children }: Props): React.JSX.Elemen
           return;
         }
 
-        const userEmail = (session.user.email || "").toLowerCase();
-
         const { data: profile, error } = await supabase
           .from("profiles")
           .select("main_role, staff_role")
@@ -66,7 +64,7 @@ export default function ClientShell({ role, children }: Props): React.JSX.Elemen
           .maybeSingle();
 
           if (error) {
-            setCurrentRole("admin");
+            setCurrentRole("client");
             return;
           }
 

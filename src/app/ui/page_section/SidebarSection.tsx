@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useMemo, useRef, useEffect, useState, useCallback } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { UserRole } from "@/lib/roles";
 import {
-  Layout, Clipboard, FileText, Calendar, BookOpen, Users,
-  BarChart3, Music, Headphones, Mic2, Settings, Package2 
+  Layout, Clipboard, FileText, Calendar, BookOpen, Users, Settings, Package2
 } from "lucide-react";
 
 import { motion, AnimatePresence, MotionConfig } from "framer-motion";
@@ -32,6 +31,8 @@ const MENU: Partial<Record<UserRole, readonly NavItem[]>> = {
     { href: "/admin/dashboard", label: "Dashboard", Icon: Layout },
     { href: "/admin/projects", label: "Projects", Icon: Clipboard },
     { href: "/admin/invoices", label: "Invoices", Icon: FileText },
+    { href: "/admin/publishing", label: "Publishing", Icon: BookOpen },
+    { href: "/admin/meetings", label: "Meetings", Icon: Calendar },
     { href: "/admin/productservices", label: "Products & Services", Icon: Package2 }, // ⬅️ baru
     { href: "/admin/users", label: "Users (Owner)", Icon: Users },
   ],
@@ -39,6 +40,8 @@ const MENU: Partial<Record<UserRole, readonly NavItem[]>> = {
     { href: "/admin/dashboard", label: "Dashboard", Icon: Layout },
     { href: "/admin/projects", label: "Projects", Icon: Clipboard },
     { href: "/admin/invoices", label: "Invoices", Icon: FileText },
+    { href: "/admin/publishing", label: "Publishing", Icon: BookOpen },
+    { href: "/admin/meetings", label: "Meetings", Icon: Calendar },
     { href: "/admin/productservices", label: "Products & Services", Icon: Package2 }, // ⬅️ baru
     { href: "/admin/users", label: "Users", Icon: Users },
   ],
@@ -69,66 +72,6 @@ const normalizeRole = (role: UserRole): UserRole => (String(role).replace(/-/g, 
 const isActive = (pathname: string, href: string): boolean =>
   pathname === href || (href !== "/" && pathname.startsWith(href + "/"));
 
-const getPageColorScheme = (pathname: string) => {
-  if (pathname.includes("/dashboard")) {
-    return {
-      primary: "blue",
-      gradient: "from-blue-900 via-blue-800 to-indigo-900",
-      accent: "blue-400",
-      activeFrom: "blue-600",
-      activeTo: "indigo-600"
-    };
-  } else if (pathname.includes("/projects")) {
-    return {
-      primary: "purple", 
-      gradient: "from-slate-900 via-slate-800 to-purple-900",
-      accent: "purple-400",
-      activeFrom: "purple-600", 
-      activeTo: "violet-600"
-    };
-  } else if (pathname.includes("/invoices")) {
-    return {
-      primary: "green",
-      gradient: "from-slate-900 via-emerald-900 to-green-900", 
-      accent: "green-400",
-      activeFrom: "green-600",
-      activeTo: "emerald-600"
-    };
-  } else if (pathname.includes("/meetings")) {
-    return {
-      primary: "orange",
-      gradient: "from-slate-900 via-orange-900 to-amber-900",
-      accent: "orange-400", 
-      activeFrom: "orange-600",
-      activeTo: "amber-600"
-    };
-  } else if (pathname.includes("/publishing")) {
-    return {
-      primary: "teal",
-      gradient: "from-slate-900 via-teal-900 to-cyan-900",
-      accent: "teal-400",
-      activeFrom: "teal-600", 
-      activeTo: "cyan-600"
-    };
-  } else if (pathname.includes("/users")) {
-    return {
-      primary: "rose",
-      gradient: "from-slate-900 via-rose-900 to-pink-900",
-      accent: "rose-400",
-      activeFrom: "rose-600",
-      activeTo: "pink-600"
-    };
-  }
-  
-  return {
-    primary: "purple",
-    gradient: "from-slate-900 via-slate-800 to-blue-900", 
-    accent: "purple-400",
-    activeFrom: "blue-600",
-    activeTo: "purple-600"
-  };
-};
-
 const EASE: [number, number, number, number] = [0.2, 0.8, 0.2, 1];
 const TWEEN_FAST = { type: "tween" as const, duration: 0.18, ease: EASE };
 const SPRING_SNAPPY = { type: "spring" as const, stiffness: 600, damping: 42, mass: 0.6 };
@@ -140,7 +83,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
   const items = normalizedRole === "guest" 
     ? [] 
     : MENU[normalizedRole] ?? MENU.admin ?? [];
-  const colorScheme = getPageColorScheme(pathname ?? "");
   
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
@@ -196,7 +138,6 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
       const rect = buttonRef.getBoundingClientRect();
       const dropdownHeight = 320;
       const gap = 8;
-      const viewportHeight = window.innerHeight;
       
       const isMobile = buttonRef === mobileProfileButtonRef.current;
       

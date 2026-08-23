@@ -1,14 +1,13 @@
 // src/app/admin/projects/page.tsx
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { useFocusWarmAuth } from "@/lib/supabase/useFocusWarmAuth";
 import { getEffectiveRole } from "@/lib/roles/effective";
 import type { UserRole } from "@/lib/roles";
-import { Plus } from "lucide-react";
-import CreateProjectPopover from "../../ui/panel/projects/CreateProjectPopover";
+import { ARRANGEMENT_SERVICE_KEY } from "@/lib/arrangement";
 import ProjectList, {
   TabKey, ProjectRow, PicOption, StageOption, StatusOption,
 } from "@/app/ui/panel/projects/project_list";
@@ -78,8 +77,8 @@ export default function ClientProjectsPage(): React.ReactElement {
   const params = useSearchParams();
   const supabase = useMemo(() => getSupabaseClient(), []);
 
-  const [openRequest, setOpenRequest] = useState(false);
-  const requestBtnRef = useRef<HTMLButtonElement | null>(null);
+  const hasArrangementIntent =
+    params.get("new") === "1" && params.get("service") === ARRANGEMENT_SERVICE_KEY;
 
   const getClientName = (row: DbProjectSummary): string => {
     const first = row.client_first_name?.trim() ?? "";
@@ -90,7 +89,7 @@ export default function ClientProjectsPage(): React.ReactElement {
   };
 
   // ===== role & user =====
-  const [role, setRole] = useState<UserRole>("guest");
+  const [, setRole] = useState<UserRole>("guest");
   const [myId, setMyId] = useState<string | null>(null);
   const [roleReady, setRoleReady] = useState(false);
 
@@ -323,6 +322,9 @@ export default function ClientProjectsPage(): React.ReactElement {
         onOpen={handleOpen}
         onBulkAssignPIC={handleBulkAssignPIC}
         onBulkMarkFinished={handleBulkMarkFinished}
+        initiallyOpenRequest={hasArrangementIntent}
+        initialServiceKeys={hasArrangementIntent ? [ARRANGEMENT_SERVICE_KEY] : []}
+        requestIntent={hasArrangementIntent ? "arrangement" : undefined}
       />
     </div>
   );

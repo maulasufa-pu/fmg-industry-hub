@@ -12,7 +12,6 @@ import {
   Database,
   Cog,
   UserCheck,
-  Trash2,
   Clock,
   Building2,
   EyeOff,
@@ -29,7 +28,7 @@ export default function PrivacyPage(): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [active, setActive] = useState<string>("intro");
 
-  const lastUpdated = "2025-08-01";
+  const lastUpdated = "2026-08-23";
 
   const sections = useMemo(
     () => [
@@ -78,7 +77,6 @@ export default function PrivacyPage(): React.JSX.Element {
   }, [sections]);
 
   const card = "rounded-2xl border border-neutral-900/10 bg-white/70 backdrop-blur-xl shadow-xl dark:border-white/10 dark:bg-white/5";
-  const h2 = "text-xl font-semibold tracking-tight text-neutral-900 dark:text-white";
   const p = "text-[15px] leading-relaxed text-neutral-700 dark:text-white/80";
   const list = "list-disc pl-5 space-y-2 text-[15px] text-neutral-700 dark:text-white/80";
 
@@ -278,7 +276,7 @@ export default function PrivacyPage(): React.JSX.Element {
               <ul className={list}>
                 <li>We use technical and organizational measures designed to protect personal data (encryption in transit, access controls, logging, secure development practices).</li>
                 <li>No system is perfectly secure; we cannot guarantee absolute security.</li>
-                <li>Report security issues to <a href="mailto:security@fmguniverse.com" className="underline underline-offset-4">security@fmguniverse.com</a>.</li>
+                <li>Report security issues to <a href="mailto:legal@flemmomusic.com" className="underline underline-offset-4">legal@flemmomusic.com</a>.</li>
               </ul>
             </ArticleCard>
 
@@ -297,7 +295,7 @@ export default function PrivacyPage(): React.JSX.Element {
                 <li><strong>Other regions:</strong> We will honor applicable local laws. Contact us to exercise your rights.</li>
               </ul>
               <p className={classNames(p, "mt-3")}>
-                To make a request, email <a href="mailto:privacy@fmguniverse.com" className="underline underline-offset-4">privacy@fmguniverse.com</a> or use in‑app settings where available. We may verify your request and may deny requests where an exemption applies.
+                To make a request, email <a href="mailto:legal@flemmomusic.com" className="underline underline-offset-4">legal@flemmomusic.com</a> or use in‑app settings where available. We may verify your request and may deny requests where an exemption applies.
               </p>
             </ArticleCard>
 
@@ -323,7 +321,7 @@ export default function PrivacyPage(): React.JSX.Element {
               <p className={p}>
                 Questions, requests, or complaints about privacy? Contact our privacy team at
                 {" "}
-                <a href="mailto:privacy@fmguniverse.com" className="underline underline-offset-4">privacy@fmguniverse.com</a>.
+                <a href="mailto:legal@flemmomusic.com" className="underline underline-offset-4">legal@flemmomusic.com</a>.
               </p>
               <p className={classNames(p, "mt-3")}>
                 If you are in the EU/UK, you may also contact your local supervisory authority. If you are in California, you may contact us to exercise your CPRA rights or use settings where available.

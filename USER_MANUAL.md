@@ -354,7 +354,7 @@ All prices are displayed in your preferred currency:
 - **Biography**: Professional background and experience
 
 ### Payment & Billing
-- **Payment Methods**: Credit cards, PayPal, bank transfer
+- **Payment Methods**: Methods enabled by the configured Midtrans account
 - **Billing Address**: Invoice delivery information
 - **Tax Information**: VAT/GST details for international clients
 - **Invoice History**: Download past invoices and receipts

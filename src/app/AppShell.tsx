@@ -2,9 +2,7 @@
 "use client";
 
 import React from "react";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { usePathname } from "next/navigation";
-import GlobalSpotlight from "@/app/ui/GlobalSpotlight";
 import Footer from "@/app/ui/page_section/FooterSection";
 import { HeaderSection } from "@/app/ui/page_section/HeaderSection";
 
@@ -24,7 +22,7 @@ function MainContainer({ children }: { children: React.ReactNode }) {
       ? "w-full"
       : "mx-auto w-full max-w-screen-xl px-4 sm:px-6 lg:px-8";
 
-  return <main className={wrapperCls}>{children}</main>;
+  return <div className={wrapperCls}>{children}</div>;
 }
 
 function Header() {
@@ -38,17 +36,6 @@ function Header() {
   return <HeaderSection />;
 }
 
-function ThemeToggleWrapper() {
-  const pathname = usePathname();
-  const isApp =
-    pathname?.startsWith("/client") ||
-    pathname?.startsWith("/admin") ||
-    pathname?.startsWith("/profile");
-
-  if (isApp) return null;
-  return <ThemeToggle />;
-}
-
 function FooterWrapper() {
   const pathname = usePathname();
   const hideFooter =
@@ -60,9 +47,7 @@ function FooterWrapper() {
 export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
-      {/* <GlobalSpotlight /> */}
       <Header />
-      {/* <ThemeToggleWrapper />  // aktifkan kalau mau tombolnya muncul */}
       <MainContainer>{children}</MainContainer>
       <FooterWrapper />
     </>

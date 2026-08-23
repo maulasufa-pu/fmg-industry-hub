@@ -55,7 +55,7 @@ export default function ClientProjectDetailPage() {
   const [project, setProject] = useState<ProjectSummary | null>(null);
   const [userAccess, setUserAccess] = useState<UserAccess | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
-  const [assignmentsLoading, setAssignmentsLoading] = useState<boolean>(true);
+  const [, setAssignmentsLoading] = useState<boolean>(true);
 
   const [accessChecked, setAccessChecked] = useState(false);
   const [projectChecked, setProjectChecked] = useState(false);
@@ -76,7 +76,7 @@ export default function ClientProjectDetailPage() {
   });
 
   const [drafts, setDrafts] = useState<any[] | null>(null);
-  const [revisions, setRevisions] = useState<any[] | null>(null);
+  const [revisions, ] = useState<any[] | null>(null);
   const [links, setLinks] = useState<any[] | null>(null);
   const [messages, setMessages] = useState<any[] | null>(null);
   const [meetings, setMeetings] = useState<any[] | null>(null);
@@ -329,8 +329,7 @@ export default function ClientProjectDetailPage() {
       }),
     });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
+    if (!res.ok) {await res.json().catch(() => ({}));
       //console.error("Save assignments failed:", err?.error || `HTTP ${res.status}`);
       return;
     }
@@ -347,8 +346,7 @@ export default function ClientProjectDetailPage() {
           method: "DELETE",
           signal: AbortSignal.timeout(8000),
         });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
+        if (!res.ok) {await res.json().catch(() => ({}));
           //console.error(`Failed to remove ${role}:`, err?.error || `HTTP ${res.status}`);
         }
       }
@@ -361,12 +359,9 @@ export default function ClientProjectDetailPage() {
   const handleAcceptProject = async () => {
     if (!project) return;
     try {
-      const { error } = await supabase
-        .from("projects")
-        .update({ status: "approved", stage: "drafting" })
-        .eq("project_id", project.project_id);
+      const { error } = await supabase.rpc("accept_project", { p_project_id: project.project_id });
       if (error) throw error;
-      setProject(prev => prev ? { ...prev, status: "approved", stage: "drafting" } : prev);
+      setProject(prev => prev ? { ...prev, status: "in_progress", stage: "awaiting_payment" } : prev);
     } catch (err) {
       //console.error("Failed to accept project:", err);
     }
@@ -375,12 +370,9 @@ export default function ClientProjectDetailPage() {
   const handlePutOnHold = async () => {
     if (!project) return;
     try {
-      const { error } = await supabase
-        .from("projects")
-        .update({ status: "pending" })
-        .eq("project_id", project.project_id);
+      const { error } = await supabase.rpc("put_project_on_hold", { p_project_id: project.project_id });
       if (error) throw error;
-      setProject(prev => prev ? { ...prev, status: "pending" } : prev);
+      setProject(prev => prev ? { ...prev, status: "on_hold" } : prev);
     } catch (err) {
       //console.error("Failed to put project on hold:", err);
     }
@@ -444,7 +436,7 @@ export default function ClientProjectDetailPage() {
       case "meetings":
         return <MeetingsTab project={project} meetings={meetings} setMeetings={setMeetings} />;
       case "publishing":
-        return <PublishingTab project={project} />;
+        return <PublishingTab project={project} isClient />;
       default:
         return null;
     }

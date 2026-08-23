@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   Mail,
@@ -33,6 +33,7 @@ type FormValues = {
   reason: Reason;
   subject: string;
   message: string;
+  website: string;
 };
 
 type FormState =
@@ -50,6 +51,7 @@ const defaultValues: FormValues = {
   reason: "project",
   subject: "",
   message: "",
+  website: "",
 };
 
 type Channel = {
@@ -129,6 +131,7 @@ export default function ContactPage(): React.JSX.Element {
     reason: false,
     subject: false,
     message: false,
+    website: false,
   });
 
   useEffect(() => {
@@ -173,6 +176,7 @@ export default function ContactPage(): React.JSX.Element {
       reason: true,
       subject: true,
       message: true,
+      website: false,
     });
     if (hasErrors) return;
 
@@ -197,6 +201,7 @@ export default function ContactPage(): React.JSX.Element {
         reason: false,
         subject: false,
         message: false,
+        website: false,
       });
     } catch {
       setState({ status: "error", message: "Network error. Please try again." });
@@ -319,6 +324,18 @@ export default function ContactPage(): React.JSX.Element {
               </p>
 
               <form className="mt-5 grid gap-4" onSubmit={onSubmit} noValidate>
+                <div className="absolute left-[-10000px] h-px w-px overflow-hidden" aria-hidden="true">
+                  <label htmlFor="contact-website">Website</label>
+                  <input
+                    id="contact-website"
+                    name="website"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={values.website}
+                    onChange={onChange("website")}
+                  />
+                </div>
                 <StatusBanner state={state} />
 
                 <div className="grid gap-4 sm:grid-cols-2">

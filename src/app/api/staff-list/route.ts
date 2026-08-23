@@ -1,28 +1,12 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { apiAuthErrorResponse, requireAdminRequest } from "@/lib/auth/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const cookieStore = await cookies();
-
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            cookieStore.set({ name, value, ...options });
-          },
-          remove(name: string, options: CookieOptions) {
-            cookieStore.delete({ name, ...options });
-          },
-        },
-      }
-    );
+    await requireAdminRequest(request);
+    const supabase = getSupabaseAdminClient();
+    if (!supabase) return NextResponse.json({ success: false, error: "Server configuration error" }, { status: 500 });
 
     const { data, error } = await supabase
       .from("staff_list")
@@ -32,10 +16,11 @@ export async function GET() {
 
     return NextResponse.json(
       { success: true, data },
-      { status: 200, headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" } }
+      { status: 200, headers: { "Cache-Control": "private, no-store" } }
     );
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+    const authResponse = apiAuthErrorResponse(e);
+    if (authResponse) return authResponse;
+    return NextResponse.json({ success: false, error: "Unable to load staff" }, { status: 500 });
   }
 }

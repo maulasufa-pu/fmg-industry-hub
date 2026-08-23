@@ -4,6 +4,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import type { ReferenceLinkRow, ProjectSummary } from "../../types";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { notify } from "@/components/ui/FeedbackHost";
 
 interface ReferencesTabProps {
   project: ProjectSummary;
@@ -239,7 +240,8 @@ const ReferenceItem = memo(function ReferenceItem({
 export default function ReferencesTab(
   { project, links, setLinks }: ReferencesTabProps
 ): React.JSX.Element {
-  const supabase = getSupabaseClient();
+  const supabase = useMemo(() => getSupabaseClient(), []);
+  const initialLinksRef = useRef(links);
 
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState<Record<string, boolean>>({});
@@ -247,7 +249,7 @@ export default function ReferencesTab(
   useEffect(() => {
     let cancelled = false;
     const fetchLinks = async () => {
-      if (links !== null) return;
+      if (initialLinksRef.current !== null) return;
       setLoading(true);
       const { data, error } = await supabase
         .from("reference_links")
@@ -295,8 +297,7 @@ export default function ReferencesTab(
       .subscribe();
 
     return () => { cancelled = true; void supabase.removeChannel(channel); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project.project_id, supabase]);
+  }, [project.project_id, setLinks, supabase]);
 
   const renderLinks = useMemo<ReferenceLinkRow[]>(() => {
     if (links === null) return [];
@@ -311,7 +312,7 @@ export default function ReferencesTab(
 
   const addReference = useCallback(async (url: string, note: string) => {
     const normalized = normalizeUrl(url);
-    if (!isValidHttpUrl(normalized)) { alert("Invalid URL."); return; }
+    if (!isValidHttpUrl(normalized)) { notify("Invalid URL.", "error"); return; }
     try {
       const { data: userData, error: userErr } = await supabase.auth.getUser();
       if (userErr) throw userErr;
@@ -333,7 +334,7 @@ export default function ReferencesTab(
       setLinks((prev) => [data as ReferenceLinkRow, ...(prev ?? [])]);
     } catch (err) {
       //console.error("[ReferencesTab] add error:", err);
-      alert("Failed to add link. Check RLS or policies.");
+      notify("Failed to add link. Check RLS or policies.", "error");
     }
   }, [project.project_id, setLinks, supabase]);
 
@@ -347,7 +348,7 @@ export default function ReferencesTab(
     } catch (err) {
       setLinks(backup);
       //console.error("[ReferencesTab] delete error:", err);
-      alert("Failed to delete link. Check RLS or policies.");
+      notify("Failed to delete link. Check RLS or policies.", "error");
     } finally {
       setDeleting((d) => { const { [id]: _removed, ...rest } = d; return rest; });
     }

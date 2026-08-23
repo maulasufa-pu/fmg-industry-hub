@@ -1,13 +1,12 @@
 
 import type { Metadata } from "next";
-import { seoFromDB } from "@/lib/seo-loader";
+import ArrangementOffer from "@/components/public/ArrangementOffer";
 
-export const metadata: Metadata = seoFromDB("/pricing");
+export const metadata: Metadata = {
+  title: "Music Arrangement Pricing",
+  description: "Arrangement starts at USD 350, with scope, timeline, revisions, deliverables, and payment confirmed before production.",
+};
 
-export default function PageName() {
-  return (
-    <div>
-      {/* isi halaman */}
-    </div>
-  );
+export default function PricingPage() {
+  return <ArrangementOffer />;
 }

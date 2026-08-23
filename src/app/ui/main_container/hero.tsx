@@ -146,9 +146,10 @@ export default function Hero(): React.JSX.Element {
           <div className="mt-10 w-full">
             <CinematicVideoHeroHLS
                 shape="rounded"
-                m3u8="/videos/vaa/index.m3u8"
-                mp4Fallback="/videos/viokichi-you-are-enough-official-music-video-mv.mp4"
-                poster="/images/hero-poster.jpg"
+                m3u8="/videos/hero/master.m3u8"
+                mp4Fallback="/videos/hero/fallback.mp4"
+                mobileMp4="/videos/hero/mobile.mp4"
+                poster="/videos/hero/poster.webp"
                 maxWidthClass="max-w-7xl"
                 kicker="FMG Universe • Custom Music"
                 heading="Let’s Create Your Music."

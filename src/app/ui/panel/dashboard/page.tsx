@@ -9,7 +9,6 @@ import { getEffectiveRole } from "@/lib/roles/effective";
 import type { UserRole } from "@/lib/roles";
 import { gsap } from "gsap";
 import {
-  TrendingUp,
   Clock,
   Users,
   DollarSign,
@@ -87,7 +86,6 @@ export default function AdminDashboard(): React.JSX.Element {
       }
       return count ?? 0;
     } catch (err) {
-      const e = err as { message?: string };
       //console.warn(`Error querying ${tableName}:`, e?.message || err);
       return 0;
     }
@@ -207,7 +205,6 @@ export default function AdminDashboard(): React.JSX.Element {
 
   useEffect(() => {
     void loadDashboardData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadDashboardData]);
 
   useEffect(() => {
@@ -242,8 +239,6 @@ export default function AdminDashboard(): React.JSX.Element {
       const step = (currentTime: number) => {
         if (startTime === null) startTime = currentTime;
         const progress = Math.min((currentTime - startTime) / duration, 1);
-        const easeOutCubic = 1 - Math.pow(1 - progress, 3);
-        const current = Math.floor(start + (end - start) * easeOutCubic);
         if (progress < 1) {
           requestAnimationFrame(step);
         } else {
@@ -283,7 +278,7 @@ export default function AdminDashboard(): React.JSX.Element {
         }, 400);
         return () => clearTimeout(timer);
       }
-    }, [value, loading, hasAnimated]);
+    }, [value, hasAnimated]);
 
     const colorSchemes = {
       gray: {

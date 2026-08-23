@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
 type MeetingRow = {
@@ -24,7 +24,7 @@ export default function AdminMeetingsPage(): React.JSX.Element {
   const [q, setQ] = useState("");
   const [when, setWhen] = useState<"upcoming" | "past" | "all">("upcoming");
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     const nowIso = new Date().toISOString();
 
@@ -40,9 +40,9 @@ export default function AdminMeetingsPage(): React.JSX.Element {
     const { data, error } = await qb;
     if (!error) setRows(((data ?? []) as unknown) as MeetingRow[]);
     setLoading(false);
-  };
+  }, [q, sb, when]);
 
-  useEffect(() => { void load(); }, [q, when]);
+  useEffect(() => { void load(); }, [load]);
 
   const createMeeting = async (payload: Pick<MeetingRow, "title" | "start_at" | "duration_min" | "link" | "notes"> & { project_id?: string | null }) => {
     const { error } = await sb.from("meetings").insert({

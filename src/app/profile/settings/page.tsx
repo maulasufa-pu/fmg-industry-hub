@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { gsap } from "gsap";
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -8,6 +8,7 @@ import { User, Camera, Save, PictureEdit, MapMarker, Phone, File, ShieldCheck } 
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { notify } from "@/components/ui/FeedbackHost";
 
 const ProfileHeader = () => {
   const router = useRouter();
@@ -107,7 +108,7 @@ const USE_PUBLIC_BUCKET = true;
 
 
 export default function ProfileSettingsPage() {
-  const supabase = getSupabaseClient();
+  const supabase = useMemo(() => getSupabaseClient(), []);
   const cardRef = useRef<HTMLDivElement>(null);
   const avatarRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -136,6 +137,18 @@ export default function ProfileSettingsPage() {
   const [emailConfirming, setEmailConfirming] = useState(false);
   const [loginProvider, setLoginProvider] = useState<string | null>(null);
   const [emailVerificationSent, setEmailVerificationSent] = useState(false);
+  const [privacyBusy, setPrivacyBusy] = useState<"export" | "delete" | null>(null);
+  const [privacyMessage, setPrivacyMessage] = useState<string | null>(null);
+
+  const refreshAvatarUrl = useCallback(async (path: string) => {
+    if (USE_PUBLIC_BUCKET) {
+      const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+      setAvatarUrl(data.publicUrl);
+      return;
+    }
+    const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 10);
+    if (!error && data) setAvatarUrl(data.signedUrl);
+  }, [supabase]);
 
   useEffect(() => {
     if (!loading && cardRef.current) {
@@ -194,18 +207,7 @@ export default function ProfileSettingsPage() {
         setLoading(false);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const refreshAvatarUrl = async (path: string) => {
-    if (USE_PUBLIC_BUCKET) {
-      const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-      setAvatarUrl(data.publicUrl);
-      return;
-    }
-    const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 10);
-    if (!error && data) setAvatarUrl(data.signedUrl);
-  };
+  }, [refreshAvatarUrl, supabase]);
 
   const handleInputChange = (field: keyof FormData, value: string) =>
     setFormData((p) => ({ ...p, [field]: value }));
@@ -309,9 +311,28 @@ export default function ProfileSettingsPage() {
       }
     } catch (e) {
       //console.error("Upload avatar error:", e);
-      alert("Failed to upload avatar. Please try again.");
+      notify("Failed to upload avatar. Please try again.", "error");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const submitPrivacyRequest = async (type: "export" | "delete") => {
+    setPrivacyBusy(type);
+    setPrivacyMessage(null);
+    try {
+      const response = await fetch("/api/privacy/requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type }) });
+      const body = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(body.error || "Unable to submit request");
+      const message = type === "export" ? "Data export request submitted." : "Account deletion request submitted for identity and legal review.";
+      setPrivacyMessage(message);
+      notify(message, "success");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to submit privacy request";
+      setPrivacyMessage(message);
+      notify(message, "error");
+    } finally {
+      setPrivacyBusy(null);
     }
   };
 
@@ -588,6 +609,15 @@ export default function ProfileSettingsPage() {
                   placeholder="Your phone number"
                 />
               </motion.form>
+              <section className="mt-8 border-t border-neutral-200 pt-6 dark:border-white/10" aria-labelledby="privacy-controls-title">
+                <h3 id="privacy-controls-title" className="text-lg font-semibold">Privacy and account data</h3>
+                <p className="mt-2 max-w-2xl text-sm text-neutral-600 dark:text-neutral-400">Request a portable copy of your account data or start account deletion. Deletion is reviewed first so invoices, ownership records, and active projects are handled safely.</p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <button type="button" disabled={privacyBusy !== null} onClick={() => void submitPrivacyRequest("export")} className="rounded-xl border border-neutral-300 px-4 py-2.5 text-sm font-semibold disabled:opacity-50 dark:border-white/20">{privacyBusy === "export" ? "Submitting…" : "Request data export"}</button>
+                  <button type="button" disabled={privacyBusy !== null} onClick={() => void submitPrivacyRequest("delete")} className="rounded-xl border border-red-300 px-4 py-2.5 text-sm font-semibold text-red-700 disabled:opacity-50 dark:border-red-900 dark:text-red-300">{privacyBusy === "delete" ? "Submitting…" : "Request account deletion"}</button>
+                </div>
+                {privacyMessage ? <p className="mt-3 text-sm" role="status">{privacyMessage}</p> : null}
+              </section>
             </div>
           </div>
         </motion.div>

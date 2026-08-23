@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatIDRCurrency, isOverdue, nextStatusColor } from "@/lib/invoices/utils";
+import { notify } from "@/components/ui/FeedbackHost";
 
 type InvoiceStatus = "draft" | "unpaid" | "paid" | "cancelled";
 
@@ -42,6 +43,7 @@ export type InvoiceItemRow = {
 };
 
 type UserRole = "owner" | "admin" | "client" | "engineer" | "staff" | "guest"; // sesuaikan jika perlu
+type DeliveryLog = { id: string; recipient_email: string; delivery_type: string; status: string; template_version: string; attempt_count: number; error_message: string | null; sent_at: string | null; opened_at: string | null; created_at: string };
 
 const INVOICE_COLS =
   "id,invoice_no,client_name,client_email,amount_total,currency,status,created_at,issue_date,due_date,notes,payment_url";
@@ -76,6 +78,8 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
   const [loading, setLoading] = useState(true);
   const [inv, setInv] = useState<InvoiceRow | null>(null);
   const [items, setItems] = useState<InvoiceItemRow[] | null>(null);
+  const [deliveryLogs, setDeliveryLogs] = useState<DeliveryLog[]>([]);
+  const [reminderStatus, setReminderStatus] = useState<string | null>(null);
 
   const [role, setRole] = useState<UserRole>("client");
   const isAdminOwner = role === "admin" || role === "owner";
@@ -106,6 +110,15 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
       cancelled = true;
     };
   }, [sb]);
+
+  const loadDeliveryLogs = useCallback(async () => {
+    const response = await fetch(`/api/invoices/${invoiceId}/reminders`, { cache: "no-store" });
+    if (!response.ok) return;
+    const body = await response.json();
+    setDeliveryLogs(Array.isArray(body.logs) ? body.logs : []);
+  }, [invoiceId]);
+
+  useEffect(() => { if (isAdminOwner) void loadDeliveryLogs(); }, [isAdminOwner, loadDeliveryLogs]);
 
   const MIDTRANS_CLIENT_KEY = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY;
   const MIDTRANS_IS_PRODUCTION =
@@ -168,8 +181,11 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
 
   const sendReminder = async (): Promise<void> => {
     if (!inv) return;
-    // eslint-disable-next-line no-console
-    //console.log("send reminder -> invoice:", inv.id);
+    setReminderStatus("Sending reminder…");
+    const response = await fetch(`/api/invoices/${inv.id}/reminders`, { method: "POST" });
+    const body = await response.json().catch(() => ({}));
+    setReminderStatus(response.ok ? `Reminder delivered${body.attempts > 1 ? ` after ${body.attempts} attempts` : ""}.` : (typeof body.error === "string" ? body.error : "Reminder delivery failed."));
+    void loadDeliveryLogs();
   };
 
   const createSnapAndPay = async (): Promise<void> => {
@@ -181,10 +197,9 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
       body: JSON.stringify({ invoiceId: inv.id }),
     });
 
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
+    if (!res.ok) {await res.text().catch(() => "");
       //console.error("payment create error:", text || res.statusText);
-      alert("Failed to start payment.");
+      notify("Failed to start payment.", "error");
       return;
     }
 
@@ -223,7 +238,7 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
     } catch (err) {
       // eslint-disable-next-line no-console
       //console.error("refresh payment link failed:", err);
-      alert("Failed to refresh payment.");
+      notify("Failed to refresh payment.", "error");
     } finally {
       await load();
     }
@@ -262,6 +277,7 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
 
   return (
     <div className="p-6 space-y-6">
+      {reminderStatus && <div role="status" className="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-800 dark:border-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-200">{reminderStatus}</div>}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">Invoice {inv.invoice_no}</h1>
@@ -364,6 +380,8 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
           </div>
         </div>
       </div>
+
+      {isAdminOwner && <section className="rounded-xl border-2 border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800"><h2 className="font-semibold text-slate-900 dark:text-white">Reminder delivery</h2>{deliveryLogs.length === 0 ? <p className="mt-2 text-sm text-slate-500">No reminder sent yet.</p> : <div className="mt-3 overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Sent</th><th className="p-2">Recipient</th><th className="p-2">Status</th><th className="p-2">Attempts</th><th className="p-2">Opened</th><th className="p-2">Template</th></tr></thead><tbody>{deliveryLogs.map((log) => <tr key={log.id} className="border-b border-slate-200 dark:border-slate-700"><td className="p-2">{new Date(log.created_at).toLocaleString("id-ID")}</td><td className="p-2">{log.recipient_email}</td><td className="p-2">{log.status}{log.error_message ? ` — ${log.error_message}` : ""}</td><td className="p-2">{log.attempt_count}</td><td className="p-2">{log.opened_at ? new Date(log.opened_at).toLocaleString("id-ID") : "Not yet"}</td><td className="p-2">{log.template_version}</td></tr>)}</tbody></table></div>}</section>}
 
       <div className="rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
         <div className="border-b-2 border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-700 px-4 py-3 font-medium text-slate-900 dark:text-white">Items</div>

@@ -513,14 +513,18 @@ html {
   .text-primary-90 { color: var(--primary-90); }
   
   /* Ring utilities */
-  .focus:ring-primary-30 { --tw-ring-color: var(--primary); }
-  .focus:ring-offset-2 { --tw-ring-offset-width: 2px; }
+  .focus\:ring-primary-30:focus { --tw-ring-color: var(--primary); }
+  .focus\:ring-offset-2:focus { --tw-ring-offset-width: 2px; }
   
   /* Typography utilities */
   .font-medium { font-weight: 500; }
 
-  /* Transition utility for smooth hover effects */
-  .transition { transition: all 0.3s ease; }
+  /* Keep hover motion GPU/compositor friendly; avoid animating layout properties. */
+  .transition {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
 
   /* Custom animations for dashboard */
   .animate-shimmer {
@@ -648,6 +652,25 @@ html {
 
 html { scroll-behavior: smooth; }
 html, body { overflow-x: clip; }
+
+/* Skip layout and paint work for below-the-fold landing sections until needed. */
+@supports (content-visibility: auto) {
+  [data-performance-page] > section:not(:first-of-type) {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 900px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 
 @media (max-width: 640px) {
   html, body {

@@ -9,6 +9,7 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 import type { DraftRow, RevisionRow } from "../../types";
 import type { UserRole } from "@/lib/roles";
 import WaveformPlayer from "../WaveformPlayer";
+import { confirmAction, notify } from "@/components/ui/FeedbackHost";
 
 interface DraftsTabProps {
   drafts: DraftRow[] | null;
@@ -97,7 +98,6 @@ export default function DraftsTab({
   const canRequestRevision =
     effectiveRole === "client" || effectiveRole === "anr" || effectiveRole === "owner";
 
-  const canWriteNotes = effectiveRole === "anr";
 
   const USER_ROLES = ["owner","admin","anr","producer","composer","engineer","publisher"] as const;
   const USER_ROLE_SET: ReadonlySet<string> = new Set(USER_ROLES as readonly string[]);
@@ -197,10 +197,10 @@ export default function DraftsTab({
 
   const deleteDraft = async (draft: DraftRow) => {
     if (!canManageDrafts) {
-      alert("Kamu tidak memiliki izin menghapus draft.");
+      notify("Kamu tidak memiliki izin menghapus draft.", "error");
       return;
     }
-    if (!confirm("Hapus draft ini?")) return;
+    if (!(await confirmAction("Hapus draft ini? File audio dan waveform terkait juga akan dihapus."))) return;
     setDeletingId(draft.draft_id);
     try {
       const ref = parseStorageRef(draft.file_path) ?? { bucket: "drafts", path: draft.file_path };
@@ -221,7 +221,7 @@ export default function DraftsTab({
 
       setLocalDrafts(prev => asArr(prev).filter(d => d.draft_id !== draft.draft_id));
     } catch (e: any) {
-      alert(e?.message || "Gagal menghapus draft");
+      notify(e?.message || "Gagal menghapus draft", "error");
     } finally {
       setDeletingId(null);
     }
@@ -439,7 +439,6 @@ export default function DraftsTab({
               .slice()
               .sort((a, b) => Number(a.version) - Number(b.version))
               .map((d, index) => {
-                const list = (localRevisions ?? []).filter((r) => r.draft_id === d.draft_id);
                 return (
                   <motion.li
                     key={d.draft_id}
@@ -537,18 +536,6 @@ export default function DraftsTab({
         )}
       </AnimatedCard>
 
-      {canWriteNotes && false && (
-        <AnimatedCard title="📝 ANR Notes" gradient>
-          <div className="text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-200/50 dark:border-slate-700/50">
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              <span className="font-medium">(Coming soon)</span>
-            </div>
-          </div>
-        </AnimatedCard>
-      )}
     </motion.div>
   );
 }

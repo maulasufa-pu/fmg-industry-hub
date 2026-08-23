@@ -54,11 +54,6 @@ const fetchAssignmentNames = async (supabase: any, projectIds: string[]) => {
   }
 };
 
-type ProfileName = {
-  first_name: string | null;
-  last_name: string | null;
-};
-
 type DbProjectSummary = {
   project_id: string;
   title: string;
@@ -84,12 +79,6 @@ export default function AdminProjectsPage(): React.JSX.Element {
   const router = useRouter();
   const params = useSearchParams();
   const supabase = useMemo(() => getSupabaseClient(), []);
-
-  type ProfileRow = {
-    id: string;
-    first_name: string | null;
-    last_name: string | null;
-  };
 
   const getClientName = (row: DbProjectSummary): string => {
     const first = row.client_first_name?.trim() ?? "";
@@ -200,8 +189,6 @@ export default function AdminProjectsPage(): React.JSX.Element {
         .range(from, to);
 
       if (error) throw error;
-
-      const clientIds = (data ?? []).map(r => r.client_id).filter((v): v is string => Boolean(v));
       const projectIds = (data ?? []).map(r => r.project_id);
 
       const assignmentNames = await fetchAssignmentNames(supabase, projectIds);
@@ -243,7 +230,7 @@ export default function AdminProjectsPage(): React.JSX.Element {
     } finally {
       setLoadingInitial(false);
     }
-  }, [supabase, pageSize, debouncedSearch, filterPIC, filterStage, filterStatus]);
+  }, [supabase, pageSize, debouncedSearch, filterStage, filterStatus]);
 
   useEffect(() => {
     fetchCounts().then(setTabCounts);

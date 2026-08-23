@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { MapPin, Clock, Phone, Mail, ExternalLink, Search } from "lucide-react";
+import { useConsent } from "@/components/privacy/ConsentManager";
 
 type Region = "asia" | "americas" | "other";
 
@@ -17,6 +18,7 @@ type Location = {
   email?: string;
   phone?: string;
   mapsQuery: string; 
+  kind: "physical" | "remote_coverage";
 };
 
 const LOCATIONS: ReadonlyArray<Location> = [
@@ -31,39 +33,43 @@ const LOCATIONS: ReadonlyArray<Location> = [
     email: "admin@flemmomusic.com",
     phone: "+62 822 9828 8188",
     mapsQuery: encodeURIComponent("Jl. Kebon Jeruk No. 8 Palmerah, Jakarta Barat, Indonesia"),
+    kind: "physical",
   },
   {
     id: "kuala-lumpur",
     name: "Kuala Lumpur",
-    addressLines: ["City Center"],
+    addressLines: ["Remote collaboration coverage"],
     city: "Kuala Lumpur",
     country: "Malaysia",
     region: "asia",
     timezone: "Asia/Kuala_Lumpur",
     email: "admin@flemmomusic.com",
     mapsQuery: encodeURIComponent("Kuala Lumpur, Malaysia"),
+    kind: "remote_coverage",
   },
   {
     id: "singapore",
     name: "Singapore",
-    addressLines: ["Downtown Core"],
+    addressLines: ["Remote collaboration coverage"],
     city: "Singapore",
     country: "Singapore",
     region: "asia",
     timezone: "Asia/Singapore",
     email: "admin@flemmomusic.com",
     mapsQuery: encodeURIComponent("Singapore"),
+    kind: "remote_coverage",
   },
   {
     id: "new-york",
     name: "New York",
-    addressLines: ["Manhattan"],
+    addressLines: ["Remote collaboration coverage"],
     city: "New York",
     country: "United States",
     region: "americas",
     timezone: "America/New_York",
     email: "admin@flemmomusic.com",
     mapsQuery: encodeURIComponent("New York, USA"),
+    kind: "remote_coverage",
   },
 ];
 
@@ -146,7 +152,7 @@ function LocationCard({
               {loc.name}
             </h3>
             <span className="rounded-full bg-neutral-900/5 px-2 py-0.5 text-[11px] text-neutral-600 dark:bg-white/10 dark:text-white/70">
-              {loc.country}
+              {loc.kind === "physical" ? "Physical location" : "Remote coverage"}
             </span>
           </div>
           <p className="mt-1 text-sm text-neutral-700 dark:text-white/80 break-words">
@@ -165,7 +171,7 @@ function LocationCard({
               </a>
             )}
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          {loc.kind === "physical" && <div className="mt-3 flex flex-wrap items-center gap-2">
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${loc.mapsQuery}`}
               target="_blank"
@@ -187,7 +193,7 @@ function LocationCard({
             >
               Copy address
             </button>
-          </div>
+          </div>}
         </div>
       </div>
     </motion.button>
@@ -195,6 +201,7 @@ function LocationCard({
 }
 
 export default function LocationsPage(): React.JSX.Element {
+  const { preferences, openPreferences } = useConsent();
   const reduce = useReducedMotion();
   const [query, setQuery] = useState<string>("");
   const [region, setRegion] = useState<Region | "all">("all");
@@ -248,13 +255,13 @@ export default function LocationsPage(): React.JSX.Element {
         <div className="mx-auto max-w-6xl">
           <div className="inline-flex items-center gap-2 rounded-full bg-neutral-900/70 px-3 py-1 text-[11px] uppercase tracking-wider text-white backdrop-blur dark:bg-white/10">
             <span className="h-1.5 w-1.5 rounded-full bg-white/90" />
-            FMG Universe Locations
+            Physical location & remote coverage
           </div>
           <h1 className="mt-4 text-3xl font-semibold leading-tight sm:text-4xl md:text-5xl">
             Wherever creativity grows.
           </h1>
           <p className="mt-3 max-w-2xl text-neutral-700 dark:text-white/80">
-            Jakarta, Kuala Lumpur, Singapore, and New York. Global by design. Local in execution.
+            FMG&apos;s listed physical location is in West Jakarta. Kuala Lumpur, Singapore, and New York describe remote collaboration coverage—not FMG offices.
           </p>
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -296,14 +303,14 @@ export default function LocationsPage(): React.JSX.Element {
             <div className="sticky top-20">
               <div className="overflow-hidden rounded-2xl border border-neutral-900/10 bg-white/60 shadow-sm dark:border-white/10 dark:bg-white/5">
                 <div className="aspect-[16/10] w-full">
-                  <iframe
-                    key={selected?.id}
-                    title={`Map of ${selected?.name}`}
-                    src={`https://www.google.com/maps?q=${selected?.mapsQuery ?? ""}&output=embed`}
-                    className="h-full w-full"
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  />
+                  {preferences?.embeds ? <iframe
+                      key={selected?.id}
+                      title={`Map of ${selected?.name}`}
+                      src={`https://www.google.com/maps?q=${selected?.mapsQuery ?? ""}&output=embed`}
+                      className="h-full w-full"
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    /> : <div className="flex h-full flex-col items-center justify-center gap-3 bg-neutral-100 p-6 text-center dark:bg-white/5"><MapPin className="h-8 w-8"/><p className="max-w-sm text-sm text-neutral-600 dark:text-white/70">The map is blocked until you allow external media.</p><button type="button" onClick={openPreferences} className="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white dark:bg-white dark:text-neutral-900">Manage privacy choices</button></div>}
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
                   <div>

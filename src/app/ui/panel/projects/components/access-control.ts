@@ -1,5 +1,4 @@
 // src/app/admin/projects/[id]/components/access-control.ts
-import type { UserRole } from '@/lib/roles';
 
 export interface UserAccess {
   main_role: string | null;

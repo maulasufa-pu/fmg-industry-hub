@@ -5,10 +5,12 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   ChangeEvent,
 } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import type { ProjectSummary } from "../../types";
 import type { UserRole } from "@/lib/roles";
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -71,6 +73,9 @@ type PublishingFields = {
   royalty_splits: Split[];
   platform_statuses: PlatformStatuses;
 };
+
+type DeliveryLog = { id: string; action: string; distributor: string | null; status: string; error_message: string | null; attempt_count: number; created_at: string };
+type AnalyticsRow = { id: string; platform: string; period_start: string; period_end: string; streams: number; listeners: number; revenue_amount: number; revenue_currency: string; source: string; synced_at: string };
 
 const STAFF_ROLES: ReadonlyArray<UserRole> = [
   "owner",
@@ -203,6 +208,12 @@ export default function PublishingTab({
   const [saving, setSaving] = useState<boolean>(false);
   const [err, setErr] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+  const [actionBusy, setActionBusy] = useState<string | null>(null);
+  const [deliveryLogs, setDeliveryLogs] = useState<DeliveryLog[]>([]);
+  const [analytics, setAnalytics] = useState<AnalyticsRow[]>([]);
+  const [analyticsDraft, setAnalyticsDraft] = useState({ platform: "spotify", period_start: "", period_end: "", streams: 0, listeners: 0, revenue_amount: 0, revenue_currency: "USD" });
+  const artworkInputRef = useRef<HTMLInputElement>(null);
+  const releaseDateRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState<PublishingFields>({
     isrc: "",
@@ -287,7 +298,6 @@ export default function PublishingTab({
     return () => {
       alive = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.project_id]);
 
   const onChangeText =
@@ -310,6 +320,16 @@ export default function PublishingTab({
       ),
     [form.royalty_splits]
   );
+
+  const loadOperations = useCallback(async () => {
+    const response = await fetch(`/api/publishing/projects/${project.project_id}`, { cache: "no-store" });
+    if (!response.ok) return;
+    const data = await response.json();
+    setDeliveryLogs(Array.isArray(data.logs) ? data.logs : []);
+    setAnalytics(Array.isArray(data.analytics) ? data.analytics : []);
+  }, [project.project_id]);
+
+  useEffect(() => { void loadOperations(); }, [loadOperations]);
 
   const addSplit = useCallback(() => {
     setForm((prev) => ({
@@ -393,14 +413,12 @@ export default function PublishingTab({
   }, []);
 
   const validate = useCallback((): string | null => {
-    if (!form.isrc.trim()) return "ISRC is required.";
-    if (!form.release_date.trim()) return "Release Date is required.";
     if (totalSplit > 100.0001)
       return "Total Royalty Share cannot exceed 100%.";
     if (form.royalty_splits.some((s) => s.percentage < 0))
       return "Percentage cannot be negative.";
     return null;
-  }, [form.isrc, form.release_date, form.royalty_splits, totalSplit]);
+  }, [form.royalty_splits, totalSplit]);
 
   const onSave = useCallback(async () => {
     setErr(null);
@@ -411,8 +429,6 @@ export default function PublishingTab({
       return;
     }
     setSaving(true);
-    const supabase = getSupabaseClient();
-
     const payload: ProjectPublishingUpdate = {
       isrc: form.isrc || null,
       upc: form.upc || null,
@@ -430,21 +446,64 @@ export default function PublishingTab({
       platform_statuses: form.platform_statuses,
     };
 
-    const { error } = await supabase
-      .from("projects")
-      .update(payload)
-      .eq("project_id", project.project_id);
+    const response = await fetch(`/api/publishing/projects/${project.project_id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "save_metadata", metadata: payload }),
+    });
+    const body = await response.json().catch(() => ({}));
 
     setSaving(false);
-    if (error) {
-      setErr(
-        error.message ??
-          "Failed to save. (If error column 'platform_statuses', add that JSONB column to projects table.)"
-      );
+    if (!response.ok) {
+      setErr(typeof body.error === "string" ? body.error : "Failed to save publishing metadata.");
     } else {
       setOk("Saved.");
+      void loadOperations();
     }
-  }, [form, project.project_id, validate]);
+  }, [form, project.project_id, validate, loadOperations]);
+
+  const runAction = useCallback(async (action: "validate" | "generate_isrc" | "submit") => {
+    setActionBusy(action); setErr(null); setOk(null);
+    if (action === "submit") {
+      await onSave();
+    }
+    const response = await fetch(`/api/publishing/projects/${project.project_id}`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(action === "submit" ? { action, distributors: DSPS.map((item) => item.key) } : { action }),
+    });
+    const body = await response.json().catch(() => ({}));
+    setActionBusy(null);
+    if (!response.ok) {
+      const details = Array.isArray(body.errors) ? body.errors.join(" ") : body.error;
+      setErr(typeof details === "string" ? details : "Publishing action failed.");
+      return;
+    }
+    if (action === "generate_isrc" && body.isrc) setForm((current) => ({ ...current, isrc: body.isrc }));
+    setOk(action === "submit" ? `${body.queued} distributor deliveries queued.` : action === "validate" ? "Metadata is ready for submission." : "ISRC reserved and saved.");
+    void loadOperations();
+  }, [loadOperations, onSave, project.project_id]);
+
+  const persistDSPStatus = useCallback(async (key: DSP, status: DSPStatus) => {
+    setDSPStatus(key, status);
+    const response = await fetch(`/api/publishing/projects/${project.project_id}`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "update_status", distributor: key, status, url: form.platform_statuses[key]?.url || null }),
+    });
+    if (!response.ok) setErr("Could not save distributor status.");
+    else void loadOperations();
+  }, [form.platform_statuses, loadOperations, project.project_id, setDSPStatus]);
+
+  const saveAnalytics = useCallback(async () => {
+    setActionBusy("analytics"); setErr(null);
+    const response = await fetch(`/api/publishing/projects/${project.project_id}`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "analytics_upsert", ...analyticsDraft }),
+    });
+    const body = await response.json().catch(() => ({}));
+    setActionBusy(null);
+    if (!response.ok) setErr(typeof body.error === "string" ? body.error : "Could not save analytics.");
+    else { setOk("Analytics saved."); void loadOperations(); }
+  }, [analyticsDraft, loadOperations, project.project_id]);
 
   return (
     <motion.div
@@ -486,6 +545,7 @@ export default function PublishingTab({
 
               <Field label="Release Date" required>
                 <input
+                  ref={releaseDateRef}
                   type="date"
                   className={inputCls}
                   value={form.release_date}
@@ -580,9 +640,12 @@ export default function PublishingTab({
               <Field label="Artwork">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                   {form.artwork_url ? (
-                    <img
+                    <Image
                       src={form.artwork_url}
                       alt="Artwork"
+                      width={80}
+                      height={80}
+                      unoptimized
                       className="h-20 w-20 rounded-xl object-cover border-2 border-slate-200 dark:border-slate-600 shadow-sm"
                     />
                   ) : (
@@ -591,6 +654,7 @@ export default function PublishingTab({
                     </div>
                   )}
                   <input
+                    ref={artworkInputRef}
                     type="file"
                     accept="image/*"
                     onChange={onUploadArtwork}
@@ -753,7 +817,7 @@ export default function PublishingTab({
                     <select
                       className="w-full rounded-lg border-2 border-slate-200 dark:border-slate-600 bg-white/95 dark:bg-slate-800/95 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 shadow-sm focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/30 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200"
                       value={st.status}
-                      onChange={(e) => setDSPStatus(key, e.target.value as DSPStatus)}
+                      onChange={(e) => void persistDSPStatus(key, e.target.value as DSPStatus)}
                       disabled={isClientView}
                     >
                       <option value="pending">Pending</option>
@@ -798,10 +862,10 @@ export default function PublishingTab({
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {[
-              { action: "Submit to Distributors", icon: "📤", color: "from-blue-500 to-indigo-600" },
-              { action: "Generate ISRC Codes", icon: "🔢", color: "from-green-500 to-emerald-600" },
-              { action: "Upload Artwork", icon: "🎨", color: "from-purple-500 to-pink-600" },
-              { action: "Set Release Date", icon: "📅", color: "from-orange-500 to-red-600" },
+              { action: "submit", label: "Validate & Queue Delivery", icon: "📤", color: "from-blue-500 to-indigo-600" },
+              { action: "generate_isrc", label: "Generate ISRC Code", icon: "🔢", color: "from-green-500 to-emerald-600" },
+              { action: "upload", label: "Upload Artwork", icon: "🎨", color: "from-purple-500 to-pink-600" },
+              { action: "release_date", label: "Set Release Date", icon: "📅", color: "from-orange-500 to-red-600" },
             ].map((item, index) => (
               <motion.button
                 key={item.action}
@@ -812,25 +876,40 @@ export default function PublishingTab({
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.98 }}
                 type="button"
+                disabled={actionBusy !== null}
+                onClick={() => {
+                  if (item.action === "upload") artworkInputRef.current?.click();
+                  else if (item.action === "release_date") { releaseDateRef.current?.focus(); releaseDateRef.current?.showPicker?.(); }
+                  else void runAction(item.action as "submit" | "generate_isrc");
+                }}
               >
                 <span className="flex items-center justify-center gap-2">
                   <span>{item.icon}</span>
-                  {item.action}
+                  {actionBusy === item.action ? "Working…" : item.label}
                 </span>
               </motion.button>
             ))}
           </div>
+          <button type="button" onClick={() => void runAction("validate")} disabled={actionBusy !== null} className="mt-3 w-full rounded-xl border-2 border-slate-200 px-4 py-3 text-sm font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">Validate metadata without submitting</button>
         </AnimatedCard>
       )}
 
       <AnimatedCard title="📈 Analytics & Performance" gradient className="xl:col-span-12">
-        <div className="text-center py-8 text-slate-500 dark:text-slate-400">
-          <div className="text-4xl mb-4">📊</div>
-          <p>Performance analytics will appear after track is published.</p>
-          <p className="text-xs mt-2">
-            Including streaming numbers, revenue tracking, and platform performance.
-          </p>
-        </div>
+        {!isClientView && <div className="grid gap-3 rounded-2xl border border-slate-200 p-4 dark:border-slate-700 md:grid-cols-4 lg:grid-cols-8">
+          <input aria-label="Platform" className={inputCls} value={analyticsDraft.platform} onChange={(e) => setAnalyticsDraft((d) => ({ ...d, platform: e.target.value }))} placeholder="Platform" />
+          <input aria-label="Period start" type="date" className={inputCls} value={analyticsDraft.period_start} onChange={(e) => setAnalyticsDraft((d) => ({ ...d, period_start: e.target.value }))} />
+          <input aria-label="Period end" type="date" className={inputCls} value={analyticsDraft.period_end} onChange={(e) => setAnalyticsDraft((d) => ({ ...d, period_end: e.target.value }))} />
+          <input aria-label="Streams" type="number" min={0} className={inputCls} value={analyticsDraft.streams} onChange={(e) => setAnalyticsDraft((d) => ({ ...d, streams: Number(e.target.value) || 0 }))} placeholder="Streams" />
+          <input aria-label="Listeners" type="number" min={0} className={inputCls} value={analyticsDraft.listeners} onChange={(e) => setAnalyticsDraft((d) => ({ ...d, listeners: Number(e.target.value) || 0 }))} placeholder="Listeners" />
+          <input aria-label="Revenue" type="number" min={0} step="0.01" className={inputCls} value={analyticsDraft.revenue_amount} onChange={(e) => setAnalyticsDraft((d) => ({ ...d, revenue_amount: Number(e.target.value) || 0 }))} placeholder="Revenue" />
+          <input aria-label="Currency" maxLength={3} className={inputCls} value={analyticsDraft.revenue_currency} onChange={(e) => setAnalyticsDraft((d) => ({ ...d, revenue_currency: e.target.value.toUpperCase() }))} />
+          <button type="button" onClick={() => void saveAnalytics()} disabled={!analyticsDraft.period_start || !analyticsDraft.period_end || actionBusy !== null} className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Save period</button>
+        </div>}
+        {analytics.length === 0 ? <p className="py-8 text-center text-sm text-slate-500">No performance periods recorded yet.</p> : <div className="mt-4 overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Platform</th><th className="p-2">Period</th><th className="p-2">Streams</th><th className="p-2">Listeners</th><th className="p-2">Revenue</th><th className="p-2">Source</th></tr></thead><tbody>{analytics.map((row) => <tr key={row.id} className="border-b border-slate-200 dark:border-slate-700"><td className="p-2 font-medium">{row.platform}</td><td className="p-2">{row.period_start} – {row.period_end}</td><td className="p-2">{Number(row.streams).toLocaleString()}</td><td className="p-2">{Number(row.listeners).toLocaleString()}</td><td className="p-2">{row.revenue_currency} {Number(row.revenue_amount).toLocaleString()}</td><td className="p-2">{row.source}</td></tr>)}</tbody></table></div>}
+      </AnimatedCard>
+
+      <AnimatedCard title="🚚 Distributor Delivery Log" gradient className="xl:col-span-12">
+        {deliveryLogs.length === 0 ? <p className="text-sm text-slate-500">No distributor action has been recorded.</p> : <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Time</th><th className="p-2">Action</th><th className="p-2">Distributor</th><th className="p-2">Status</th><th className="p-2">Attempts</th><th className="p-2">Error</th></tr></thead><tbody>{deliveryLogs.map((log) => <tr key={log.id} className="border-b border-slate-200 dark:border-slate-700"><td className="p-2 whitespace-nowrap">{new Date(log.created_at).toLocaleString()}</td><td className="p-2">{log.action}</td><td className="p-2">{log.distributor || "—"}</td><td className="p-2 font-medium">{log.status}</td><td className="p-2">{log.attempt_count}</td><td className="p-2 text-rose-600">{log.error_message || "—"}</td></tr>)}</tbody></table></div>}
       </AnimatedCard>
     </motion.div>
   );

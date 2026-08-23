@@ -18,6 +18,7 @@ module.exports = {
         "default-success": "var(--default-success)",
         defaultalert: "var(--defaultalert)",
         defaultwhite: "var(--defaultwhite)",
+        "primary-30": "var(--primary)",
         "primary-60": "var(--primary-60)",
         "primary-90": "var(--primary-90)",
       },
@@ -35,7 +36,5 @@ module.exports = {
       },
     },
   },
-  plugins: [
-    require("tailwindcss-animate"),
-  ],
+  plugins: [],
 };

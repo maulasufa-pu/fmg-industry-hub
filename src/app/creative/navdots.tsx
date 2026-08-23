@@ -21,7 +21,7 @@ export function NavDots({ total, activeIndex, onGo }: NavDotsProps) {
           >
             <motion.span
               layout
-              animate={{ width: active ? 28 : 8, backgroundColor: active ? "rgb(99 102 241)" : "rgba(163,163,163,0.7)" }} // indigo-500 vs neutral-400/70
+              animate={{ width: active ? 28 : 8, backgroundColor: active ? "rgba(99,102,241,1)" : "rgba(163,163,163,0.7)" }}
               transition={{ type: "spring", stiffness: 520, damping: 34 }}
               className="h-2 rounded-full"
             />

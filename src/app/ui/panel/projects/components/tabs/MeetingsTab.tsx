@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import type { MeetingRow, ProjectSummary } from "../../types";
+import { notify } from "@/components/ui/FeedbackHost";
 
 interface MeetingsTabProps {
   project: ProjectSummary;
@@ -185,13 +186,13 @@ export default function MeetingsTab({ project, meetings, setMeetings }: Meetings
   const createMeeting = async (): Promise<void> => {
     const { title, date, time, durationMin, notes, provider } = meetingForm;
     if (!title.trim() || !date || !time) {
-      alert("Isi Title, Date, dan Time.");
+      notify("Isi Title, Date, dan Time.", "error");
       return;
     }
 
     const startLocal = new Date(`${date}T${time}:00`);
     if (Number.isNaN(startLocal.getTime())) {
-      alert("Tanggal/Jam tidak valid.");
+      notify("Tanggal/Jam tidak valid.", "error");
       return;
     }
 
@@ -230,7 +231,7 @@ export default function MeetingsTab({ project, meetings, setMeetings }: Meetings
     } catch (e) {
       // eslint-disable-next-line no-console
       //console.error(e);
-      alert("Gagal membuat meeting otomatis.");
+      notify("Gagal membuat meeting otomatis.", "error");
     } finally {
       setIsCreatingMeeting(false);
     }

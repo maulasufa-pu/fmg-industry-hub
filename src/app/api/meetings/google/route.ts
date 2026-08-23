@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { google, calendar_v3 } from "googleapis";
+import { apiAuthErrorResponse, requireAdminRequest } from "@/lib/auth/server";
+import { consumeRateLimit, isSameOriginRequest } from "@/lib/security/request";
 
 const GOOGLE_OAUTH_CLIENT_ID = process.env.GOOGLE_OAUTH_CLIENT_ID!;
 const GOOGLE_OAUTH_CLIENT_SECRET = process.env.GOOGLE_OAUTH_CLIENT_SECRET!;
@@ -15,13 +17,17 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
+    const actor = await requireAdminRequest(req);
+    const rate = consumeRateLimit(req, "meeting-google", 10, 60_000, actor.user.id);
+    if (!rate.allowed) return NextResponse.json({ error: "Too many meeting requests" }, { status: 429, headers: { "Retry-After": String(rate.retryAfter) } });
     const { title, startAt, durationMin } = (await req.json()) as {
       title: string;
       startAt: string;   
       durationMin: number;
     };
 
-    if (!title || !startAt || !durationMin) {
+    if (!title?.trim() || title.length > 160 || !startAt || !Number.isInteger(durationMin) || durationMin < 5 || durationMin > 480) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
@@ -69,8 +75,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ joinUrl });
   } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : typeof err === "string" ? err : JSON.stringify(err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const authResponse = apiAuthErrorResponse(err);
+    if (authResponse) return authResponse;
+    return NextResponse.json({ error: "Unable to create Google meeting" }, { status: 500 });
   }
 }

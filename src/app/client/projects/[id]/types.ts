@@ -6,6 +6,7 @@ export type ProjectStatus =
   | "revision"
   | "approved"
   | "published"
+  | "on_hold"
   | "archived"
   | "cancelled";
 

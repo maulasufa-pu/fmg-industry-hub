@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useState, useEffect, ReactNode } from 'react';
 import { Currency, DEFAULT_CURRENCY, fetchExchangeRates } from '@/lib/currency';
 
 interface CurrencyContextType {
@@ -38,7 +38,7 @@ export function CurrencyProvider({
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
-  const refreshRates = async () => {
+  const refreshRates = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -63,13 +63,13 @@ export function CurrencyProvider({
       // console.error('Currency rates fetch failed:', errorMessage);
       
       // Keep existing rates if available, otherwise use fallback
-      if (Object.keys(rates).length <= 1) {
-        setRates({ USD: 1, IDR: 16000, EUR: 0.92, JPY: 150 });
-      }
+      setRates((current) => Object.keys(current).length <= 1
+        ? { USD: 1, IDR: 16000, EUR: 0.92, JPY: 150 }
+        : current);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Initial load and periodic refresh
   useEffect(() => {
@@ -78,13 +78,13 @@ export function CurrencyProvider({
     // Refresh every hour
     const interval = setInterval(refreshRates, 60 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [refreshRates]);
 
   // Persist currency selection in localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('fmg-currency');
-      if (stored && stored !== currency) {
+      if (stored) {
         const storedCurrency = stored as Currency;
         // Validate it's a supported currency
         const supportedCurrencies = ['USD', 'IDR', 'EUR', 'JPY', 'GBP', 'AUD', 'CAD', 'SGD'];

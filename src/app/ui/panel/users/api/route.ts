@@ -1,12 +1,12 @@
 // src/app/api/admin/users/route.ts
 import { NextResponse } from "next/server";
-import { getEffectiveRole } from "@/lib/roles/effective";
-import { isAdminLike } from "@/lib/roles";
+import { apiAuthErrorResponse, requireAdminRequest } from "@/lib/auth/server";
 
-export async function GET() {
-  const role = await getEffectiveRole();
-  if (!isAdminLike(role)) {
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+export async function GET(request: Request) {
+  try {
+    await requireAdminRequest(request);
+  } catch (error) {
+    return apiAuthErrorResponse(error) ?? NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
   // ... logic
   return NextResponse.json({ ok: true });

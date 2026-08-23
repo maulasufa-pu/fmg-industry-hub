@@ -1,12 +1,12 @@
 
 import type { Metadata } from "next";
-import { seoFromDB } from "@/lib/seo-loader";
+import ArrangementOffer from "@/components/public/ArrangementOffer";
 
-export const metadata: Metadata = seoFromDB("/services");
+export const metadata: Metadata = {
+  title: "Music Arrangement Service",
+  description: "Professional music arrangement with a clear scope, timeline, revisions, deliverables, ownership, and payment flow.",
+};
 
-export default function PageName() {
-  return (
-    <div>
-    </div>
-  );
+export default function ServicesPage() {
+  return <ArrangementOffer />;
 }

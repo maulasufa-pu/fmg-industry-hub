@@ -56,7 +56,6 @@ async function checkUserRoles() {
     
     // Check for owner role specifically
     const owners = profiles.filter(p => p.role === 'owner');
-    const admins = profiles.filter(p => p.role === 'admin');
     
     //console.log(`👑 Owners: ${owners.length}`);
     //console.log(`🛡️  Admins: ${admins.length}`);

@@ -1,5 +1,6 @@
 // src/app/api/verify-hcaptcha/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { consumeRateLimit, isSameOriginRequest } from "@/lib/security/request";
 
 type VerifyPayload = { token?: string };
 type HCaptchaVerifyResponse = {
@@ -12,6 +13,9 @@ type HCaptchaVerifyResponse = {
 };
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  if (!isSameOriginRequest(req)) return NextResponse.json({ ok: false, error: "Invalid request origin" }, { status: 403 });
+  const rate = consumeRateLimit(req, "hcaptcha-verify", 20, 10 * 60_000);
+  if (!rate.allowed) return NextResponse.json({ ok: false, error: "Too many verification attempts" }, { status: 429, headers: { "Retry-After": String(rate.retryAfter) } });
   const secret = process.env.HCAPTCHA_SECRET;
   if (!secret) {
     return NextResponse.json(

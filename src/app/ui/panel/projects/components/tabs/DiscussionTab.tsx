@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion";
 import type { DiscussionMessage, ProjectSummary } from "../../types";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { notify } from "@/components/ui/FeedbackHost";
 
 type ChatMessage = DiscussionMessage & {
   author_display_name?: string | null;
@@ -311,8 +312,7 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
       setTimeout(() => {}, 180);
       scrollToBottom();
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project.project_id, supabase]);
+  }, [messages, project.project_id, scrollToBottom, setMessages, supabase]);
 
   const lastTailIdRef = useRef<string | null>(null);
   useEffect(() => {
@@ -523,7 +523,7 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
 
     if (error) {
       setMessages((prev) => prev ? prev.filter((m) => m.id !== optimisticId) : prev);
-      alert(error.message ?? "Gagal mengirim pesan.");
+      notify(error.message ?? "Gagal mengirim pesan.", "error");
       setInput(content);
     }
   }, [input, project.project_id, supabase, canPost, viewerId, selfDisplayName, setMessages, scrollToBottom]);
@@ -536,7 +536,7 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
       const { error } = await supabase.from("discussion_messages").delete().eq("id", id);
       if (error) {
         preserveScrollDuring(() => setMessages(prevSnapshot));
-        alert(error.message);
+        notify(error.message, "error");
       }
     },
     [messages, setMessages, supabase]
@@ -559,7 +559,7 @@ export default function DiscussionTab({ project, messages, setMessages }: Discus
     const { error } = await supabase.from("discussion_messages").update({ content: newText }).eq("id", id).select("id");
     if (error) {
       setMessages(prevSnapshot);
-      alert(error.message);
+      notify(error.message, "error");
       return;
     }
     setEditingId(null);

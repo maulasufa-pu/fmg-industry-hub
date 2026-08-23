@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useRef, useEffect, useState, useCallback, useLayoutEffect } from "react";
+import React, { useRef, useEffect, useState, useCallback, useLayoutEffect } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -27,6 +27,7 @@ import UserDropdown from "../pop_over/user_dropdown";
 import { useProfile } from "@/hooks/useProfile";
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
 import Portal from "@/components/ui/Portal";
+import { ARRANGEMENT_ORDER_PATH, ARRANGEMENT_PORTFOLIO_PATH } from "@/lib/arrangement";
 
 type MenuItem = {
   label: string;
@@ -213,16 +214,7 @@ export const HeaderSection = (): React.JSX.Element => {
   const profileButtonRef = useRef<HTMLButtonElement>(null);
   const mobileProfileButtonRef = useRef<HTMLButtonElement>(null);
 
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const linkRefs = useRef<Array<HTMLAnchorElement | null>>([]);
-
   const { profile, loading: profileLoading } = useProfile();
-
-  const setItemRef =
-    (idx: number) =>
-    (el: HTMLAnchorElement | null): void => {
-      itemRefs.current[idx] = el;
-    };
 
   const dropdownWrapperRef = useRef<HTMLDivElement | null>(null);
 
@@ -474,13 +466,13 @@ export const HeaderSection = (): React.JSX.Element => {
                 <Link href="/#about" className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
                   About
                 </Link>
-                <Link href="/#features" className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
+                <Link href="/services" className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
                   Services
                 </Link>
-                <Link href="/#pricing" className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
+                <Link href="/pricing" className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
                   Pricing
                 </Link>
-                <Link href="/portfolio" className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
+                <Link href={ARRANGEMENT_PORTFOLIO_PATH} className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
                   Portfolio
                 </Link>
 
@@ -625,7 +617,7 @@ export const HeaderSection = (): React.JSX.Element => {
                             “Beyond Sound. Built-in Intelligence.”
                           </span>
                           <Link
-                            href="/client/dashboard"
+                            href={ARRANGEMENT_ORDER_PATH}
                             className="
                             inline-flex items-center gap-1.5 rounded-lg border border-black/10 dark:border-white/10
                             bg-black text-white dark:bg-white dark:text-black px-3 py-1.5 text-xs font-semibold
@@ -645,7 +637,7 @@ export const HeaderSection = (): React.JSX.Element => {
 
             <div className="hidden items-center gap-3 min-[1028px]:flex flex-shrink-0">
               <Link
-                href="/client/dashboard"
+                href={ARRANGEMENT_ORDER_PATH}
                 className="
                 group relative inline-flex h-10 items-center gap-2 rounded-2xl px-4
                 text-sm font-semibold leading-none whitespace-nowrap
@@ -788,21 +780,21 @@ export const HeaderSection = (): React.JSX.Element => {
                       About
                     </Link>
                     <Link
-                      href="/#features"
+                      href="/services"
                       onClick={() => setMobileOpen(false)}
                       className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2.5 text-center hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
                     >
                       Services
                     </Link>
                     <Link
-                      href="/#pricing"
+                      href="/pricing"
                       onClick={() => setMobileOpen(false)}
                       className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2.5 text-center hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
                     >
                       Packages
                     </Link>
                     <Link
-                      href="/portfolio"
+                      href={ARRANGEMENT_PORTFOLIO_PATH}
                       onClick={() => setMobileOpen(false)}
                       className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2.5 text-center hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
                     >
@@ -842,7 +834,7 @@ export const HeaderSection = (): React.JSX.Element => {
 
                     <div className="pt-3">
                       <Link
-                        href="/client/dashboard"
+                        href={ARRANGEMENT_ORDER_PATH}
                         onClick={() => setMobileOpen(false)}
                         className="
                         mt-1 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3

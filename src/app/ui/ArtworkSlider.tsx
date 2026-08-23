@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Parallax } from "react-scroll-parallax";
 
@@ -132,12 +133,14 @@ export default function ArtworkSlider({ artworks }: { artworks: string[] }) {
               px-1
             "
             style={{ WebkitOverflowScrolling: "touch" }}
+            role="region"
+            tabIndex={0}
             aria-label="Artwork carousel"
           >
             <style>{`[data-hide-scrollbar]::-webkit-scrollbar{display:none}`}</style>
             {extended.map((src, i) => (
               <div key={i} className="snap-center shrink-0 w-[260px] h-[260px] rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5">
-                <img src={src} alt={`Artwork ${i}`} className="h-full w-full object-cover" />
+                <Image src={src} alt={`Artwork ${i}`} width={260} height={260} sizes="260px" className="h-full w-full object-cover" />
               </div>
             ))}
           </div>

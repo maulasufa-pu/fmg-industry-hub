@@ -4,6 +4,8 @@
 import { useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { safeInternalPath, withNext } from "@/lib/safe-next";
+import { TERMS_CONSENT_STORAGE_KEY } from "@/lib/legal";
 
 type HashTokens = {
   access_token: string | null;
@@ -54,86 +56,54 @@ function dumpPkce(label: string) {
   }
 }
 
+async function recordPendingTermsConsent(supabase: ReturnType<typeof getSupabaseClient>): Promise<void> {
+  const raw = window.localStorage.getItem(TERMS_CONSENT_STORAGE_KEY);
+  if (!raw) return;
+  try {
+    const pending = JSON.parse(raw) as { version?: string; acceptedAt?: string };
+    if (!pending.version || !pending.acceptedAt) return;
+    const { error } = await supabase.auth.updateUser({ data: { terms_version: pending.version, terms_accepted_at: pending.acceptedAt } });
+    if (!error) window.localStorage.removeItem(TERMS_CONSENT_STORAGE_KEY);
+  } catch {
+    window.localStorage.removeItem(TERMS_CONSENT_STORAGE_KEY);
+  }
+}
+
 export default function CallbackClient() {
-  const sp = useSearchParams();
-  const ran = useRef(false);
+  const searchParams = useSearchParams();
+  const hasRun = useRef(false);
 
   useEffect(() => {
-    if (ran.current) return;
-    ran.current = true;
+    if (hasRun.current) return;
+    hasRun.current = true;
 
-    (async () => {
+    void (async () => {
       const supabase = getSupabaseClient();
-
       const url = new URL(window.location.href);
+      const next = safeInternalPath(
+        searchParams.get("next") || searchParams.get("redirectedFrom"),
+      );
       const code = url.searchParams.get("code");
-      const nextParam = sp.get("next") || sp.get("redirectedFrom") || "";
-      const safeNext = nextParam.startsWith("/") ? nextParam : "/client/dashboard";
-
       const hash = parseHash();
-    const flowType = url.searchParams.get("type") || hash.type; // "email" | "recovery" | "magiclink" | "invite" | ...
-    const hasHashTokens = Boolean(hash.access_token && hash.refresh_token);
+      const flowType = url.searchParams.get("type") || hash.type;
 
-    if (hasHashTokens) {
-    dumpPkce("hash-tokens-detected:" + (flowType || "unknown"));
-
-    const { data: setData, error: setErr } = await supabase.auth.setSession({
-        access_token: hash.access_token as string,
-        refresh_token: hash.refresh_token as string,
-    });
-    if (setErr || !setData.session) {
-        //console.error("[callback] setSession (hash) error:", setErr);
+      const fail = (reason: string) => {
         stripHash();
-        window.location.replace("/login?err=hash-setsession");
-        return;
-    }
+        window.location.replace(withNext(`/login?err=${encodeURIComponent(reason)}`, next));
+      };
 
-    const resp = await fetch("/auth/set", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-        body: JSON.stringify({
-        access_token: setData.session.access_token,
-        refresh_token: setData.session.refresh_token,
-        }),
-        cache: "no-store",
-        credentials: "same-origin",
-    });
-    if (!resp.ok) {
-        let msg = "failed to set server session (hash)";
-        try { msg = (await resp.json())?.error ?? msg; } catch {}
-        //console.error("[callback] set-session (hash) error:", msg);
-        stripHash();
-        window.location.replace("/login?err=hash-setcookie");
-        return;
-    }
-
-    stripHash(flowType ? `type=${flowType}` : undefined);
-    if (flowType === "recovery") {
-        window.location.replace(RECOVERY_DEST);     
-    } else if (flowType === "signup") {
-        // Email verification successful - redirect to verified page
-        window.location.replace("/auth/verified");
-    } else {
-        const rawNext = sp.get("next") || sp.get("redirectedFrom") || "";
-        const dest = rawNext.startsWith("/") ? rawNext : "/client/dashboard";
-        window.location.replace(dest);
-    }
-    return;
-    }
-    
-      if (code) {
-        dumpPkce("before-exchange");
-        const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+      if (hash.access_token && hash.refresh_token) {
+        dumpPkce(`hash-tokens-detected:${flowType || "unknown"}`);
+        const { data, error } = await supabase.auth.setSession({
+          access_token: hash.access_token,
+          refresh_token: hash.refresh_token,
+        });
         if (error || !data.session) {
-          //console.error("[callback] exchange error:", error);
-          dumpPkce("exchange-failed");
-          stripHash();
-          window.location.replace("/login?err=oauth");
+          fail("hash-setsession");
           return;
         }
-        dumpPkce("after-exchange");
-
-        const resp = await fetch("/auth/set", {
+        await recordPendingTermsConsent(supabase);
+        const response = await fetch("/auth/set", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
           body: JSON.stringify({
@@ -143,29 +113,47 @@ export default function CallbackClient() {
           cache: "no-store",
           credentials: "same-origin",
         });
-        if (!resp.ok) {
-          let msg = "failed to set server session";
-          try {
-            msg = (await resp.json())?.error ?? msg;
-          } catch {}
-          //console.error("[callback] set-session error:", msg);
-          dumpPkce("after-set-failed");
-          stripHash();
-          window.location.replace("/login?err=setcookie");
+        if (!response.ok) {
+          fail("hash-setcookie");
           return;
         }
-
-        dumpPkce("after-set-success");
-        stripHash();
-        window.location.replace(safeNext);
+        stripHash(flowType ? `type=${flowType}` : undefined);
+        if (flowType === "recovery") window.location.replace(RECOVERY_DEST);
+        else if (flowType === "signup") window.location.replace("/auth/verified");
+        else window.location.replace(next);
         return;
       }
 
-      //console.error("[callback] missing code and no recovery tokens");
+      if (!code) {
+        fail("nocode");
+        return;
+      }
+
+      dumpPkce("before-exchange");
+      const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+      if (error || !data.session) {
+        fail("oauth");
+        return;
+      }
+      await recordPendingTermsConsent(supabase);
+      const response = await fetch("/auth/set", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+        body: JSON.stringify({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        }),
+        cache: "no-store",
+        credentials: "same-origin",
+      });
+      if (!response.ok) {
+        fail("setcookie");
+        return;
+      }
       stripHash();
-      window.location.replace("/login?err=nocode");
+      window.location.replace(next);
     })();
-  }, [sp]);
+  }, [searchParams]);
 
   return null;
 }

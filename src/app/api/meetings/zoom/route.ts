@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiAuthErrorResponse, requireAdminRequest } from "@/lib/auth/server";
+import { consumeRateLimit, isSameOriginRequest } from "@/lib/security/request";
 
 const ZOOM_ACCOUNT_ID = process.env.ZOOM_ACCOUNT_ID!;
 const ZOOM_CLIENT_ID = process.env.ZOOM_CLIENT_ID!;
@@ -24,6 +26,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
+    const actor = await requireAdminRequest(req);
+    const rate = consumeRateLimit(req, "meeting-zoom", 10, 60_000, actor.user.id);
+    if (!rate.allowed) return NextResponse.json({ error: "Too many meeting requests" }, { status: 429, headers: { "Retry-After": String(rate.retryAfter) } });
     const { title, startAt, durationMin, timezone } = (await req.json()) as {
       title: string;
       startAt: string;    
@@ -31,7 +37,7 @@ export async function POST(req: NextRequest) {
       timezone?: string;   
     };
 
-    if (!title || !startAt || !durationMin) {
+    if (!title?.trim() || title.length > 160 || !startAt || !Number.isInteger(durationMin) || durationMin < 5 || durationMin > 480) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
@@ -65,7 +71,8 @@ export async function POST(req: NextRequest) {
     const json = (await res.json()) as { join_url: string };
     return NextResponse.json({ joinUrl: json.join_url });
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : typeof e === "string" ? e : JSON.stringify(e);
-    return NextResponse.json({ error: String(message) }, { status: 500 });
+    const authResponse = apiAuthErrorResponse(e);
+    if (authResponse) return authResponse;
+    return NextResponse.json({ error: "Unable to create Zoom meeting" }, { status: 500 });
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState, forwardRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState, forwardRef } from "react";
 import type { HTMLMotionProps } from "framer-motion";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -316,8 +316,6 @@ function Popover({
 
 export default function ProductServicesPage(): React.JSX.Element {
   const [role, setRole] = useState<UserRole | null>(null);
-  const { currency, rates, loading: ratesLoading } = useCurrency();
-
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -513,7 +511,7 @@ function ServicesPanel(): React.JSX.Element {
   const [quickBusy, setQuickBusy] = useState(false);
   const [quickErr, setQuickErr] = useState<string | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     const { data, error: err } = await sb
@@ -526,9 +524,9 @@ function ServicesPanel(): React.JSX.Element {
     if (err) setError(err.message);
     else setRows((data ?? []).map(normalizeService));
     setLoading(false);
-  }
+  }, [sb]);
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); }, [load]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -1034,7 +1032,7 @@ function BundlesPanel(): React.JSX.Element {
   const [quickBusy, setQuickBusy] = useState(false);
   const [quickErr, setQuickErr] = useState<string | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     const [b, bi, s] = await Promise.all([
@@ -1050,9 +1048,9 @@ function BundlesPanel(): React.JSX.Element {
     setBundleItems((bi.data ?? []) as BundleItemRow[]);
     setServices((s.data ?? []).map(normalizeService));
     setLoading(false);
-  }
+  }, [sb]);
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); }, [load]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -1330,11 +1328,6 @@ function BundleEditor({
     if (!initial) return [];
     return items.filter(i => i.bundle_id === initial.id).map(i => i.service_id);
   });
-
-  const attachable = useMemo(() => {
-    const set = new Set(attached);
-    return services.filter(s => !set.has(s.id) && s.is_active);
-  }, [services, attached]);
 
   function set<K extends keyof typeof draft>(key: K, value: (typeof draft)[K]) {
     setDraft(prev => ({ ...prev, [key]: value }));

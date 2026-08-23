@@ -67,7 +67,6 @@ export function BackgroundField({
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const target = container?.current ?? (document.scrollingElement as HTMLElement | null) ?? document.documentElement;
 
     const onPointer = (e: PointerEvent) => {
       const vw = window.innerWidth || 1;
@@ -83,8 +82,9 @@ export function BackgroundField({
       scrollTopRef.current = st;
     };
 
+    const scrollTarget = container?.current ?? window;
     window.addEventListener("pointermove", onPointer, { passive: true });
-    (container?.current ?? window).addEventListener("scroll", onScroll, { passive: true });
+    scrollTarget.addEventListener("scroll", onScroll, { passive: true });
 
     onScroll(); 
 
@@ -109,7 +109,7 @@ export function BackgroundField({
     rafRef.current = requestAnimationFrame(tick);
     return () => {
       window.removeEventListener("pointermove", onPointer);
-      (container?.current ?? window).removeEventListener("scroll", onScroll);
+      scrollTarget.removeEventListener("scroll", onScroll);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [container, intensity, items]);

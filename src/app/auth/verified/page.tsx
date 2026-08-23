@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { CheckCircle2, ArrowRight, Mail, Sparkles } from "lucide-react";
+import { safeInternalPath, withNext } from "@/lib/safe-next";
 
-export default function EmailVerifiedPage() {
+function EmailVerifiedContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const loginPath = withNext("/login", safeInternalPath(searchParams.get("next")));
   const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
@@ -15,7 +18,7 @@ export default function EmailVerifiedPage() {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          router.replace("/login");
+          router.replace(loginPath);
           return 0;
         }
         return prev - 1;
@@ -23,7 +26,7 @@ export default function EmailVerifiedPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [router]);
+  }, [loginPath, router]);
 
   return (
     <div className="relative min-h-screen flex items-center justify-center px-4 py-10 overflow-hidden bg-gradient-to-br from-slate-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
@@ -152,7 +155,7 @@ export default function EmailVerifiedPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
-              onClick={() => router.push("/login")}
+              onClick={() => router.push(loginPath)}
               className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-semibold transition-all duration-200 shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/50"
             >
               Go to Login Now
@@ -172,5 +175,13 @@ export default function EmailVerifiedPage() {
         </motion.p>
       </motion.div>
     </div>
+  );
+}
+
+export default function EmailVerifiedPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white dark:bg-slate-950" />}>
+      <EmailVerifiedContent />
+    </Suspense>
   );
 }

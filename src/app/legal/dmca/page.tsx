@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   ShieldAlert,
@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   CheckCircle2,
 } from "lucide-react";
+import { notify } from "@/components/ui/FeedbackHost";
 
 function SectionCard({ children, id, title, icon: Icon }: { children: React.ReactNode; id: string; title: string; icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>; }): React.JSX.Element {
   return (
@@ -88,7 +89,7 @@ function useScrollSpy(ids: string[]): string | null {
 
     elements.forEach((el) => obs.observe(el));
     return () => obs.disconnect();
-  }, [ids.join("|")]);
+  }, [ids]);
   return active;
 }
 
@@ -96,10 +97,10 @@ async function copyText(text: string): Promise<void> {
   try {
     await navigator.clipboard.writeText(text);
     // eslint-disable-next-line no-alert
-    alert("Copied to clipboard.");
+    notify("Copied to clipboard.", "success");
   } catch {
     // eslint-disable-next-line no-alert
-    alert("Copy failed. Please copy manually.");
+    notify("Copy failed. Please copy manually.", "error");
   }
 }
 
@@ -138,7 +139,7 @@ export default function DMCAPage(): React.JSX.Element {
             <p className="mx-auto mt-3 max-w-2xl text-[15px] leading-relaxed text-neutral-700 dark:text-white/80">
               This page explains FMG Universe’s policy under the U.S. Digital Millennium Copyright Act (17 U.S.C. §512), including how to send a valid takedown notice and how to submit a counter‑notification.
             </p>
-            <p className="mt-2 text-xs opacity-70">Last updated: {new Date().toLocaleDateString()}</p>
+            <p className="mt-2 text-xs opacity-70">Last updated: August 23, 2026</p>
           </div>
           <div aria-hidden className="pointer-events-none absolute -inset-[1px] rounded-2xl ring-1 ring-neutral-900/10 dark:ring-white/15" />
         </div>
@@ -188,7 +189,7 @@ export default function DMCAPage(): React.JSX.Element {
                   West Jakarta 11480, Indonesia
                 </span>
               </div>
-              <div className="flex items-center gap-2"><Mail className="h-4 w-4 opacity-70" /> <a className="underline underline-offset-4" href="mailto:admin@flemmomusic.com">admin@flemmomusic.com</a></div>
+              <div className="flex items-center gap-2"><Mail className="h-4 w-4 opacity-70" /> <a className="underline underline-offset-4" href="mailto:legal@flemmomusic.com">legal@flemmomusic.com</a></div>
               <div className="flex items-center gap-2"><Phone className="h-4 w-4 opacity-70" /> +62 82298288188</div>
             </div>
             <p className="mt-3 text-[13px] opacity-80">Do not send unrelated inquiries to the DMCA mailbox; they may not receive a response.</p>
@@ -212,7 +213,7 @@ export default function DMCAPage(): React.JSX.Element {
                 <Copy className="mr-2 h-4 w-4" /> Copy Notice Template
               </button>
               <a
-                href={`mailto:dmca@fmg-universe.com?subject=${encodeURIComponent("DMCA Takedown Notice")}`}
+                href={`mailto:legal@flemmomusic.com?subject=${encodeURIComponent("DMCA Takedown Notice")}`}
                 className="inline-flex items-center justify-center rounded-xl border border-neutral-900/20 px-3 py-2 text-sm font-semibold text-neutral-900 hover:bg-neutral-900/5 dark:border-white/20 dark:text-white dark:hover:bg-white/10"
               >
                 <Mail className="mr-2 h-4 w-4" /> Email the Agent
@@ -238,7 +239,7 @@ export default function DMCAPage(): React.JSX.Element {
                 <Copy className="mr-2 h-4 w-4" /> Copy Counter‑Notice Template
               </button>
               <a
-                href={`mailto:dmca@fmg-universe.com?subject=${encodeURIComponent("DMCA Counter-Notification")}`}
+                href={`mailto:legal@flemmomusic.com?subject=${encodeURIComponent("DMCA Counter-Notification")}`}
                 className="inline-flex items-center justify-center rounded-xl border border-neutral-900/20 px-3 py-2 text-sm font-semibold text-neutral-900 hover:bg-neutral-900/5 dark:border-white/20 dark:text-white dark:hover:bg-white/10"
               >
                 <Mail className="mr-2 h-4 w-4" /> Email the Agent

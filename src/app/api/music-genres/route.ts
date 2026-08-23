@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
 // GET - Fetch all unique genres from music_genres table
@@ -19,7 +19,7 @@ export async function GET() {
     if (error) {
       console.error('Supabase error:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch genres', details: error.message },
+        { error: 'Failed to fetch genres' },
         { status: 500 }
       );
     }
@@ -45,7 +45,7 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching genres:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     if (error) {
       console.error('Supabase error:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch sub-genres', details: error.message },
+        { error: 'Failed to fetch sub-genres' },
         { status: 500 }
       );
     }
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error fetching sub-genres:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

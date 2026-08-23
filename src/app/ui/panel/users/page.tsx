@@ -24,13 +24,6 @@ type UserRow = {
   last_sign_in: string | null;
 };
 
-const isAbortError = (e: unknown): boolean => {
-  if (typeof e !== "object" || e === null) return false;
-  const name = (e as { name?: string }).name;
-  // beberapa browser/pustaka memberi pesan "signal is aborted without reason"
-  return name === "AbortError";
-};
-
 export default function UsersPage(): React.JSX.Element {
   useFocusWarmAuth();
 

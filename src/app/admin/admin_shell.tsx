@@ -5,7 +5,6 @@ import SidebarSection from "@/app/ui/page_section/SidebarSection";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { UserRole } from "@/lib/roles";
-import { getEffectiveRole } from "@/lib/roles/effective";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
 const WAKE_EVENT = "admin-wake";
@@ -35,20 +34,7 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
 
         //console.log('[AdminShell] User email:', session.user.email);
 
-        const ownerEmails = (process.env.NEXT_PUBLIC_OWNER_EMAILS || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
-        const userEmail = (session.user.email || "").toLowerCase();
-        
-        //console.log('[AdminShell] Owner emails:', ownerEmails);
-        //console.log('[AdminShell] User email normalized:', userEmail);
-        
-        if (ownerEmails.length > 0 && ownerEmails.includes(userEmail)) {
-          //console.log('[AdminShell] User is owner based on environment');
-          setCurrentRole("owner");
-          setIsLoading(false);
-          return;
-        }
-
-        const { data: profile, error } = await supabase
+        const { data: profile } = await supabase
           .from("profiles")
           .select("main_role, staff_role")
           .eq("id", session.user.id)
@@ -73,12 +59,10 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
           //console.log('[AdminShell] Effective role:', effectiveRole);
           setCurrentRole(effectiveRole);
         } else {
-          //console.log('[AdminShell] No profile found, defaulting to admin for testing');
-          setCurrentRole("admin");
+          setCurrentRole("client");
         }
       } catch (error) {
-        //console.error("Error checking user role:", error);
-        setCurrentRole("admin");
+        setCurrentRole("client");
       } finally {
         setIsLoading(false);
       }
@@ -139,7 +123,6 @@ export default function AdminShell({ role, children }: Props): React.JSX.Element
   useEffect(() => {
     //console.log('[AdminShell] currentRole =', currentRole, 'isLoading =', isLoading);
     //console.log('[AdminShell] sidebarOpen =', sidebarOpen);
-    //console.log('[AdminShell] NEXT_PUBLIC_OWNER_EMAILS =', process.env.NEXT_PUBLIC_OWNER_EMAILS);
   }, [currentRole, isLoading, sidebarOpen]);
 
   if (isLoading) {

@@ -4,6 +4,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ARRANGEMENT_ORDER_PATH, ARRANGEMENT_PORTFOLIO_PATH, NEW_CUSTOMER_PROMO_BUNDLE_KEY } from "@/lib/arrangement";
 import type { BundleItemRow, BundleRow, ServiceRow } from "@/components/catalog";
 import GlobalPrice from "@/components/public/GlobalPrice";
+import LocalizedText from "@/components/LocalizedText";
 
 async function loadCatalog() {
   const admin = getSupabaseAdminClient();
@@ -38,13 +39,13 @@ export default async function ServicesPricingCatalog() {
   return (
     <main className="min-h-screen bg-white text-slate-950 dark:bg-black dark:text-white">
       <section className="mx-auto max-w-7xl px-5 py-16 sm:py-24">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600 dark:text-violet-300">Services &amp; pricing</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600 dark:text-violet-300"><LocalizedText id="Layanan & harga" en="Services & pricing" /></p>
         <div className="mt-4 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
           <div>
-            <h1 className="max-w-4xl text-balance text-4xl font-bold tracking-tight sm:text-6xl">Choose the service that fits your project.</h1>
-            <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600 dark:text-slate-300">The cards below use the same active catalog as the order form. Select Order New Arrangement to open the form directly.</p>
+            <h1 className="max-w-4xl text-balance text-4xl font-bold tracking-tight sm:text-6xl"><LocalizedText id="Pilih layanan yang paling cocok untuk project Anda." en="Choose the service that fits your project." /></h1>
+            <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600 dark:text-slate-300"><LocalizedText id="Harga dan paket di sini sama dengan yang tersedia pada form order." en="The prices and packages shown here match the live order form." /></p>
           </div>
-          <Link href={ARRANGEMENT_ORDER_PATH} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-violet-600 px-6 py-3 font-semibold text-white hover:bg-violet-700">Order New Arrangement <ArrowRight className="h-4 w-4" /></Link>
+          <Link href={ARRANGEMENT_ORDER_PATH} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-violet-600 px-6 py-3 font-semibold text-white hover:bg-violet-700"><LocalizedText id="Order Aransemen Baru" en="Order New Arrangement" /> <ArrowRight className="h-4 w-4" /></Link>
         </div>
 
         {bundles.length > 0 && <section className="mt-14">
@@ -53,7 +54,7 @@ export default async function ServicesPricingCatalog() {
             {bundles.map((bundle) => <article key={bundle.id} className="flex flex-col rounded-3xl border-2 border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-violet-400 hover:shadow-xl dark:border-slate-700 dark:bg-slate-900">
               <div className="flex items-start justify-between gap-3"><h3 className="text-xl font-bold">{bundle.label}</h3>{bundle.bundle_key === NEW_CUSTOMER_PROMO_BUNDLE_KEY && <span className="rounded-full bg-rose-600 px-3 py-1 text-xs font-bold text-white">NEW CUSTOMER</span>}</div>
               <p className="mt-2 text-3xl font-bold"><GlobalPrice usd={Number(bundle.bundle_price)} idr={bundle.bundle_key === NEW_CUSTOMER_PROMO_BUNDLE_KEY ? Number(bundle.promo_value) : undefined} /></p>
-              {bundle.bundle_key === NEW_CUSTOMER_PROMO_BUNDLE_KEY && <p className="mt-1 text-sm font-semibold text-rose-600 dark:text-rose-300">Penawaran spesial untuk project pertama Anda.</p>}
+              {bundle.bundle_key === NEW_CUSTOMER_PROMO_BUNDLE_KEY && <p className="mt-1 text-sm font-semibold text-rose-600 dark:text-rose-300"><LocalizedText id="Penawaran spesial untuk project pertama Anda." en="A special offer for your first project." /></p>}
               {bundle.note && <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{bundle.note}</p>}
               <ul className="mt-5 flex-1 space-y-2">{bundle.items.map((item) => <li key={item} className="flex gap-2 text-sm"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{item}</li>)}</ul>
               <Link href={ARRANGEMENT_ORDER_PATH} className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 font-semibold text-white hover:bg-violet-700 dark:bg-white dark:text-black dark:hover:bg-violet-500 dark:hover:text-white">Order New Arrangement <ArrowRight className="h-4 w-4" /></Link>

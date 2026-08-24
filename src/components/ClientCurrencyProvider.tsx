@@ -3,6 +3,7 @@
 import { CurrencyProvider } from '@/contexts/CurrencyContext';
 import { Currency } from '@/lib/currency';
 import { ReactNode } from 'react';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 
 interface ClientCurrencyProviderProps {
   children: ReactNode;
@@ -14,8 +15,10 @@ export function ClientCurrencyProvider({
   defaultCurrency = "USD" as Currency 
 }: ClientCurrencyProviderProps) {
   return (
-    <CurrencyProvider defaultCurrency={defaultCurrency}>
-      {children}
-    </CurrencyProvider>
+    <LanguageProvider>
+      <CurrencyProvider defaultCurrency={defaultCurrency}>
+        {children}
+      </CurrencyProvider>
+    </LanguageProvider>
   );
 }

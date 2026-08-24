@@ -30,6 +30,8 @@ import Portal from "@/components/ui/Portal";
 import { ARRANGEMENT_PORTFOLIO_PATH } from "@/lib/arrangement";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { CurrencyDropdownAdvanced } from "@/components/CurrencyDropdownAdvanced";
+import LanguageSelector from "@/components/LanguageSelector";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type MenuItem = {
   label: string;
@@ -204,6 +206,7 @@ export function BrandLockup({
 
 export const HeaderSection = (): React.JSX.Element => {
   const { currency, setCurrency, loading: currencyLoading } = useCurrency();
+  const { pick } = useLanguage();
   const [open, setOpen] = React.useState(false); // desktop mega menu
   const [focusIndex, setFocusIndex] = React.useState<number>(-1);
   const menuRef = React.useRef<HTMLDivElement | null>(null);
@@ -640,6 +643,7 @@ export const HeaderSection = (): React.JSX.Element => {
             </div>
 
             <div className="hidden items-center gap-3 min-[1028px]:flex flex-shrink-0">
+              <LanguageSelector />
               <CurrencyDropdownAdvanced
                 value={currency}
                 onChange={setCurrency}
@@ -660,8 +664,8 @@ export const HeaderSection = (): React.JSX.Element => {
                 min-[1200px]:h-11 min-[1200px]:px-5
               "
               >
-                <span className="hidden min-[1200px]:inline">Start My Project</span>
-                <span className="min-[1200px]:hidden">Start Project</span>
+                <span className="hidden min-[1200px]:inline">{pick("Mulai Project Saya", "Start My Project")}</span>
+                <span className="min-[1200px]:hidden">{pick("Mulai Project", "Start Project")}</span>
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 <span className="pointer-events-none absolute inset-0 rounded-2xl bg-white/10 opacity-0 blur-xl transition-opacity group-hover:opacity-100 dark:bg-black/10" />
               </Link>
@@ -822,7 +826,11 @@ export const HeaderSection = (): React.JSX.Element => {
 
                   <div className="mt-4 divide-y divide-black/5 dark:divide-white/10">
                     <div className="pb-4">
-                      <div className="mb-2 text-xs uppercase tracking-wide text-neutral-600 dark:text-neutral-300">Currency</div>
+                      <div className="mb-2 text-xs uppercase tracking-wide text-neutral-600 dark:text-neutral-300">{pick("Bahasa", "Language")}</div>
+                      <LanguageSelector mobile />
+                    </div>
+                    <div className="pb-4">
+                      <div className="mb-2 text-xs uppercase tracking-wide text-neutral-600 dark:text-neutral-300">{pick("Mata uang", "Currency")}</div>
                       <CurrencyDropdownAdvanced
                         value={currency}
                         onChange={setCurrency}

@@ -3,14 +3,7 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ARRANGEMENT_ORDER_PATH, ARRANGEMENT_PORTFOLIO_PATH } from "@/lib/arrangement";
 import type { BundleItemRow, BundleRow, ServiceRow } from "@/components/catalog";
-
-function usd(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
+import GlobalPrice from "@/components/public/GlobalPrice";
 
 async function loadCatalog() {
   const admin = getSupabaseAdminClient();
@@ -59,7 +52,7 @@ export default async function ServicesPricingCatalog() {
           <div className="mt-6 grid gap-5 lg:grid-cols-3">
             {bundles.map((bundle) => <article key={bundle.id} className="flex flex-col rounded-3xl border-2 border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-violet-400 hover:shadow-xl dark:border-slate-700 dark:bg-slate-900">
               <h3 className="text-xl font-bold">{bundle.label}</h3>
-              <p className="mt-2 text-3xl font-bold">{usd(Number(bundle.bundle_price))}</p>
+              <p className="mt-2 text-3xl font-bold"><GlobalPrice usd={Number(bundle.bundle_price)} /></p>
               {bundle.note && <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{bundle.note}</p>}
               <ul className="mt-5 flex-1 space-y-2">{bundle.items.map((item) => <li key={item} className="flex gap-2 text-sm"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{item}</li>)}</ul>
               <Link href={ARRANGEMENT_ORDER_PATH} className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 font-semibold text-white hover:bg-violet-700 dark:bg-white dark:text-black dark:hover:bg-violet-500 dark:hover:text-white">Order New Arrangement <ArrowRight className="h-4 w-4" /></Link>
@@ -71,7 +64,7 @@ export default async function ServicesPricingCatalog() {
           <h2 className="text-2xl font-bold">Individual services</h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {services.map((service) => <article key={service.id} className="rounded-2xl border-2 border-slate-200 p-5 transition hover:border-violet-400 dark:border-slate-700">
-              <div className="flex items-start justify-between gap-4"><div><h3 className="font-semibold">{service.label}</h3>{service.is_subscription && <span className="mt-2 inline-block rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">Monthly</span>}</div><p className="shrink-0 text-lg font-bold">{usd(Number(service.price))}</p></div>
+              <div className="flex items-start justify-between gap-4"><div><h3 className="font-semibold">{service.label}</h3>{service.is_subscription && <span className="mt-2 inline-block rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">Monthly</span>}</div><p className="shrink-0 text-lg font-bold"><GlobalPrice usd={Number(service.price)} /></p></div>
             </article>)}
           </div>
         </section>}

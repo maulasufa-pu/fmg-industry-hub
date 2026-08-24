@@ -28,6 +28,8 @@ import { useProfile } from "@/hooks/useProfile";
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
 import Portal from "@/components/ui/Portal";
 import { ARRANGEMENT_PORTFOLIO_PATH } from "@/lib/arrangement";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { CurrencyDropdownAdvanced } from "@/components/CurrencyDropdownAdvanced";
 
 type MenuItem = {
   label: string;
@@ -201,6 +203,7 @@ export function BrandLockup({
 }
 
 export const HeaderSection = (): React.JSX.Element => {
+  const { currency, setCurrency, loading: currencyLoading } = useCurrency();
   const [open, setOpen] = React.useState(false); // desktop mega menu
   const [focusIndex, setFocusIndex] = React.useState<number>(-1);
   const menuRef = React.useRef<HTMLDivElement | null>(null);
@@ -637,6 +640,15 @@ export const HeaderSection = (): React.JSX.Element => {
             </div>
 
             <div className="hidden items-center gap-3 min-[1028px]:flex flex-shrink-0">
+              <CurrencyDropdownAdvanced
+                value={currency}
+                onChange={setCurrency}
+                loading={currencyLoading}
+                variant="compact"
+                size="sm"
+                showName={false}
+                showSearch={false}
+              />
               <Link
                 href="/arrangement"
                 className="
@@ -809,6 +821,17 @@ export const HeaderSection = (): React.JSX.Element => {
                   </div>
 
                   <div className="mt-4 divide-y divide-black/5 dark:divide-white/10">
+                    <div className="pb-4">
+                      <div className="mb-2 text-xs uppercase tracking-wide text-neutral-600 dark:text-neutral-300">Currency</div>
+                      <CurrencyDropdownAdvanced
+                        value={currency}
+                        onChange={setCurrency}
+                        loading={currencyLoading}
+                        variant="compact"
+                        size="sm"
+                        showName
+                      />
+                    </div>
                     <div className="pb-3">
                       <div className="text-xs uppercase tracking-wide text-neutral-600 dark:text-neutral-300 mb-2">
                         FMG Sections

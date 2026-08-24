@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useState, useEffect, ReactNode } from 'react';
-import { Currency, DEFAULT_CURRENCY, fetchExchangeRates } from '@/lib/currency';
+import { Currency, CURRENCY_OPTIONS, DEFAULT_CURRENCY, fetchExchangeRates } from '@/lib/currency';
 
 interface CurrencyContextType {
   currency: Currency;
@@ -37,6 +37,7 @@ export function CurrencyProvider({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [storageReady, setStorageReady] = useState(false);
 
   const refreshRates = useCallback(async () => {
     setLoading(true);
@@ -87,19 +88,20 @@ export function CurrencyProvider({
       if (stored) {
         const storedCurrency = stored as Currency;
         // Validate it's a supported currency
-        const supportedCurrencies = ['USD', 'IDR', 'EUR', 'JPY', 'GBP', 'AUD', 'CAD', 'SGD'];
+        const supportedCurrencies = CURRENCY_OPTIONS.map((option) => option.code);
         if (supportedCurrencies.includes(storedCurrency)) {
           setCurrency(storedCurrency);
         }
       }
+      setStorageReady(true);
     }
   }, []);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && storageReady) {
       localStorage.setItem('fmg-currency', currency);
     }
-  }, [currency]);
+  }, [currency, storageReady]);
 
   const value: CurrencyContextType = {
     currency,

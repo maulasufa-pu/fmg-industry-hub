@@ -16,6 +16,7 @@ import InnovationBadge from "./ui/InnovationBadge";
 import type { PanInfo } from "framer-motion";
 import { CurrencyDropdownAdvanced, type Currency } from "@/components/CurrencyDropdownAdvanced";
 import { ARRANGEMENT_ORDER_PATH, ARRANGEMENT_PORTFOLIO_PATH } from "@/lib/arrangement";
+import { useCurrency } from "@/contexts/CurrencyContext";
 // import Hero from "./ui/main_container/hero";
 /** urutan & “berat” ukuran: basic small, pro medium, ultimate large, custom largest */
 
@@ -1813,90 +1814,14 @@ function CTA() {
  *************************/
 
 export default function LandingPage({ mode = "company" }: { mode?: "company" | "sales" }) {
-  const [currency, setCurrency] = React.useState<Currency>("USD");
-  const [rates, setRates] = React.useState<Record<string, number>>({ USD: 1 });
-  const [ratesLoading, setRatesLoading] = React.useState(true);
-  const [ratesError, setRatesError] = React.useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    if (mode !== "sales") {
-      setRatesLoading(false);
-      return;
-    }
-
-    const fetchRates = async () => {
-      setRatesLoading(true);
-      setRatesError(null);
-      
-      try {
-        const res = await fetch("/api/exchange", {
-          headers: {
-            'Cache-Control': 'no-cache',
-          },
-        });
-        
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}: Failed to fetch exchange rates`);
-        }
-        
-        const data = await res.json();
-        
-        // Validate response structure
-        if (!data?.rates || typeof data.rates !== 'object' || !data.rates.USD) {
-          throw new Error('Invalid exchange rate data structure');
-        }
-        
-        // Ensure we have essential currencies
-        const requiredCurrencies = ['USD', 'IDR', 'EUR', 'JPY'];
-        const missingCurrencies = requiredCurrencies.filter(curr => !data.rates[curr]);
-        
-        if (missingCurrencies.length > 0) {
-          //console.warn('Missing currencies:', missingCurrencies);
-        }
-        
-        setRates(data.rates);
-        setLastUpdated(data.lastUpdated || new Date().toISOString());
-        
-        //console.log('Exchange rates updated:', {
-        //   date: data.date,
-        //   currencyCount: Object.keys(data.rates).length,
-        //   sample: {
-        //     USD: data.rates.USD,
-        //     IDR: data.rates.IDR,
-        //     EUR: data.rates.EUR,
-        //     JPY: data.rates.JPY
-        //   }
-        // });
-        
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-        setRatesError(errorMessage);
-        //console.error('Exchange rate fetch failed:', errorMessage);
-        
-        // Only set fallback if we don't have any rates yet
-        setRates((current) => Object.keys(current).length <= 1 ? { USD: 1 } : current);
-      } finally {
-        setRatesLoading(false);
-      }
-    };
-
-    let interval: ReturnType<typeof setInterval> | null = null;
-    const start = () => {
-      void fetchRates();
-      interval = setInterval(fetchRates, 60 * 60 * 1000);
-    };
-
-    const idleId = window.requestIdleCallback
-      ? window.requestIdleCallback(start, { timeout: 1800 })
-      : window.setTimeout(start, 800);
-
-    return () => {
-      if (window.cancelIdleCallback) window.cancelIdleCallback(idleId);
-      else window.clearTimeout(idleId);
-      if (interval) clearInterval(interval);
-    };
-  }, [mode]);
+  const {
+    currency,
+    setCurrency,
+    rates,
+    loading: ratesLoading,
+    error: ratesError,
+    lastUpdated,
+  } = useCurrency();
 
   const [artworks, setArtworks] = React.useState<string[]>([]);
 

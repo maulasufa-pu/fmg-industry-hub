@@ -22,6 +22,12 @@ export const CURRENCY_OPTIONS: CurrencyOption[] = [
   { code: "CAD", name: "Canadian Dollar", flag: "🇨🇦", symbol: "C$" },
   { code: "SGD", name: "Singapore Dollar", flag: "🇸🇬", symbol: "S$" },
   { code: "IDR", name: "Indonesian Rupiah", flag: "🇮🇩", symbol: "Rp" },
+  { code: "KRW", name: "South Korean Won", flag: "🇰🇷", symbol: "₩" },
+  { code: "VND", name: "Vietnamese Dong", flag: "🇻🇳", symbol: "₫" },
+  { code: "INR", name: "Indian Rupee", flag: "🇮🇳", symbol: "₹" },
+  { code: "PHP", name: "Philippine Peso", flag: "🇵🇭", symbol: "₱" },
+  { code: "THB", name: "Thai Baht", flag: "🇹🇭", symbol: "฿" },
+  { code: "MYR", name: "Malaysian Ringgit", flag: "🇲🇾", symbol: "RM" },
 ];
 
 export const DEFAULT_CURRENCY: Currency = "USD";

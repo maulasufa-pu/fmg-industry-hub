@@ -431,6 +431,8 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
                     <UserDropdown 
                       isOpen={showUserMenu}
                       onClose={() => setShowUserMenu(false)}
+                      profile={profile}
+                      loading={profileLoading}
                     />
                   </div>
                 </Portal>
@@ -619,6 +621,8 @@ export default function SidebarSection({ role, isOpen = true, onClose }: Props):
                         <UserDropdown 
                           isOpen={showUserMenu}
                           onClose={() => setShowUserMenu(false)}
+                          profile={profile}
+                          loading={profileLoading}
                         />
                       </div>
                     </Portal>

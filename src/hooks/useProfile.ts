@@ -13,7 +13,7 @@ type Role =
   | "producer"
   | "publisher";
 
-type ProfileInfo = {
+export type ProfileInfo = {
   id: string;
   fullName: string;
   email: string;
@@ -143,8 +143,12 @@ export function useProfile() {
   useEffect(() => {
     if (!profile?.id) return;
 
+    // A page can render more than one profile consumer (for example the header
+    // and sidebar). Supabase reuses channels by name, so each hook instance
+    // needs its own channel before registering callbacks.
+    const channelName = `profile-${profile.id}-${crypto.randomUUID()}`;
     const channel = supabase
-      .channel(`profile-${profile.id}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -160,7 +164,7 @@ export function useProfile() {
       .subscribe();
 
     return () => {
-      channel.unsubscribe();
+      void supabase.removeChannel(channel);
     };
   }, [profile?.id, loadProfile, supabase]);
 

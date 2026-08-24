@@ -17,17 +17,18 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import LogoutButton from "@/app/auth/LogoutButton";
-import { useProfile } from "@/hooks/useProfile";
+import type { ProfileInfo } from "@/hooks/useProfile";
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
 
 interface UserDropdownProps {
   isOpen: boolean;
   onClose: () => void;
+  profile: ProfileInfo | null;
+  loading: boolean;
   className?: string;
 }
 
-export default function UserDropdown({ isOpen, onClose, className = "" }: UserDropdownProps) {
-  const { profile, loading } = useProfile();
+export default function UserDropdown({ isOpen, onClose, profile, loading, className = "" }: UserDropdownProps) {
   const { theme, setTheme } = useTheme();
   const dropdownRef = useRef<HTMLDivElement>(null);
 

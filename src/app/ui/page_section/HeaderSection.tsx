@@ -689,7 +689,12 @@ export const HeaderSection = (): React.JSX.Element => {
                   maxWidth: "min(96vw, 360px)",
                 }}
               >
-                <UserDropdown isOpen={showUserMenu} onClose={() => setShowUserMenu(false)} />
+                <UserDropdown
+                  isOpen={showUserMenu}
+                  onClose={() => setShowUserMenu(false)}
+                  profile={profile}
+                  loading={profileLoading}
+                />
               </div>
             </Portal>
           )}

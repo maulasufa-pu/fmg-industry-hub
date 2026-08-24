@@ -188,7 +188,7 @@ function PackageCard({
                 : formatPrice(Number(bundle.bundle_price), currency, rates)}
             </p>
             {bundle.bundle_key === NEW_CUSTOMER_PROMO_BUNDLE_KEY ? (
-              <p className="mt-1 text-sm font-semibold text-rose-600 dark:text-rose-300">New customer promo · IDR 6,000,000</p>
+              <p className="mt-1 text-sm font-semibold text-rose-600 dark:text-rose-300">Promo project pertama</p>
             ) : currency !== 'USD' && (
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                 ${Number(bundle.bundle_price)}

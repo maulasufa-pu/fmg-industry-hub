@@ -10,6 +10,7 @@ const IMPORTANT_ROUTES = new Set([
   "/portfolio",
   "/pricing",
   "/services",
+  "/arrangement",
 ]);
 
 module.exports = {
@@ -19,6 +20,12 @@ module.exports = {
   generateIndexSitemap: true,
   sitemapSize: 45000,
   autoLastmod: false,
+  additionalPaths: async (config) =>
+    Promise.all(
+      ["/arrangement", "/pricing", "/services"].map((path) =>
+        config.transform(config, path),
+      ),
+    ),
   exclude: [
     "/admin/**",
     "/api/**",

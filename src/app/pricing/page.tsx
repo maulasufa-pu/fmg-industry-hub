@@ -1,6 +1,8 @@
 
 import type { Metadata } from "next";
-import ArrangementOffer from "@/components/public/ArrangementOffer";
+import ServicesPricingCatalog from "@/components/public/ServicesPricingCatalog";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Music Arrangement Pricing & Process",
@@ -8,5 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function PricingPage() {
-  return <ArrangementOffer />;
+  return <ServicesPricingCatalog />;
 }

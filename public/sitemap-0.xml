@@ -5,7 +5,7 @@
 <url><loc>https://flemmomusic.com/academy</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
 <url><loc>https://flemmomusic.com/academy/apply</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
 <url><loc>https://flemmomusic.com/apple-icon.png</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-<url><loc>https://flemmomusic.com/arrangement</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+<url><loc>https://flemmomusic.com/arrangement</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
 <url><loc>https://flemmomusic.com/careers</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
 <url><loc>https://flemmomusic.com/catalog</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
 <url><loc>https://flemmomusic.com/contact</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
@@ -30,11 +30,11 @@
 <url><loc>https://flemmomusic.com/portfolio</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
 <url><loc>https://flemmomusic.com/portfolio/opengraph-image</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
 <url><loc>https://flemmomusic.com/press</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-<url><loc>https://flemmomusic.com/pricing</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
 <url><loc>https://flemmomusic.com/publishing</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
 <url><loc>https://flemmomusic.com/publishing/inquiry</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
 <url><loc>https://flemmomusic.com/publishing/proposal</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-<url><loc>https://flemmomusic.com/services</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
 <url><loc>https://flemmomusic.com/services/inquiry</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
 <url><loc>https://flemmomusic.com/talent</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+<url><loc>https://flemmomusic.com/pricing</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+<url><loc>https://flemmomusic.com/services</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
 </urlset>

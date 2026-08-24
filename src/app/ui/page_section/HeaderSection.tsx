@@ -27,7 +27,7 @@ import UserDropdown from "../pop_over/user_dropdown";
 import { useProfile } from "@/hooks/useProfile";
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
 import Portal from "@/components/ui/Portal";
-import { ARRANGEMENT_ORDER_PATH, ARRANGEMENT_PORTFOLIO_PATH } from "@/lib/arrangement";
+import { ARRANGEMENT_PORTFOLIO_PATH } from "@/lib/arrangement";
 
 type MenuItem = {
   label: string;
@@ -43,6 +43,7 @@ type UniverseItem = {
 };
 
 const MENU: readonly MenuItem[] = [
+  { label: "Music Arrangement", href: "/arrangement", desc: "Professional arrangement service with a clear order flow.", Icon: Wand2 },
   { label: "Creative", href: "/creative", desc: "Production, mixing, mastering, sound design.", Icon: Wand2 },
   { label: "Talent", href: "/talent", desc: "Scouting, A&R, artist development & management.", Icon: Users2 },
   { label: "Labs (AI/tuneXpert)", href: "/labs", desc: "R&D, AI tools, workflow acceleration.", Icon: Cpu },
@@ -617,7 +618,7 @@ export const HeaderSection = (): React.JSX.Element => {
                             “Beyond Sound. Built-in Intelligence.”
                           </span>
                           <Link
-                            href={ARRANGEMENT_ORDER_PATH}
+                            href="/arrangement"
                             className="
                             inline-flex items-center gap-1.5 rounded-lg border border-black/10 dark:border-white/10
                             bg-black text-white dark:bg-white dark:text-black px-3 py-1.5 text-xs font-semibold
@@ -637,7 +638,7 @@ export const HeaderSection = (): React.JSX.Element => {
 
             <div className="hidden items-center gap-3 min-[1028px]:flex flex-shrink-0">
               <Link
-                href={ARRANGEMENT_ORDER_PATH}
+                href="/arrangement"
                 className="
                 group relative inline-flex h-10 items-center gap-2 rounded-2xl px-4
                 text-sm font-semibold leading-none whitespace-nowrap
@@ -839,7 +840,7 @@ export const HeaderSection = (): React.JSX.Element => {
 
                     <div className="pt-3">
                       <Link
-                        href={ARRANGEMENT_ORDER_PATH}
+                        href="/arrangement"
                         onClick={() => setMobileOpen(false)}
                         className="
                         mt-1 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3

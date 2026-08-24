@@ -639,7 +639,63 @@ function PricingCard({
   );
 }
 
-function Hero() {
+function Hero({ mode }: { mode: "company" | "sales" }) {
+  if (mode === "company") {
+    return (
+      <section className="relative overflow-hidden pt-12 sm:pt-12">
+        <Parallax speed={-0.03}>
+          <div className="absolute inset-0 -z-10 bg-[radial-gradient(1200px_500px_at_50%_-100px,rgba(79,70,229,0.15),transparent)]" />
+        </Parallax>
+
+        <motion.div initial={false} className="mx-auto max-w-6xl px-4">
+          <div className="flex flex-col items-center">
+            <InnovationBadge />
+            <Parallax speed={0.12}>
+              <SplitHeadline text="Beyond Sound. Built-in Intelligence." />
+            </Parallax>
+            <Parallax speed={0.13}>
+              <motion.p variants={fadeUp} custom={3} initial={false} whileInView="visible" viewport={{ once: true }} className="mt-4 max-w-xl text-center text-balance text-lg font-medium leading-relaxed text-black dark:text-white">
+                We help artists, creators, labels, and brands create, own, and grow lasting value in music.
+              </motion.p>
+            </Parallax>
+            <Parallax speed={0.14}>
+              <motion.p variants={fadeUp} custom={4} initial={false} whileInView="visible" viewport={{ once: true }} className="mt-5 max-w-3xl text-center text-balance text-base leading-relaxed text-black dark:text-white">
+                <b>FMG Universe</b> is the creative-technology ecosystem of <b>Flemmo Music Global</b>, established in 2018 and expanded across music production, publishing, talent, media, live events, education, and technology. One connected universe for building work, rights, careers, and catalog value.
+              </motion.p>
+            </Parallax>
+
+            <Parallax speed={0.15}>
+              <motion.div variants={fadeUp} custom={5} initial={false} whileInView="visible" viewport={{ once: true }} className="mt-10 grid gap-8 text-center sm:grid-cols-2 sm:gap-12">
+                <div>
+                  <h2 className="text-2xl font-bold tracking-wide sm:text-3xl">Our Vision</h2>
+                  <p className="mt-3 max-w-md text-sm leading-relaxed text-black/75 dark:text-white/75">Empowering the future of music through innovation, technology, and intelligence.</p>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold tracking-wide sm:text-3xl">Our Mission</h2>
+                  <p className="mt-3 max-w-md text-sm leading-relaxed text-black/75 dark:text-white/75">To unite creativity and technology in one ecosystem—helping artists and brands create, own, and grow lasting value.</p>
+                </div>
+              </motion.div>
+            </Parallax>
+
+            <Parallax speed={0.16}>
+              <motion.div variants={fadeUp} custom={6} initial={false} whileInView="visible" viewport={{ once: true }} className="mt-12 flex flex-wrap items-center justify-center gap-3">
+                <MagneticButton href="/arrangement">Music Arrangement Service</MagneticButton>
+                <Link href="/portfolio" className="group inline-flex items-center gap-2 rounded-2xl border border-black/10 bg-white/70 px-5 py-3 text-sm font-semibold shadow-sm backdrop-blur transition hover:bg-white dark:border-white/10 dark:bg-black/40 dark:hover:bg-black">
+                  <Music className="h-5 w-5" /> View Portfolio
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+                <Link href="/about" className="group inline-flex items-center gap-2 rounded-2xl border border-black/10 bg-white/70 px-5 py-3 text-sm font-semibold shadow-sm backdrop-blur transition hover:bg-white dark:border-white/10 dark:bg-black/40 dark:hover:bg-black">
+                  About FMG Universe
+                </Link>
+              </motion.div>
+            </Parallax>
+            <LazyCinematicVideoHero />
+          </div>
+        </motion.div>
+      </section>
+    );
+  }
+
   return (
     <section className="relative overflow-hidden pt-12 sm:pt-12">
       <Parallax speed={-0.03}>
@@ -1756,7 +1812,7 @@ function CTA() {
  * Page Component
  *************************/
 
-export default function LandingPage() {
+export default function LandingPage({ mode = "company" }: { mode?: "company" | "sales" }) {
   const [currency, setCurrency] = React.useState<Currency>("USD");
   const [rates, setRates] = React.useState<Record<string, number>>({ USD: 1 });
   const [ratesLoading, setRatesLoading] = React.useState(true);
@@ -1764,6 +1820,11 @@ export default function LandingPage() {
   const [lastUpdated, setLastUpdated] = React.useState<string | null>(null);
 
   React.useEffect(() => {
+    if (mode !== "sales") {
+      setRatesLoading(false);
+      return;
+    }
+
     const fetchRates = async () => {
       setRatesLoading(true);
       setRatesError(null);
@@ -1835,7 +1896,7 @@ export default function LandingPage() {
       else window.clearTimeout(idleId);
       if (interval) clearInterval(interval);
     };
-  }, []);
+  }, [mode]);
 
   const [artworks, setArtworks] = React.useState<string[]>([]);
 
@@ -1911,27 +1972,27 @@ export default function LandingPage() {
         </svg>
       </div>
 
-      <Hero />
-      <ArrangementSalesIntro />
+      <Hero mode={mode} />
+      {mode === "sales" && <ArrangementSalesIntro />}
+      {mode === "company" && <AboutFMG />}
+      {mode === "company" && <Features />}
       <PortfolioShowcase />
       <Testimonials />
-      <Pricing 
+      {mode === "sales" && <Pricing
         currency={currency} 
         rates={rates} 
         onCurrencyChange={setCurrency}
         loading={ratesLoading}
         error={ratesError}
         lastUpdated={lastUpdated}
-      />
-      <ArtworkSlider artworks={artworks} />;
-      <CTA />
-      <AboutFMG />
-      <Features />
+      />}
+      <ArtworkSlider artworks={artworks} />
+      {mode === "sales" && <CTA />}
       {/* <Footer /> */}
       <JsonLd id="org" data={org} />
       <JsonLd id="website" data={website} />
-      <JsonLd id="arrangement-service" data={arrangementService} />
-      <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:py-12">
+      {mode === "sales" && <JsonLd id="arrangement-service" data={arrangementService} />}
+      {mode === "company" && <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:py-12">
         <h2 className="mb-6 text-center text-xl font-semibold tracking-tight text-neutral-800 dark:text-neutral-100 sm:mb-10 sm:text-2xl">
           FMG Universe Brand Lockups
         </h2>
@@ -2004,7 +2065,7 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
 
     </main>
   );

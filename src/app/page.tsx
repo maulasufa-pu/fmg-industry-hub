@@ -5,5 +5,5 @@ import { seoFromDB } from "@/lib/seo-loader";
 export const metadata: Metadata = seoFromDB("/");
 
 export default function Page() {
-  return <PageClient />;
+  return <PageClient mode="company" />;
 }

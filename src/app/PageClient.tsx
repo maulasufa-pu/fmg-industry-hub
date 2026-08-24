@@ -17,6 +17,7 @@ import type { PanInfo } from "framer-motion";
 import { CurrencyDropdownAdvanced, type Currency } from "@/components/CurrencyDropdownAdvanced";
 import { ARRANGEMENT_ORDER_PATH, ARRANGEMENT_PORTFOLIO_PATH } from "@/lib/arrangement";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import NewCustomerPromoCard from "@/components/public/NewCustomerPromoCard";
 // import Hero from "./ui/main_container/hero";
 /** urutan & “berat” ukuran: basic small, pro medium, ultimate large, custom largest */
 
@@ -1911,6 +1912,7 @@ export default function LandingPage({ mode = "company" }: { mode?: "company" | "
         error={ratesError}
         lastUpdated={lastUpdated}
       />}
+      {mode === "sales" && <NewCustomerPromoCard />}
       <ArtworkSlider artworks={artworks} />
       {mode === "sales" && <CTA />}
       {/* <Footer /> */}

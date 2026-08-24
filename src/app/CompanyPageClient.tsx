@@ -17,6 +17,7 @@ import type { PanInfo } from "framer-motion";
 import CinematicVideoHeroHLS from "@/components/CinematicVideoHeroHLS";
 import { CurrencyDropdownAdvanced, type Currency } from "@/components/CurrencyDropdownAdvanced";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import NewCustomerPromoCard from "@/components/public/NewCustomerPromoCard";
 // import Hero from "./ui/main_container/hero";
 /** urutan & “berat” ukuran: basic small, pro medium, ultimate large, custom largest */
 
@@ -1900,6 +1901,7 @@ export default function LandingPage() {
         error={ratesError}
         lastUpdated={lastUpdated}
       />
+      <NewCustomerPromoCard />
       <ArtworkSlider artworks={artworks} />;
       <CTA />
       {/* <Footer /> */}

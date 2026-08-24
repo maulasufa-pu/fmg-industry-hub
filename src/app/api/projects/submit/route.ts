@@ -4,6 +4,7 @@ import { apiAuthErrorResponse, requireAuthenticatedRequest } from "@/lib/auth/se
 import { consumeRateLimit, isSameOriginRequest } from "@/lib/security/request";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { catalogMoney, catalogTotalFromVerifiedRows } from "@/lib/projects/catalog-pricing";
+import { NEW_CUSTOMER_PROMO_BUNDLE_KEY } from "@/lib/arrangement";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,18 @@ const PayloadSchema = z.object({
 });
 
 type ServiceRow = { id: string; service_key: string; label: string; price: number | string };
-type BundleRow = { id: string; bundle_key: string; label: string; bundle_price: number | string };
+type BundleRow = { id: string; bundle_key: string; label: string; bundle_price: number | string; promo_type: string; promo_value: number | string; promo_start: string | null; promo_end: string | null };
+
+async function idrPerUsd(): Promise<number> {
+  try {
+    const response = await fetch("https://api.exchangerate-api.com/v4/latest/USD", { next: { revalidate: 3600 } });
+    const data = response.ok ? await response.json() : null;
+    const rate = Number(data?.rates?.IDR);
+    return Number.isFinite(rate) && rate > 0 ? rate : 15750;
+  } catch {
+    return 15750;
+  }
+}
 
 function parseReferenceLinks(raw: string): string[] | null {
   const links = raw.split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
@@ -79,10 +91,23 @@ export async function POST(request: Request): Promise<NextResponse> {
     let bundledServiceIds = new Set<string>();
     let bundledRows: ServiceRow[] = [];
     if (body.bundle) {
-      const { data, error } = await admin.from("bundles").select("id,bundle_key,label,bundle_price").eq("bundle_key", body.bundle.key).eq("is_active", true).maybeSingle<BundleRow>();
+      const { data, error } = await admin.from("bundles").select("id,bundle_key,label,bundle_price,promo_type,promo_value,promo_start,promo_end").eq("bundle_key", body.bundle.key).eq("is_active", true).maybeSingle<BundleRow>();
       if (error) throw new Error("Unable to verify the selected bundle");
       if (!data) return NextResponse.json({ error: "The selected bundle is unavailable" }, { status: 400 });
       bundle = data;
+
+      if (bundle.bundle_key === NEW_CUSTOMER_PROMO_BUNDLE_KEY) {
+        const now = new Date();
+        if ((bundle.promo_start && now < new Date(bundle.promo_start)) || (bundle.promo_end && now > new Date(bundle.promo_end))) {
+          return NextResponse.json({ error: "This promotion is not currently available" }, { status: 400 });
+        }
+        const { count, error: historyError } = await admin
+          .from("projects")
+          .select("id", { count: "exact", head: true })
+          .eq("client_id", auth.user.id);
+        if (historyError) throw new Error("Unable to verify promotion eligibility");
+        if ((count ?? 0) > 0) return NextResponse.json({ error: "This promotion is only available to new customers" }, { status: 409 });
+      }
 
       const { data: bundleItems, error: bundleItemsError } = await admin.from("bundle_items").select("service_id").eq("bundle_id", bundle.id);
       if (bundleItemsError) throw new Error("Unable to verify the selected bundle");
@@ -105,7 +130,10 @@ export async function POST(request: Request): Promise<NextResponse> {
       if (!validEngineer) return NextResponse.json({ error: "Preferred engineer is unavailable" }, { status: 400 });
     }
 
-    const total = catalogTotalFromVerifiedRows(bundle?.bundle_price ?? null, selectedRows, bundledServiceIds);
+    const verifiedBundlePrice = bundle?.bundle_key === NEW_CUSTOMER_PROMO_BUNDLE_KEY
+      ? Number(bundle.promo_value) / await idrPerUsd()
+      : bundle?.bundle_price ?? null;
+    const total = catalogTotalFromVerifiedRows(verifiedBundlePrice, selectedRows, bundledServiceIds);
     if (total <= 0) return NextResponse.json({ error: "The selected catalog has no valid price" }, { status: 400 });
 
     const itemMap = new Map<string, ServiceRow>();

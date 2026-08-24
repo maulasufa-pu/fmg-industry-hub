@@ -28,9 +28,10 @@ type ProjectStatus =
   | "requested" | "pending" | "in_progress" | "revision"
   | "approved" | "published" | "archived" | "cancelled" | "draft";
 
-import { formatPrice } from '@/lib/currency';
+import { formatIdrAnchoredPrice, formatPrice } from '@/lib/currency';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { CurrencyDropdownAdvanced, type Currency } from '@/components/CurrencyDropdownAdvanced';
+import { NEW_CUSTOMER_PROMO_BUNDLE_KEY } from '@/lib/arrangement';
 
 type Props = {
   open: boolean;
@@ -182,9 +183,13 @@ function PackageCard({
               {bundle.label}
             </h4>
             <p className="text-3xl font-bold text-slate-900 dark:text-white">
-              {formatPrice(Number(bundle.bundle_price), currency, rates)}
+              {bundle.bundle_key === NEW_CUSTOMER_PROMO_BUNDLE_KEY
+                ? formatIdrAnchoredPrice(Number(bundle.promo_value), currency, rates)
+                : formatPrice(Number(bundle.bundle_price), currency, rates)}
             </p>
-            {currency !== 'USD' && (
+            {bundle.bundle_key === NEW_CUSTOMER_PROMO_BUNDLE_KEY ? (
+              <p className="mt-1 text-sm font-semibold text-rose-600 dark:text-rose-300">New customer promo · IDR 6,000,000</p>
+            ) : currency !== 'USD' && (
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                 ${Number(bundle.bundle_price)}
               </p>
@@ -374,10 +379,13 @@ export default function CreateProjectPopover({
       const bundleKeys = new Set(selectedBundle.items.map(it => it.service_key));
       const outside = Array.from(selectedServices).filter(k => !bundleKeys.has(k));
       const outsideSum = outside.reduce((acc, k) => acc + resolvedPriceOf(k), 0);
-      return Number(selectedBundle.bundle_price) + outsideSum;
+      const bundleUsd = selectedBundle.bundle_key === NEW_CUSTOMER_PROMO_BUNDLE_KEY
+        ? Number(selectedBundle.promo_value) / (rates.IDR || 15750)
+        : Number(selectedBundle.bundle_price);
+      return bundleUsd + outsideSum;
     }
     return Array.from(selectedServices).reduce((acc, k) => acc + resolvedPriceOf(k), 0);
-  }, [selectedBundle, selectedServices, resolvedPriceOf]);
+  }, [selectedBundle, selectedServices, resolvedPriceOf, rates.IDR]);
 
   const buildPayload = (): SubmitPayload => {
     const chosenKeys = Array.from(selectedServices);
@@ -450,7 +458,7 @@ export default function CreateProjectPopover({
 
       const { data: bdl } = await supabase
         .from("bundles")
-        .select("id,bundle_key,label,bundle_price,note,is_active,sort_order")
+        .select("id,bundle_key,label,bundle_price,note,description,is_active,sort_order,promo_type,promo_value,promo_start,promo_end")
         .eq("is_active", true)
         .order("sort_order", { ascending: true })
         .order("label", { ascending: true })
@@ -1307,7 +1315,9 @@ export default function CreateProjectPopover({
                                 🎵 Bundle: {selectedBundle.label}
                               </span>
                               <span className="font-bold text-violet-900 dark:text-violet-100">
-                                {formatPrice(Number(selectedBundle.bundle_price), currency, rates)}
+                                {selectedBundle.bundle_key === NEW_CUSTOMER_PROMO_BUNDLE_KEY
+                                  ? formatIdrAnchoredPrice(Number(selectedBundle.promo_value), currency, rates)
+                                  : formatPrice(Number(selectedBundle.bundle_price), currency, rates)}
                               </span>
                             </div>
                           </div>

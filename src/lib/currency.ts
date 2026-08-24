@@ -191,3 +191,14 @@ export async function fetchExchangeRates(): Promise<{
     };
   }
 }
+
+export function formatIdrAnchoredPrice(
+  idrAmount: number,
+  displayCurrency: Currency,
+  exchangeRates: Record<string, number>,
+): string {
+  if (displayCurrency === "IDR") return formatCurrency(idrAmount, "IDR");
+  const idrPerUsd = exchangeRates.IDR || 15750;
+  const usdAmount = idrAmount / idrPerUsd;
+  return formatPrice(usdAmount, displayCurrency, exchangeRates);
+}

@@ -19,6 +19,11 @@ export type BundleRow = {
   note: string | null;
   is_active: boolean;
   sort_order: number;
+  description?: string | null;
+  promo_type: string;
+  promo_value: number;
+  promo_start?: string | null;
+  promo_end?: string | null;
 };
 
 export type BundleItemRow = {

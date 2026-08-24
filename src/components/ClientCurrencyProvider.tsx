@@ -4,6 +4,7 @@ import { CurrencyProvider } from '@/contexts/CurrencyContext';
 import { Currency } from '@/lib/currency';
 import { ReactNode } from 'react';
 import { LanguageProvider } from '@/contexts/LanguageContext';
+import GlobalWebsiteTranslator from '@/components/GlobalWebsiteTranslator';
 
 interface ClientCurrencyProviderProps {
   children: ReactNode;
@@ -17,6 +18,7 @@ export function ClientCurrencyProvider({
   return (
     <LanguageProvider>
       <CurrencyProvider defaultCurrency={defaultCurrency}>
+        <GlobalWebsiteTranslator />
         {children}
       </CurrencyProvider>
     </LanguageProvider>

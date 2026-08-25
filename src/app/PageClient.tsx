@@ -352,7 +352,7 @@ function SplitHeadline({ text }: { text: string }) {
   const words = React.useMemo(() => text.split(" "), [text]);
 
   return (
-    <h1 className="mx-auto max-w-5xl text-balance text-center text-5xl font-bold leading-tight tracking-tight sm:text-6xl">
+    <h1 data-no-translate={text.includes("Beyond Sound") ? true : undefined} className="mx-auto max-w-5xl text-balance text-center text-5xl font-bold leading-tight tracking-tight sm:text-6xl">
       {words.map((w, i) => (
         <React.Fragment key={`${w}-${i}`}>
           <motion.span

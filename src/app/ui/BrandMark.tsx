@@ -18,7 +18,7 @@ export function BrandLockup({
 }: BrandLockupProps): React.JSX.Element {
   // Simplified static version to prevent hydration issues
   return (
-    <div className={`flex flex-col justify-center break-words ${className}`}>
+    <div data-no-translate className={`flex flex-col justify-center break-words ${className}`}>
       <div className="font-heading-1 font-black leading-[1.05] text-gray-800 dark:text-gray-100 max-w-full break-words text-center">
         {title}
       </div>

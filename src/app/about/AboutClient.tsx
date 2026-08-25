@@ -121,7 +121,7 @@ function Parallax({
 
 function SplitHeadline({ text }: { text: string }) {
   return (
-    <h1 className="mx-auto max-w-5xl text-balance text-center text-5xl font-bold leading-tight tracking-tight sm:text-6xl">
+    <h1 data-no-translate={text.includes("Beyond Sound") ? true : undefined} className="mx-auto max-w-5xl text-balance text-center text-5xl font-bold leading-tight tracking-tight sm:text-6xl">
       {text.split(" ").map((word, i) => (
         <motion.span
           key={`w-${i}`}

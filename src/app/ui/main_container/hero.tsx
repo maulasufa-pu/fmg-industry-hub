@@ -66,7 +66,7 @@ function SplitHeadline({ text }: { text: string }): React.JSX.Element {
   const words = text.split(" ");
 
   return (
-    <h1 className="text-center text-3xl font-extrabold leading-tight tracking-tight text-black dark:text-white sm:text-4xl md:text-5xl">
+    <h1 data-no-translate={text.includes("Beyond Sound") ? true : undefined} className="text-center text-3xl font-extrabold leading-tight tracking-tight text-black dark:text-white sm:text-4xl md:text-5xl">
       {words.map((word, index) => (
         <React.Fragment key={`${word}-${index}`}>
           <span className="inline-block">{word}</span>

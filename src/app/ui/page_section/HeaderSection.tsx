@@ -65,6 +65,25 @@ const UNIVERSE: readonly UniverseItem[] = [
   { label: "Contact", href: "/contact", Icon: Mail },
 ];
 
+const MENU_ID: Record<string, { label: string; desc: string }> = {
+  "/arrangement": { label: "Aransemen Musik", desc: "Jasa aransemen profesional dengan alur order yang jelas." },
+  "/creative": { label: "Kreatif", desc: "Produksi, mixing, mastering, dan sound design." },
+  "/talent": { label: "Talenta", desc: "Scouting, A&R, pengembangan artis, dan manajemen." },
+  "/labs": { label: "Labs (AI/tuneXpert)", desc: "R&D, perangkat AI, dan percepatan workflow." },
+  "/publishing": { label: "Publishing", desc: "Administrasi hak, lisensi, dan pelacakan royalti." },
+  "/academy": { label: "Akademi", desc: "Workshop, mentoring, dan jalur karier." },
+  "/media": { label: "Media", desc: "Konten, video musik, promosi, dan distribusi PR." },
+  "/event": { label: "Event & Festival", desc: "Showcase, tur, venue, dan kolaborasi brand." },
+};
+
+const UNIVERSE_ID: Record<string, string> = {
+  "Overview": "Ringkasan",
+  "About": "Tentang",
+  "Products": "Produk",
+  "Careers": "Karier",
+  "Contact": "Kontak",
+};
+
 const panel: Variants = {
   hidden: { opacity: 0, y: -10, scale: 0.985 },
   show: {
@@ -172,7 +191,7 @@ export function BrandLockup({
   };
 
   return (
-    <div className={`relative grid content-center ${className}`}>
+    <div data-no-translate className={`relative grid content-center ${className}`}>
       <div
         ref={titleRef}
         className="font-heading-1 font-black leading-[1.05] text-gray-800 dark:text-gray-100 whitespace-nowrap"
@@ -207,6 +226,9 @@ export function BrandLockup({
 export const HeaderSection = (): React.JSX.Element => {
   const { currency, setCurrency, loading: currencyLoading } = useCurrency();
   const { pick } = useLanguage();
+  const menuLabel = (menu: MenuItem) => pick(MENU_ID[menu.href]?.label ?? menu.label, menu.label);
+  const menuDescription = (menu: MenuItem) => pick(MENU_ID[menu.href]?.desc ?? menu.desc, menu.desc);
+  const universeLabel = (menu: UniverseItem) => pick(UNIVERSE_ID[menu.label] ?? menu.label, menu.label);
   const [open, setOpen] = React.useState(false); // desktop mega menu
   const [focusIndex, setFocusIndex] = React.useState<number>(-1);
   const menuRef = React.useRef<HTMLDivElement | null>(null);
@@ -471,16 +493,16 @@ export const HeaderSection = (): React.JSX.Element => {
             <div className="hidden min-[1028px]:flex items-center justify-center flex-1 mx-8">
               <div className="flex items-center gap-6 text-sm">
                 <Link href="/#about" className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
-                  About
+                  {pick("Tentang", "About")}
                 </Link>
                 <Link href="/services" className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
-                  Services
+                  {pick("Layanan", "Services")}
                 </Link>
                 <Link href="/pricing" className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
-                  Pricing
+                  {pick("Harga", "Pricing")}
                 </Link>
                 <Link href={ARRANGEMENT_PORTFOLIO_PATH} className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
-                  Portfolio
+                  {pick("Portofolio", "Portfolio")}
                 </Link>
 
                 <div className="relative" ref={menuRef}>
@@ -501,7 +523,7 @@ export const HeaderSection = (): React.JSX.Element => {
                   transition
                 "
                 >
-                  Menu
+                  {pick("Menu", "Menu")}
                   <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
                     <ChevronDown className="h-4 w-4" />
                   </motion.span>
@@ -517,7 +539,7 @@ export const HeaderSection = (): React.JSX.Element => {
                       exit="exit"
                       onKeyDown={onMenuKeyDown}
                       role="menu"
-                      aria-label="FMG Sections"
+                      aria-label={pick("Bagian FMG", "FMG Sections")}
                       style={{ willChange: "transform, opacity" }}
                       className="
                       fixed top-16 left-1/2 z-[60]
@@ -557,7 +579,7 @@ export const HeaderSection = (): React.JSX.Element => {
                                     <u.Icon className="h-4 w-4" />
                                   </span>
                                   <span className="text-[12.5px] font-medium text-black/85 dark:text-white/90">
-                                    {u.label}
+                                    {universeLabel(u)}
                                   </span>
                                 </Link>
                               </motion.div>
@@ -607,11 +629,11 @@ export const HeaderSection = (): React.JSX.Element => {
 
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-2">
-                                    <span className="font-medium text-black/90 dark:text-white/90">{m.label}</span>
+                                    <span className="font-medium text-black/90 dark:text-white/90">{menuLabel(m)}</span>
                                     <ArrowRight className="h-3.5 w-3.5 opacity-0 -translate-x-1 transition group-hover:opacity-100 group-hover:translate-x-0" />
                                   </div>
                                   <p className="mt-0.5 text-[12.5px] leading-5 text-neutral-700 dark:text-neutral-300 line-clamp-2">
-                                    {m.desc}
+                                    {menuDescription(m)}
                                   </p>
                                 </div>
                               </Link>
@@ -631,7 +653,7 @@ export const HeaderSection = (): React.JSX.Element => {
                             hover:opacity-90 transition
                           "
                           >
-                            Start Project <ArrowRight className="h-3.5 w-3.5" />
+                            {pick("Mulai Project", "Start Project")} <ArrowRight className="h-3.5 w-3.5" />
                           </Link>
                         </div>
                       </div>
@@ -786,7 +808,7 @@ export const HeaderSection = (): React.JSX.Element => {
                             <u.Icon className="h-4 w-4" />
                           </span>
                           <span className="text-[12.5px] font-medium text-black/85 dark:text-white/90">
-                            {u.label}
+                            {universeLabel(u)}
                           </span>
                         </Link>
                       ))}
@@ -799,28 +821,28 @@ export const HeaderSection = (): React.JSX.Element => {
                       onClick={() => setMobileOpen(false)}
                       className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2.5 text-center hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
                     >
-                      About
+                      {pick("Tentang", "About")}
                     </Link>
                     <Link
                       href="/services"
                       onClick={() => setMobileOpen(false)}
                       className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2.5 text-center hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
                     >
-                      Services
+                      {pick("Layanan", "Services")}
                     </Link>
                     <Link
                       href="/pricing"
                       onClick={() => setMobileOpen(false)}
                       className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2.5 text-center hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
                     >
-                      Packages
+                      {pick("Paket", "Packages")}
                     </Link>
                     <Link
                       href={ARRANGEMENT_PORTFOLIO_PATH}
                       onClick={() => setMobileOpen(false)}
                       className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2.5 text-center hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
                     >
-                      Portfolio
+                      {pick("Portofolio", "Portfolio")}
                     </Link>
                   </div>
 
@@ -842,7 +864,7 @@ export const HeaderSection = (): React.JSX.Element => {
                     </div>
                     <div className="pb-3">
                       <div className="text-xs uppercase tracking-wide text-neutral-600 dark:text-neutral-300 mb-2">
-                        FMG Sections
+                        {pick("Bagian FMG", "FMG Sections")}
                       </div>
                       <div className="grid grid-cols-1 gap-2">
                         {MENU.map((m) => (
@@ -857,10 +879,10 @@ export const HeaderSection = (): React.JSX.Element => {
                             </span>
                             <span className="flex-1 min-w-0">
                               <span className="block text-[15px] font-medium text-black/90 dark:text-white/90">
-                                {m.label}
+                                {menuLabel(m)}
                               </span>
                               <span className="block text-[12.5px] text-neutral-700 dark:text-neutral-300 line-clamp-1">
-                                {m.desc}
+                                {menuDescription(m)}
                               </span>
                             </span>
                             <ArrowRight className="h-4 w-4 opacity-60 group-hover:opacity-100" />
@@ -881,7 +903,7 @@ export const HeaderSection = (): React.JSX.Element => {
                         hover:bg-gradient-to-r hover:from-indigo-600 hover:to-violet-600 hover:text-white
                       "
                       >
-                        Start My Project
+                        {pick("Mulai Project Saya", "Start My Project")}
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                     </div>

@@ -93,6 +93,7 @@ export default function InnovationBadge() {
 
   return (
     <motion.div
+      data-no-translate
       initial={false}                    // jangan inject state awal beda dengan SSR
       animate={liveAnimate}              // hanya aktif setelah mounted
       transition={{ duration: 0.4, ease: "easeInOut" }}

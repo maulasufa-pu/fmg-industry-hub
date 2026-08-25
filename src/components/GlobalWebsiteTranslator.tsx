@@ -1,21 +1,58 @@
 "use client";
 
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import translations from "@/i18n/generated-translations.json";
 import { translationOverrides } from "@/i18n/translation-overrides";
 
 type Translation = { id?: string; en?: string };
 const dictionary = { ...(translations as Record<string, Translation>), ...translationOverrides };
-let originalText = new WeakMap<Text, string>();
-let originalAttributes = new WeakMap<Element, Map<string, string>>();
+const reverseDictionary = new Map<string, Translation>();
+for (const entry of Object.values(dictionary)) {
+  if (entry.id) reverseDictionary.set(entry.id.replace(/\s+/g, " ").trim(), entry);
+  if (entry.en) reverseDictionary.set(entry.en.replace(/\s+/g, " ").trim(), entry);
+}
+const originalText = new WeakMap<Text, string>();
+const originalAttributes = new WeakMap<Element, Map<string, string>>();
 const ATTRIBUTES = ["placeholder", "title", "aria-label", "alt"] as const;
+const PROTECTED_COPY = new Set([
+  "FLEMMO MUSIC",
+  "Flemmo Music",
+  "Flemmo Music Global",
+  "Flemmo Music Global Publishing",
+  "Flemmo Music Global (FMG) Publishing",
+  "FMG Universe",
+  "FMG UNIVERSE",
+  "Global Universe Solution",
+  "Beyond Sound. Built-in Intelligence",
+  "Beyond Sound. Built-in Intelligence.",
+  "“Beyond Sound. Built-in Intelligence.”",
+  "Build Ecosystem • Spark Innovation • Foster Collaboration",
+  "Build Ecosystem",
+  "Spark Innovation",
+  "Foster Collaboration",
+  "A&R",
+  "AI R&D",
+  "Music Arrangement",
+  "Arrangement",
+  "Mixing",
+  "Mastering",
+  "Publishing",
+  "Distribution",
+  "ISRC",
+  "ISWC",
+  "IPI/CAE",
+  "tuneXpert",
+  "FMG Labs",
+]);
 
 export function translateWebsiteText(value: string, language: "id" | "en") {
   const leading = value.match(/^\s*/)?.[0] ?? "";
   const trailing = value.match(/\s*$/)?.[0] ?? "";
   const key = value.trim().replace(/\s+/g, " ");
-  let result = dictionary[key]?.[language];
+  if (PROTECTED_COPY.has(key)) return value;
+  const entry = dictionary[key] ?? reverseDictionary.get(key);
+  let result = entry?.[language];
   if (!result && language === "id") {
     const step = key.match(/^Step (\d+) of (\d+)$/i);
     const loading = key.match(/^Loading (.+?)(?:\.{3}|…)?$/i);
@@ -64,12 +101,7 @@ function localize(root: ParentNode, language: "id" | "en") {
 export default function GlobalWebsiteTranslator() {
   const { language } = useLanguage();
 
-  useEffect(() => {
-    // React components that use `pick()` have already rendered the new language
-    // by the time this effect runs. Reset the source snapshots so the global
-    // layer complements those components instead of restoring stale copy.
-    originalText = new WeakMap<Text, string>();
-    originalAttributes = new WeakMap<Element, Map<string, string>>();
+  useLayoutEffect(() => {
     let queued = false;
     const run = () => {
       queued = false;

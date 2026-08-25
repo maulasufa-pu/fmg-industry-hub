@@ -3,6 +3,11 @@ type Entry = { id: string; en: string };
 const id = (english: string, indonesian: string): Entry => ({ id: indonesian, en: english });
 
 export const translationOverrides: Record<string, Entry> = {
+  "Global Universe Solution": id("Global Universe Solution", "Global Universe Solution"),
+  "Beyond Sound. Built-in Intelligence": id("Beyond Sound. Built-in Intelligence", "Beyond Sound. Built-in Intelligence"),
+  "Beyond Sound. Built-in Intelligence.": id("Beyond Sound. Built-in Intelligence.", "Beyond Sound. Built-in Intelligence."),
+  "“Beyond Sound. Built-in Intelligence.”": id("“Beyond Sound. Built-in Intelligence.”", "“Beyond Sound. Built-in Intelligence.”"),
+  "Build Ecosystem • Spark Innovation • Foster Collaboration": id("Build Ecosystem • Spark Innovation • Foster Collaboration", "Build Ecosystem • Spark Innovation • Foster Collaboration"),
   "Accept all": id("Accept all", "Terima semua"),
   "Accept": id("Accept", "Terima"),
   "Account Recovery": id("Account Recovery", "Pemulihan Akun"),

@@ -9,6 +9,7 @@ import { NewInvoiceDialog } from "./components/NewInvoiceDialog";
 import { formatIDRCurrency, isOverdue, nextStatusColor } from "@/lib/invoices/utils";
 import type { User } from "@supabase/supabase-js";
 import { notify } from "@/components/ui/FeedbackHost";
+import PaymentMethodsShowcase from "@/components/payments/PaymentMethodsShowcase";
 import {
   Search, X, Loader2, BellRing, CheckCircle2, XCircle, CreditCard,
   Link2, RefreshCw, ExternalLink, Wallet, AlertTriangle
@@ -565,6 +566,8 @@ export default function InvoicesPage(): React.JSX.Element {
             </div>
           </div>
         </motion.div>
+
+        {!isAdmin && <PaymentMethodsShowcase compact />}
 
         {loading ? (
           <SkeletonTable />

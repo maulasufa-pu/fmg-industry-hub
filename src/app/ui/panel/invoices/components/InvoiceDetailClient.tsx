@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatIDRCurrency, isOverdue, nextStatusColor } from "@/lib/invoices/utils";
 import { notify } from "@/components/ui/FeedbackHost";
+import PaymentMethodsShowcase from "@/components/payments/PaymentMethodsShowcase";
 
 type InvoiceStatus = "draft" | "unpaid" | "paid" | "cancelled";
 
@@ -380,6 +381,8 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
           </div>
         </div>
       </div>
+
+      {inv.status === "unpaid" && <PaymentMethodsShowcase compact />}
 
       {isAdminOwner && <section className="rounded-xl border-2 border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800"><h2 className="font-semibold text-slate-900 dark:text-white">Reminder delivery</h2>{deliveryLogs.length === 0 ? <p className="mt-2 text-sm text-slate-500">No reminder sent yet.</p> : <div className="mt-3 overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Sent</th><th className="p-2">Recipient</th><th className="p-2">Status</th><th className="p-2">Attempts</th><th className="p-2">Opened</th><th className="p-2">Template</th></tr></thead><tbody>{deliveryLogs.map((log) => <tr key={log.id} className="border-b border-slate-200 dark:border-slate-700"><td className="p-2">{new Date(log.created_at).toLocaleString("id-ID")}</td><td className="p-2">{log.recipient_email}</td><td className="p-2">{log.status}{log.error_message ? ` — ${log.error_message}` : ""}</td><td className="p-2">{log.attempt_count}</td><td className="p-2">{log.opened_at ? new Date(log.opened_at).toLocaleString("id-ID") : "Not yet"}</td><td className="p-2">{log.template_version}</td></tr>)}</tbody></table></div>}</section>}
 

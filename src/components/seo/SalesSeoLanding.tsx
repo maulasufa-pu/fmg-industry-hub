@@ -3,6 +3,7 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { JsonLd } from "@/components/JsonLd";
 import type { Json } from "@/components/JsonLd";
 import { siteConfig } from "@/lib/site";
+import PaymentMethodsShowcase from "@/components/payments/PaymentMethodsShowcase";
 
 type Faq = { question: string; answer: string };
 type Step = { title: string; text: string };
@@ -89,6 +90,8 @@ export default function SalesSeoLanding({ lang, path, eyebrow, title, intro, sec
         {sections.map((section) => <section key={section.title} className="mt-16"><h2 className="text-3xl font-bold">{section.title}</h2><div className="mt-5 space-y-4 text-lg leading-8 text-slate-700 dark:text-slate-300">{section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div></section>)}
 
         <section className="mt-16" aria-labelledby="process-title"><h2 id="process-title" className="text-3xl font-bold">{isId ? "Proses kerja" : "How it works"}</h2><ol className="mt-6 grid gap-4 md:grid-cols-3">{steps.map((step, index) => <li key={step.title} className="rounded-2xl border border-slate-200 p-5 dark:border-white/10"><span className="text-sm font-bold text-violet-700 dark:text-violet-300">{String(index + 1).padStart(2, "0")}</span><h3 className="mt-2 text-xl font-bold">{step.title}</h3><p className="mt-2 leading-7 text-slate-600 dark:text-slate-300">{step.text}</p></li>)}</ol></section>
+
+        <PaymentMethodsShowcase className="mt-16" compact />
 
         <section className="mt-16" aria-labelledby="faq-title"><h2 id="faq-title" className="text-3xl font-bold">FAQ</h2><div className="mt-6 divide-y divide-slate-200 rounded-2xl border border-slate-200 px-5 dark:divide-white/10 dark:border-white/10">{faqs.map((faq) => <details key={faq.question} className="py-5"><summary className="cursor-pointer font-bold">{faq.question}</summary><p className="mt-3 leading-7 text-slate-600 dark:text-slate-300">{faq.answer}</p></details>)}</div></section>
 

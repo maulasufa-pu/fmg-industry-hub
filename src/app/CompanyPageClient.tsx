@@ -18,6 +18,7 @@ import CinematicVideoHeroHLS from "@/components/CinematicVideoHeroHLS";
 import { CurrencyDropdownAdvanced, type Currency } from "@/components/CurrencyDropdownAdvanced";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import NewCustomerPromoCard from "@/components/public/NewCustomerPromoCard";
+import PaymentMethodsShowcase from "@/components/payments/PaymentMethodsShowcase";
 // import Hero from "./ui/main_container/hero";
 /** urutan & “berat” ukuran: basic small, pro medium, ultimate large, custom largest */
 
@@ -1758,6 +1759,9 @@ function Pricing({
       <Parallax speed={0.1}>
         <Pricing3DCarousel currency={currency} rates={rates} loading={loading} />
       </Parallax>
+      <div className="mx-auto mt-10 max-w-7xl px-4">
+        <PaymentMethodsShowcase compact />
+      </div>
     </section>
   );
 }

@@ -32,6 +32,7 @@ import { formatIdrAnchoredPrice, formatPrice } from '@/lib/currency';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { CurrencyDropdownAdvanced, type Currency } from '@/components/CurrencyDropdownAdvanced';
 import { NEW_CUSTOMER_PROMO_BUNDLE_KEY } from '@/lib/arrangement';
+import PaymentMethodsShowcase from '@/components/payments/PaymentMethodsShowcase';
 
 type Props = {
   open: boolean;
@@ -1578,6 +1579,8 @@ export default function CreateProjectPopover({
                       </div>
                     </div>
                   </div>
+
+                  <PaymentMethodsShowcase compact />
 
                   {/* Enhanced Agreement Section */}
                   <div className="bg-gradient-to-br from-rose-50/90 to-pink-50/60 dark:from-rose-900/30 dark:to-pink-900/20 rounded-2xl p-8 border border-rose-200/60 dark:border-rose-700/50">

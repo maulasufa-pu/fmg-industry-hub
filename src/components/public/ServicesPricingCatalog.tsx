@@ -5,6 +5,7 @@ import { ARRANGEMENT_ORDER_PATH, ARRANGEMENT_PORTFOLIO_PATH, NEW_CUSTOMER_PROMO_
 import type { BundleItemRow, BundleRow, ServiceRow } from "@/components/catalog";
 import GlobalPrice from "@/components/public/GlobalPrice";
 import LocalizedText from "@/components/LocalizedText";
+import PaymentMethodsShowcase from "@/components/payments/PaymentMethodsShowcase";
 
 async function loadCatalog() {
   const admin = getSupabaseAdminClient();
@@ -87,6 +88,8 @@ export default async function ServicesPricingCatalog({ view = "services" }: { vi
         </section>}
 
         {services.length === 0 && bundles.length === 0 && <div className="mt-12 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">The service catalog is temporarily unavailable. Please try again shortly.</div>}
+
+        <PaymentMethodsShowcase className="mt-16" compact={!isPricing} />
 
         <div className="mt-14 flex flex-wrap gap-3"><Link href={ARRANGEMENT_ORDER_PATH} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-6 py-3 font-semibold text-white hover:bg-violet-700">Order New Arrangement <ArrowRight className="h-4 w-4" /></Link><Link href={ARRANGEMENT_PORTFOLIO_PATH} className="rounded-xl border border-slate-300 px-6 py-3 font-semibold dark:border-white/20">View arrangement work</Link><Link href="/services/inquiry" className="rounded-xl border border-slate-300 px-6 py-3 font-semibold dark:border-white/20">Ask before ordering</Link></div>
       </section>

@@ -2305,7 +2305,7 @@ const PortfolioCard = React.memo(function PortfolioCard({
     }
     
     // Priority 5: Default FMG logo
-    return "/img/logo/FMG-Universe-Flemmo-Music-Global.png";
+    return "/logo/FMG-Universe-Flemmo-Music-Global.png";
   };
 
   // Artwork/Thumbnail Priority System:
@@ -2334,7 +2334,7 @@ const PortfolioCard = React.memo(function PortfolioCard({
     }
     
     // Final fallback to default logo
-    setImgSrc("/img/logo/FMG-Universe-Flemmo-Music-Global.png");
+    setImgSrc("/logo/FMG-Universe-Flemmo-Music-Global.png");
     setImgError(true);
   };
 
@@ -3137,7 +3137,7 @@ function PortfolioDetailModal({
     }
     
     // Priority 5: Default FMG logo
-    return "/img/logo/FMG-Universe-Flemmo-Music-Global.png";
+    return "/logo/FMG-Universe-Flemmo-Music-Global.png";
   };
 
   React.useEffect(() => {
@@ -3175,7 +3175,7 @@ function PortfolioDetailModal({
             className="object-cover"
             sizes="(max-width: 640px) 100vw, 672px"
             priority
-            onError={() => setImgSrc("/img/logo/FMG-Universe-Flemmo-Music-Global.png")}
+            onError={() => setImgSrc("/logo/FMG-Universe-Flemmo-Music-Global.png")}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         </div>
@@ -3288,4 +3288,3 @@ function PortfolioDetailModal({
     </div>
   );
 }
-

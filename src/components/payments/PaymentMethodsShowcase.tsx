@@ -20,16 +20,16 @@ const PAYMENT_GROUPS: PaymentGroup[] = [
     titleId: "Transfer bank & virtual account",
     titleEn: "Bank transfer & virtual account",
     methods: [
-      { name: "BCA", logo: "/payment-methods/bca.webp" },
-      { name: "BRI / BRIVA", logo: "/payment-methods/bri.webp" },
-      { name: "BNI", logo: "/payment-methods/bni.webp" },
-      { name: "Mandiri", logo: "/payment-methods/mandiri.webp" },
-      { name: "PermataBank", logo: "/payment-methods/permata.webp" },
-      { name: "CIMB Niaga", logo: "/payment-methods/cimb.webp" },
-      { name: "Danamon", logo: "/payment-methods/danamon.webp" },
-      { name: "BSI", logo: "/payment-methods/bsi.webp" },
-      { name: "SeaBank", logo: "/payment-methods/seabank.webp" },
-      { name: "Bank Saqu", logo: "/payment-methods/bank-saqu.webp" },
+      { name: "BCA", logo: "/payment-methods/bca.svg" },
+      { name: "BRI / BRIVA", logo: "/payment-methods/bri.svg" },
+      { name: "BNI", logo: "/payment-methods/bni.svg" },
+      { name: "Mandiri", logo: "/payment-methods/mandiri.svg" },
+      { name: "PermataBank", logo: "/payment-methods/permata.svg" },
+      { name: "CIMB Niaga", logo: "/payment-methods/cimb.svg" },
+      { name: "Danamon", logo: "/payment-methods/danamon.svg" },
+      { name: "BSI", logo: "/payment-methods/bsi.svg" },
+      { name: "SeaBank", logo: "/payment-methods/seabank.svg" },
+      { name: "Bank Saqu", logo: "/payment-methods/bank-saqu.svg" },
       { name: "ATM Bersama", logo: "/payment-methods/atm-bersama.webp" },
       { name: "PRIMA", logo: "/payment-methods/prima.webp" },
       { name: "ALTO", logo: "/payment-methods/alto.webp" },
@@ -41,10 +41,10 @@ const PAYMENT_GROUPS: PaymentGroup[] = [
     titleEn: "E-wallets & QRIS",
     methods: [
       { name: "GoPay", logo: "/payment-methods/gopay.webp" },
-      { name: "QRIS", logo: "/payment-methods/qris.webp" },
-      { name: "ShopeePay", logo: "/payment-methods/shopeepay.webp" },
-      { name: "DANA", logo: "/payment-methods/dana.webp" },
-      { name: "OVO", logo: "/payment-methods/ovo.webp" },
+      { name: "QRIS", logo: "/payment-methods/qris.svg" },
+      { name: "ShopeePay", logo: "/payment-methods/shopeepay.svg" },
+      { name: "DANA", logo: "/payment-methods/dana.svg" },
+      { name: "OVO", logo: "/payment-methods/ovo.svg" },
     ],
   },
   {
@@ -52,12 +52,12 @@ const PAYMENT_GROUPS: PaymentGroup[] = [
     titleId: "Kartu & pembayaran global",
     titleEn: "Cards & global payments",
     methods: [
-      { name: "Visa", logo: "/payment-methods/visa.webp" },
-      { name: "Mastercard", logo: "/payment-methods/mastercard.webp" },
-      { name: "JCB", logo: "/payment-methods/jcb.webp" },
-      { name: "American Express", logo: "/payment-methods/amex.webp" },
-      { name: "UnionPay", logo: "/payment-methods/unionpay.webp" },
-      { name: "Google Pay", logo: "/payment-methods/google-pay.webp" },
+      { name: "Visa", logo: "/payment-methods/visa.svg" },
+      { name: "Mastercard", logo: "/payment-methods/mastercard.svg" },
+      { name: "JCB", logo: "/payment-methods/jcb.svg" },
+      { name: "American Express", logo: "/payment-methods/amex.svg" },
+      { name: "UnionPay", logo: "/payment-methods/unionpay.svg" },
+      { name: "Google Pay", logo: "/payment-methods/google-pay.svg" },
     ],
   },
   {
@@ -65,9 +65,9 @@ const PAYMENT_GROUPS: PaymentGroup[] = [
     titleId: "Gerai retail",
     titleEn: "Retail outlets",
     methods: [
-      { name: "Indomaret", logo: "/payment-methods/indomaret.webp" },
-      { name: "Alfamart", logo: "/payment-methods/alfamart.webp" },
-      { name: "Alfamidi", logo: "/payment-methods/alfamidi.webp" },
+      { name: "Indomaret", logo: "/payment-methods/indomaret.svg" },
+      { name: "Alfamart", logo: "/payment-methods/alfamart.svg" },
+      { name: "Alfamidi", logo: "/payment-methods/alfamidi.svg" },
       { name: "DAN+DAN", logo: "/payment-methods/dan-dan.webp" },
     ],
   },
@@ -76,8 +76,8 @@ const PAYMENT_GROUPS: PaymentGroup[] = [
     titleId: "PayLater",
     titleEn: "PayLater",
     methods: [
-      { name: "Akulaku PayLater", logo: "/payment-methods/akulaku.webp" },
-      { name: "Kredivo", logo: "/payment-methods/kredivo.webp" },
+      { name: "Akulaku PayLater", logo: "/payment-methods/akulaku.svg" },
+      { name: "Kredivo", logo: "/payment-methods/kredivo.svg" },
     ],
   },
 ];
@@ -132,10 +132,10 @@ export default function PaymentMethodsShowcase({
                   <Image
                     src={method.logo}
                     alt={method.name}
-                    width={128}
-                    height={48}
-                    className="h-9 w-full object-contain"
-                    sizes="(max-width: 640px) 40vw, (max-width: 1024px) 22vw, 128px"
+                    width={160}
+                    height={56}
+                    className="h-10 w-full max-w-40 object-contain"
+                    unoptimized
                   />
                 </div>
               ))}

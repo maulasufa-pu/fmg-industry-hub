@@ -33,6 +33,28 @@ export const CURRENCY_OPTIONS: CurrencyOption[] = [
 export const DEFAULT_CURRENCY: Currency = "USD";
 
 /**
+ * Safe rates used immediately while the live exchange-rate request is pending.
+ * Keeping every supported currency here means the selector never has to wait
+ * for an external service before it can update prices.
+ */
+export const FALLBACK_EXCHANGE_RATES: Record<Currency, number> = {
+  USD: 1,
+  EUR: 0.92,
+  JPY: 150,
+  GBP: 0.81,
+  AUD: 1.51,
+  CAD: 1.37,
+  SGD: 1.35,
+  KRW: 1380,
+  VND: 25400,
+  INR: 83.5,
+  PHP: 58,
+  THB: 35.5,
+  MYR: 4.4,
+  IDR: 15750,
+};
+
+/**
  * Convert USD amount to target currency
  */
 export function convertFromUSD(
@@ -170,25 +192,29 @@ export async function fetchExchangeRates(): Promise<{
   date?: string;
   lastUpdated?: string;
 }> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
   try {
-    const response = await fetch('/api/exchange');
+    const response = await fetch('/api/exchange', { signal: controller.signal });
     if (!response.ok) {
       throw new Error(`Failed to fetch rates: ${response.status}`);
     }
     
     const data = await response.json();
     return {
-      rates: data.rates || { USD: 1 },
+      rates: { ...FALLBACK_EXCHANGE_RATES, ...(data.rates || {}) },
       date: data.date,
       lastUpdated: data.lastUpdated || new Date().toISOString()
     };
   } catch (error) {
     // console.warn('Failed to fetch exchange rates, using fallback:', error);
-    // Fallback rates
     return {
-      rates: { USD: 1, IDR: 16000, EUR: 0.92, JPY: 150 },
+      rates: { ...FALLBACK_EXCHANGE_RATES },
       lastUpdated: new Date().toISOString()
     };
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

@@ -145,13 +145,13 @@ export function CurrencyDropdown({
   }, [isOpen, positionDropdown]);
 
   return (
-    <div className={className}>
+    <div className={className} data-no-translate>
       {/* Trigger */}
       <button
         ref={buttonRef}
         type="button"
         onClick={handleToggle}
-        disabled={loading}
+        aria-busy={loading}
         className={[
           "flex items-center justify-between gap-2 rounded-xl border transition-all duration-200",
           "hover:shadow-lg disabled:opacity-50 bg-white/10 border-white/20 text-white",

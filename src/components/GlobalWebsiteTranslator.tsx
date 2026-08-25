@@ -62,6 +62,16 @@ export function translateWebsiteText(value: string, language: "id" | "en") {
   return result && result !== key ? `${leading}${result}${trailing}` : value;
 }
 
+function hasTranslationSource(value: string) {
+  const key = value.trim().replace(/\s+/g, " ");
+  return Boolean(
+    dictionary[key] ||
+    reverseDictionary.has(key) ||
+    /^Step \d+ of \d+$/i.test(key) ||
+    /^Loading .+?(?:\.{3}|…)?$/i.test(key)
+  );
+}
+
 function skip(element: Element | null) {
   return Boolean(element?.closest("script,style,code,pre,[data-no-translate]"));
 }
@@ -72,7 +82,17 @@ function localize(root: ParentNode, language: "id" | "en") {
   while (node) {
     if (!skip(node.parentElement) && node.data.trim()) {
       if (!originalText.has(node)) originalText.set(node, node.data);
-      const source = originalText.get(node) ?? node.data;
+      let source = originalText.get(node) ?? node.data;
+
+      // React reuses text nodes for live values such as prices, totals, and
+      // statuses. If the stored source is not translatable, a changed value is
+      // fresh application state and must become the new source instead of
+      // being overwritten with the first-render value.
+      if (!hasTranslationSource(source) && node.data !== source) {
+        source = node.data;
+        originalText.set(node, source);
+      }
+
       const next = translateWebsiteText(source, language);
       if (node.data !== next) node.data = next;
     }
@@ -91,7 +111,11 @@ function localize(root: ParentNode, language: "id" | "en") {
       const current = element.getAttribute(attribute);
       if (!current) continue;
       if (!originals.has(attribute)) originals.set(attribute, current);
-      const source = originals.get(attribute) ?? current;
+      let source = originals.get(attribute) ?? current;
+      if (!hasTranslationSource(source) && current !== source) {
+        source = current;
+        originals.set(attribute, source);
+      }
       const next = translateWebsiteText(source, language);
       if (current !== next) element.setAttribute(attribute, next);
     }

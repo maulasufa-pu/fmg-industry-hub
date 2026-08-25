@@ -106,6 +106,25 @@ export function CurrencyDropdownAdvanced({
 }: CurrencyDropdownAdvancedProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
+  const rootRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setIsOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsOpen(false);
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isOpen]);
   
   const selectedOption = options.find(opt => opt.code === value);
   
@@ -185,15 +204,19 @@ export function CurrencyDropdownAdvanced({
   const styles = variantStyles[variant];
 
   return (
-    <div className={`relative ${className}`}>
+    <div ref={rootRef} className={`relative ${className}`} data-no-translate>
       {/* Trigger Button */}
       <motion.button
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        disabled={loading || disabled}
+        disabled={disabled}
         className={`flex items-center justify-between gap-3 font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${styles.button} ${sizes.button}`}
         whileHover={{ scale: disabled ? 1 : 1.02 }}
         whileTap={{ scale: disabled ? 1 : 0.98 }}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-busy={loading}
+        aria-label="Select currency"
       >
         <div className="flex items-center gap-2">
           <span className={sizes.flag}>{selectedOption?.flag}</span>
@@ -220,15 +243,6 @@ export function CurrencyDropdownAdvanced({
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
-              className="fixed inset-0 z-[9998] bg-black/20 backdrop-blur-sm"
-            />
-            
             {/* Dropdown Panel */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: -10 }}
@@ -236,6 +250,8 @@ export function CurrencyDropdownAdvanced({
               exit={{ opacity: 0, scale: 0.95, y: -10 }}
               transition={{ duration: 0.2 }}
               className={`absolute top-full mt-2 left-0 right-0 z-[9999] max-h-80 overflow-hidden ${styles.dropdown} ${sizes.dropdown}`}
+              role="listbox"
+              aria-label="Select currency"
             >
               {/* Search Input */}
               {showSearch && (
@@ -269,6 +285,8 @@ export function CurrencyDropdownAdvanced({
                       }`}
                       whileHover={{ x: 4 }}
                       transition={{ duration: 0.15 }}
+                      role="option"
+                      aria-selected={option.code === value}
                     >
                       <span className={sizes.flag}>{option.flag}</span>
                       <div className="flex-1">

@@ -1,7 +1,13 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useState, useEffect, ReactNode } from 'react';
-import { Currency, CURRENCY_OPTIONS, DEFAULT_CURRENCY, fetchExchangeRates } from '@/lib/currency';
+import {
+  Currency,
+  CURRENCY_OPTIONS,
+  DEFAULT_CURRENCY,
+  FALLBACK_EXCHANGE_RATES,
+  fetchExchangeRates,
+} from '@/lib/currency';
 
 interface CurrencyContextType {
   currency: Currency;
@@ -32,12 +38,18 @@ export function CurrencyProvider({
   children, 
   defaultCurrency = DEFAULT_CURRENCY 
 }: CurrencyProviderProps) {
-  const [currency, setCurrency] = useState<Currency>(defaultCurrency);
-  const [rates, setRates] = useState<Record<string, number>>({ USD: 1 });
+  const [currency, setCurrencyState] = useState<Currency>(defaultCurrency);
+  const [rates, setRates] = useState<Record<string, number>>({ ...FALLBACK_EXCHANGE_RATES });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const [storageReady, setStorageReady] = useState(false);
+
+  const setCurrency = useCallback((nextCurrency: Currency) => {
+    setCurrencyState(nextCurrency);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('fmg-currency', nextCurrency);
+    }
+  }, []);
 
   const refreshRates = useCallback(async () => {
     setLoading(true);
@@ -45,7 +57,7 @@ export function CurrencyProvider({
     
     try {
       const data = await fetchExchangeRates();
-      setRates(data.rates);
+      setRates({ ...FALLBACK_EXCHANGE_RATES, ...data.rates });
       setLastUpdated(data.lastUpdated || new Date().toISOString());
       
       // console.log('Exchange rates updated:', {
@@ -63,10 +75,7 @@ export function CurrencyProvider({
       setError(errorMessage);
       // console.error('Currency rates fetch failed:', errorMessage);
       
-      // Keep existing rates if available, otherwise use fallback
-      setRates((current) => Object.keys(current).length <= 1
-        ? { USD: 1, IDR: 16000, EUR: 0.92, JPY: 150 }
-        : current);
+      setRates((current) => ({ ...FALLBACK_EXCHANGE_RATES, ...current }));
     } finally {
       setLoading(false);
     }
@@ -90,18 +99,11 @@ export function CurrencyProvider({
         // Validate it's a supported currency
         const supportedCurrencies = CURRENCY_OPTIONS.map((option) => option.code);
         if (supportedCurrencies.includes(storedCurrency)) {
-          setCurrency(storedCurrency);
+          setCurrencyState(storedCurrency);
         }
       }
-      setStorageReady(true);
     }
   }, []);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && storageReady) {
-      localStorage.setItem('fmg-currency', currency);
-    }
-  }, [currency, storageReady]);
 
   const value: CurrencyContextType = {
     currency,

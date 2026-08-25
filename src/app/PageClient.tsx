@@ -412,7 +412,7 @@ function MarqueeRow({ items, speed = 50 }: { items: ReadonlyArray<React.ReactNod
         >
           {[...items, ...items].map((it, i) => (
             <div key={i} className="flex items-center gap-3 text-black/60 dark:text-white/100">
-              <div className="inline-flex h-9 w-9 items:center justify-center rounded-full bg-black/5 ring-1 ring-black/10 dark:bg-white/10 dark:ring-white/10">
+              <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/5 ring-1 ring-black/10 dark:bg-white/10 dark:ring-white/10">
                 <Star className="h-4 w-4" />
               </div>
               <div className="text-sm font-medium tracking-wide">{it}</div>

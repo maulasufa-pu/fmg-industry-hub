@@ -14,7 +14,7 @@ const STORAGE_KEY = "fmg-language";
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>("id");
+  const [language, setLanguageState] = useState<Language>("en");
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);

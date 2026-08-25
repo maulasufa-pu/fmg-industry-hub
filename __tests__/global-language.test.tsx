@@ -18,13 +18,13 @@ test("language changes update the existing page without a refresh", async () => 
   window.localStorage.clear();
   render(<LanguageProvider><GlobalWebsiteTranslator /><Fixture /></LanguageProvider>);
 
-  expect(screen.getByTestId("order-copy")).toHaveTextContent("Pesan Aransemen Baru");
+  expect(screen.getByTestId("order-copy")).toHaveTextContent("Order New Arrangement");
   expect(screen.getByTestId("brand-copy")).toHaveTextContent("Global Universe Solution");
-
-  fireEvent.click(screen.getByText("English"));
-  await waitFor(() => expect(screen.getByTestId("order-copy")).toHaveTextContent("Order New Arrangement"));
 
   fireEvent.click(screen.getByText("Indonesia"));
   await waitFor(() => expect(screen.getByTestId("order-copy")).toHaveTextContent("Pesan Aransemen Baru"));
   expect(screen.getByTestId("brand-copy")).toHaveTextContent("Global Universe Solution");
+
+  fireEvent.click(screen.getByText("English"));
+  await waitFor(() => expect(screen.getByTestId("order-copy")).toHaveTextContent("Order New Arrangement"));
 });

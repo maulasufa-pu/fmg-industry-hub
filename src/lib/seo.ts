@@ -20,7 +20,7 @@ export function seo(input: SeoInput = {}): Metadata {
   return {
     title: { absolute: t },
     description: d,
-    alternates: { canonical: p, languages: { "id-ID": p, "x-default": p } },
+    alternates: { canonical: p, languages: { "en-US": p, "x-default": p } },
     openGraph: {
       type: "website",
       url: abs(p),

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import InquiryPage from "@/components/public/InquiryPage";
-export const metadata: Metadata = { title: "Apply to FMG" };
+export const metadata: Metadata = { title: "Apply to FMG", robots: { index: false, follow: true } };
 export default async function Page({ searchParams }: { searchParams: Promise<{ role?: string }> }) {
   const { role } = await searchParams;
   const selectedRole = role?.trim() || "General application";

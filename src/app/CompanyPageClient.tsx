@@ -1849,21 +1849,22 @@ export default function LandingPage() {
     siteConfig.social.youtube,
     siteConfig.social.linkedin,
     siteConfig.social.tiktok,
-    siteConfig.social.twitter, // opsional
   ]);
 
   const org = {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": `${siteConfig.url}/#organization`,
     name: siteConfig.name,
     url: siteConfig.url,
-    logo: `${siteConfig.url}/apple-touch-icon.png`,
+    logo: `${siteConfig.url}/icon.png`,
     sameAs, // sekarang pasti string[]
   };
 
   const website = {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": `${siteConfig.url}/#website`,
     url: siteConfig.url,
     name: `${siteConfig.name} — ${siteConfig.tagline}`,
     potentialAction: {

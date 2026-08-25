@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 
 export type Language = "id" | "en";
 
@@ -14,12 +15,19 @@ const STORAGE_KEY = "fmg-language";
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>("en");
+  const pathname = usePathname();
+  const routeLanguage: Language | null = pathname?.startsWith("/id/") || pathname === "/id" ? "id" : null;
+  const [language, setLanguageState] = useState<Language>(routeLanguage ?? "en");
 
   useEffect(() => {
+    if (routeLanguage) {
+      setLanguageState(routeLanguage);
+      return;
+    }
     const saved = window.localStorage.getItem(STORAGE_KEY);
     if (saved === "id" || saved === "en") setLanguageState(saved);
-  }, []);
+    else setLanguageState("en");
+  }, [pathname, routeLanguage]);
 
   const setLanguage = (next: Language) => {
     setLanguageState(next);

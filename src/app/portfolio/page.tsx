@@ -7,17 +7,7 @@ import { siteConfig } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Portfolio",
   description: "Explore our portfolio of successful music projects, artist collaborations, and creative productions. Discover the quality and creativity that defines Flemmo Music Global.",
-  alternates: { canonical: "/portfolio", languages: { "id-ID": "/portfolio", "x-default": "/portfolio" } },
-  keywords: [
-    "music portfolio",
-    "music production",
-    "artist development", 
-    "music projects",
-    "flemmo music global",
-    "music collaboration",
-    "creative productions",
-    "music showcase"
-  ],
+  alternates: { canonical: "/portfolio", languages: { "en-US": "/portfolio", "x-default": "/portfolio" } },
   openGraph: {
     title: "Portfolio aransemen dan produksi musik — FMG Universe",
     description: "Explore our portfolio of successful music projects, artist collaborations, and creative productions.",

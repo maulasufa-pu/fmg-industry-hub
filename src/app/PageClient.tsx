@@ -1856,21 +1856,22 @@ export default function LandingPage({ mode = "company" }: { mode?: "company" | "
     siteConfig.social.youtube,
     siteConfig.social.linkedin,
     siteConfig.social.tiktok,
-    siteConfig.social.twitter, // opsional
   ]);
 
   const org = {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": `${siteConfig.url}/#organization`,
     name: siteConfig.name,
     url: siteConfig.url,
-    logo: `${siteConfig.url}/apple-touch-icon.png`,
+    logo: `${siteConfig.url}/icon.png`,
     sameAs, // sekarang pasti string[]
   };
 
   const website = {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": `${siteConfig.url}/#website`,
     url: siteConfig.url,
     name: `${siteConfig.name} — ${siteConfig.tagline}`,
   };
@@ -1878,10 +1879,14 @@ export default function LandingPage({ mode = "company" }: { mode?: "company" | "
   const arrangementService = {
     "@context": "https://schema.org",
     "@type": "Service",
-    name: "Jasa aransemen musik profesional",
+    "@id": `${siteConfig.url}/arrangement#service`,
+    name: "Professional music arrangement service",
     serviceType: "Music arrangement and production",
-    provider: { "@type": "Organization", name: siteConfig.name, url: siteConfig.url },
-    areaServed: { "@type": "Country", name: "Indonesia" },
+    description: "Online music arrangement for artists and songwriters, with clear scope, revisions, deliverables, and ownership terms.",
+    url: `${siteConfig.url}/arrangement`,
+    inLanguage: "en-US",
+    provider: { "@type": "Organization", "@id": `${siteConfig.url}/#organization`, name: siteConfig.name, url: siteConfig.url },
+    areaServed: ["Indonesia", "Worldwide"],
     availableChannel: { "@type": "ServiceChannel", serviceUrl: `${siteConfig.url}${ARRANGEMENT_ORDER_PATH}` },
   };
 

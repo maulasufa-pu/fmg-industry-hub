@@ -33,20 +33,35 @@ async function loadCatalog() {
   };
 }
 
-export default async function ServicesPricingCatalog() {
+type CatalogView = "services" | "pricing";
+
+export default async function ServicesPricingCatalog({ view = "services" }: { view?: CatalogView }) {
   const { services, bundles } = await loadCatalog();
+  const isPricing = view === "pricing";
 
   return (
     <main className="min-h-screen bg-white text-slate-950 dark:bg-black dark:text-white">
       <section className="mx-auto max-w-7xl px-5 py-16 sm:py-24">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600 dark:text-violet-300"><LocalizedText id="Layanan & harga" en="Services & pricing" /></p>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600 dark:text-violet-300"><LocalizedText id={isPricing ? "Harga aransemen" : "Jasa aransemen musik"} en={isPricing ? "Arrangement pricing" : "Music arrangement services"} /></p>
         <div className="mt-4 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
           <div>
-            <h1 className="max-w-4xl text-balance text-4xl font-bold tracking-tight sm:text-6xl"><LocalizedText id="Pilih layanan yang paling cocok untuk project Anda." en="Choose the service that fits your project." /></h1>
-            <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600 dark:text-slate-300"><LocalizedText id="Harga dan paket di sini sama dengan yang tersedia pada form order." en="The prices and packages shown here match the live order form." /></p>
+            <h1 className="max-w-4xl text-balance text-4xl font-bold tracking-tight sm:text-6xl"><LocalizedText id={isPricing ? "Harga dan paket jasa aransemen lagu." : "Jasa aransemen musik profesional untuk project Anda."} en={isPricing ? "Music arrangement pricing and packages." : "Professional music arrangement services for your project."} /></h1>
+            <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600 dark:text-slate-300"><LocalizedText id={isPricing ? "Bandingkan paket, layanan individual, dan harga yang sama dengan form order aktif." : "Pilih aransemen, produksi, editing, mixing, mastering, atau vocal directing dalam scope project yang jelas."} en={isPricing ? "Compare bundles, individual services, and the same live prices used in the order form." : "Choose arrangement, production, editing, mixing, mastering, or vocal direction within a clearly confirmed project scope."} /></p>
           </div>
           <Link href={ARRANGEMENT_ORDER_PATH} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-violet-600 px-6 py-3 font-semibold text-white hover:bg-violet-700"><LocalizedText id="Order Aransemen Baru" en="Order New Arrangement" /> <ArrowRight className="h-4 w-4" /></Link>
         </div>
+
+        <section className="mt-10 grid gap-4 rounded-2xl border border-slate-200 p-6 md:grid-cols-3 dark:border-white/10" aria-label={isPricing ? "Pricing information" : "Service process"}>
+          {(isPricing ? [
+            { id: "Harga mengikuti mata uang yang dipilih di header.", en: "Prices follow the currency selected in the header." },
+            { id: "Paket menampilkan layanan yang sudah termasuk.", en: "Each bundle shows the services already included." },
+            { id: "Kebutuhan di luar scope dikonfirmasi sebelum produksi.", en: "Requirements outside the scope are confirmed before production." },
+          ] : [
+            { id: "Brief dan referensi menentukan arah kreatif.", en: "Your brief and references define the creative direction." },
+            { id: "Scope, timeline, revisi, dan ownership dikonfirmasi.", en: "Scope, timeline, revisions, and ownership are confirmed." },
+            { id: "Project dilanjutkan di dashboard setelah order.", en: "The project continues in your dashboard after ordering." },
+          ]).map((item) => <p key={item.en} className="flex gap-3 leading-7 text-slate-600 dark:text-slate-300"><CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-emerald-600" /><LocalizedText id={item.id} en={item.en} /></p>)}
+        </section>
 
         {bundles.length > 0 && <section className="mt-14">
           <h2 className="text-2xl font-bold">Bundles</h2>

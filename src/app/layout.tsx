@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { ClientCurrencyProvider } from "@/components/ClientCurrencyProvider";
 import ConsentManager from "@/components/privacy/ConsentManager";
 import FeedbackHost from "@/components/ui/FeedbackHost";
+import { JsonLd } from "@/components/JsonLd";
 
 const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
 const bingVerification = process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION?.trim();
@@ -18,25 +19,7 @@ export const metadata: Metadata = {
     template: `%s — ${siteConfig.name}`,
   },
   description: siteConfig.description,
-  keywords: [
-    "FMG Universe",
-    "music production",
-    "publishing",
-    "mixing",
-    "mastering",
-    "A&R",
-    "global music",
-    "songwriting",
-    "distribution",
-  ],
   applicationName: siteConfig.name,
-  alternates: {
-    canonical: "/",
-    languages: {
-      "id-ID": "/",
-      "x-default": "/",
-    },
-  },
   openGraph: {
     type: "website",
     url: siteConfig.url,
@@ -87,9 +70,31 @@ export const viewport: Viewport = {
 
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const organization = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${siteConfig.url}/#organization`,
+    name: "FMG Universe",
+    legalName: "PT. Flemmo Music Global",
+    url: siteConfig.url,
+    logo: `${siteConfig.url}/icon.png`,
+    sameAs: [siteConfig.social.instagram, siteConfig.social.youtube].filter((value): value is string => Boolean(value)),
+  };
+  const website = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${siteConfig.url}/#website`,
+    name: "FMG Universe",
+    alternateName: "Flemmo Music Global",
+    url: siteConfig.url,
+    inLanguage: ["en-US", "id-ID"],
+    publisher: { "@id": `${siteConfig.url}/#organization` },
+  };
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
+        <JsonLd id="organization-schema" data={organization} />
+        <JsonLd id="website-schema" data={website} />
         <ConsentManager>
           <FeedbackHost />
           <ThemeProvider

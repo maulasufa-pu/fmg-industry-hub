@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import PageClient from "../PageClient";
 
 export const metadata: Metadata = {
-  title: "Jasa Aransemen Musik Profesional | FMG Universe",
+  title: "Professional Music Arrangement Service",
   description:
-    "Jasa aransemen musik profesional dengan scope, timeline, revisi, dan hasil akhir yang dikonfirmasi sebelum produksi dimulai.",
-  alternates: { canonical: "/arrangement" },
+    "Online music arrangement service for artists and songwriters. Turn your melody, chords, lyrics, or voice note into a release-ready song with clear scope and revisions.",
+  alternates: { canonical: "/arrangement", languages: { "en-US": "/arrangement", "id-ID": "/id/jasa-aransemen-lagu", "x-default": "/arrangement" } },
   openGraph: {
-    title: "Jasa Aransemen Musik Profesional | FMG Universe",
+    title: "Professional Music Arrangement Service | FMG Universe",
     description:
-      "Ubah ide, melodi, chord, atau panduan vokal menjadi aransemen musik yang siap diproduksi.",
+      "Turn your musical idea into a structured, production-ready arrangement built around your genre, references, and release goals.",
     url: "/arrangement",
     type: "website",
   },

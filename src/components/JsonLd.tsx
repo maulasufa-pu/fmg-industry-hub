@@ -1,7 +1,5 @@
-import Script from "next/script";
-
 // JSON-safe type (no `any`)
-type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -16,10 +14,10 @@ type JsonLdProps = {
 
 export function JsonLd({ id, data }: JsonLdProps) {
   return (
-    <Script
+    <script
       id={id}
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
     />
   );
 }

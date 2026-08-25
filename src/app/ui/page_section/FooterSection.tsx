@@ -29,6 +29,17 @@ export default function Footer(): React.JSX.Element {
 
   const columns: Column[] = [
     {
+      title: "Services",
+      links: [
+        { label: "Music Arrangement", href: "/arrangement" },
+        { label: "Song Creation", href: "/song-creation-service" },
+        { label: "Pricing", href: "/pricing" },
+        { label: "Portfolio", href: "/portfolio" },
+        { label: "Jasa Aransemen Lagu", href: "/id/jasa-aransemen-lagu" },
+        { label: "Jasa Pembuatan Lagu", href: "/id/jasa-pembuatan-lagu" },
+      ],
+    },
+    {
       title: "Company",
       links: [
         { label: "About", href: "/about" },
@@ -124,7 +135,7 @@ export default function Footer(): React.JSX.Element {
           </form>
         </div>
 
-        <div className="mt-10 grid grid-cols-2 gap-8 text-sm sm:grid-cols-4">
+        <div className="mt-10 grid grid-cols-2 gap-8 text-sm sm:grid-cols-3 lg:grid-cols-5">
           {columns.map((col) => (
             <div key={col.title}>
               <div className="font-semibold text-neutral-900 dark:text-neutral-50">

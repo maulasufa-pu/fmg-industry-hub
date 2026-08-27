@@ -71,7 +71,7 @@ export default async function ServicesPricingCatalog({ view = "services" }: { vi
               <div className="flex items-start justify-between gap-3"><h3 className="text-xl font-bold">{bundle.label}</h3>{bundle.bundle_key === NEW_CUSTOMER_PROMO_BUNDLE_KEY && <span className="rounded-full bg-rose-600 px-3 py-1 text-xs font-bold text-white">NEW CUSTOMER</span>}</div>
               <p className="mt-2 text-3xl font-bold"><GlobalPrice usd={Number(bundle.bundle_price)} idr={bundle.bundle_key === NEW_CUSTOMER_PROMO_BUNDLE_KEY ? Number(bundle.promo_value) : undefined} /></p>
               {bundle.bundle_key === NEW_CUSTOMER_PROMO_BUNDLE_KEY && <p className="mt-1 text-sm font-semibold text-rose-600 dark:text-rose-300"><LocalizedText id="Penawaran spesial untuk project pertama Anda." en="A special offer for your first project." /></p>}
-              {bundle.note && <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{bundle.note}</p>}
+              {bundle.note && bundle.bundle_key !== NEW_CUSTOMER_PROMO_BUNDLE_KEY && <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{bundle.note}</p>}
               <ul className="mt-5 flex-1 space-y-2">{bundle.items.map((item) => <li key={item} className="flex gap-2 text-sm"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{item}</li>)}</ul>
               <Link href={ARRANGEMENT_ORDER_PATH} className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 font-semibold text-white hover:bg-violet-700 dark:bg-white dark:text-black dark:hover:bg-violet-500 dark:hover:text-white">Order New Arrangement <ArrowRight className="h-4 w-4" /></Link>
             </article>)}

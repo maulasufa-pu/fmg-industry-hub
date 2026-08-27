@@ -8,7 +8,7 @@ values (
   'new_customer_arrangement_promo',
   'Paket Hemat Customer Baru',
   339.10,
-  'Khusus customer baru. Harga Indonesia tetap Rp6.000.000; mata uang lain mengikuti kurs.',
+  'Paket perdana untuk mewujudkan satu lagu dengan alur produksi yang jelas.',
   'Composition, arrangement, digital audio production, editing, mixing, mastering, dan vocal directing.',
   true,
   -10,

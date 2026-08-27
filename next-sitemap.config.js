@@ -30,6 +30,7 @@ const UTILITY_ROUTES = [
   "/events/deck",
   "/events/inquiry",
   "/icon.png",
+  "/id/jasa-aransemen-lagu/opengraph-image",
   "/labs/beta",
   "/media/inquiry",
   "/opengraph-image",

@@ -1,5 +1,6 @@
 export const ARRANGEMENT_SERVICE_KEY = "arrangement";
 export const NEW_CUSTOMER_PROMO_BUNDLE_KEY = "new_customer_arrangement_promo";
+export const NEW_CUSTOMER_PROMO_IDR = 6_000_000;
 
 export const ARRANGEMENT_ORDER_PATH =
   "/order/arrangement";

@@ -114,7 +114,8 @@ export function formatCurrency(
     }
     
     // Use Intl.NumberFormat for proper locale formatting
-    const formatter = new Intl.NumberFormat('en-US', {
+    const locale = currency === "IDR" ? "id-ID" : "en-US";
+    const formatter = new Intl.NumberFormat(locale, {
       style: showSymbol ? 'currency' : 'decimal',
       currency: currency,
       maximumFractionDigits,

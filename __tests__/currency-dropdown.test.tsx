@@ -67,7 +67,7 @@ test("changing currency updates global prices immediately and persists the choic
 
   await waitFor(() => {
     expect(screen.getByRole("button", { name: "Select currency" })).toHaveTextContent("IDR");
-    expect(screen.getByTestId("promotion-price")).toHaveTextContent(/Rp\s*6,000,000/);
+    expect(screen.getByTestId("promotion-price")).toHaveTextContent(/Rp\s*6\.000\.000/);
   });
   expect(window.localStorage.getItem("fmg-currency")).toBe("IDR");
 });

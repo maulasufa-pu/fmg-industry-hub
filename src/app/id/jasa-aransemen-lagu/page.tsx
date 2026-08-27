@@ -1,42 +1,123 @@
 import type { Metadata } from "next";
-import SalesSeoLanding from "@/components/seo/SalesSeoLanding";
+import { JsonLd, type Json } from "@/components/JsonLd";
+import ArrangementServiceLanding from "@/components/seo/ArrangementServiceLanding";
+import { NEW_CUSTOMER_PROMO_IDR } from "@/lib/arrangement";
+import { siteConfig } from "@/lib/site";
+
+const path = "/id/jasa-aransemen-lagu";
+const pageUrl = `${siteConfig.url}${path}`;
+const description = "Jasa aransemen lagu profesional online: aransemen, produksi, editing, mixing, mastering, dan vocal directing. Paket project pertama Rp6 juta.";
 
 export const metadata: Metadata = {
-  title: "Jasa Aransemen Lagu Profesional",
-  description: "Jasa aransemen lagu online untuk mengubah melodi, chord, lirik, atau rekaman panduan menjadi lagu yang terstruktur dan siap dirilis.",
-  alternates: { canonical: "/id/jasa-aransemen-lagu", languages: { "id-ID": "/id/jasa-aransemen-lagu", "en-US": "/arrangement", "x-default": "/arrangement" } },
-  openGraph: { title: "Jasa Aransemen Lagu Profesional", description: "Aransemen, produksi, editing, mixing, mastering, dan vocal directing dalam alur kerja yang jelas.", url: "/id/jasa-aransemen-lagu", locale: "id_ID", type: "website" },
+  title: { absolute: "Jasa Aransemen Lagu Profesional | FMG Universe" },
+  description,
+  alternates: {
+    canonical: pageUrl,
+    languages: {
+      "id-ID": pageUrl,
+      "en-US": `${siteConfig.url}/arrangement`,
+      "x-default": `${siteConfig.url}/arrangement`,
+    },
+  },
+  openGraph: {
+    title: "Jasa Aransemen Lagu Profesional",
+    description,
+    url: pageUrl,
+    locale: "id_ID",
+    alternateLocale: ["en_US"],
+    type: "website",
+    siteName: "FMG Universe",
+    images: [{ url: `${pageUrl}/opengraph-image`, width: 1200, height: 630, alt: "Jasa aransemen lagu profesional dari FMG Universe" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Jasa Aransemen Lagu Profesional | FMG Universe",
+    description,
+    images: [`${pageUrl}/opengraph-image`],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
 };
 
+const faqs = [
+  ["Apa yang perlu saya kirim untuk memulai?", "Kirim voice note, vokal, melodi, chord, lirik, struktur kasar, serta dua atau tiga referensi yang membantu menjelaskan arah lagu."],
+  ["Apakah lagu saya akan dibeli atau diambil FMG?", "Tidak. Anda membeli jasa aransemen dan produksi. Credit, ownership, aset sesi, lisensi, dan pengalihan hak hanya berlaku jika tertulis dalam dokumen project yang Anda setujui."],
+  ["Berapa harga jasa aransemen lagu?", "Paket project pertama tersedia seharga Rp6.000.000 untuk scope yang tercantum. Kebutuhan di luar scope dikonfirmasi sebelum dikerjakan."],
+  ["Berapa lama proses aransemen lagu?", "Timeline ditentukan setelah materi dan kompleksitas lagu diperiksa. Tanggal mulai, milestone review, dan target delivery ditulis sebelum produksi."],
+  ["Apakah bisa dikerjakan sepenuhnya online?", "Bisa. Brief, file, komunikasi, review, revisi, status project, dan delivery dapat dikelola melalui flow online FMG."],
+  ["Apakah mixing dan mastering termasuk?", "Ya. Editing, mixing, dan mastering termasuk dalam Paket Project Pertama. Detail format file akhir mengikuti scope yang disetujui."],
+] as const;
+
+const schema: Json = [
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Beranda", item: siteConfig.url },
+      { "@type": "ListItem", position: 2, name: "Jasa Aransemen Lagu", item: pageUrl },
+    ],
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "@id": `${pageUrl}/#service`,
+    name: "Jasa Aransemen Lagu Profesional",
+    alternateName: ["Jasa aransemen musik", "Music arrangement service"],
+    serviceType: "Music arrangement and production",
+    description,
+    url: pageUrl,
+    inLanguage: "id-ID",
+    provider: {
+      "@type": "Organization",
+      "@id": `${siteConfig.url}/#organization`,
+      name: "FMG Universe",
+      url: siteConfig.url,
+    },
+    areaServed: [
+      { "@type": "Country", name: "Indonesia" },
+      { "@type": "Place", name: "Worldwide" },
+    ],
+    availableChannel: {
+      "@type": "ServiceChannel",
+      serviceUrl: `${siteConfig.url}/order/arrangement`,
+      availableLanguage: ["Indonesian", "English"],
+    },
+    offers: {
+      "@type": "Offer",
+      name: "Paket Project Pertama",
+      price: NEW_CUSTOMER_PROMO_IDR,
+      priceCurrency: "IDR",
+      availability: "https://schema.org/InStock",
+      url: `${siteConfig.url}/order/arrangement`,
+      category: "New customer music arrangement package",
+      eligibleCustomerType: "New customer",
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map(([question, answer]) => ({
+      "@type": "Question",
+      name: question,
+      acceptedAnswer: { "@type": "Answer", text: answer },
+    })),
+  },
+];
+
 export default function Page() {
-  return <SalesSeoLanding
-    lang="id"
-    path="/id/jasa-aransemen-lagu"
-    eyebrow="Jasa aransemen lagu online"
-    title="Jasa Aransemen Lagu Profesional untuk Membawa Ide Musik Anda Jadi Utuh"
-    intro="Sudah punya melodi, chord, lirik, atau rekaman panduan sederhana? FMG membantu mengembangkannya menjadi aransemen yang terstruktur, sesuai karakter artis, dan siap masuk ke tahap rilis. Anda tetap memegang kendali kreatif; scope, revisi, timeline, deliverables, dan hak penggunaan dikonfirmasi sebelum produksi dimulai."
-    serviceName="Jasa aransemen lagu profesional"
-    benefits={["Komposisi dan aransemen sesuai brief", "Produksi audio digital", "Editing, mixing, dan mastering", "Vocal directing", "Scope dan jumlah revisi yang disepakati", "File akhir sesuai deliverables project"]}
-    sections={[
-      { title: "Apa itu jasa aransemen lagu?", paragraphs: ["Jasa aransemen lagu adalah proses mengembangkan ide dasar menjadi bentuk musik yang lengkap. Arranger menentukan struktur, dinamika, harmoni, pilihan instrumen, transisi, dan arah emosi agar lagu bekerja sebagai satu kesatuan.", "Layanan ini cocok untuk songwriter, penyanyi, band, kreator konten, brand, maupun siapa pun yang memiliki ide lagu tetapi membutuhkan partner produksi untuk mewujudkannya secara profesional."] },
-      { title: "Bukan membeli lagu Anda", paragraphs: ["FMG menjual jasa kreatif dan produksi. Kami bukan label yang membeli lagu atau mengambil komposisi hanya karena Anda memesan aransemen. Kepemilikan, credit, aset sesi, material pihak ketiga, serta lisensi atau pengalihan apa pun harus tertulis pada quote, invoice, dan ketentuan project yang Anda setujui.", "Untuk customer baru tersedia paket hemat Rp6.000.000. Harga akhir, tambahan kebutuhan musisi, dan ruang lingkup khusus selalu ditampilkan atau dikonfirmasi sebelum project dimulai."] },
-      { title: "Aransemen yang dibangun untuk tujuan lagu", paragraphs: ["Aransemen untuk single pop tentu berbeda dari lagu kompetisi, soundtrack, jingle, lagu pernikahan, atau materi live. Karena itu kami membaca referensi, target pendengar, range vokal, nuansa, dan tujuan rilis sebelum menentukan pendekatan produksi."] },
-    ]}
-    steps={[
-      { title: "Kirim brief", text: "Isi judul, genre, referensi, rekaman panduan, dan tujuan lagu melalui form order." },
-      { title: "Konfirmasi scope", text: "Tim mengonfirmasi layanan, timeline, revisi, deliverables, ownership, dan pembayaran." },
-      { title: "Produksi & review", text: "Project berjalan melalui milestone yang jelas sampai file akhir disetujui dan diserahkan." },
-    ]}
-    faqs={[
-      { question: "Apakah harus sudah punya demo?", answer: "Tidak perlu menyebutnya demo. Anda cukup mengirim panduan apa pun yang membantu kami memahami lagu: voice note, vokal, chord, lirik, atau referensi." },
-      { question: "Apakah lagu saya dibeli FMG?", answer: "Tidak. Anda membeli jasa aransemen dan produksi. Ketentuan ownership dan credit ditulis secara jelas pada dokumen project." },
-      { question: "Berapa harga jasa aransemen lagu?", answer: "Customer baru dapat memilih paket hemat Rp6.000.000. Kebutuhan di luar scope paket akan dikonfirmasi sebelum pengerjaan." },
-      { question: "Bisa dikerjakan secara online?", answer: "Bisa. Brief, file, review, revisi, komunikasi, dan status project dikelola melalui flow online FMG." },
-      { question: "Apakah termasuk mixing dan mastering?", answer: "Paket yang dipilih pada halaman order menampilkan layanan yang termasuk. Paket customer baru mencakup editing, mixing, dan mastering." },
-    ]}
-    primaryCta="Mulai order aransemen"
-    secondaryCta="Lihat portofolio"
-    secondaryHref="/portfolio?work_type=arrangement"
-    related={[{ href: "/id/jasa-pembuatan-lagu", label: "Jasa pembuatan lagu" }, { href: "/id/cara-bikin-lagu", label: "Cara bikin lagu" }, { href: "/pricing", label: "Harga & paket" }, { href: "/arrangement", label: "English version" }]}
-  />;
+  return (
+    <>
+      <JsonLd id="jasa-aransemen-lagu-schema" data={schema} />
+      <ArrangementServiceLanding />
+    </>
+  );
 }

@@ -44,7 +44,9 @@ module.exports = {
   siteUrl: SITE_URL,
   outDir: "./public",
   generateRobotsTxt: true,
-  generateIndexSitemap: true,
+  // The site is small enough for one direct sitemap. Avoid an index/child
+  // split so search engines cannot retain a stale child sitemap count.
+  generateIndexSitemap: false,
   sitemapSize: 45000,
   autoLastmod: false,
   additionalPaths: async (config) =>

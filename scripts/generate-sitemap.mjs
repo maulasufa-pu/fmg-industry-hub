@@ -14,13 +14,18 @@ for (let attempt = 1; attempt <= 3; attempt += 1) {
   const reportedError = /(?:❌|\[next-sitemap\]\s+Error:)/i.test(lastOutput);
 
   if (result.status === 0 && !reportedError) {
-    const [index, sitemap] = await Promise.all([
-      readFile("public/sitemap.xml", "utf8"),
-      readFile("public/sitemap-0.xml", "utf8"),
-    ]);
-    if (index.includes("<sitemapindex") && sitemap.includes("<urlset")) {
+    const sitemap = await readFile("public/sitemap.xml", "utf8");
+    if (sitemap.includes("<urlset")) {
       process.stdout.write(lastOutput);
       process.exit(0);
+    }
+
+    if (sitemap.includes("<sitemapindex")) {
+      const child = await readFile("public/sitemap-0.xml", "utf8");
+      if (child.includes("<urlset")) {
+        process.stdout.write(lastOutput);
+        process.exit(0);
+      }
     }
   }
 

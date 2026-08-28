@@ -93,6 +93,17 @@ const nextConfig: NextConfig = {
         has: [
           {
             type: "host",
+            value: "www.flemmomusic.com",
+          },
+        ],
+        destination: "https://flemmomusic.com/:path*",
+        permanent: true,
+      },
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "host",
             value: "fmg-industry-hub.vercel.app",
           },
         ],

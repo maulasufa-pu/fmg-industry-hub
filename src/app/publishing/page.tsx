@@ -192,9 +192,15 @@ const Slide = forwardRef<HTMLDivElement, SlideProps>(function Slide(
                 {kicker}
               </div>
             )}
-            <h2 className="mt-4 text-3xl font-semibold leading-tight text-neutral-900 sm:text-4xl md:text-5xl dark:text-white">
-              {title}
-            </h2>
+            {index === 0 ? (
+              <h1 className="mt-4 text-3xl font-semibold leading-tight text-neutral-900 sm:text-4xl md:text-5xl dark:text-white">
+                {title}
+              </h1>
+            ) : (
+              <h2 className="mt-4 text-3xl font-semibold leading-tight text-neutral-900 sm:text-4xl md:text-5xl dark:text-white">
+                {title}
+              </h2>
+            )}
             {description && (
               <p className="mt-4 max-w-2xl text-base leading-relaxed text-neutral-700 sm:text-lg dark:text-white/85">
                 {description}

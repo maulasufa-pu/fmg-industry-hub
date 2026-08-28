@@ -89,6 +89,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/reel",
+        destination: "https://flemmomusic.com/portfolio",
+        permanent: true,
+      },
+      {
         source: "/:path*",
         has: [
           {

@@ -29,6 +29,7 @@ import {
   Users,
   Zap,
 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 
 function useIsMobile(breakpoint = 768): boolean {
@@ -650,6 +651,7 @@ function FloatArrows({ onPrev, onNext }: { onPrev: () => void; onNext: () => voi
 }
 
 export default function CareersPage(): React.JSX.Element {
+  const { pick } = useLanguage();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const sectionRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [active, setActive] = useState(0);
@@ -940,7 +942,7 @@ export default function CareersPage(): React.JSX.Element {
                   Listings
                 </h2>
                 <p className="mt-2 text-sm text-neutral-700 dark:text-white/80">
-                  Showing {filteredRoles.length} role{filteredRoles.length === 1 ? "" : "s"}.
+                  {pick(`Menampilkan ${filteredRoles.length} posisi.`, `Showing ${filteredRoles.length} role${filteredRoles.length === 1 ? "" : "s"}.`)}
                 </p>
 
                 <div className="mt-4 grid gap-4 sm:grid-cols-2 max-h-[62vh] overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

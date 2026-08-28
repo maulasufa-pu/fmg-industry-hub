@@ -1,22 +1,22 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import Link from "next/link";
-import { motion, useAnimation, useInView, useMotionValue, useSpring, useTransform, useScroll, Variants, AnimatePresence } from "framer-motion";
+import { motion, useInView, useMotionValue, useSpring, useTransform, useScroll, Variants } from "framer-motion";
 import type { MotionValue } from "framer-motion";
 // di baris import icon lucide, tambahkan MessageCircle
-import { ArrowRight, Star, Check, CheckCircle2, Rocket, Music, ShieldCheck, Zap, Sparkles, PlayCircle, LineChart, Mic2, MessageCircle } from "lucide-react";
+import { ArrowRight, Star, Check, Music, Sparkles, PlayCircle, Mic2, MessageCircle } from "lucide-react";
 import { Users, Share2, Cpu, BookOpen, Calendar, GraduationCap, type LucideIcon } from "lucide-react";
 import { JsonLd } from "@/components/JsonLd";
 import { siteConfig } from "@/lib/site";
 import { compact } from "@/lib/arrays";
-import BrandMark from "./ui/BrandMark";
 import Image from "next/image";
 import InnovationBadge from "./ui/InnovationBadge";
 import type { PanInfo } from "framer-motion";
 import CinematicVideoHeroHLS from "@/components/CinematicVideoHeroHLS";
 import { CurrencyDropdownAdvanced, type Currency } from "@/components/CurrencyDropdownAdvanced";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import NewCustomerPromoCard from "@/components/public/NewCustomerPromoCard";
 import PaymentMethodsShowcase from "@/components/payments/PaymentMethodsShowcase";
 // import Hero from "./ui/main_container/hero";
@@ -646,6 +646,7 @@ function Checkmark() { return (
 );} 
 
 function Hero() {
+  const { pick } = useLanguage();
   return (
     <section className="relative overflow-hidden pt-12 sm:pt-12">
       <Parallax speed={-0.03}>
@@ -669,13 +670,14 @@ function Hero() {
               viewport={{ once: true }}
               className="mt-4 max-w-xl text-center text-balance text-lg font-medium leading-relaxed text-black dark:text-white"
             >
-              We help you create professional songs from start to release.
+              {pick("Kami membantumu membuat lagu secara profesional, dari ide awal hingga siap rilis.", "We help you create professional songs from start to release.")}
             </motion.p>
           </Parallax>
 
           {/* Deskripsi */}
           <Parallax speed={0.14}>
             <motion.p
+              data-no-translate
               variants={fadeUp}
               custom={4}
               initial={false}
@@ -683,24 +685,10 @@ function Hero() {
               viewport={{ once: true }}
               className="mt-5 max-w-2xl text-center text-balance text-base leading-relaxed text-black dark:text-white"
             >
-              <b>FMG Universe</b> is a creative-technology ecosystem and
-              solution, born from{" "}
-              <b>Flemmo Music Global (FMG) Publishing</b> established since 2018, and later evolved
-              into a holding in 2025 that spans music, technology, and digital
-              innovation. <b>Beyond Sound. Built-in Intelligence</b>. We’re
-              building one integrated operating system for music, rights-first,
-              advanced technology platform that unites songwriting, composition,
-              end-to-end music production (A-Z: Recording, Studio, Sound Design,
-              Mixing and Mastering), audio-visual content creation (film, video,
-              and sound) talent, distribution & media, artist & repertoire
-              (A&R), <b> AI research & development (R&D)</b>, publishing, live
-              event, music academy, and musician community development—with
-              worldwide collaboration as the connective layer. By embedding
-              intelligence into real workflows,{" "}
-              <b>we help artists, labels, and brands</b> to scout smarter,
-              produce faster, own rights, grow royalties, and scale catalogs
-              into lasting equity—ready for shaping positive impact for the next
-              generation in the future.
+              {pick(
+                "FMG Universe adalah ekosistem kreatif dan teknologi dari Flemmo Music Global (FMG) Publishing, yang berdiri sejak 2018 dan berkembang menjadi holding pada 2025. Kami menghubungkan songwriting, komposisi, produksi musik dari awal hingga akhir, konten audio-visual, talent, distribusi dan media, A&R, riset AI, Publishing, live event, akademi musik, serta pengembangan komunitas dalam satu sistem. Dengan kecerdasan yang menyatu ke workflow nyata, kami membantu artis, label, dan brand menemukan peluang lebih tajam, memproduksi lebih cepat, menjaga hak atas karya, menumbuhkan royalti, dan membangun nilai katalog untuk jangka panjang.",
+                "FMG Universe is the creative-technology ecosystem of Flemmo Music Global (FMG) Publishing, established in 2018 and expanded into a holding in 2025. We connect songwriting, composition, end-to-end music production, audio-visual content, talent, distribution and media, A&R, AI research, Publishing, live events, music education, and community development in one system. By embedding intelligence into real workflows, we help artists, labels, and brands discover better opportunities, produce faster, protect their rights, grow royalties, and build lasting catalog value."
+              )}
             </motion.p>
           </Parallax>
 
@@ -716,20 +704,18 @@ function Hero() {
             >
               <div>
                 <h3 className="text-3xl sm:text-4xl font-bold tracking-widest text-black dark:text-white">
-                  Our Vision
+                  {pick("Visi Kami", "Our Vision")}
                 </h3>
                 <p className="mt-3 max-w-xl mx-auto text-base leading-relaxed text-black/90 dark:text-white/100">
-                  Empowering the future of music through innovation,
-                  technology, and intelligence.
+                  {pick("Mendorong masa depan musik lewat inovasi, teknologi, dan kecerdasan.", "Empowering the future of music through innovation, technology, and intelligence.")}
                 </p>
               </div>
               <div>
                 <h3 className="text-3xl sm:text-4xl font-bold tracking-widest text-black dark:text-white">
-                  Our Mission
+                  {pick("Misi Kami", "Our Mission")}
                 </h3>
                 <p className="mt-3 max-w-xl mx-auto text-base leading-relaxed text-black/90 dark:text-white/100">
-                  To unite creativity and technology in one ecosystem—helping
-                  artists and brands create, own, and grow lasting value.
+                  {pick("Menyatukan kreativitas dan teknologi dalam satu ekosistem agar artis dan brand bisa mencipta, memiliki, dan menumbuhkan nilai jangka panjang.", "To unite creativity and technology in one ecosystem—helping artists and brands create, own, and grow lasting value.")}
                 </p>
               </div>
             </motion.div>
@@ -1191,6 +1177,7 @@ function PortfolioShowcase() {
  * About FMG
  *************************/
 function AboutFMG() {
+  const { pick } = useLanguage();
   return (
     <section id="about" className="relative mx-auto max-w-6xl px-4">
       <Parallax speed={0.06}>
@@ -1202,11 +1189,13 @@ function AboutFMG() {
           </div>
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="mx-auto max-w-3xl text-center">
           <motion.h2 variants={fadeUp} className="text-3xl font-bold sm:text-4xl">What is Flemmo Music Global?</motion.h2>
-          <motion.p variants={fadeUp} custom={1} className="mt-3 text-black/70 dark:text-white">
-            Flemmo Music Global (powered by FMG Universe) is a professional music company providing comprehensive services across the creative and business spectrum. 
-            Our expertise spans songwriting, composition, arranging, recording, mixing, mastering, and sound design, as well as publishing, copyright management, licensing, 
-            digital and physical distribution, marketing, promotion, public relations, artist branding, image development, business development, partnerships, sponsorships, and monetization.
-            <br /><br />We serve artists, musicians, and labels, seeking success in both local and international music industries.
+          <motion.p data-no-translate variants={fadeUp} custom={1} className="mt-3 text-black/70 dark:text-white">
+            {pick(
+              "Flemmo Music Global, powered by FMG Universe, adalah perusahaan musik profesional yang menghubungkan kebutuhan kreatif dan bisnis dalam satu ekosistem. Keahlian kami mencakup songwriting, komposisi, aransemen, rekaman, mixing, mastering, sound design, Publishing, pengelolaan hak cipta, lisensi, distribusi digital dan fisik, marketing, promosi, public relations, artist branding, pengembangan bisnis, kemitraan, sponsorship, dan monetisasi.",
+              "Flemmo Music Global, powered by FMG Universe, is a professional music company connecting creative and business needs in one ecosystem. Our expertise spans songwriting, composition, arranging, recording, mixing, mastering, sound design, Publishing, copyright management, licensing, digital and physical distribution, marketing, promotion, public relations, artist branding, business development, partnerships, sponsorships, and monetization."
+            )}
+            <br /><br />
+            {pick("Kami bekerja bersama artis, musisi, dan label yang ingin tumbuh di industri musik Indonesia maupun global.", "We work with artists, musicians, and labels seeking growth in both local and international music industries.")}
           </motion.p>
         </motion.div>
       </Parallax>

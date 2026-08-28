@@ -95,20 +95,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <JsonLd id="organization-schema" data={organization} />
         <JsonLd id="website-schema" data={website} />
-        <ConsentManager>
-          <FeedbackHost />
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem={false}
-            disableTransitionOnChange
-            storageKey="fmg-theme"
-          >
-            <ClientCurrencyProvider defaultCurrency="USD">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          disableTransitionOnChange
+          storageKey="fmg-theme"
+        >
+          <ClientCurrencyProvider defaultCurrency="USD">
+            <ConsentManager>
+              <FeedbackHost />
               <AppShell>{children}</AppShell>
-            </ClientCurrencyProvider>
-          </ThemeProvider>
-        </ConsentManager>
+            </ConsentManager>
+          </ClientCurrencyProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -17,6 +17,7 @@ import type { PanInfo } from "framer-motion";
 import { CurrencyDropdownAdvanced, type Currency } from "@/components/CurrencyDropdownAdvanced";
 import { ARRANGEMENT_ORDER_PATH, ARRANGEMENT_PORTFOLIO_PATH } from "@/lib/arrangement";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import NewCustomerPromoCard from "@/components/public/NewCustomerPromoCard";
 import PaymentMethodsShowcase from "@/components/payments/PaymentMethodsShowcase";
 // import Hero from "./ui/main_container/hero";
@@ -353,7 +354,7 @@ function SplitHeadline({ text }: { text: string }) {
   const words = React.useMemo(() => text.split(" "), [text]);
 
   return (
-    <h1 data-no-translate={text.includes("Beyond Sound") ? true : undefined} className="mx-auto max-w-5xl text-balance text-center text-5xl font-bold leading-tight tracking-tight sm:text-6xl">
+    <h1 data-no-translate={text.includes("Beyond Sound") || text.includes("Aransemen Profesional") ? true : undefined} className="mx-auto max-w-5xl text-balance text-center text-5xl font-bold leading-tight tracking-tight sm:text-6xl">
       {words.map((w, i) => (
         <React.Fragment key={`${w}-${i}`}>
           <motion.span
@@ -643,6 +644,7 @@ function PricingCard({
 }
 
 function Hero({ mode }: { mode: "company" | "sales" }) {
+  const { pick } = useLanguage();
   if (mode === "company") {
     return (
       <section className="relative overflow-hidden pt-12 sm:pt-12">
@@ -710,7 +712,7 @@ function Hero({ mode }: { mode: "company" | "sales" }) {
           <InnovationBadge />
 
           <Parallax speed={0.12}>
-            <SplitHeadline text="Professional Music Arrangement for Your Song." />
+            <SplitHeadline text={pick("Jasa Aransemen Profesional untuk Lagumu.", "Professional Music Arrangement for Your Song.")} />
           </Parallax>
 
           <Parallax speed={0.13}>

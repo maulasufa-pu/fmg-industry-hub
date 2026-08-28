@@ -19,4 +19,6 @@ test("global translator switches deep UI labels in both directions", () => {
   expect(translateWebsiteText("Step 2 of 4", "id")).toBe("Langkah 2 dari 4");
   expect(translateWebsiteText("Global Universe Solution", "id")).toBe("Global Universe Solution");
   expect(translateWebsiteText("Beyond Sound. Built-in Intelligence.", "id")).toBe("Beyond Sound. Built-in Intelligence.");
+  expect(translateWebsiteText("Professional Music Arrangement for Your Song.", "id")).toBe("Jasa Aransemen Profesional untuk Lagumu.");
+  expect(translateWebsiteText("Artists, labels & brands choose FMG Universe", "id")).toBe("Dipercaya artis, label, dan brand");
 });

@@ -83,7 +83,7 @@ export default function SalesSeoLanding({ lang, path, eyebrow, title, intro, sec
 
       <div className="mx-auto max-w-5xl px-5 py-14 sm:py-20">
         <section aria-labelledby="benefits-title">
-          <h2 id="benefits-title" className="text-3xl font-bold">{isId ? "Yang Anda dapatkan" : "What you receive"}</h2>
+          <h2 id="benefits-title" className="text-3xl font-bold">{isId ? "Yang akan kamu dapatkan" : "What you receive"}</h2>
           <ul className="mt-6 grid gap-3 sm:grid-cols-2">{benefits.map((benefit) => <li key={benefit} className="flex gap-3 rounded-2xl border border-slate-200 p-4 dark:border-white/10"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" /><span>{benefit}</span></li>)}</ul>
         </section>
 

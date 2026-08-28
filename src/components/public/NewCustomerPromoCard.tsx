@@ -17,7 +17,7 @@ export default function NewCustomerPromoCard() {
         <BadgePercent className="h-9 w-9 text-rose-600" />
         <h2 className="mt-4 text-3xl font-bold">{pick("Paket Hemat Aransemen", "Arrangement Starter Package")}</h2>
         <p className="mt-3 text-4xl font-black text-rose-600">{formatIdrAnchoredPrice(NEW_CUSTOMER_PROMO_IDR, currency, rates)}</p>
-        <p className="mt-1 text-sm font-semibold">{pick("Penawaran spesial untuk project pertama Anda.", "A special offer for your first project.")}</p>
+        <p className="mt-1 text-sm font-semibold">{pick("Harga spesial untuk project pertamamu.", "A special offer for your first project.")}</p>
         <div className="mt-5 grid gap-2 text-sm sm:grid-cols-2">{["Composition & arrangement", "Digital audio production", "Editing, mixing & mastering", "Vocal directing"].map((item) => <div key={item} className="flex gap-2"><CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />{item}</div>)}</div>
         <Link href={ARRANGEMENT_ORDER_PATH} className="mt-7 inline-flex items-center gap-2 rounded-xl bg-rose-600 px-6 py-3 font-bold text-white hover:bg-rose-700">{pick("Mulai Project Pertama", "Start Your First Project")} <ArrowRight className="h-4 w-4" /></Link>
       </div>

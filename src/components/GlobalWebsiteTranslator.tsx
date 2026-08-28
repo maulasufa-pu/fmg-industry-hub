@@ -4,6 +4,7 @@ import { useLayoutEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import translations from "@/i18n/generated-translations.json";
 import { translationOverrides } from "@/i18n/translation-overrides";
+import { hasIndonesianEditorial, polishIndonesian } from "@/i18n/indonesian-editorial";
 
 type Translation = { id?: string; en?: string };
 const dictionary = { ...(translations as Record<string, Translation>), ...translationOverrides };
@@ -53,6 +54,10 @@ export function translateWebsiteText(value: string, language: "id" | "en") {
   if (PROTECTED_COPY.has(key)) return value;
   const entry = dictionary[key] ?? reverseDictionary.get(key);
   let result = entry?.[language];
+  if (language === "id") {
+    const polished = polishIndonesian(entry?.en ?? key, result ?? key);
+    if (result || polished !== key) result = polished;
+  }
   if (!result && language === "id") {
     const step = key.match(/^Step (\d+) of (\d+)$/i);
     const loading = key.match(/^Loading (.+?)(?:\.{3}|…)?$/i);
@@ -67,6 +72,7 @@ function hasTranslationSource(value: string) {
   return Boolean(
     dictionary[key] ||
     reverseDictionary.has(key) ||
+    hasIndonesianEditorial(key) ||
     /^Step \d+ of \d+$/i.test(key) ||
     /^Loading .+?(?:\.{3}|…)?$/i.test(key)
   );

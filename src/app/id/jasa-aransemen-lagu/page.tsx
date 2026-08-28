@@ -50,7 +50,7 @@ export const metadata: Metadata = {
 
 const faqs = [
   ["Apa yang perlu saya kirim untuk memulai?", "Kirim voice note, vokal, melodi, chord, lirik, struktur kasar, serta dua atau tiga referensi yang membantu menjelaskan arah lagu."],
-  ["Apakah lagu saya akan dibeli atau diambil FMG?", "Tidak. Anda membeli jasa aransemen dan produksi. Credit, ownership, aset sesi, lisensi, dan pengalihan hak hanya berlaku jika tertulis dalam dokumen project yang Anda setujui."],
+  ["Apakah lagu saya akan dibeli atau diambil FMG?", "Tidak. Kamu membeli jasa aransemen dan produksi. Credit, ownership, session assets, lisensi, serta pengalihan hak hanya berlaku jika tertulis dalam dokumen project yang kamu setujui."],
   ["Berapa harga jasa aransemen lagu?", "Paket project pertama tersedia seharga Rp6.000.000 untuk scope yang tercantum. Kebutuhan di luar scope dikonfirmasi sebelum dikerjakan."],
   ["Berapa lama proses aransemen lagu?", "Timeline ditentukan setelah materi dan kompleksitas lagu diperiksa. Tanggal mulai, milestone review, dan target delivery ditulis sebelum produksi."],
   ["Apakah bisa dikerjakan sepenuhnya online?", "Bisa. Brief, file, komunikasi, review, revisi, status project, dan delivery dapat dikelola melalui flow online FMG."],

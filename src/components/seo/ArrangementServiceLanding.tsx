@@ -73,7 +73,7 @@ const process = [
   },
   {
     title: copy("Produksi dan review", "Production and review"),
-    text: copy("Anda memberi feedback pada milestone yang disepakati agar keputusan tetap fokus dan terukur.", "You provide feedback at agreed milestones so every decision stays focused and measurable."),
+    text: copy("Kamu memberi feedback pada setiap milestone yang disepakati agar keputusan tetap fokus dan terukur.", "You provide feedback at agreed milestones so every decision stays focused and measurable."),
   },
   {
     title: copy("Finalisasi dan delivery", "Finalization and delivery"),
@@ -86,11 +86,11 @@ const genres = ["Pop", "R&B", "Rock", "Electronic", "Acoustic", "Ballad", "Hip-h
 const faqs = [
   {
     q: copy("Apa yang perlu saya kirim untuk memulai?", "What do I need to send to get started?"),
-    a: copy("Kirim materi apa pun yang paling jelas menggambarkan lagu: voice note, vokal, melodi, chord, lirik, struktur kasar, dan dua atau tiga referensi dengan catatan bagian yang Anda sukai.", "Send whatever communicates the song best: a voice note, vocal, melody, chords, lyrics, a rough structure, and two or three references with notes about what you like."),
+    a: copy("Kirim materi yang paling jelas menggambarkan lagumu: voice note, vokal, melodi, chord, lirik, struktur kasar, serta dua atau tiga referensi. Beri tahu kami bagian mana yang paling kamu suka.", "Send whatever communicates the song best: a voice note, vocal, melody, chords, lyrics, a rough structure, and two or three references with notes about what you like."),
   },
   {
     q: copy("Apakah lagu saya akan dibeli atau diambil FMG?", "Will FMG buy or take my song?"),
-    a: copy("Tidak. Halaman ini menjual jasa aransemen dan produksi kepada Anda. Credit, ownership, session assets, material pihak ketiga, serta lisensi atau pengalihan apa pun hanya berlaku jika tertulis dalam dokumen project yang Anda setujui.", "No. This page sells arrangement and production services to you. Credits, ownership, session assets, third-party material, and any license or transfer only apply when written into the project documents you approve."),
+    a: copy("Tidak. Di sini kamu membeli jasa aransemen dan produksi. Credit, ownership, session assets, material pihak ketiga, serta lisensi atau pengalihan apa pun hanya berlaku jika tertulis dalam dokumen project yang kamu setujui.", "No. This page sells arrangement and production services to you. Credits, ownership, session assets, third-party material, and any license or transfer only apply when written into the project documents you approve."),
   },
   {
     q: copy("Berapa harga jasa aransemen lagu?", "How much does music arrangement cost?"),
@@ -114,7 +114,7 @@ const faqs = [
   },
   {
     q: copy("Apa bedanya aransemen dan pembuatan lagu?", "What is the difference between arrangement and song creation?"),
-    a: copy("Aransemen cocok ketika identitas inti lagu—misalnya melodi atau lirik—sudah ada dan perlu dikembangkan menjadi musik yang utuh. Jika Anda baru memiliki cerita, tema, atau brief dan membutuhkan lagu dibangun dari awal, pilih jasa pembuatan lagu.", "Arrangement is ideal when the song's core identity—such as its melody or lyrics—already exists and needs to become a complete production. If you only have a story, theme, or brief and need the song built from the ground up, choose song creation."),
+    a: copy("Aransemen cocok jika identitas inti lagunya—seperti melodi atau lirik—sudah ada dan perlu dikembangkan menjadi musik yang utuh. Kalau kamu baru punya cerita, tema, atau brief dan ingin membangun lagu dari awal, pilih jasa pembuatan lagu.", "Arrangement is ideal when the song's core identity—such as its melody or lyrics—already exists and needs to become a complete production. If you only have a story, theme, or brief and need the song built from the ground up, choose song creation."),
   },
 ];
 
@@ -141,11 +141,11 @@ export default function ArrangementServiceLanding() {
                 {isId ? "Jasa aransemen lagu profesional" : "Professional music arrangement service"}
               </p>
               <h1 className="mt-6 max-w-5xl text-balance text-4xl font-black leading-[1.04] tracking-[-0.04em] sm:text-6xl lg:text-7xl">
-                {isId ? "Bawa ide lagu Anda menjadi produksi yang terdengar utuh." : "Turn your song idea into a production that feels complete."}
+                {isId ? "Bawa ide lagumu menjadi produksi yang terdengar utuh." : "Turn your song idea into a production that feels complete."}
               </h1>
               <p className="mt-7 max-w-3xl text-lg leading-8 text-white/70 sm:text-xl">
                 {isId
-                  ? "FMG mengembangkan melodi, chord, lirik, atau rekaman panduan Anda menjadi aransemen dengan struktur, dinamika, instrumen, dan arah sound yang sengaja dibangun untuk karakter lagu."
+                  ? "FMG mengembangkan melodi, chord, lirik, atau rekaman panduanmu menjadi aransemen dengan struktur, dinamika, instrumen, dan arah sound yang dibangun khusus untuk karakter lagumu."
                   : "FMG develops your melody, chords, lyrics, or guide recording into an arrangement with structure, dynamics, instrumentation, and a sound direction intentionally built around the song."}
               </p>
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -159,7 +159,7 @@ export default function ArrangementServiceLanding() {
             </div>
 
             <aside className="rounded-[2rem] border border-white/15 bg-white/[0.06] p-6 shadow-2xl shadow-violet-950/30 backdrop-blur sm:p-8">
-              <p className="text-sm font-semibold text-white/55">{isId ? "Anda bisa mulai dari" : "You can start with"}</p>
+              <p className="text-sm font-semibold text-white/55">{isId ? "Kamu bisa mulai dari" : "You can start with"}</p>
               <ul className="mt-5 space-y-4">
                 {inputs.map((item) => (
                   <li key={item.en} className="flex items-start gap-3 text-sm leading-6 text-white/85">
@@ -178,7 +178,7 @@ export default function ArrangementServiceLanding() {
       <section className="bg-white py-20 text-slate-950 sm:py-28" aria-labelledby="outcomes-title">
         <div className="mx-auto max-w-7xl px-5">
           <div className="max-w-3xl">
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-violet-700">{isId ? "Yang sebenarnya Anda beli" : "What you are actually buying"}</p>
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-violet-700">{isId ? "Yang sebenarnya kamu beli" : "What you are actually buying"}</p>
             <h2 id="outcomes-title" className="mt-4 text-balance text-3xl font-black tracking-tight sm:text-5xl">
               {isId ? "Bukan sekadar banyak instrumen. Setiap keputusan harus punya fungsi." : "Not simply more instruments. Every decision needs a purpose."}
             </h2>
@@ -245,13 +245,13 @@ export default function ArrangementServiceLanding() {
             <article className="rounded-[2rem] bg-slate-950 p-8 text-white sm:p-10">
               <Music2 className="h-8 w-8 text-violet-300" />
               <h3 className="mt-6 text-2xl font-black">{isId ? "Pilih jasa aransemen" : "Choose arrangement"}</h3>
-              <p className="mt-4 leading-7 text-white/65">{isId ? "Cocok jika Anda sudah memiliki identitas inti lagu—melodi, lirik, chord, atau bentuk dasar—dan ingin mengembangkannya menjadi produksi musik yang utuh." : "Best when you already have the song's core identity—a melody, lyrics, chords, or a basic form—and want to develop it into a complete music production."}</p>
+              <p className="mt-4 leading-7 text-white/65">{isId ? "Cocok jika kamu sudah punya identitas inti lagu—melodi, lirik, chord, atau bentuk dasar—dan ingin mengembangkannya menjadi produksi musik yang utuh." : "Best when you already have the song's core identity—a melody, lyrics, chords, or a basic form—and want to develop it into a complete music production."}</p>
               <Link href={ARRANGEMENT_ORDER_PATH} className="mt-7 inline-flex items-center gap-2 font-bold text-violet-300">{isId ? "Mulai aransemen" : "Start arrangement"}<ArrowRight className="h-4 w-4" /></Link>
             </article>
             <article className="rounded-[2rem] border border-slate-300 bg-white p-8 sm:p-10">
               <Sparkles className="h-8 w-8 text-rose-600" />
               <h3 className="mt-6 text-2xl font-black">{isId ? "Pilih jasa pembuatan lagu" : "Choose song creation"}</h3>
-              <p className="mt-4 leading-7 text-slate-600">{isId ? "Cocok jika Anda baru memiliki cerita, tema, pesan, atau brief dan membutuhkan bantuan membangun lirik, melodi, komposisi, serta produksi dari awal." : "Best when you only have a story, theme, message, or brief and need help building lyrics, melody, composition, and production from the ground up."}</p>
+              <p className="mt-4 leading-7 text-slate-600">{isId ? "Cocok jika kamu baru punya cerita, tema, pesan, atau brief dan ingin membangun lirik, melodi, komposisi, serta produksinya dari awal." : "Best when you only have a story, theme, message, or brief and need help building lyrics, melody, composition, and production from the ground up."}</p>
               <Link href="/id/jasa-pembuatan-lagu" className="mt-7 inline-flex items-center gap-2 font-bold text-violet-700">{isId ? "Lihat jasa pembuatan lagu" : "Explore song creation"}<ArrowRight className="h-4 w-4" /></Link>
             </article>
           </div>
@@ -310,7 +310,7 @@ export default function ArrangementServiceLanding() {
           <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-violet-700">{isId ? "Lintas genre dan kebutuhan" : "Across genres and use cases"}</p>
-              <h2 id="genre-title" className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">{isId ? "Referensi memberi arah. Lagu Anda tetap punya identitas." : "References give direction. Your song keeps its identity."}</h2>
+              <h2 id="genre-title" className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">{isId ? "Referensi memberi arah. Lagumu tetap punya identitas." : "References give direction. Your song keeps its identity."}</h2>
               <p className="mt-5 leading-7 text-slate-600">{isId ? "Kami membaca referensi untuk memahami energi, warna, groove, ruang, dan target produksi—bukan untuk menyalin lagu lain." : "We read references to understand energy, color, groove, space, and production goals—not to copy another song."}</p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -324,8 +324,8 @@ export default function ArrangementServiceLanding() {
         <div className="mx-auto max-w-5xl px-5">
           <div className="rounded-[2rem] bg-slate-950 p-8 text-white sm:p-12">
             <ShieldCheck className="h-10 w-10 text-emerald-400" />
-            <h2 id="ownership-title" className="mt-6 text-balance text-3xl font-black tracking-tight sm:text-5xl">{isId ? "Lagu Anda tidak sedang ditawarkan untuk dijual kepada kami." : "You are not pitching your song for us to buy."}</h2>
-            <p className="mt-6 max-w-3xl text-lg leading-8 text-white/65">{isId ? "FMG menjual jasa kreatif dan produksi kepada Anda. Ownership, credit, hak penggunaan, session assets, dan material pihak ketiga dijelaskan dalam dokumen project. Tidak ada pengalihan hak yang disembunyikan di balik tombol order." : "FMG sells creative and production services to you. Ownership, credits, usage rights, session assets, and third-party material are explained in the project documents. No rights transfer is hidden behind the order button."}</p>
+            <h2 id="ownership-title" className="mt-6 text-balance text-3xl font-black tracking-tight sm:text-5xl">{isId ? "Lagumu tidak sedang ditawarkan untuk kami beli." : "You are not pitching your song for us to buy."}</h2>
+            <p className="mt-6 max-w-3xl text-lg leading-8 text-white/65">{isId ? "Di sini FMG menawarkan jasa kreatif dan produksi untukmu. Ownership, credit, hak penggunaan, session assets, dan material pihak ketiga dijelaskan dalam dokumen project. Tidak ada pengalihan hak yang disembunyikan di balik tombol order." : "FMG sells creative and production services to you. Ownership, credits, usage rights, session assets, and third-party material are explained in the project documents. No rights transfer is hidden behind the order button."}</p>
             <Link href="/legal/terms" className="mt-7 inline-flex items-center gap-2 font-bold text-emerald-300">{isId ? "Baca ketentuan" : "Read the terms"}<ArrowRight className="h-4 w-4" /></Link>
           </div>
         </div>
@@ -352,8 +352,8 @@ export default function ArrangementServiceLanding() {
         <div className="mx-auto grid max-w-7xl gap-12 px-5 lg:grid-cols-[0.62fr_1.38fr]">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-violet-300">FAQ</p>
-            <h2 id="faq-title" className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">{isId ? "Sebelum Anda order." : "Before you order."}</h2>
-            <p className="mt-5 leading-7 text-white/60">{isId ? "Jika kebutuhan Anda belum terjawab, kirim pertanyaan tanpa membuat akun terlebih dahulu." : "If your question is not answered here, send an inquiry before creating an account."}</p>
+            <h2 id="faq-title" className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">{isId ? "Sebelum kamu order." : "Before you order."}</h2>
+            <p className="mt-5 leading-7 text-white/60">{isId ? "Kalau kebutuhanmu belum terjawab, kirim pertanyaan dulu tanpa perlu membuat akun." : "If your question is not answered here, send an inquiry before creating an account."}</p>
             <Link href="/services/inquiry" className="mt-7 inline-flex items-center gap-2 font-bold text-violet-300">{isId ? "Tanya tim FMG" : "Ask the FMG team"}<ArrowRight className="h-4 w-4" /></Link>
           </div>
           <div className="divide-y divide-white/10 border-y border-white/10">
@@ -374,7 +374,7 @@ export default function ArrangementServiceLanding() {
         <div className="relative mx-auto max-w-5xl px-5 text-center">
           <p className="text-sm font-black uppercase tracking-[0.2em] text-violet-100">FMG Universe</p>
           <h2 id="final-cta-title" className="mt-5 text-balance text-4xl font-black tracking-tight sm:text-6xl">{isId ? "Lagunya sudah ada. Sekarang beri bentuk yang layak didengar." : "The song already exists. Now give it a form worth hearing."}</h2>
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-violet-100">{isId ? "Mulai dari materi yang Anda punya. Kami bantu menentukan langkah berikutnya dengan scope yang jelas." : "Start with the material you have. We will help define the next step with a clear scope."}</p>
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-violet-100">{isId ? "Mulai dari materi yang kamu punya. Kami bantu menentukan langkah berikutnya dengan scope yang jelas." : "Start with the material you have. We will help define the next step with a clear scope."}</p>
           <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
             <Link href={ARRANGEMENT_ORDER_PATH} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-7 py-3 font-bold text-violet-800 transition hover:-translate-y-0.5 hover:bg-violet-50">{isId ? "Mulai project saya" : "Start my project"}<ArrowRight className="h-4 w-4" /></Link>
             <Link href="/services/inquiry" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/35 px-7 py-3 font-bold text-white transition hover:bg-white/10">{isId ? "Konsultasi scope" : "Discuss the scope"}</Link>

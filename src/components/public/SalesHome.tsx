@@ -53,19 +53,23 @@ export default function SalesHome({ language }: { language: "en" | "id" }) {
   return (
     <main className="min-h-screen bg-white text-slate-950 dark:bg-black dark:text-white">
       <JsonLd id={`${language}-sales-home`} data={serviceSchema} />
-      <HomePromoPopup />
       <section className="relative overflow-hidden px-5 py-20 sm:py-28">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(124,58,237,0.18),transparent_36%),radial-gradient(circle_at_85%_35%,rgba(244,63,94,0.13),transparent_32%)]" />
-        <div className="relative mx-auto max-w-6xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-violet-600 dark:text-violet-300">{isId ? "Aransemen dan produksi musik" : "Music arrangement & production"}</p>
-          <h1 className="mt-5 max-w-5xl text-balance text-4xl font-bold tracking-tight sm:text-6xl lg:text-7xl">{isId ? "Punya ide lagu? Kami bantu menggarapnya sampai siap dirilis." : "Bring your song idea. We will help shape it into a release-ready production."}</h1>
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600 dark:text-slate-300">{isId ? "Kirim lirik, melodi, chord, atau rekaman sederhana yang sudah kamu punya. FMG Universe membantu mengembangkannya menjadi aransemen dan produksi yang utuh. Semua scope dijelaskan sebelum pengerjaan dimulai." : "Send the lyrics, melody, chords, or simple recording you already have. FMG Universe develops your material into a complete arrangement and production, with the scope confirmed before work begins."}</p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/order/arrangement" className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-6 py-3 font-semibold text-white hover:bg-violet-700">{isId ? "Mulai project-mu" : "Start your project"}<ArrowRight className="h-4 w-4" /></Link>
-            <Link href={paths.portfolio} className="rounded-xl border border-slate-300 px-6 py-3 font-semibold dark:border-white/20">{isId ? "Dengarkan portofolio" : "Listen to our work"}</Link>
+        <div className="relative mx-auto grid max-w-7xl items-center gap-12 xl:grid-cols-[minmax(0,1.18fr)_minmax(340px,0.82fr)] xl:gap-16">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-violet-600 dark:text-violet-300">{isId ? "Aransemen dan produksi musik" : "Music arrangement & production"}</p>
+            <h1 className="mt-5 max-w-5xl text-balance text-4xl font-bold tracking-tight sm:text-6xl xl:text-7xl">{isId ? "Punya ide lagu? Kami bantu menggarapnya sampai siap dirilis." : "Bring your song idea. We will help shape it into a release-ready production."}</h1>
+            <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600 dark:text-slate-300">{isId ? "Kirim lirik, melodi, chord, atau rekaman sederhana yang sudah kamu punya. FMG Universe membantu mengembangkannya menjadi aransemen dan produksi yang utuh. Semua scope dijelaskan sebelum pengerjaan dimulai." : "Send the lyrics, melody, chords, or simple recording you already have. FMG Universe develops your material into a complete arrangement and production, with the scope confirmed before work begins."}</p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/order/arrangement" className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-6 py-3 font-semibold text-white hover:bg-violet-700">{isId ? "Mulai project-mu" : "Start your project"}<ArrowRight className="h-4 w-4" /></Link>
+              <Link href={paths.portfolio} className="rounded-xl border border-slate-300 px-6 py-3 font-semibold dark:border-white/20">{isId ? "Dengarkan portofolio" : "Listen to our work"}</Link>
+            </div>
+            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-slate-600 dark:text-slate-300">
+              {(isId ? ["Alur kerja jelas", "Revisi sesuai paket", "File akhir siap digunakan", "Hak penggunaan dijelaskan sejak awal"] : ["Clear workflow", "Package-based revisions", "Ready-to-use final files", "Usage rights clarified upfront"]).map((item) => <span key={item} className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" />{item}</span>)}
+            </div>
           </div>
-          <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-slate-600 dark:text-slate-300">
-            {(isId ? ["Alur kerja jelas", "Revisi sesuai paket", "File akhir siap digunakan", "Hak penggunaan dijelaskan sejak awal"] : ["Clear workflow", "Package-based revisions", "Ready-to-use final files", "Usage rights clarified upfront"]).map((item) => <span key={item} className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" />{item}</span>)}
+          <div className="mx-auto w-full max-w-xl xl:max-w-none">
+            <HomePromoPopup />
           </div>
         </div>
       </section>

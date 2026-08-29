@@ -53,25 +53,42 @@ export default function HomePromoPopup() {
       {!open && (
         <motion.button
           type="button"
-          initial={{ opacity: 0, x: -16 }}
-          animate={{ opacity: 1, x: 0 }}
-          whileHover={{ y: -3, scale: 1.02 }}
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          whileHover={{ y: -6, scale: 1.015 }}
           whileTap={{ scale: 0.97 }}
           onClick={() => setOpen(true)}
-          className="fixed bottom-5 left-4 z-40 inline-flex items-center gap-2 rounded-full border border-rose-300/80 bg-white/95 px-4 py-3 text-sm font-bold text-slate-950 shadow-[0_14px_45px_rgba(225,29,72,0.25)] backdrop-blur-xl dark:border-rose-700 dark:bg-slate-950/95 dark:text-white sm:bottom-7 sm:left-7"
+          className="group relative flex min-h-[280px] w-full overflow-hidden rounded-[2rem] border border-rose-300/60 bg-slate-950 p-6 text-left text-white shadow-[0_24px_70px_rgba(88,28,135,0.24)] transition-shadow hover:shadow-[0_30px_85px_rgba(225,29,72,0.3)] dark:border-rose-700/70 sm:min-h-[330px] sm:p-8"
           aria-label={pick("Buka promo pelanggan baru", "Open new customer offer")}
         >
-          <span className="relative grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-rose-500 to-orange-400 text-white">
-            <Gift className="h-4 w-4" />
-            <span className="absolute inset-0 animate-ping rounded-full bg-rose-400/30" />
+          <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_10%,rgba(251,113,133,0.35),transparent_36%),radial-gradient(circle_at_15%_90%,rgba(124,58,237,0.42),transparent_42%),linear-gradient(135deg,#020617,#0f172a)]" />
+          <motion.span aria-hidden className="pointer-events-none absolute -right-14 -top-14 h-48 w-48 rounded-full border border-white/15" animate={{ rotate: 360 }} transition={{ duration: 22, repeat: Infinity, ease: "linear" }}>
+            <span className="absolute bottom-4 left-2 h-4 w-4 rounded-full bg-rose-400 shadow-[0_0_25px_rgba(251,113,133,0.9)]" />
+          </motion.span>
+          <span className="relative flex w-full flex-col justify-between gap-8 self-stretch">
+            <span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-rose-200 backdrop-blur">
+                <Gift className="h-3.5 w-3.5" />
+                {pick("Promo project pertama", "First-project offer")}
+              </span>
+              <span className="mt-5 block text-3xl font-black leading-tight tracking-[-0.035em] sm:text-4xl">
+                {pick("Mulai lagumu dengan paket lengkap.", "Start your song with one complete package.")}
+              </span>
+              <span className="mt-3 block text-3xl font-black tracking-tight text-rose-300">
+                {formatIdrAnchoredPrice(NEW_CUSTOMER_PROMO_IDR, currency, rates)}
+              </span>
+            </span>
+            <span className="inline-flex items-center gap-2 font-bold text-white">
+              {pick("Buka detail promo", "Open offer details")}
+              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+            </span>
           </span>
-          <span>{pick("Promo project pertama", "First-project offer")}</span>
         </motion.button>
       )}
 
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className="max-h-[calc(100dvh-1rem)] w-[min(880px,calc(100vw-1rem))] max-w-none overflow-x-hidden overflow-y-auto border-white/15 bg-slate-950 p-0 text-white shadow-[0_30px_100px_rgba(0,0,0,0.65)] sm:max-h-[calc(100dvh-2rem)] sm:w-[min(880px,calc(100vw-2rem))] sm:rounded-[2rem]"
+          className="max-h-[calc(100dvh-1rem)] w-[min(1120px,calc(100vw-1rem))] max-w-none overflow-x-hidden overflow-y-auto border-white/15 bg-slate-950 p-0 text-white shadow-[0_30px_100px_rgba(0,0,0,0.65)] sm:max-h-[calc(100dvh-2rem)] sm:w-[min(1120px,calc(100vw-2rem))] sm:rounded-[2rem]"
         >
           <div className="relative isolate overflow-hidden rounded-[inherit]">
             <div className="pointer-events-none absolute inset-0 -z-20 bg-[radial-gradient(circle_at_15%_10%,rgba(244,63,94,0.38),transparent_34%),radial-gradient(circle_at_90%_85%,rgba(124,58,237,0.35),transparent_38%),linear-gradient(135deg,#020617,#0f172a_55%,#020617)]" />
@@ -84,8 +101,8 @@ export default function HomePromoPopup() {
               <span className="absolute bottom-7 left-4 h-4 w-4 rounded-full bg-rose-400 shadow-[0_0_28px_rgba(251,113,133,0.9)]" />
             </motion.div>
 
-            <div className="grid gap-0 lg:grid-cols-[0.82fr_1.18fr]">
-              <div className="relative hidden min-h-[560px] overflow-hidden border-r border-white/10 p-7 [container-type:inline-size] lg:flex lg:flex-col lg:justify-between xl:p-9">
+            <div className="grid gap-0 lg:grid-cols-[0.84fr_1.16fr]">
+              <div className="relative hidden min-h-[580px] overflow-hidden border-r border-white/10 p-8 [container-type:inline-size] lg:flex lg:flex-col lg:justify-between xl:p-10">
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-rose-200 backdrop-blur">
                     <Sparkles className="h-3.5 w-3.5" />

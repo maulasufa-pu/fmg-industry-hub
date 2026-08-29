@@ -32,5 +32,8 @@ describe("home sales promo", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Apa saja yang termasuk?" }));
     expect(screen.getByText("Komposisi & aransemen")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(await screen.findByRole("button", { name: "Buka promo pelanggan baru" })).toBeInTheDocument();
   });
 });

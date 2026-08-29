@@ -1919,18 +1919,16 @@ export default function LandingPage() {
 
         <div className="grid gap-6 sm:gap-8">
           {/* 1) FMG Universe */}
-          <div className="grid items-center gap-4 rounded-3xl border border-black/10 bg-gradient-to-br from-white to-neutral-50 p-4 shadow-sm transition hover:shadow-md dark:border-white/10 dark:from-zinc-950 dark:to-black sm:grid-cols-[132px_1fr] sm:gap-6 sm:p-6">
+          <div className="grid items-center gap-4 rounded-3xl border border-black/10 bg-gradient-to-br from-white to-neutral-50 p-4 shadow-sm transition hover:shadow-md dark:border-white/10 dark:from-zinc-950 dark:to-black sm:grid-cols-[208px_1fr] sm:gap-6 sm:p-6">
             <div
-              className="relative mx-auto aspect-square w-28 overflow-hidden rounded-2xl p-2 ring-1 ring-black/10 sm:mx-0 sm:w-32
-                        [background:linear-gradient(135deg,_#0b0b0b_0%_50%,_#ffffff_50%_100%)]
-                        dark:[background:linear-gradient(135deg,_#0b0b0b_0%_50%,_#f5f5f5_50%_100%)]"
+              className="relative mx-auto aspect-[3/2] w-44 overflow-hidden rounded-2xl bg-black ring-1 ring-black/10 sm:mx-0 sm:w-48"
             >
               <Image
-                src="/logo/FMG-Universe-Flemmo-Music-Global.png"
+                src="/logo/FMG-Universe-2026.png"
                 alt="FMG Universe logo"
                 fill
                 className="rounded-2xl object-contain"
-                sizes="(max-width: 640px) 7rem, 8rem"
+                sizes="(max-width: 640px) 11rem, 12rem"
                 priority
               />
             </div>

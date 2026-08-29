@@ -105,7 +105,12 @@ export default function Footer(): React.JSX.Element {
       />
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <BrandMark href={language === "id" ? "/id" : "/"} logoSrc="/logo/FMG-Universe-Flemmo-Music-Global.png"/>
+          <BrandMark
+            href={language === "id" ? "/id" : "/"}
+            logoSrc="/logo/FMG-Universe-2026.png"
+            logoSize={60}
+            logoClassName="h-10 w-[60px] rounded-md object-contain flex-shrink-0"
+          />
           <form
             onSubmit={onSubmit}
             className="flex w-full max-w-md items-center gap-2 sm:w-auto"

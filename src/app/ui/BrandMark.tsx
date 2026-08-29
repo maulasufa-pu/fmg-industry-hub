@@ -56,7 +56,7 @@ export default function BrandMark({
   logoSrc,
   logoAlt = "FMG Universe Logo",
   logoSize = 40,
-  logoClassName = "rounded-md object-cover flex-shrink-0", // tambahkan shrink-0 konsisten
+  logoClassName = "rounded-md object-contain flex-shrink-0", // preserve non-square brand lockups
   priority = true,
   subtitleBasePx = 10,
   subtitleMinPx = 1,

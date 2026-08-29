@@ -2311,7 +2311,7 @@ const PortfolioCard = React.memo(function PortfolioCard({
     }
     
     // Priority 5: Default FMG logo
-    return "/logo/FMG-Universe-Flemmo-Music-Global.png";
+    return "/logo/FMG-Universe-2026.png";
   };
 
   // Artwork/Thumbnail Priority System:
@@ -2340,7 +2340,7 @@ const PortfolioCard = React.memo(function PortfolioCard({
     }
     
     // Final fallback to default logo
-    setImgSrc("/logo/FMG-Universe-Flemmo-Music-Global.png");
+    setImgSrc("/logo/FMG-Universe-2026.png");
     setImgError(true);
   };
 
@@ -2369,7 +2369,7 @@ const PortfolioCard = React.memo(function PortfolioCard({
               alt={item.song_title}
               fill
               loading="lazy"
-              className={`object-cover ${!hasCustomArtwork ? 'opacity-50' : ''}`}
+              className={hasCustomArtwork ? "object-cover" : "object-contain p-1 opacity-70"}
               sizes="64px"
               quality={70}
               onError={handleImageError}
@@ -2522,7 +2522,9 @@ const PortfolioCard = React.memo(function PortfolioCard({
           loading="lazy"
           placeholder="blur"
           blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzJhMmEzMiIvPjwvc3ZnPg=="
-          className={`object-cover transition-transform duration-700 group-hover:scale-110 ${!hasCustomArtwork ? 'opacity-40' : ''}`}
+          className={hasCustomArtwork
+            ? "object-cover transition-transform duration-700 group-hover:scale-110"
+            : "object-contain p-3 opacity-70"}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           quality={75}
           onError={handleImageError}
@@ -3143,7 +3145,7 @@ function PortfolioDetailModal({
     }
     
     // Priority 5: Default FMG logo
-    return "/logo/FMG-Universe-Flemmo-Music-Global.png";
+    return "/logo/FMG-Universe-2026.png";
   };
 
   React.useEffect(() => {
@@ -3178,10 +3180,10 @@ function PortfolioDetailModal({
             src={imgSrc}
             alt={item.song_title}
             fill
-            className="object-cover"
+            className={imgSrc === "/logo/FMG-Universe-2026.png" ? "object-contain p-4" : "object-cover"}
             sizes="(max-width: 640px) 100vw, 672px"
             priority
-            onError={() => setImgSrc("/logo/FMG-Universe-Flemmo-Music-Global.png")}
+            onError={() => setImgSrc("/logo/FMG-Universe-2026.png")}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         </div>

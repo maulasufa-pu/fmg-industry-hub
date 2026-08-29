@@ -447,11 +447,11 @@ export const HeaderSection = (): React.JSX.Element => {
 
             <Link href={homeHref} className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
               <Image
-                src="/logo/FMG-Universe-Flemmo-Music-Global.png"
+                src="/logo/FMG-Universe-2026.png"
                 alt="FMG Universe Logo"
-                width={100}
-                height={100}
-                className="h-9 w-9 rounded-md object-cover"
+                width={120}
+                height={80}
+                className="h-9 w-[54px] rounded-md object-contain"
                 priority
               />
             </Link>
@@ -475,11 +475,11 @@ export const HeaderSection = (): React.JSX.Element => {
           <div className="hidden h-16 items-center justify-between min-[1028px]:flex">
             <Link href={homeHref} className="flex items-center gap-2 font-semibold flex-shrink-0 min-w-0">
               <Image
-                src="/logo/FMG-Universe-Flemmo-Music-Global.png"
+                src="/logo/FMG-Universe-2026.png"
                 alt="FMG Universe Logo"
-                width={100}
-                height={100}
-                className="block h-10 w-10 rounded-md object-cover flex-shrink-0"
+                width={120}
+                height={80}
+                className="block h-10 w-[60px] rounded-md object-contain flex-shrink-0"
                 priority
               />
               <div className="min-w-0">

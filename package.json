@@ -7,7 +7,6 @@
     "generate:roles": "node scripts/generate-roles.mjs",
     "prebuild": "npm run validate:env",
     "build": "next build",
-    "postbuild": "npm run sitemap",
     "start": "next start",
     "lint": "eslint src --max-warnings 0",
     "typecheck": "tsc --noEmit",
@@ -33,8 +32,7 @@
     "global-2025": "node scripts/global-standard-2025.js",
     "seo:generate": "ts-node --esm --transpile-only scripts/generate-seo.ts",
     "seo:inject": "ts-node --esm --transpile-only scripts/inject-seo-metadata.ts",
-    "seo:dedupe": "ts-node --esm --transpile-only scripts/seo-dedupe.ts",
-    "sitemap": "node scripts/generate-sitemap.mjs"
+    "seo:dedupe": "ts-node --esm --transpile-only scripts/seo-dedupe.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -87,7 +85,6 @@
     "fast-glob": "^3.3.3",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
-    "next-sitemap": "^4.2.3",
     "node-html-parser": "^7.0.1",
     "postcss": "8.5.26",
     "start-server-and-test": "^2.0.13",

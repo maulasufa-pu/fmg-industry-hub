@@ -1,9 +1,0 @@
-# *
-User-agent: *
-Allow: /
-
-# Host
-Host: https://flemmomusic.com
-
-# Sitemaps
-Sitemap: https://flemmomusic.com/sitemap.xml

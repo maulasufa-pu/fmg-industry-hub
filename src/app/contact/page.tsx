@@ -17,6 +17,8 @@ import {
   Clock,
   ExternalLink
 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { siteConfig } from "@/lib/site";
 
 type Reason =
   | "project"
@@ -121,6 +123,7 @@ function StatusBanner({ state }: { state: FormState }): React.JSX.Element | null
 }
 
 export default function ContactPage(): React.JSX.Element {
+  const { pick } = useLanguage();
   const reduce = useReducedMotion();
   const [values, setValues] = useState<FormValues>(defaultValues);
   const [state, setState] = useState<FormState>({ status: "idle" });
@@ -211,33 +214,33 @@ export default function ContactPage(): React.JSX.Element {
   const channels: ReadonlyArray<Channel> = [
     {
       icon: Megaphone,
-      title: "Project & Creative",
-      desc: "Campaign briefs, content, music & media production. From idea to release.",
+      title: pick("Project & Kreatif", "Project & Creative"),
+      desc: pick("Brief campaign, konten, serta produksi musik dan media dari ide hingga rilis.", "Campaign briefs, content, music & media production. From idea to release."),
       href: "/media/inquiry",
-      badge: "Priority",
+      badge: pick("Prioritas", "Priority"),
     },
     {
       icon: Handshake,
-      title: "Partnerships",
-      desc: "Brand collaborations, co-programs, and long-term partnerships.",
+      title: pick("Partnership", "Partnerships"),
+      desc: pick("Kolaborasi brand, program bersama, dan partnership jangka panjang.", "Brand collaborations, co-programs, and long-term partnerships."),
       href: "/partners",
     },
     {
       icon: Music2,
       title: "Publishing / Rights",
-      desc: "Work registration, split sheets, royalty claims, sync licensing.",
+      desc: pick("Registrasi karya, split sheet, klaim royalti, dan sync licensing.", "Work registration, split sheets, royalty claims, sync licensing."),
       href: "/publishing/inquiry",
     },
     {
       icon: Newspaper,
       title: "Press & Media",
-      desc: "Interviews, press kit, media releases, and coverage info.",
+      desc: pick("Wawancara, press kit, media release, dan informasi liputan.", "Interviews, press kit, media releases, and coverage info."),
       href: "/press",
     },
     {
       icon: ShieldCheck,
-      title: "Support",
-      desc: "General questions, request status, or account help.",
+      title: pick("Bantuan", "Support"),
+      desc: pick("Pertanyaan umum, status permintaan, atau bantuan akun.", "General questions, request status, or account help."),
       href: "/help",
     },
   ];
@@ -264,13 +267,16 @@ export default function ContactPage(): React.JSX.Element {
         <div className="mx-auto max-w-5xl">
           <div className="inline-flex items-center gap-2 rounded-full bg-neutral-900/70 px-3 py-1 text-[11px] uppercase tracking-wider text-white backdrop-blur dark:bg-white/10">
             <span className="h-1.5 w-1.5 rounded-full bg-white/90" />
-            Contact FMG Universe
+            {pick("Hubungi FMG Universe", "Contact FMG Universe")}
           </div>
           <h1 className="mt-4 text-3xl font-semibold leading-tight sm:text-4xl md:text-5xl">
-            Let’s build something remarkable.
+            {pick("Mari wujudkan sesuatu yang berarti.", "Let’s build something remarkable.")}
           </h1>
           <p className="mt-3 max-w-2xl text-neutral-700 dark:text-white/80">
-            Beyond Sound. Built-in Intelligence. We help artists, labels, and brands turn creativity into compounding value — with one operating system for music.
+            {pick(
+              "Beyond Sound. Built-in Intelligence. Kami membantu artis, label, dan brand mengubah ide kreatif menjadi karya dan peluang yang terus berkembang dalam satu ekosistem musik.",
+              "Beyond Sound. Built-in Intelligence. We help artists, labels, and brands turn creativity into compounding value — with one operating system for music."
+            )}
           </p>
 
           <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-neutral-700 dark:text-white/70">
@@ -281,7 +287,7 @@ export default function ContactPage(): React.JSX.Element {
               <MapPin className="h-4 w-4" /> Jakarta, ID
             </span>
             <span className="inline-flex items-center gap-2">
-              <Clock className="h-4 w-4" /> Mon–Fri, 10:00–18:00 (GMT+7)
+              <Clock className="h-4 w-4" /> {pick("Sen–Jum, 10.00–18.00 WIB", "Mon–Fri, 10:00–18:00 (GMT+7)")}
             </span>
           </div>
         </div>
@@ -318,9 +324,9 @@ export default function ContactPage(): React.JSX.Element {
         <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-5">
           <div className="md:col-span-3">
             <div className="rounded-2xl border border-neutral-900/10 bg-white/60 p-5 shadow-sm backdrop-blur-lg dark:border-white/10 dark:bg-white/5">
-              <h2 className="text-xl font-semibold">Send us a message</h2>
+              <h2 className="text-xl font-semibold">{pick("Kirim pesan", "Send us a message")}</h2>
               <p className="mt-1 text-sm text-neutral-600 dark:text-white/70">
-                Fill out the form below. We’ll review and get back to you.
+                {pick("Isi form berikut. Tim kami akan memeriksa kebutuhanmu dan menghubungimu kembali.", "Fill out the form below. We’ll review and get back to you.")}
               </p>
 
               <form className="mt-5 grid gap-4" onSubmit={onSubmit} noValidate>
@@ -542,9 +548,9 @@ export default function ContactPage(): React.JSX.Element {
             "@context": "https://schema.org",
             "@type": "Organization",
             name: "FMG Universe",
-            url: "https://your-domain",
+            url: siteConfig.url,
             contactPoint: [
-              { "@type": "ContactPoint", contactType: "customer support", email: "hello@your-domain", availableLanguage: ["en"] },
+              { "@type": "ContactPoint", contactType: "customer support", availableLanguage: ["Indonesian", "English"] },
             ],
           }),
         }}

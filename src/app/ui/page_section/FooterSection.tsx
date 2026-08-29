@@ -13,6 +13,8 @@ import {
   Threads,
 } from "@/icons";
 import BrandMark from "../BrandMark";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { localizedPathFor } from "@/i18n/language-routes";
 
 type Column = {
   title: string;
@@ -26,6 +28,8 @@ type SocialItem = {
 
 export default function Footer(): React.JSX.Element {
   const [email, setEmail] = useState<string>("");
+  const { language } = useLanguage();
+  const localeHref = (href: string) => localizedPathFor(href, language) ?? href;
 
   const columns: Column[] = [
     {
@@ -35,8 +39,6 @@ export default function Footer(): React.JSX.Element {
         { label: "Song Creation", href: "/song-creation-service" },
         { label: "Pricing", href: "/pricing" },
         { label: "Portfolio", href: "/portfolio" },
-        { label: "Jasa Aransemen Lagu", href: "/id/jasa-aransemen-lagu" },
-        { label: "Jasa Pembuatan Lagu", href: "/id/jasa-pembuatan-lagu" },
       ],
     },
     {
@@ -102,7 +104,7 @@ export default function Footer(): React.JSX.Element {
       />
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <BrandMark href="/" logoSrc="/logo/FMG-Universe-Flemmo-Music-Global.png"/>
+          <BrandMark href={language === "id" ? "/id" : "/"} logoSrc="/logo/FMG-Universe-Flemmo-Music-Global.png"/>
           <form
             onSubmit={onSubmit}
             className="flex w-full max-w-md items-center gap-2 sm:w-auto"
@@ -157,7 +159,7 @@ export default function Footer(): React.JSX.Element {
                           {l.label}
                         </a>
                       ) : (
-                        <Link href={l.href} className={linkClass}>
+                        <Link href={localeHref(l.href)} className={linkClass}>
                           {l.label}
                         </Link>
                       )}

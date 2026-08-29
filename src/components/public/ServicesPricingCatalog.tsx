@@ -36,9 +36,11 @@ async function loadCatalog() {
 
 type CatalogView = "services" | "pricing";
 
-export default async function ServicesPricingCatalog({ view = "services" }: { view?: CatalogView }) {
+export default async function ServicesPricingCatalog({ view = "services", language = "en" }: { view?: CatalogView; language?: "id" | "en" }) {
   const { services, bundles } = await loadCatalog();
   const isPricing = view === "pricing";
+  const portfolioHref = language === "id" ? "/id/portofolio?work=arrangement" : ARRANGEMENT_PORTFOLIO_PATH;
+  const inquiryHref = language === "id" ? "/services/inquiry?lang=id" : "/services/inquiry";
 
   return (
     <main className="min-h-screen bg-white text-slate-950 dark:bg-black dark:text-white">
@@ -65,33 +67,33 @@ export default async function ServicesPricingCatalog({ view = "services" }: { vi
         </section>
 
         {bundles.length > 0 && <section className="mt-14">
-          <h2 className="text-2xl font-bold">Bundles</h2>
+          <h2 className="text-2xl font-bold"><LocalizedText id="Paket" en="Bundles" /></h2>
           <div className="mt-6 grid gap-5 lg:grid-cols-3">
             {bundles.map((bundle) => <article key={bundle.id} className="flex flex-col rounded-3xl border-2 border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-violet-400 hover:shadow-xl dark:border-slate-700 dark:bg-slate-900">
-              <div className="flex items-start justify-between gap-3"><h3 className="text-xl font-bold">{bundle.label}</h3>{bundle.bundle_key === NEW_CUSTOMER_PROMO_BUNDLE_KEY && <span className="rounded-full bg-rose-600 px-3 py-1 text-xs font-bold text-white">NEW CUSTOMER</span>}</div>
+              <div className="flex items-start justify-between gap-3"><h3 className="text-xl font-bold">{bundle.label}</h3>{bundle.bundle_key === NEW_CUSTOMER_PROMO_BUNDLE_KEY && <span className="rounded-full bg-rose-600 px-3 py-1 text-xs font-bold text-white"><LocalizedText id="CUSTOMER BARU" en="NEW CUSTOMER" /></span>}</div>
               <p className="mt-2 text-3xl font-bold"><GlobalPrice usd={Number(bundle.bundle_price)} idr={bundle.bundle_key === NEW_CUSTOMER_PROMO_BUNDLE_KEY ? Number(bundle.promo_value) : undefined} /></p>
               {bundle.bundle_key === NEW_CUSTOMER_PROMO_BUNDLE_KEY && <p className="mt-1 text-sm font-semibold text-rose-600 dark:text-rose-300"><LocalizedText id="Harga spesial untuk project pertamamu." en="A special offer for your first project." /></p>}
               {bundle.note && bundle.bundle_key !== NEW_CUSTOMER_PROMO_BUNDLE_KEY && <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{bundle.note}</p>}
               <ul className="mt-5 flex-1 space-y-2">{bundle.items.map((item) => <li key={item} className="flex gap-2 text-sm"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{item}</li>)}</ul>
-              <Link href={ARRANGEMENT_ORDER_PATH} className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 font-semibold text-white hover:bg-violet-700 dark:bg-white dark:text-black dark:hover:bg-violet-500 dark:hover:text-white">Order New Arrangement <ArrowRight className="h-4 w-4" /></Link>
+              <Link href={ARRANGEMENT_ORDER_PATH} className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 font-semibold text-white hover:bg-violet-700 dark:bg-white dark:text-black dark:hover:bg-violet-500 dark:hover:text-white"><LocalizedText id="Pesan Aransemen Baru" en="Order New Arrangement" /> <ArrowRight className="h-4 w-4" /></Link>
             </article>)}
           </div>
         </section>}
 
         {services.length > 0 && <section className="mt-16">
-          <h2 className="text-2xl font-bold">Individual services</h2>
+          <h2 className="text-2xl font-bold"><LocalizedText id="Layanan satuan" en="Individual services" /></h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {services.map((service) => <article key={service.id} className="rounded-2xl border-2 border-slate-200 p-5 transition hover:border-violet-400 dark:border-slate-700">
-              <div className="flex items-start justify-between gap-4"><div><h3 className="font-semibold">{service.label}</h3>{service.is_subscription && <span className="mt-2 inline-block rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">Monthly</span>}</div><p className="shrink-0 text-lg font-bold"><GlobalPrice usd={Number(service.price)} /></p></div>
+              <div className="flex items-start justify-between gap-4"><div><h3 className="font-semibold">{service.label}</h3>{service.is_subscription && <span className="mt-2 inline-block rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"><LocalizedText id="Bulanan" en="Monthly" /></span>}</div><p className="shrink-0 text-lg font-bold"><GlobalPrice usd={Number(service.price)} /></p></div>
             </article>)}
           </div>
         </section>}
 
-        {services.length === 0 && bundles.length === 0 && <div className="mt-12 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">The service catalog is temporarily unavailable. Please try again shortly.</div>}
+        {services.length === 0 && bundles.length === 0 && <div className="mt-12 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200"><LocalizedText id="Katalog layanan sedang tidak tersedia. Coba lagi sebentar lagi." en="The service catalog is temporarily unavailable. Please try again shortly." /></div>}
 
         <PaymentMethodsShowcase className="mt-16" compact={!isPricing} />
 
-        <div className="mt-14 flex flex-wrap gap-3"><Link href={ARRANGEMENT_ORDER_PATH} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-6 py-3 font-semibold text-white hover:bg-violet-700">Order New Arrangement <ArrowRight className="h-4 w-4" /></Link><Link href={ARRANGEMENT_PORTFOLIO_PATH} className="rounded-xl border border-slate-300 px-6 py-3 font-semibold dark:border-white/20">View arrangement work</Link><Link href="/services/inquiry" className="rounded-xl border border-slate-300 px-6 py-3 font-semibold dark:border-white/20">Ask before ordering</Link></div>
+        <div className="mt-14 flex flex-wrap gap-3"><Link href={ARRANGEMENT_ORDER_PATH} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-6 py-3 font-semibold text-white hover:bg-violet-700"><LocalizedText id="Pesan Aransemen Baru" en="Order New Arrangement" /> <ArrowRight className="h-4 w-4" /></Link><Link href={portfolioHref} className="rounded-xl border border-slate-300 px-6 py-3 font-semibold dark:border-white/20"><LocalizedText id="Lihat hasil aransemen" en="View arrangement work" /></Link><Link href={inquiryHref} className="rounded-xl border border-slate-300 px-6 py-3 font-semibold dark:border-white/20"><LocalizedText id="Tanya sebelum order" en="Ask before ordering" /></Link></div>
       </section>
     </main>
   );

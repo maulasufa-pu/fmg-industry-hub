@@ -9,6 +9,11 @@ const IMPORTANT_ROUTES = new Set([
   "/id/jasa-pembuatan-lagu",
   "/learn/how-to-make-a-song",
   "/id/cara-bikin-lagu",
+  "/id",
+  "/id/layanan",
+  "/id/harga",
+  "/id/portofolio",
+  "/id/kontak",
   "/portfolio",
   "/pricing",
   "/services",
@@ -21,6 +26,14 @@ const LANGUAGE_PAIRS = {
   "/id/jasa-pembuatan-lagu": { en: "/song-creation-service", id: "/id/jasa-pembuatan-lagu" },
   "/learn/how-to-make-a-song": { en: "/learn/how-to-make-a-song", id: "/id/cara-bikin-lagu" },
   "/id/cara-bikin-lagu": { en: "/learn/how-to-make-a-song", id: "/id/cara-bikin-lagu" },
+  "/services": { en: "/services", id: "/id/layanan" },
+  "/id/layanan": { en: "/services", id: "/id/layanan" },
+  "/pricing": { en: "/pricing", id: "/id/harga" },
+  "/id/harga": { en: "/pricing", id: "/id/harga" },
+  "/portfolio": { en: "/portfolio", id: "/id/portofolio" },
+  "/id/portofolio": { en: "/portfolio", id: "/id/portofolio" },
+  "/contact": { en: "/contact", id: "/id/kontak" },
+  "/id/kontak": { en: "/contact", id: "/id/kontak" },
 };
 
 const UTILITY_ROUTES = [
@@ -85,6 +98,8 @@ module.exports = {
         ? 0.9
         : path === "/learn/how-to-make-a-song" || path === "/id/cara-bikin-lagu"
           ? 0.8
+          : path === "/id"
+            ? 0.9
           : isImportant ? 0.75 : path === "/" ? 0.7 : isLegal ? 0.3 : 0.5;
 
     return {

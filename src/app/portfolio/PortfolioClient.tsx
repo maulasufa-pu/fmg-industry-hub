@@ -48,6 +48,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Custom Apple Music Icon Component with official gradient
 const AppleMusicIcon = ({ className = "w-5 h-5" }: { className?: string }) => {
@@ -141,6 +142,7 @@ const stagger = {
 
 // Main Portfolio Component  
 export default function PortfolioClient(): React.JSX.Element {
+  const { language, pick } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [selectedWorkType, setSelectedWorkType] = useState<string>('all');
@@ -505,10 +507,10 @@ export default function PortfolioClient(): React.JSX.Element {
               className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl"
             >
               <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Our
+                {pick("Portofolio", "Our")}
               </span>{" "}
               <span className="text-slate-900 dark:text-white">
-                Portfolio
+                {pick("Pilihan", "Portfolio")}
               </span>
             </motion.h1>
 
@@ -517,8 +519,10 @@ export default function PortfolioClient(): React.JSX.Element {
               custom={1}
               className="mx-auto max-w-3xl text-lg sm:text-xl text-slate-600 dark:text-slate-300"
             >
-              Discover the stories behind our music. From intimate songwriting sessions to
-              massive productions, explore the projects that define our creative journey.
+              {pick(
+                "Dengarkan cerita di balik setiap karya. Dari penulisan lagu yang personal hingga produksi berskala besar, temukan project yang membentuk perjalanan kreatif kami.",
+                "Discover the stories behind our music. From intimate songwriting sessions to massive productions, explore the projects that define our creative journey."
+              )}
             </motion.p>
 
             <motion.div 
@@ -528,11 +532,11 @@ export default function PortfolioClient(): React.JSX.Element {
             >
               <div className="flex items-center gap-2">
                 <Music className="w-4 h-4" />
-                <span>50+ Projects</span>
+                  <span>{pick("50+ Project", "50+ Projects")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
-                <span>25+ Artists</span>
+                  <span>{pick("25+ Artis", "25+ Artists")}</span>
               </div>
             </motion.div>
           </motion.div>
@@ -550,7 +554,7 @@ export default function PortfolioClient(): React.JSX.Element {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search by title, artist, or genre..."
+                  placeholder={pick("Cari judul, artis, atau genre...", "Search by title, artist, or genre...")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500"
@@ -604,7 +608,7 @@ export default function PortfolioClient(): React.JSX.Element {
                   className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
                   <Filter className="w-4 h-4" />
-                  Genres
+                  {pick("Genre", "Genres")}
                   {selectedGenres.length > 0 && (
                     <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-semibold">
                       {selectedGenres.length}
@@ -755,7 +759,7 @@ export default function PortfolioClient(): React.JSX.Element {
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
                 >
-                  All Projects
+                  {pick("Semua Project", "All Projects")}
                 </button>
                 <button
                   onClick={() => setSelectedWorkType('production')}
@@ -811,13 +815,13 @@ export default function PortfolioClient(): React.JSX.Element {
                   className="inline-flex items-center gap-1 px-3 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                 >
                   <X className="w-4 h-4" />
-                  Clear Filters
+                  {pick("Hapus Filter", "Clear Filters")}
                 </button>
               )}
 
               {/* View Mode Toggle */}
               <div className="flex items-center gap-2 ml-auto">
-                <span className="text-sm text-slate-600 dark:text-slate-400">View:</span>
+                <span className="text-sm text-slate-600 dark:text-slate-400">{pick("Tampilan:", "View:")}</span>
                 <div className="inline-flex rounded-lg bg-slate-100 dark:bg-slate-800 p-1">
                   <button
                     onClick={() => setViewMode('tiles')}
@@ -856,7 +860,7 @@ export default function PortfolioClient(): React.JSX.Element {
             <div className="flex items-center justify-center py-20">
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 mx-auto border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-                <p className="text-slate-600 dark:text-slate-400">Loading portfolio...</p>
+                <p className="text-slate-600 dark:text-slate-400">{pick("Memuat portofolio...", "Loading portfolio...")}</p>
               </div>
             </div>
           ) : (
@@ -927,7 +931,7 @@ export default function PortfolioClient(): React.JSX.Element {
                 disabled={currentPage === 1}
                 className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                Previous
+                {pick("Sebelumnya", "Previous")}
               </button>
               
               <div className="flex items-center gap-2">
@@ -964,7 +968,7 @@ export default function PortfolioClient(): React.JSX.Element {
                 disabled={currentPage === totalPages}
                 className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                Next
+                {pick("Berikutnya", "Next")}
               </button>
             </div>
           )}
@@ -972,7 +976,7 @@ export default function PortfolioClient(): React.JSX.Element {
           {/* Results Info */}
           {!isLoading && filteredProjects.length > 0 && (
             <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
-              Showing {startIndex + 1}-{Math.min(endIndex, filteredProjects.length)} of {filteredProjects.length} projects
+              {pick("Menampilkan", "Showing")} {startIndex + 1}-{Math.min(endIndex, filteredProjects.length)} {pick("dari", "of")} {filteredProjects.length} project
             </p>
           )}
 
@@ -986,8 +990,8 @@ export default function PortfolioClient(): React.JSX.Element {
               <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 rounded-full flex items-center justify-center">
                 <Search className="w-6 h-6 text-slate-400" />
               </div>
-              <h3 className="text-lg font-medium text-slate-600 dark:text-slate-300 mb-2">No projects found</h3>
-              <p className="text-slate-500 dark:text-slate-400">Try adjusting your search or filter criteria</p>
+              <h3 className="text-lg font-medium text-slate-600 dark:text-slate-300 mb-2">{pick("Project tidak ditemukan", "No projects found")}</h3>
+              <p className="text-slate-500 dark:text-slate-400">{pick("Coba ubah kata pencarian atau filtermu.", "Try adjusting your search or filter criteria")}</p>
             </motion.div>
           )}
         </div>
@@ -1007,7 +1011,7 @@ export default function PortfolioClient(): React.JSX.Element {
               variants={fadeUp}
               className="text-3xl sm:text-4xl font-bold"
             >
-              Numbers That Speak
+              {pick("Karya dalam Angka", "Numbers That Speak")}
             </motion.h2>
 
             <motion.div 
@@ -1016,18 +1020,18 @@ export default function PortfolioClient(): React.JSX.Element {
               className="grid grid-cols-2 md:grid-cols-4 gap-8"
             >
               {[
-                { label: "Total Projects", value: portfolioItems.length.toString(), icon: Music },
+                { label: pick("Total Project", "Total Projects"), value: portfolioItems.length.toString(), icon: Music },
                 { 
-                  label: "Artists", 
+                  label: pick("Artis", "Artists"),
                   value: new Set(portfolioItems.flatMap(p => Array.isArray(p.singer) ? p.singer : [])).size.toString(), 
                   icon: Users 
                 },
                 { 
-                  label: "Genres", 
+                  label: pick("Genre", "Genres"),
                   value: new Set(portfolioItems.map(p => p.genre).filter(Boolean)).size.toString(), 
                   icon: Headphones 
                 },
-                { label: "Released", value: portfolioItems.filter(p => p.release_date_aggregator).length.toString(), icon: Award }
+                { label: pick("Sudah Rilis", "Released"), value: portfolioItems.filter(p => p.release_date_aggregator).length.toString(), icon: Award }
               ].map((stat, index) => (
                 <div key={index} className="text-center space-y-3">
                   <div className="w-12 h-12 mx-auto bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center">
@@ -1060,7 +1064,7 @@ export default function PortfolioClient(): React.JSX.Element {
               variants={fadeUp}
               className="text-3xl sm:text-4xl font-bold"
             >
-              Ready to Create Your Story?
+              {pick("Siap Mewujudkan Ceritamu?", "Ready to Create Your Story?")}
             </motion.h2>
 
             <motion.p 
@@ -1068,8 +1072,10 @@ export default function PortfolioClient(): React.JSX.Element {
               custom={1}
               className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto"
             >
-              Join the artists and creators who trust FMG Universe to bring their 
-              vision to life. Let&apos;s create something extraordinary together.
+              {pick(
+                "Bawa visi musikmu ke proses yang jelas dan kolaboratif. Mari ciptakan karya yang benar-benar terasa seperti dirimu.",
+                "Join the artists and creators who trust FMG Universe to bring their vision to life. Let's create something extraordinary together."
+              )}
             </motion.p>
 
             <motion.div 
@@ -1078,18 +1084,18 @@ export default function PortfolioClient(): React.JSX.Element {
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
               <Link
-                href="/contact"
+                href={language === "id" ? "/id/kontak" : "/contact"}
                 className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-2xl hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-200"
               >
-                Start Your Project
+                {pick("Mulai Project-mu", "Start Your Project")}
                 <ExternalLink className="w-4 h-4" />
               </Link>
               
               <Link
-                href="/services"
+                href={language === "id" ? "/id/layanan" : "/services"}
                 className="inline-flex items-center gap-2 px-8 py-4 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-semibold rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200"
               >
-                View Services
+                {pick("Lihat Layanan", "View Services")}
               </Link>
             </motion.div>
           </motion.div>

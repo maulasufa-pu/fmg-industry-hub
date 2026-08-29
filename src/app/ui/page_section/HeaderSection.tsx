@@ -32,6 +32,7 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { CurrencyDropdownAdvanced } from "@/components/CurrencyDropdownAdvanced";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { localizedPathFor } from "@/i18n/language-routes";
 
 type MenuItem = {
   label: string;
@@ -225,7 +226,9 @@ export function BrandLockup({
 
 export const HeaderSection = (): React.JSX.Element => {
   const { currency, setCurrency, loading: currencyLoading } = useCurrency();
-  const { pick } = useLanguage();
+  const { language, pick } = useLanguage();
+  const localeHref = (href: string) => localizedPathFor(href, language) ?? href;
+  const homeHref = language === "id" ? "/id" : "/";
   const menuLabel = (menu: MenuItem) => pick(MENU_ID[menu.href]?.label ?? menu.label, menu.label);
   const menuDescription = (menu: MenuItem) => pick(MENU_ID[menu.href]?.desc ?? menu.desc, menu.desc);
   const universeLabel = (menu: UniverseItem) => pick(UNIVERSE_ID[menu.label] ?? menu.label, menu.label);
@@ -442,7 +445,7 @@ export const HeaderSection = (): React.JSX.Element => {
               />
             </div>
 
-            <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
+            <Link href={homeHref} className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
               <Image
                 src="/logo/FMG-Universe-Flemmo-Music-Global.png"
                 alt="FMG Universe Logo"
@@ -470,7 +473,7 @@ export const HeaderSection = (): React.JSX.Element => {
           </div>
 
           <div className="hidden h-16 items-center justify-between min-[1028px]:flex">
-            <Link href="/" className="flex items-center gap-2 font-semibold flex-shrink-0 min-w-0">
+            <Link href={homeHref} className="flex items-center gap-2 font-semibold flex-shrink-0 min-w-0">
               <Image
                 src="/logo/FMG-Universe-Flemmo-Music-Global.png"
                 alt="FMG Universe Logo"
@@ -495,13 +498,13 @@ export const HeaderSection = (): React.JSX.Element => {
                 <Link href="/#about" className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
                   {pick("Tentang", "About")}
                 </Link>
-                <Link href="/services" className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
+                <Link href={localeHref("/services")} className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
                   {pick("Layanan", "Services")}
                 </Link>
-                <Link href="/pricing" className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
+                <Link href={localeHref("/pricing")} className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
                   {pick("Harga", "Pricing")}
                 </Link>
-                <Link href={ARRANGEMENT_PORTFOLIO_PATH} className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
+                <Link href={language === "id" ? "/id/portofolio?work=arrangement" : ARRANGEMENT_PORTFOLIO_PATH} className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
                   {pick("Portofolio", "Portfolio")}
                 </Link>
 
@@ -561,7 +564,7 @@ export const HeaderSection = (): React.JSX.Element => {
                             {UNIVERSE.map((u) => (
                               <motion.div key={u.label} variants={item}>
                                 <Link
-                                  href={u.href}
+                                  href={localeHref(u.href)}
                                   onClick={() => {
                                     setOpen(false);
                                     setFocusIndex(-1);
@@ -594,7 +597,7 @@ export const HeaderSection = (): React.JSX.Element => {
                                 ref={((i: number) => (el: HTMLAnchorElement | null) => {
                                   itemRefs.current[i] = el;
                                 })(idx)}
-                                href={m.href}
+                                href={localeHref(m.href)}
                                 role="menuitem"
                                 tabIndex={-1}
                                 onClick={() => {
@@ -646,7 +649,7 @@ export const HeaderSection = (): React.JSX.Element => {
                             “Beyond Sound. Built-in Intelligence.”
                           </span>
                           <Link
-                            href="/arrangement"
+                            href={localeHref("/arrangement")}
                             className="
                             inline-flex items-center gap-1.5 rounded-lg border border-black/10 dark:border-white/10
                             bg-black text-white dark:bg-white dark:text-black px-3 py-1.5 text-xs font-semibold
@@ -676,7 +679,7 @@ export const HeaderSection = (): React.JSX.Element => {
                 showSearch={false}
               />
               <Link
-                href="/arrangement"
+                href={localeHref("/arrangement")}
                 className="
                 group relative inline-flex h-10 items-center gap-2 rounded-2xl px-4
                 text-sm font-semibold leading-none whitespace-nowrap
@@ -800,7 +803,7 @@ export const HeaderSection = (): React.JSX.Element => {
                       {UNIVERSE.map((u) => (
                         <Link
                           key={u.label}
-                          href={u.href}
+                          href={localeHref(u.href)}
                           onClick={() => setMobileOpen(false)}
                           className="group flex flex-col items-center justify-center gap-1 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2"
                         >
@@ -824,21 +827,21 @@ export const HeaderSection = (): React.JSX.Element => {
                       {pick("Tentang", "About")}
                     </Link>
                     <Link
-                      href="/services"
+                      href={localeHref("/services")}
                       onClick={() => setMobileOpen(false)}
                       className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2.5 text-center hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
                     >
                       {pick("Layanan", "Services")}
                     </Link>
                     <Link
-                      href="/pricing"
+                      href={localeHref("/pricing")}
                       onClick={() => setMobileOpen(false)}
                       className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2.5 text-center hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
                     >
                       {pick("Paket", "Packages")}
                     </Link>
                     <Link
-                      href={ARRANGEMENT_PORTFOLIO_PATH}
+                      href={language === "id" ? "/id/portofolio?work=arrangement" : ARRANGEMENT_PORTFOLIO_PATH}
                       onClick={() => setMobileOpen(false)}
                       className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2.5 text-center hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
                     >
@@ -870,7 +873,7 @@ export const HeaderSection = (): React.JSX.Element => {
                         {MENU.map((m) => (
                           <Link
                             key={m.label}
-                            href={m.href}
+                            href={localeHref(m.href)}
                             onClick={() => setMobileOpen(false)}
                             className="group flex items-center gap-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 p-3"
                           >
@@ -893,7 +896,7 @@ export const HeaderSection = (): React.JSX.Element => {
 
                     <div className="pt-3">
                       <Link
-                        href="/arrangement"
+                        href={localeHref("/arrangement")}
                         onClick={() => setMobileOpen(false)}
                         className="
                         mt-1 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3

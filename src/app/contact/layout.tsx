@@ -4,7 +4,10 @@ export const metadata: Metadata = {
   title: "Contact FMG Universe",
   description:
     "Contact FMG Universe about music projects, partnerships, publishing, press, support, or other business inquiries.",
-  alternates: { canonical: "/contact" },
+  alternates: {
+    canonical: "/contact",
+    languages: { "en-US": "/contact", "id-ID": "/id/kontak", "x-default": "/contact" },
+  },
   openGraph: {
     title: "Contact FMG Universe",
     description:

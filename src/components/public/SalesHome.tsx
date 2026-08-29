@@ -2,11 +2,9 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, Headphones, MessageSquareText, Music2, SlidersHorizontal } from "lucide-react";
 
 import { JsonLd } from "@/components/JsonLd";
-import PaymentMethodsShowcase from "@/components/payments/PaymentMethodsShowcase";
-import FeaturedReleasedWorks from "@/components/public/FeaturedReleasedWorks";
 import NewCustomerPromoCard from "@/components/public/NewCustomerPromoCard";
-import PricingPackagesPreview from "@/components/public/PricingPackagesPreview";
 import { siteConfig } from "@/lib/site";
+import { CompanyPortfolioShowcase, CompanyPricingSection, CompanyReleasedWorks } from "@/app/CompanyPageClient";
 
 export default function SalesHome({ language }: { language: "en" | "id" }) {
   const isId = language === "id";
@@ -83,22 +81,16 @@ export default function SalesHome({ language }: { language: "en" | "id" }) {
         </div>
       </section>
 
-      <PricingPackagesPreview language={language} />
-
       <section className="mx-auto max-w-6xl px-5 py-16" aria-labelledby={`${language}-process-heading`}>
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600 dark:text-violet-300">{isId ? "Cara order" : "How it works"}</p>
         <h2 id={`${language}-process-heading`} className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">{isId ? "Tiga langkah, tanpa proses yang berbelit." : "Three steps. No complicated process."}</h2>
         <div className="mt-10 grid gap-5 md:grid-cols-3">{process.map(([number, title, text]) => <article key={number} className="rounded-3xl border border-slate-200 p-6 dark:border-white/10"><p className="text-sm font-bold text-violet-600 dark:text-violet-300">{number}</p><h3 className="mt-4 text-xl font-bold">{title}</h3><p className="mt-2 leading-7 text-slate-600 dark:text-slate-300">{text}</p></article>)}</div>
       </section>
 
-      <FeaturedReleasedWorks language={language} />
-
-      <section className="py-8" aria-labelledby={`${language}-promo-heading`}>
-        <div className="mx-auto max-w-6xl px-5"><p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose-600 dark:text-rose-300">{isId ? "Promo pelanggan baru" : "New customer offer"}</p><h2 id={`${language}-promo-heading`} className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">{isId ? "Mulai project pertamamu dengan paket hemat." : "Start your first project with a complete package."}</h2></div>
-        <NewCustomerPromoCard />
-      </section>
-
-      <section className="mx-auto max-w-6xl px-5 py-12"><PaymentMethodsShowcase compact /></section>
+      <CompanyPortfolioShowcase />
+      <CompanyPricingSection />
+      <NewCustomerPromoCard />
+      <CompanyReleasedWorks />
 
       <section className="mx-auto max-w-4xl px-5 py-20 text-center">
         <h2 className="text-3xl font-bold tracking-tight sm:text-5xl">{isId ? "Masih bingung memilih layanan?" : "Not sure which service fits?"}</h2>

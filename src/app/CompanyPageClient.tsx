@@ -59,7 +59,7 @@ const PLANS: readonly Plan[] = [
       name: "Basic (Single)",
       priceUSDNumber: 700,
       cta: "Start My Project",
-      ctaHref: "/client/dashboard",
+      ctaHref: "/order/arrangement",
       features: [
         "Original songwriting",
         "Arrangement & production",
@@ -76,7 +76,7 @@ const PLANS: readonly Plan[] = [
       name: "Pro (Single)",
       priceUSDNumber: 1000,
       cta: "Start My Project",
-      ctaHref: "/client/dashboard",
+      ctaHref: "/order/arrangement",
       features: [
         "Everything in Basic +",
         "Multi-version deliverables (original/acoustic/remix/instrumental)",
@@ -95,7 +95,7 @@ const PLANS: readonly Plan[] = [
       name: "Ultimate (Single)",
       priceUSDNumber: 2000,
       cta: "Start My Project",
-      ctaHref: "/client/dashboard",
+      ctaHref: "/order/arrangement",
       features: [
         "Everything in Basic & Pro +",
         "Music video direction & production",
@@ -115,7 +115,7 @@ const PLANS: readonly Plan[] = [
       priceUSDNumber: 0, // ditampilkan sebagai "Custom"
       period: "project",
       cta: "Start My Project",
-      ctaHref: "/client/dashboard",
+      ctaHref: "/order/arrangement",
       features: [
         "Scope-based pricing",
         "Pick any combination of services",
@@ -1065,7 +1065,7 @@ function Numbers() {
 /*************************
  * Portfolio Showcase Preview
  *************************/
-function PortfolioShowcase() {
+export function CompanyPortfolioShowcase() {
   return (
     <section className="relative py-16 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -1514,6 +1514,19 @@ function ArtworkSlider({ artworks }: { artworks: string[] }) {
   )
 }
 
+export function CompanyReleasedWorks() {
+  const [artworks, setArtworks] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    fetch("/api/artworks")
+      .then((response) => response.json())
+      .then((data: string[]) => setArtworks(data))
+      .catch(() => setArtworks([]));
+  }, []);
+
+  return <ArtworkSlider artworks={artworks} />;
+}
+
 function Pricing3DCarousel({
   currency,
   rates,
@@ -1755,6 +1768,28 @@ function Pricing({
   );
 }
 
+export function CompanyPricingSection() {
+  const {
+    currency,
+    setCurrency,
+    rates,
+    loading,
+    error,
+    lastUpdated,
+  } = useCurrency();
+
+  return (
+    <Pricing
+      currency={currency}
+      rates={rates}
+      onCurrencyChange={setCurrency}
+      loading={loading}
+      error={error}
+      lastUpdated={lastUpdated}
+    />
+  );
+}
+
 /*************************
  * CTA
  *************************/
@@ -1818,23 +1853,6 @@ function CTA() {
  *************************/
 
 export default function LandingPage() {
-  const {
-    currency,
-    setCurrency,
-    rates,
-    loading: ratesLoading,
-    error: ratesError,
-    lastUpdated,
-  } = useCurrency();
-
-  const [artworks, setArtworks] = React.useState<string[]>([]);
-
-  React.useEffect(() => {
-    fetch("/api/artworks")
-      .then((res) => res.json())
-      .then((data: string[]) => setArtworks(data));
-  }, []);
-
   // const artworks = getArtworks();
   const sameAs = compact([
     siteConfig.social.website,
@@ -1883,20 +1901,13 @@ export default function LandingPage() {
       <Hero />
       <AboutFMG />
       <Features />
-      <PortfolioShowcase />
+      <CompanyPortfolioShowcase />
       <Numbers />
       
       <Testimonials />
-      <Pricing 
-        currency={currency} 
-        rates={rates} 
-        onCurrencyChange={setCurrency}
-        loading={ratesLoading}
-        error={ratesError}
-        lastUpdated={lastUpdated}
-      />
+      <CompanyPricingSection />
       <NewCustomerPromoCard />
-      <ArtworkSlider artworks={artworks} />;
+      <CompanyReleasedWorks />
       <CTA />
       {/* <Footer /> */}
       <JsonLd id="org" data={org} />

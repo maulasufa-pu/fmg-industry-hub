@@ -12,8 +12,8 @@ import { useConsent } from "@/components/privacy/ConsentManager";
 import { ARRANGEMENT_ORDER_PATH, NEW_CUSTOMER_PROMO_IDR } from "@/lib/arrangement";
 import { formatIdrAnchoredPrice } from "@/lib/currency";
 
-const DISMISSED_KEY = "fmg-home-promo-dismissed-v1";
-const SESSION_SHOWN_KEY = "fmg-home-promo-shown-v1";
+const DISMISSED_KEY = "fmg-home-promo-dismissed-v2";
+const SESSION_SHOWN_KEY = "fmg-home-promo-shown-v2";
 const REOPEN_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
 
 export default function HomePromoPopup() {
@@ -33,12 +33,8 @@ export default function HomePromoPopup() {
 
     if (dismissedRecently || shownThisSession) return;
 
-    const timer = window.setTimeout(() => {
-      window.sessionStorage.setItem(SESSION_SHOWN_KEY, "1");
-      setOpen(true);
-    }, 3500);
-
-    return () => window.clearTimeout(timer);
+    window.sessionStorage.setItem(SESSION_SHOWN_KEY, "1");
+    setOpen(true);
   }, [preferences]);
 
   const onOpenChange = (next: boolean) => {
@@ -75,7 +71,7 @@ export default function HomePromoPopup() {
 
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className="max-h-[calc(100dvh-1.5rem)] w-[min(760px,calc(100vw-1.5rem))] max-w-none overflow-y-auto border-white/15 bg-slate-950 p-0 text-white shadow-[0_30px_100px_rgba(0,0,0,0.65)] sm:rounded-[2rem]"
+          className="max-h-[calc(100dvh-1rem)] w-[min(880px,calc(100vw-1rem))] max-w-none overflow-x-hidden overflow-y-auto border-white/15 bg-slate-950 p-0 text-white shadow-[0_30px_100px_rgba(0,0,0,0.65)] sm:max-h-[calc(100dvh-2rem)] sm:w-[min(880px,calc(100vw-2rem))] sm:rounded-[2rem]"
         >
           <div className="relative isolate overflow-hidden rounded-[inherit]">
             <div className="pointer-events-none absolute inset-0 -z-20 bg-[radial-gradient(circle_at_15%_10%,rgba(244,63,94,0.38),transparent_34%),radial-gradient(circle_at_90%_85%,rgba(124,58,237,0.35),transparent_38%),linear-gradient(135deg,#020617,#0f172a_55%,#020617)]" />
@@ -88,14 +84,14 @@ export default function HomePromoPopup() {
               <span className="absolute bottom-7 left-4 h-4 w-4 rounded-full bg-rose-400 shadow-[0_0_28px_rgba(251,113,133,0.9)]" />
             </motion.div>
 
-            <div className="grid gap-0 md:grid-cols-[0.88fr_1.12fr]">
-              <div className="relative hidden min-h-[460px] overflow-hidden border-r border-white/10 p-8 md:flex md:flex-col md:justify-between">
+            <div className="grid gap-0 lg:grid-cols-[0.82fr_1.18fr]">
+              <div className="relative hidden min-h-[560px] overflow-hidden border-r border-white/10 p-7 lg:flex lg:flex-col lg:justify-between xl:p-9">
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-rose-200 backdrop-blur">
                     <Sparkles className="h-3.5 w-3.5" />
                     {pick("Khusus customer baru", "New customers only")}
                   </div>
-                  <p className="mt-7 text-5xl font-black leading-[0.92] tracking-[-0.05em]">FMG<br />UNIVERSE</p>
+                  <p className="mt-7 text-4xl font-black leading-[0.92] tracking-[-0.05em] xl:text-5xl">FMG<br />UNIVERSE</p>
                   <p className="mt-4 max-w-[15rem] text-sm leading-6 text-slate-300">Beyond Sound. Built-in Intelligence.</p>
                 </div>
                 <div className="relative h-32">
@@ -111,22 +107,22 @@ export default function HomePromoPopup() {
                 </div>
               </div>
 
-              <div className="p-5 pt-12 sm:p-8 sm:pt-12 md:p-10">
+              <div className="min-w-0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-12 sm:p-7 sm:pt-12 lg:p-9 lg:pt-12 xl:p-10 xl:pt-12">
                 <div className="inline-flex items-center gap-2 rounded-full bg-rose-500/15 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-rose-300 ring-1 ring-rose-400/30">
                   <BadgePercent className="h-3.5 w-3.5" />
                   {pick("Paket project pertama", "First-project package")}
                 </div>
 
-                <DialogTitle className="mt-5 text-balance text-3xl font-black leading-tight tracking-tight sm:text-4xl">
+                <DialogTitle className="mt-4 text-balance text-[clamp(1.85rem,7vw,2.75rem)] font-black leading-[1.08] tracking-[-0.035em] lg:text-[2.55rem] xl:text-5xl">
                   {pick("Wujudkan lagu pertamamu bersama FMG.", "Bring your first FMG project to life.")}
                 </DialogTitle>
-                <DialogDescription className="mt-3 text-base leading-7 text-slate-300">
+                <DialogDescription className="mt-3 text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
                   {pick("Satu paket untuk membawa materi lagumu dari ide hingga file akhir yang siap digunakan.", "One complete package to take your song material from an idea to ready-to-use final files.")}
                 </DialogDescription>
 
-                <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur">
+                <div className="mt-5 min-w-0 rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur sm:mt-6">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{pick("Harga spesial", "Special offer")}</p>
-                  <motion.p key={`${currency}-${rates[currency]}`} initial={{ opacity: 0, y: 7 }} animate={{ opacity: 1, y: 0 }} className="mt-1 text-4xl font-black tracking-tight text-white">
+                  <motion.p key={`${currency}-${rates[currency]}`} initial={{ opacity: 0, y: 7 }} animate={{ opacity: 1, y: 0 }} className="mt-1 whitespace-nowrap text-[clamp(1.75rem,8vw,2.65rem)] font-black tracking-[-0.035em] text-white">
                     {formatIdrAnchoredPrice(NEW_CUSTOMER_PROMO_IDR, currency, rates)}
                   </motion.p>
                   <p className="mt-1 text-xs text-slate-400">{pick("Untuk project pertamamu.", "For your first project.")}</p>
@@ -157,7 +153,7 @@ export default function HomePromoPopup() {
                   </div>
                 </motion.div>
 
-                <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]">
+                <div className="mt-4 grid gap-3 sm:mt-5 sm:grid-cols-[minmax(0,1fr)_auto]">
                   <Link
                     href={ARRANGEMENT_ORDER_PATH}
                     onClick={() => setOpen(false)}
@@ -169,7 +165,7 @@ export default function HomePromoPopup() {
                   <Link
                     href={language === "id" ? "/id/harga" : "/pricing"}
                     onClick={() => setOpen(false)}
-                    className="inline-flex items-center justify-center rounded-xl border border-white/15 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white"
+                    className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
                   >
                     {pick("Lihat paket", "View packages")}
                   </Link>

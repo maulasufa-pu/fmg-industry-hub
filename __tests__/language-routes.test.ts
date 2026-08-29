@@ -9,6 +9,7 @@ describe("localized public routes", () => {
     ["/id/kontak", "en", "/contact"],
     ["/arrangement", "id", "/id/jasa-aransemen-lagu"],
     ["/", "id", "/id"],
+    ["/id", "en", "/"],
   ] as const)("maps %s to %s", (pathname, language, expected) => {
     expect(localizedPathFor(pathname, language)).toBe(expected);
   });

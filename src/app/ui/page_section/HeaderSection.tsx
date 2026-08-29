@@ -59,9 +59,9 @@ const MENU: readonly MenuItem[] = [
 ];
 
 const UNIVERSE: readonly UniverseItem[] = [
-  { label: "Overview", href: "/about", Icon: LayoutDashboard },
-  { label: "About", href: "/about", Icon: Info },
-  { label: "Products", href: "/#features", Icon: Package2 },
+  { label: "Overview", href: "/company", Icon: LayoutDashboard },
+  { label: "About", href: "/company#about", Icon: Info },
+  { label: "Products", href: "/company#features", Icon: Package2 },
   { label: "Careers", href: "/careers", Icon: Briefcase },
   { label: "Contact", href: "/contact", Icon: Mail },
 ];
@@ -495,7 +495,7 @@ export const HeaderSection = (): React.JSX.Element => {
 
             <div className="hidden min-[1028px]:flex items-center justify-center flex-1 mx-8">
               <div className="flex items-center gap-6 text-sm">
-                <Link href="/#about" className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
+                <Link href="/company#about" className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
                   {pick("Tentang", "About")}
                 </Link>
                 <Link href={localeHref("/services")} className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
@@ -820,7 +820,7 @@ export const HeaderSection = (): React.JSX.Element => {
 
                   <div className="grid grid-cols-2 xs:grid-cols-4 gap-2 text-sm mt-3">
                     <Link
-                      href="/#about"
+                      href="/company#about"
                       onClick={() => setMobileOpen(false)}
                       className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2.5 text-center hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
                     >

@@ -1,43 +1,15 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
-import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ARRANGEMENT_ORDER_PATH, ARRANGEMENT_PORTFOLIO_PATH, NEW_CUSTOMER_PROMO_BUNDLE_KEY } from "@/lib/arrangement";
-import type { BundleItemRow, BundleRow, ServiceRow } from "@/components/catalog";
 import GlobalPrice from "@/components/public/GlobalPrice";
 import LocalizedText from "@/components/LocalizedText";
 import PaymentMethodsShowcase from "@/components/payments/PaymentMethodsShowcase";
-
-async function loadCatalog() {
-  const admin = getSupabaseAdminClient();
-  if (!admin) return { services: [] as ServiceRow[], bundles: [] as Array<BundleRow & { items: string[] }> };
-
-  const [serviceResult, bundleResult] = await Promise.all([
-    admin.from("services").select("id,service_key,label,group_name,price,is_subscription,is_active,sort_order").eq("is_active", true).order("sort_order").returns<ServiceRow[]>(),
-    admin.from("bundles").select("id,bundle_key,label,bundle_price,note,description,is_active,sort_order,promo_type,promo_value,promo_start,promo_end").eq("is_active", true).order("sort_order").returns<BundleRow[]>(),
-  ]);
-  const services = serviceResult.data ?? [];
-  const bundleRows = bundleResult.data ?? [];
-  if (!bundleRows.length) return { services, bundles: [] as Array<BundleRow & { items: string[] }> };
-
-  const { data: itemRows } = await admin
-    .from("bundle_items")
-    .select("id,bundle_id,service_id")
-    .in("bundle_id", bundleRows.map((bundle) => bundle.id))
-    .returns<BundleItemRow[]>();
-  const labels = new Map(services.map((service) => [service.id, service.label]));
-  return {
-    services,
-    bundles: bundleRows.map((bundle) => ({
-      ...bundle,
-      items: (itemRows ?? []).filter((item) => item.bundle_id === bundle.id).map((item) => labels.get(item.service_id)).filter((label): label is string => Boolean(label)),
-    })),
-  };
-}
+import { loadPublicCatalog } from "@/lib/public-sales-data";
 
 type CatalogView = "services" | "pricing";
 
 export default async function ServicesPricingCatalog({ view = "services", language = "en" }: { view?: CatalogView; language?: "id" | "en" }) {
-  const { services, bundles } = await loadCatalog();
+  const { services, bundles } = await loadPublicCatalog();
   const isPricing = view === "pricing";
   const portfolioHref = language === "id" ? "/id/portofolio?work=arrangement" : ARRANGEMENT_PORTFOLIO_PATH;
   const inquiryHref = language === "id" ? "/services/inquiry?lang=id" : "/services/inquiry";

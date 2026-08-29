@@ -3,6 +3,7 @@ import type { Language } from "@/contexts/LanguageContext";
 export type LanguageRoutePair = Readonly<{ en: string; id: string }>;
 
 export const languageRoutePairs: readonly LanguageRoutePair[] = [
+  { en: "/", id: "/id" },
   { en: "/arrangement", id: "/id/jasa-aransemen-lagu" },
   { en: "/song-creation-service", id: "/id/jasa-pembuatan-lagu" },
   { en: "/learn/how-to-make-a-song", id: "/id/cara-bikin-lagu" },
@@ -35,8 +36,6 @@ const indonesianFallbacks: Record<string, string> = {
 export function localizedPathFor(pathname: string, language: Language): string | null {
   const pair = routeLookup.get(pathname);
   if (pair) return pair[language];
-  if (pathname === "/" && language === "id") return "/id";
-  if (pathname === "/id" && language === "en") return "/";
   if (language === "en" && pathname.startsWith("/id/")) {
     return indonesianFallbacks[pathname] ?? "/services";
   }

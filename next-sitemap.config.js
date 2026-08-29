@@ -3,6 +3,8 @@ const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://flemmomusic.com")
 const isPreviewDomain = /vercel\.app$/i.test(new URL(SITE_URL).hostname);
 
 const IMPORTANT_ROUTES = new Set([
+  "/",
+  "/company",
   "/arrangement",
   "/id/jasa-aransemen-lagu",
   "/song-creation-service",
@@ -20,6 +22,8 @@ const IMPORTANT_ROUTES = new Set([
 ]);
 
 const LANGUAGE_PAIRS = {
+  "/": { en: "/", id: "/id" },
+  "/id": { en: "/", id: "/id" },
   "/arrangement": { en: "/arrangement", id: "/id/jasa-aransemen-lagu" },
   "/id/jasa-aransemen-lagu": { en: "/arrangement", id: "/id/jasa-aransemen-lagu" },
   "/song-creation-service": { en: "/song-creation-service", id: "/id/jasa-pembuatan-lagu" },
@@ -92,19 +96,21 @@ module.exports = {
     const isLegal = path.startsWith("/legal");
     const isImportant = IMPORTANT_ROUTES.has(path);
     const pair = LANGUAGE_PAIRS[path];
-    const salesPriority = path === "/arrangement" || path === "/id/jasa-aransemen-lagu"
+    const salesPriority = path === "/" || path === "/id"
       ? 1
+      : path === "/arrangement" || path === "/id/jasa-aransemen-lagu"
+      ? 0.95
       : path === "/song-creation-service" || path === "/id/jasa-pembuatan-lagu"
         ? 0.9
         : path === "/learn/how-to-make-a-song" || path === "/id/cara-bikin-lagu"
           ? 0.8
-          : path === "/id"
-            ? 0.9
-          : isImportant ? 0.75 : path === "/" ? 0.7 : isLegal ? 0.3 : 0.5;
+          : path === "/company"
+            ? 0.5
+          : isImportant ? 0.75 : isLegal ? 0.3 : 0.5;
 
     return {
       loc: path,
-      changefreq: isLegal ? "yearly" : isImportant ? "weekly" : "monthly",
+      changefreq: isLegal ? "yearly" : path === "/company" ? "monthly" : isImportant ? "weekly" : "monthly",
       priority: salesPriority,
       alternateRefs: pair ? [
         { href: `${SITE_URL}${pair.en}`, hreflang: "en-US", hrefIsAbsolute: true },

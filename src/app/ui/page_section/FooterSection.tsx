@@ -44,7 +44,8 @@ export default function Footer(): React.JSX.Element {
     {
       title: "Company",
       links: [
-        { label: "About", href: "/about" },
+        { label: "FMG Universe", href: "/company" },
+        { label: "About", href: "/company#about" },
         { label: "Careers", href: "/careers" },
         { label: "Contact", href: "/contact" },
         { label: "Locations", href: "/locations" },
@@ -53,8 +54,8 @@ export default function Footer(): React.JSX.Element {
     {
       title: "Platform",
       links: [
-        { label: "Overview", href: "/#about" },
-        { label: "Products", href: "/#features" },
+        { label: "Overview", href: "/company#about" },
+        { label: "Products", href: "/company#features" },
         { label: "Client Portal", href: "/login" },
       ],
     },

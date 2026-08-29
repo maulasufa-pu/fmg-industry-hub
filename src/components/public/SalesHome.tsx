@@ -3,6 +3,7 @@ import { ArrowRight, CheckCircle2, Headphones, MessageSquareText, Music2, Slider
 
 import { JsonLd } from "@/components/JsonLd";
 import NewCustomerPromoCard from "@/components/public/NewCustomerPromoCard";
+import HomePromoPopup from "@/components/public/HomePromoPopup";
 import { siteConfig } from "@/lib/site";
 import { CompanyPortfolioShowcase, CompanyPricingSection, CompanyReleasedWorks } from "@/app/CompanyPageClient";
 
@@ -52,6 +53,7 @@ export default function SalesHome({ language }: { language: "en" | "id" }) {
   return (
     <main className="min-h-screen bg-white text-slate-950 dark:bg-black dark:text-white">
       <JsonLd id={`${language}-sales-home`} data={serviceSchema} />
+      <HomePromoPopup />
       <section className="relative overflow-hidden px-5 py-20 sm:py-28">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(124,58,237,0.18),transparent_36%),radial-gradient(circle_at_85%_35%,rgba(244,63,94,0.13),transparent_32%)]" />
         <div className="relative mx-auto max-w-6xl">

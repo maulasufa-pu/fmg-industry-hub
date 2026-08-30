@@ -30,6 +30,9 @@ import {
   ArrowUpDown
 } from "lucide-react";
 import Image from "next/image";
+import FmgUniverseLogo, {
+  FMG_UNIVERSE_LIGHT_LOGO,
+} from "@/components/brand/FmgUniverseLogo";
 import Link from "next/link";
 import {
   DndContext,
@@ -2311,7 +2314,7 @@ const PortfolioCard = React.memo(function PortfolioCard({
     }
     
     // Priority 5: Default FMG logo
-    return "/logo/FMG-Universe-2026.png";
+    return FMG_UNIVERSE_LIGHT_LOGO;
   };
 
   // Artwork/Thumbnail Priority System:
@@ -2340,11 +2343,12 @@ const PortfolioCard = React.memo(function PortfolioCard({
     }
     
     // Final fallback to default logo
-    setImgSrc("/logo/FMG-Universe-2026.png");
+    setImgSrc(FMG_UNIVERSE_LIGHT_LOGO);
     setImgError(true);
   };
 
   const hasCustomArtwork = item.artwork_link || (item.youtube_link && getYouTubeVideoId(item.youtube_link));
+  const usesFallbackLogo = imgSrc === FMG_UNIVERSE_LIGHT_LOGO;
 
   // List View Layout - Compact horizontal list
   if (viewMode === 'list') {
@@ -2364,16 +2368,25 @@ const PortfolioCard = React.memo(function PortfolioCard({
         <div className="flex items-center gap-3 p-3">
           {/* Compact Thumbnail - Small square */}
           <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10">
-            <Image
-              src={imgSrc}
-              alt={item.song_title}
-              fill
-              loading="lazy"
-              className={hasCustomArtwork ? "object-cover" : "object-contain p-1 opacity-70"}
-              sizes="64px"
-              quality={70}
-              onError={handleImageError}
-            />
+            {usesFallbackLogo ? (
+              <FmgUniverseLogo
+                alt="FMG Universe logo"
+                fill
+                className="object-contain p-1 opacity-70"
+                sizes="64px"
+              />
+            ) : (
+              <Image
+                src={imgSrc}
+                alt={item.song_title}
+                fill
+                loading="lazy"
+                className={hasCustomArtwork ? "object-cover" : "object-contain p-1 opacity-70"}
+                sizes="64px"
+                quality={70}
+                onError={handleImageError}
+              />
+            )}
           </div>
 
           {/* Content - Title & Artist */}
@@ -2515,20 +2528,29 @@ const PortfolioCard = React.memo(function PortfolioCard({
       <div className="relative h-48 overflow-hidden bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-pink-500/20">
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
         
-        <Image
-          src={imgSrc}
-          alt={item.song_title}
-          fill
-          loading="lazy"
-          placeholder="blur"
-          blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzJhMmEzMiIvPjwvc3ZnPg=="
-          className={hasCustomArtwork
-            ? "object-cover transition-transform duration-700 group-hover:scale-110"
-            : "object-contain p-3 opacity-70"}
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          quality={75}
-          onError={handleImageError}
-        />
+        {usesFallbackLogo ? (
+          <FmgUniverseLogo
+            alt="FMG Universe logo"
+            fill
+            className="object-contain p-3 opacity-70"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        ) : (
+          <Image
+            src={imgSrc}
+            alt={item.song_title}
+            fill
+            loading="lazy"
+            placeholder="blur"
+            blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzJhMmEzMiIvPjwvc3ZnPg=="
+            className={hasCustomArtwork
+              ? "object-cover transition-transform duration-700 group-hover:scale-110"
+              : "object-contain p-3 opacity-70"}
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            quality={75}
+            onError={handleImageError}
+          />
+        )}
 
         {/* Genre Badge */}
         <div className="absolute top-4 right-4 z-20 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-medium px-3 py-1 rounded-full">
@@ -3145,12 +3167,14 @@ function PortfolioDetailModal({
     }
     
     // Priority 5: Default FMG logo
-    return "/logo/FMG-Universe-2026.png";
+    return FMG_UNIVERSE_LIGHT_LOGO;
   };
 
   React.useEffect(() => {
     setImgSrc(getArtworkUrl());
   }, [item]);
+
+  const usesFallbackLogo = imgSrc === FMG_UNIVERSE_LIGHT_LOGO;
 
   const formatDate = (dateString: string | null): string => {
     if (!dateString) return 'TBA';
@@ -3176,15 +3200,24 @@ function PortfolioDetailModal({
 
         {/* Artwork Header */}
         <div className="relative h-64 sm:h-80 overflow-hidden bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-pink-500/20">
-          <Image
-            src={imgSrc}
-            alt={item.song_title}
-            fill
-            className={imgSrc === "/logo/FMG-Universe-2026.png" ? "object-contain p-4" : "object-cover"}
-            sizes="(max-width: 640px) 100vw, 672px"
-            priority
-            onError={() => setImgSrc("/logo/FMG-Universe-2026.png")}
-          />
+          {usesFallbackLogo ? (
+            <FmgUniverseLogo
+              alt="FMG Universe logo"
+              fill
+              className="object-contain p-4"
+              sizes="(max-width: 640px) 100vw, 672px"
+            />
+          ) : (
+            <Image
+              src={imgSrc}
+              alt={item.song_title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 100vw, 672px"
+              priority
+              onError={() => setImgSrc(FMG_UNIVERSE_LIGHT_LOGO)}
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         </div>
 

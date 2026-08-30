@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { motion, AnimatePresence, Variants, MotionConfig } from "framer-motion";
-import Image from "next/image";
 import UserDropdown from "../pop_over/user_dropdown";
 import { useProfile } from "@/hooks/useProfile";
 import ProfileAvatar from "@/components/ui/ProfileAvatar";
@@ -33,6 +32,7 @@ import { CurrencyDropdownAdvanced } from "@/components/CurrencyDropdownAdvanced"
 import LanguageSelector from "@/components/LanguageSelector";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { localizedPathFor } from "@/i18n/language-routes";
+import FmgUniverseLogo from "@/components/brand/FmgUniverseLogo";
 
 type MenuItem = {
   label: string;
@@ -446,13 +446,12 @@ export const HeaderSection = (): React.JSX.Element => {
             </div>
 
             <Link href={homeHref} className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
-              <Image
-                src="/logo/FMG-Universe-2026.png"
+              <FmgUniverseLogo
                 alt="FMG Universe Logo"
                 width={120}
                 height={80}
                 className="h-9 w-[54px] rounded-md object-contain"
-                priority
+                fetchPriority="high"
               />
             </Link>
 
@@ -474,13 +473,12 @@ export const HeaderSection = (): React.JSX.Element => {
 
           <div className="hidden h-16 items-center justify-between min-[1028px]:flex">
             <Link href={homeHref} className="flex items-center gap-2 font-semibold flex-shrink-0 min-w-0">
-              <Image
-                src="/logo/FMG-Universe-2026.png"
+              <FmgUniverseLogo
                 alt="FMG Universe Logo"
                 width={120}
                 height={80}
                 className="block h-10 w-[60px] rounded-md object-contain flex-shrink-0"
-                priority
+                fetchPriority="high"
               />
               <div className="min-w-0">
                 <BrandLockup

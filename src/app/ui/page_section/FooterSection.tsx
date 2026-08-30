@@ -107,7 +107,8 @@ export default function Footer(): React.JSX.Element {
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <BrandMark
             href={language === "id" ? "/id" : "/"}
-            logoSrc="/logo/FMG-Universe-2026.png"
+            logoSrc="/logo/FMG-Universe-light.svg"
+            logoDarkSrc="/logo/FMG-Universe-dark.svg"
             logoSize={60}
             logoClassName="h-10 w-[60px] rounded-md object-contain flex-shrink-0"
           />

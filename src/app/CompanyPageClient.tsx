@@ -19,6 +19,7 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import NewCustomerPromoCard from "@/components/public/NewCustomerPromoCard";
 import PaymentMethodsShowcase from "@/components/payments/PaymentMethodsShowcase";
+import FmgUniverseLogo from "@/components/brand/FmgUniverseLogo";
 // import Hero from "./ui/main_container/hero";
 /** urutan & “berat” ukuran: basic small, pro medium, ultimate large, custom largest */
 
@@ -1921,15 +1922,13 @@ export default function LandingPage() {
           {/* 1) FMG Universe */}
           <div className="grid items-center gap-4 rounded-3xl border border-black/10 bg-gradient-to-br from-white to-neutral-50 p-4 shadow-sm transition hover:shadow-md dark:border-white/10 dark:from-zinc-950 dark:to-black sm:grid-cols-[208px_1fr] sm:gap-6 sm:p-6">
             <div
-              className="relative mx-auto aspect-[3/2] w-44 overflow-hidden rounded-2xl bg-black ring-1 ring-black/10 sm:mx-0 sm:w-48"
+              className="relative mx-auto aspect-[3/2] w-44 overflow-hidden rounded-2xl bg-white ring-1 ring-black/10 dark:bg-black dark:ring-white/10 sm:mx-0 sm:w-48"
             >
-              <Image
-                src="/logo/FMG-Universe-2026.png"
+              <FmgUniverseLogo
                 alt="FMG Universe logo"
                 fill
                 className="rounded-2xl object-contain"
                 sizes="(max-width: 640px) 11rem, 12rem"
-                priority
               />
             </div>
             <div className="text-center sm:text-left">

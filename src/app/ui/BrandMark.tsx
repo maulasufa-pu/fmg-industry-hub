@@ -38,6 +38,7 @@ export type BrandMarkProps = {
   title?: string;
   subtitle?: string;
   logoSrc?: string;
+  logoDarkSrc?: string;
   logoAlt?: string;
   logoSize?: number;
   logoClassName?: string;
@@ -54,6 +55,7 @@ export default function BrandMark({
   title = "FLEMMO MUSIC",
   subtitle = "Global Universe Solution",
   logoSrc,
+  logoDarkSrc,
   logoAlt = "FMG Universe Logo",
   logoSize = 40,
   logoClassName = "rounded-md object-contain flex-shrink-0", // preserve non-square brand lockups
@@ -65,14 +67,28 @@ export default function BrandMark({
   const content = (
     <div className={`flex items-center ${gapClassName} ${className}`}>
       {logoSrc && logoSrc.trim() !== "" && (
-        <Image
-          src={logoSrc}
-          alt={logoAlt}
-          width={logoSize}
-          height={logoSize}
-          className={`block h-[${logoSize}px] w-[${logoSize}px] ${logoClassName}`}
-          priority={priority}
-        />
+        <>
+          <Image
+            src={logoSrc}
+            alt={logoAlt}
+            width={logoSize}
+            height={logoSize}
+            className={`block h-[${logoSize}px] w-[${logoSize}px] ${logoClassName} ${logoDarkSrc ? "dark:hidden" : ""}`}
+            {...(logoDarkSrc
+              ? { fetchPriority: priority ? "high" : undefined }
+              : { preload: priority })}
+          />
+          {logoDarkSrc && (
+            <Image
+              src={logoDarkSrc}
+              alt={logoAlt}
+              width={logoSize}
+              height={logoSize}
+              className={`hidden h-[${logoSize}px] w-[${logoSize}px] ${logoClassName} dark:block`}
+              fetchPriority={priority ? "high" : undefined}
+            />
+          )}
+        </>
       )}
       <BrandLockup
         title={title}

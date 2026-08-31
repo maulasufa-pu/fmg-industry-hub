@@ -1,15 +1,20 @@
 "use client";
 
-import { useState, type DragEvent } from "react";
+import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { AlertTriangle, CheckCircle2, Download, FileJson, FolderUp, Loader2, Upload, X } from "lucide-react";
 
-import { ARTICLE_IMPORT_LIMIT, parseArticleImportText } from "@/lib/articles/transfer";
+import { ARTICLE_IMPORT_LIMIT, inspectArticleImportText, parseArticleImportText, type ArticleImportInspection } from "@/lib/articles/transfer";
 
 type ConflictMode = "copy" | "replace" | "skip";
 type ImportResponse = {
   summary: { total: number; created: number; replaced: number; skipped: number; failed: number };
   results: Array<{ index: number; title: string; status: "created" | "replaced" | "skipped" | "failed"; message?: string }>;
 };
+type FileInspection = { key: string; kind?: ArticleImportInspection["kind"]; count: number; error?: string };
+
+function fileKey(file: File) {
+  return `${file.name}:${file.size}:${file.lastModified}`;
+}
 
 function fileSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -23,8 +28,37 @@ export default function ArticleTransferActions({ selectedIds, onImported }: { se
   const [conflict, setConflict] = useState<ConflictMode>("copy");
   const [preserveStatus, setPreserveStatus] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [inspecting, setInspecting] = useState(false);
+  const [inspections, setInspections] = useState<FileInspection[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<ImportResponse | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (files.length === 0) {
+      setInspections([]);
+      setInspecting(false);
+      return () => { active = false; };
+    }
+    setInspecting(true);
+    void Promise.all(files.map(async (file): Promise<FileInspection> => {
+      try {
+        const inspection = inspectArticleImportText(await file.text(), file.name);
+        return { key: fileKey(file), kind: inspection.kind, count: inspection.articles.length };
+      } catch (inspectionError) {
+        return { key: fileKey(file), count: 0, error: inspectionError instanceof Error ? inspectionError.message : "File tidak dapat dibaca." };
+      }
+    })).then((next) => {
+      if (!active) return;
+      setInspections(next);
+      setInspecting(false);
+    });
+    return () => { active = false; };
+  }, [files]);
+
+  const inspectionByKey = useMemo(() => new Map(inspections.map((inspection) => [inspection.key, inspection])), [inspections]);
+  const detectedArticles = inspections.reduce((total, inspection) => total + inspection.count, 0);
+  const invalidFiles = inspections.filter((inspection) => inspection.error).length;
 
   function addFiles(incoming: FileList | File[]) {
     const accepted = Array.from(incoming).filter((file) => /\.jsonl?$/i.test(file.name));
@@ -32,9 +66,11 @@ export default function ArticleTransferActions({ selectedIds, onImported }: { se
       setError("Pilih file .json atau .jsonl.");
       return;
     }
+    setInspecting(true);
+    setInspections([]);
     setFiles((current) => {
-      const seen = new Set(current.map((file) => `${file.name}:${file.size}:${file.lastModified}`));
-      return [...current, ...accepted.filter((file) => !seen.has(`${file.name}:${file.size}:${file.lastModified}`))];
+      const seen = new Set(current.map(fileKey));
+      return [...current, ...accepted.filter((file) => !seen.has(fileKey(file)))];
     });
     setError(null);
     setReport(null);
@@ -126,7 +162,10 @@ export default function ArticleTransferActions({ selectedIds, onImported }: { se
               </div>
             </div>
 
-            {files.length > 0 ? <div className="rounded-2xl border border-slate-200 dark:border-white/10"><div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-white/10"><span className="text-sm font-black">{files.length} file dipilih</span><button type="button" onClick={() => setFiles([])} className="text-xs font-bold text-rose-600">Hapus semua</button></div><div className="max-h-40 divide-y divide-slate-100 overflow-y-auto dark:divide-white/5">{files.map((file) => <div key={`${file.name}:${file.lastModified}`} className="flex items-center gap-3 px-4 py-2.5 text-sm"><FileJson className="h-4 w-4 shrink-0 text-violet-500" /><span className="min-w-0 flex-1 truncate">{file.webkitRelativePath || file.name}</span><span className="text-xs text-slate-400">{fileSize(file.size)}</span></div>)}</div></div> : null}
+            {files.length > 0 ? <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-white/10"><span className="text-sm font-black">{inspecting ? <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Mendeteksi isi file…</span> : <>{detectedArticles} artikel terdeteksi dari {files.length} file{invalidFiles > 0 ? ` · ${invalidFiles} file bermasalah` : ""}</>}</span><button type="button" onClick={() => setFiles([])} className="text-xs font-bold text-rose-600">Hapus semua</button></div>
+              <div className="max-h-56 divide-y divide-slate-100 overflow-y-auto dark:divide-white/5">{files.map((file) => { const inspection = inspectionByKey.get(fileKey(file)); return <div key={fileKey(file)} className="flex items-center gap-3 px-4 py-3 text-sm"><FileJson className={`h-4 w-4 shrink-0 ${inspection?.error ? "text-rose-500" : "text-violet-500"}`} /><span className="min-w-0 flex-1"><span className="block truncate">{file.webkitRelativePath || file.name}</span>{inspection?.error ? <span className="mt-0.5 block truncate text-xs text-rose-600 dark:text-rose-300">{inspection.error}</span> : null}</span>{inspection?.kind ? <span className={`rounded-full px-2 py-1 text-[10px] font-black uppercase tracking-wider ${inspection.kind === "single" ? "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-200" : "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-200"}`}>{inspection.kind}</span> : null}{inspection && !inspection.error ? <span className="whitespace-nowrap text-xs font-bold text-slate-600 dark:text-slate-300">{inspection.count} artikel</span> : null}<span className="whitespace-nowrap text-xs text-slate-400">{fileSize(file.size)}</span></div>; })}</div>
+            </div> : null}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div><label className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-500">Jika slug sudah ada</label><select value={conflict} onChange={(event) => setConflict(event.target.value as ConflictMode)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-semibold dark:border-white/10 dark:bg-slate-900"><option value="copy">Buat sebagai salinan baru</option><option value="replace">Ganti artikel yang ada</option><option value="skip">Lewati artikel tersebut</option></select></div>
@@ -139,7 +178,7 @@ export default function ArticleTransferActions({ selectedIds, onImported }: { se
             {error ? <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-400/20 dark:bg-rose-500/10 dark:text-rose-200"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />{error}</div> : null}
             {report ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-400/20 dark:bg-emerald-500/10"><div className="flex items-center gap-2 font-black text-emerald-800 dark:text-emerald-200"><CheckCircle2 className="h-5 w-5" />Import selesai</div><div className="mt-3 grid grid-cols-4 gap-2 text-center">{(["created", "replaced", "skipped", "failed"] as const).map((key) => <div key={key} className="rounded-xl bg-white/70 p-2 dark:bg-black/20"><div className="text-lg font-black">{report.summary[key]}</div><div className="text-[10px] uppercase tracking-wider text-slate-500">{key}</div></div>)}</div>{report.results.some((item) => item.status === "failed") ? <div className="mt-3 space-y-1 text-xs text-rose-700 dark:text-rose-200">{report.results.filter((item) => item.status === "failed").slice(0, 10).map((item) => <p key={item.index}><strong>{item.title}:</strong> {item.message}</p>)}</div> : null}</div> : null}
 
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={resetAndClose} className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold dark:border-white/10">{report ? "Selesai" : "Batal"}</button><button type="button" onClick={() => void importArticles()} disabled={importing || files.length === 0} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-black text-white disabled:opacity-40 dark:bg-white dark:text-slate-950">{importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}Import {files.length > 0 ? `${files.length} file` : "articles"}</button></div>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={resetAndClose} className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold dark:border-white/10">{report ? "Selesai" : "Batal"}</button><button type="button" onClick={() => void importArticles()} disabled={importing || inspecting || files.length === 0 || invalidFiles > 0 || detectedArticles === 0} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-black text-white disabled:opacity-40 dark:bg-white dark:text-slate-950">{importing || inspecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}Import {detectedArticles > 0 ? `${detectedArticles} artikel` : "articles"}</button></div>
           </div>
         </div>
       </div> : null}

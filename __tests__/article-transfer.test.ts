@@ -1,5 +1,6 @@
 import {
   createArticleTransferDocument,
+  inspectArticleImportText,
   parseArticleImportText,
   unwrapArticleImport,
 } from "@/lib/articles/transfer";
@@ -39,6 +40,13 @@ describe("article transfer format", () => {
     expect(parseArticleImportText(JSON.stringify([draft, draft]), "many.json")).toHaveLength(2);
     expect(parseArticleImportText(JSON.stringify({ articles: [draft] }), "batch.json")).toHaveLength(1);
     expect(parseArticleImportText(`${JSON.stringify(draft)}\n${JSON.stringify(draft)}`, "folder.jsonl")).toHaveLength(2);
+  });
+
+  it("detects single, batch, and JSONL files with their article count", () => {
+    expect(inspectArticleImportText(JSON.stringify(draft), "one.json")).toMatchObject({ kind: "single", articles: [draft] });
+    expect(inspectArticleImportText(JSON.stringify([draft, draft]), "batch.json")).toMatchObject({ kind: "batch" });
+    expect(inspectArticleImportText(`${JSON.stringify(draft)}\n${JSON.stringify(draft)}`, "batch.jsonl")).toMatchObject({ kind: "jsonl" });
+    expect(inspectArticleImportText(JSON.stringify({ articles: [draft, draft, draft] }), "export.json").articles).toHaveLength(3);
   });
 
   it("reports the filename and JSONL line when parsing fails", () => {

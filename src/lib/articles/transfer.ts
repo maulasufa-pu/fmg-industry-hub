@@ -10,6 +10,11 @@ export type ArticleTransferDocument = {
   articles: ArticleDraft[];
 };
 
+export type ArticleImportInspection = {
+  kind: "single" | "batch" | "jsonl";
+  articles: unknown[];
+};
+
 export function toArticleDraft(article: ArticleRow): ArticleDraft {
   return {
     slug: article.slug,
@@ -51,12 +56,12 @@ export function unwrapArticleImport(value: unknown): unknown[] {
   throw new Error("Isi file bukan artikel atau batch artikel yang valid.");
 }
 
-export function parseArticleImportText(text: string, filename = "article.json"): unknown[] {
+export function inspectArticleImportText(text: string, filename = "article.json"): ArticleImportInspection {
   const trimmed = text.trim();
   if (!trimmed) throw new Error(`${filename} kosong.`);
 
   if (filename.toLowerCase().endsWith(".jsonl")) {
-    return trimmed.split(/\r?\n/).flatMap((line, index) => {
+    const articles = trimmed.split(/\r?\n/).flatMap((line, index) => {
       try {
         return unwrapArticleImport(JSON.parse(line));
       } catch (error) {
@@ -64,12 +69,20 @@ export function parseArticleImportText(text: string, filename = "article.json"):
         throw new Error(`${filename}, baris ${index + 1}: ${message}`);
       }
     });
+    return { kind: "jsonl", articles };
   }
 
   try {
-    return unwrapArticleImport(JSON.parse(trimmed));
+    const value: unknown = JSON.parse(trimmed);
+    const articles = unwrapArticleImport(value);
+    const isBatch = Array.isArray(value) || Boolean(value && typeof value === "object" && "articles" in value);
+    return { kind: isBatch ? "batch" : "single", articles };
   } catch (error) {
     const message = error instanceof Error ? error.message : "JSON tidak valid";
     throw new Error(`${filename}: ${message}`);
   }
+}
+
+export function parseArticleImportText(text: string, filename = "article.json"): unknown[] {
+  return inspectArticleImportText(text, filename).articles;
 }

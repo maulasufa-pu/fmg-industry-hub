@@ -6,7 +6,7 @@ import {
   requireAdminRequest,
 } from "@/lib/auth/server";
 import { articleInputSchema, slugifyArticleTitle, validateArticleForPublishing } from "@/lib/articles/schema";
-import { ARTICLE_IMPORT_LIMIT } from "@/lib/articles/transfer";
+import { ARTICLE_IMPORT_LIMIT, normalizeArticleImportCandidate } from "@/lib/articles/transfer";
 import type { ArticleDraft } from "@/lib/articles/types";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     const changedPaths = new Set<string>();
 
     for (const [index, candidate] of body.data.articles.entries()) {
-      const parsed = articleInputSchema.safeParse(candidate);
+      const parsed = articleInputSchema.safeParse(normalizeArticleImportCandidate(candidate));
       if (!parsed.success) {
         const issue = parsed.error.issues[0];
         results.push({ index, title: candidate && typeof candidate === "object" && "title" in candidate ? String(candidate.title) : `Article ${index + 1}`, status: "failed", message: `${issue.path.join(".") || "article"}: ${issue.message}` });

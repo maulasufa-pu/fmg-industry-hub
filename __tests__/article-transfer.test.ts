@@ -1,9 +1,11 @@
 import {
   createArticleTransferDocument,
   inspectArticleImportText,
+  normalizeArticleImportCandidate,
   parseArticleImportText,
   unwrapArticleImport,
 } from "@/lib/articles/transfer";
+import { articleInputSchema } from "@/lib/articles/schema";
 import { DEFAULT_ARTICLE_DESIGN, type ArticleDraft } from "@/lib/articles/types";
 
 const draft: ArticleDraft = {
@@ -51,5 +53,28 @@ describe("article transfer format", () => {
 
   it("reports the filename and JSONL line when parsing fails", () => {
     expect(() => parseArticleImportText(`${JSON.stringify(draft)}\n{bad`, "broken.jsonl")).toThrow("broken.jsonl, baris 2");
+  });
+
+  it.each([
+    ["cyan", "blue"],
+    ["sky", "blue"],
+    ["indigo", "violet"],
+    ["purple", "violet"],
+    ["slate", "violet"],
+    ["stone", "violet"],
+    ["green", "emerald"],
+    ["lime", "emerald"],
+    ["teal", "emerald"],
+    ["red", "rose"],
+    ["pink", "rose"],
+    ["orange", "amber"],
+    ["yellow", "amber"],
+    ["zinc", "violet"],
+    ["#14b8a6", "emerald"],
+    ["#f43f5e", "rose"],
+  ])("maps imported accent %s to supported accent %s", (source, expected) => {
+    const normalized = normalizeArticleImportCandidate({ ...draft, design: { ...draft.design, accent: source } }) as ArticleDraft;
+    expect(normalized.design.accent).toBe(expected);
+    expect(articleInputSchema.safeParse(normalized).success).toBe(true);
   });
 });

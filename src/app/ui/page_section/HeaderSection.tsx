@@ -19,6 +19,7 @@ import {
   Package2,
   Briefcase,
   Mail,
+  Newspaper,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { motion, AnimatePresence, Variants, MotionConfig } from "framer-motion";
@@ -56,6 +57,7 @@ const MENU: readonly MenuItem[] = [
   { label: "Academy", href: "/academy", desc: "Workshops, mentorships, career pathways.", Icon: GraduationCap },
   { label: "Media", href: "/media", desc: "Content, MV, promos & PR distribution.", Icon: Film },
   { label: "Event & Festival", href: "/event", desc: "Showcases, tours, venue & brand collabs.", Icon: PartyPopper },
+  { label: "Articles", href: "/articles", desc: "Practical insights about songwriting, arrangement, production, and music.", Icon: Newspaper },
 ];
 
 const UNIVERSE: readonly UniverseItem[] = [
@@ -75,6 +77,7 @@ const MENU_ID: Record<string, { label: string; desc: string }> = {
   "/academy": { label: "Akademi", desc: "Workshop, mentoring, dan jalur karier." },
   "/media": { label: "Media", desc: "Konten, video musik, promosi, dan distribusi PR." },
   "/event": { label: "Event & Festival", desc: "Showcase, tur, venue, dan kolaborasi brand." },
+  "/articles": { label: "Artikel", desc: "Insight praktis tentang lagu, aransemen, produksi, dan musik." },
 };
 
 const UNIVERSE_ID: Record<string, string> = {
@@ -505,6 +508,9 @@ export const HeaderSection = (): React.JSX.Element => {
                 <Link href={language === "id" ? "/id/portofolio?work=arrangement" : ARRANGEMENT_PORTFOLIO_PATH} className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
                   {pick("Portofolio", "Portfolio")}
                 </Link>
+                <Link href={localeHref("/articles")} className="opacity-80 hover:opacity-100 whitespace-nowrap transition-opacity">
+                  {pick("Artikel", "Articles")}
+                </Link>
 
                 <div className="relative" ref={menuRef}>
                 <button
@@ -816,7 +822,7 @@ export const HeaderSection = (): React.JSX.Element => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 xs:grid-cols-4 gap-2 text-sm mt-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-sm mt-3">
                     <Link
                       href="/company#about"
                       onClick={() => setMobileOpen(false)}
@@ -844,6 +850,13 @@ export const HeaderSection = (): React.JSX.Element => {
                       className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2.5 text-center hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
                     >
                       {pick("Portofolio", "Portfolio")}
+                    </Link>
+                    <Link
+                      href={localeHref("/articles")}
+                      onClick={() => setMobileOpen(false)}
+                      className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 px-3 py-2.5 text-center hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
+                    >
+                      {pick("Artikel", "Articles")}
                     </Link>
                   </div>
 

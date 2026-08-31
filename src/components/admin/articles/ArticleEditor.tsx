@@ -22,6 +22,7 @@ import {
   ArrowLeft,
   Check,
   ChevronDown,
+  Code2,
   Copy,
   GripVertical,
   Heading2,
@@ -42,12 +43,13 @@ import {
   Text,
   Trash2,
   Upload,
+  WandSparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import ArticleRenderer from "@/components/articles/ArticleRenderer";
-import { estimateReadingMinutes, slugifyArticleTitle } from "@/lib/articles/schema";
+import { articleInputSchema, estimateReadingMinutes, slugifyArticleTitle } from "@/lib/articles/schema";
 import {
   DEFAULT_ARTICLE_DESIGN,
   type ArticleBlock,
@@ -56,7 +58,8 @@ import {
   type ArticleStatus,
 } from "@/lib/articles/types";
 
-type EditorTab = "content" | "seo" | "design";
+type EditorMode = "simple" | "advanced";
+type EditorTab = "content" | "seo" | "design" | "code";
 
 const fieldClass = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-950 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 dark:border-white/10 dark:bg-slate-950 dark:text-white";
 const labelClass = "mb-2 block text-xs font-black uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400";
@@ -146,9 +149,75 @@ function SortableBlock({
   );
 }
 
+function SimpleComposer({
+  blocks,
+  onChange,
+  onAdd,
+  onOpenAdvanced,
+}: {
+  blocks: ArticleBlock[];
+  onChange: (block: ArticleBlock) => void;
+  onAdd: (type: "heading" | "paragraph") => void;
+  onOpenAdvanced: () => void;
+}) {
+  return (
+    <div className="mt-5 space-y-4">
+      <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-400/20 dark:bg-violet-500/10">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="font-black text-violet-950 dark:text-violet-100">Mode menulis sederhana</p>
+            <p className="mt-1 text-sm leading-6 text-violet-800/80 dark:text-violet-200/75">Tulis judul bagian dan paragraf tanpa mengatur desain. Blok khusus tetap aman dan tidak akan terhapus.</p>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => onAdd("heading")} className="rounded-xl border border-violet-300 bg-white px-3 py-2 text-sm font-bold text-violet-800 dark:border-violet-400/30 dark:bg-slate-950 dark:text-violet-200">+ Judul bagian</button>
+            <button type="button" onClick={() => onAdd("paragraph")} className="rounded-xl bg-violet-600 px-3 py-2 text-sm font-bold text-white">+ Paragraf</button>
+          </div>
+        </div>
+      </div>
+
+      {blocks.map((block, index) => {
+        if (block.type === "heading") {
+          return <div key={block.id} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900"><label className={labelClass}>Judul bagian {index + 1}</label><input value={block.text} onChange={(event) => onChange({ ...block, text: event.target.value })} className={`${fieldClass} text-lg font-black`} placeholder="Judul bagian" /></div>;
+        }
+        if (block.type === "paragraph") {
+          return <div key={block.id} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900"><label className={labelClass}>Paragraf {index + 1}</label><textarea value={block.text} onChange={(event) => onChange({ ...block, text: event.target.value })} rows={8} className={fieldClass} placeholder="Tulis dengan bahasa yang alami dan mudah dipahami." /></div>;
+        }
+
+        const labels: Record<ArticleBlock["type"], string> = {
+          paragraph: "Paragraf",
+          heading: "Judul",
+          image: "Gambar",
+          quote: "Kutipan",
+          list: "Daftar",
+          callout: "Sorotan",
+          cta: "Tombol CTA",
+          divider: "Pemisah",
+        };
+        const summary = block.type === "image" ? (block.caption || block.alt || "Gambar artikel")
+          : block.type === "quote" ? block.text
+          : block.type === "list" ? `${block.items.length} poin`
+          : block.type === "callout" ? block.title
+          : block.type === "cta" ? block.heading
+          : "Pemisah visual";
+        return (
+          <div key={block.id} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300"><LayoutTemplate className="h-4 w-4" /></span>
+            <div className="min-w-0 flex-1"><p className="text-sm font-black">{labels[block.type]}</p><p className="truncate text-xs text-slate-500">{summary}</p></div>
+            <button type="button" onClick={onOpenAdvanced} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold dark:border-white/10">Edit lanjutan</button>
+          </div>
+        );
+      })}
+      {blocks.length === 0 ? <button type="button" onClick={() => onAdd("paragraph")} className="flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-slate-300 p-12 text-slate-500 hover:border-violet-400 hover:text-violet-600 dark:border-white/15"><Plus className="h-7 w-7" /><span className="font-bold">Mulai menulis paragraf pertama</span></button> : null}
+    </div>
+  );
+}
+
 export default function ArticleEditor({ articleId }: { articleId: string }) {
   const [article, setArticle] = useState<ArticleRow | null>(null);
+  const [mode, setMode] = useState<EditorMode>("simple");
   const [tab, setTab] = useState<EditorTab>("content");
+  const [codeText, setCodeText] = useState("");
+  const [codeError, setCodeError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -259,6 +328,38 @@ export default function ArticleEditor({ articleId }: { articleId: string }) {
     }
   }
 
+  function generateCode() {
+    if (!draft) return;
+    setCodeText(JSON.stringify(draft, null, 2));
+    setCodeError(null);
+    setSuccess("Kode JSON dibuat dari versi artikel saat ini.");
+  }
+
+  function applyCode() {
+    try {
+      const parsedJson: unknown = JSON.parse(codeText);
+      const parsed = articleInputSchema.safeParse(parsedJson);
+      if (!parsed.success) {
+        const issue = parsed.error.issues[0];
+        throw new Error(`${issue.path.join(".") || "article"}: ${issue.message}`);
+      }
+      update(parsed.data);
+      setCodeError(null);
+      setSuccess("Kode valid dan sudah diterapkan. Klik Simpan untuk menyimpannya ke database.");
+    } catch (codeParseError) {
+      const message = codeParseError instanceof Error ? codeParseError.message : "Kode JSON tidak valid.";
+      setCodeError(message);
+      setSuccess(null);
+    }
+  }
+
+  async function copyCode() {
+    if (!codeText) generateCode();
+    const value = codeText || (draft ? JSON.stringify(draft, null, 2) : "");
+    await navigator.clipboard.writeText(value);
+    setSuccess("Kode artikel disalin.");
+  }
+
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
@@ -282,6 +383,10 @@ export default function ArticleEditor({ articleId }: { articleId: string }) {
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-3">
           <Link href="/admin/articles" className="rounded-xl border border-slate-200 p-2.5 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/5" aria-label="Kembali"><ArrowLeft className="h-4 w-4" /></Link>
           <div className="min-w-0 flex-1"><div className="truncate text-sm font-bold">{article.title}</div><div className="text-xs text-slate-500">{dirty ? "Ada perubahan yang belum disimpan" : "Semua perubahan tersimpan"}</div></div>
+          <div className="flex rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-white/10 dark:bg-white/5" aria-label="Mode editor">
+            <button type="button" onClick={() => setMode("simple")} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-black transition ${mode === "simple" ? "bg-white text-violet-700 shadow-sm dark:bg-slate-800 dark:text-violet-300" : "text-slate-500"}`}><WandSparkles className="h-3.5 w-3.5" />Simple</button>
+            <button type="button" onClick={() => setMode("advanced")} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-black transition ${mode === "advanced" ? "bg-white text-violet-700 shadow-sm dark:bg-slate-800 dark:text-violet-300" : "text-slate-500"}`}><LayoutTemplate className="h-3.5 w-3.5" />Advanced</button>
+          </div>
           <button type="button" onClick={() => setPreview((value) => !value)} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold dark:border-white/10"><Monitor className="h-4 w-4" />{preview ? "Tutup preview" : "Preview"}</button>
           <button type="button" onClick={() => void save()} disabled={saving || !dirty} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold disabled:opacity-40 dark:border-white/10">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Simpan</button>
           <button type="button" onClick={() => void save("published")} disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-violet-500/20 hover:bg-violet-500 disabled:opacity-50"><Send className="h-4 w-4" />{article.status === "published" ? "Perbarui" : "Terbitkan"}</button>
@@ -299,8 +404,9 @@ export default function ArticleEditor({ articleId }: { articleId: string }) {
             <div className="mt-4"><label className={labelClass}>Ringkasan</label><textarea value={article.excerpt} onChange={(event) => update({ excerpt: event.target.value })} rows={3} maxLength={500} className={fieldClass} placeholder="Ringkasan singkat yang membuat pembaca ingin lanjut membaca." /><div className="mt-1 text-right text-xs text-slate-400">{article.excerpt.length}/500</div></div>
           </div>
 
-          <nav className="mt-5 grid grid-cols-3 rounded-2xl border border-slate-200 bg-white p-1.5 dark:border-white/10 dark:bg-slate-900">
-            {([{ id: "content", label: "Konten", Icon: LayoutTemplate }, { id: "seo", label: "SEO", Icon: Search }, { id: "design", label: "Desain", Icon: Sparkles }] as const).map(({ id, label, Icon }) => <button key={id} type="button" onClick={() => setTab(id)} className={`flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-bold transition ${tab === id ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5"}`}><Icon className="h-4 w-4" />{label}</button>)}
+          {mode === "simple" ? <SimpleComposer blocks={article.content} onChange={updateBlock} onAdd={addBlock} onOpenAdvanced={() => { setMode("advanced"); setTab("content"); }} /> : <>
+          <nav className="mt-5 grid grid-cols-2 rounded-2xl border border-slate-200 bg-white p-1.5 dark:border-white/10 dark:bg-slate-900 sm:grid-cols-4">
+            {([{ id: "content", label: "Konten", Icon: LayoutTemplate }, { id: "seo", label: "SEO", Icon: Search }, { id: "design", label: "Desain", Icon: Sparkles }, { id: "code", label: "Code", Icon: Code2 }] as const).map(({ id, label, Icon }) => <button key={id} type="button" onClick={() => { setTab(id); if (id === "code" && !codeText) generateCode(); }} className={`flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-bold transition ${tab === id ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5"}`}><Icon className="h-4 w-4" />{label}</button>)}
           </nav>
 
           {tab === "content" ? <div className="mt-5 space-y-5">
@@ -322,6 +428,16 @@ export default function ArticleEditor({ articleId }: { articleId: string }) {
             <div className="grid gap-4 sm:grid-cols-2"><div><label className={labelClass}>Gaya visual</label><select value={article.design.theme} onChange={(event) => update({ design: { ...article.design, theme: event.target.value as ArticleRow["design"]["theme"] } })} className={fieldClass}><option value="editorial">Editorial</option><option value="minimal">Minimal</option><option value="bold">Bold</option></select></div><div><label className={labelClass}>Hero</label><select value={article.design.heroStyle} onChange={(event) => update({ design: { ...article.design, heroStyle: event.target.value as ArticleRow["design"]["heroStyle"] } })} className={fieldClass}><option value="gradient">Gradient</option><option value="image">Fokus gambar</option><option value="clean">Bersih</option></select></div><div><label className={labelClass}>Lebar isi</label><select value={article.design.bodyWidth} onChange={(event) => update({ design: { ...article.design, bodyWidth: event.target.value as ArticleRow["design"]["bodyWidth"] } })} className={fieldClass}><option value="compact">Ringkas</option><option value="comfortable">Nyaman</option><option value="wide">Lebar</option></select></div><div><label className={labelClass}>Warna aksen</label><select value={article.design.accent} onChange={(event) => update({ design: { ...article.design, accent: event.target.value as ArticleRow["design"]["accent"] } })} className={fieldClass}><option value="violet">Violet</option><option value="blue">Biru</option><option value="emerald">Hijau</option><option value="rose">Merah muda</option><option value="amber">Amber</option></select></div></div>
             <label className="flex items-center justify-between rounded-xl border border-slate-200 p-4 dark:border-white/10"><span><span className="block text-sm font-bold">Daftar isi otomatis</span><span className="mt-1 block text-xs text-slate-500">Dibuat dari semua Heading 2 dan Heading 3.</span></span><input type="checkbox" checked={article.design.showToc} onChange={(event) => update({ design: { ...article.design, showToc: event.target.checked } })} className="h-5 w-5 accent-violet-600" /></label>
           </div> : null}
+          {tab === "code" ? <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900 sm:p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div><h2 className="font-black">Article code</h2><p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">Generate, edit, lalu terapkan struktur artikel sebagai JSON. Kode selalu divalidasi sebelum dapat masuk ke artikel dan tidak pernah dieksekusi sebagai script.</p></div>
+              <div className="flex flex-wrap gap-2"><button type="button" onClick={generateCode} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold dark:border-white/10"><Code2 className="h-4 w-4" />Generate code</button><button type="button" onClick={() => void copyCode()} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold dark:border-white/10"><Copy className="h-4 w-4" />Copy</button></div>
+            </div>
+            <textarea value={codeText} onChange={(event) => { setCodeText(event.target.value); setCodeError(null); }} rows={28} spellCheck={false} className="mt-5 w-full resize-y rounded-2xl border border-slate-800 bg-slate-950 p-4 font-mono text-[13px] leading-6 text-emerald-300 outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10" aria-label="Kode JSON artikel" />
+            {codeError ? <div className="mt-3 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:border-rose-400/20 dark:bg-rose-500/10 dark:text-rose-200"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{codeError}</div> : null}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-slate-500">Menerapkan kode belum menyimpan ke database. Periksa preview, lalu klik Simpan atau Terbitkan.</p><button type="button" onClick={applyCode} className="rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-violet-500/20 hover:bg-violet-500">Validasi & terapkan code</button></div>
+          </div> : null}
+          </>}
         </main>
 
         <aside className={`${preview ? "fixed inset-0 z-40 overflow-y-auto bg-white p-4 dark:bg-black sm:p-8 xl:static xl:z-auto xl:max-h-[calc(100vh-7rem)] xl:rounded-2xl xl:border xl:border-slate-200 xl:p-0 xl:dark:border-white/10" : "hidden xl:block"}`}>

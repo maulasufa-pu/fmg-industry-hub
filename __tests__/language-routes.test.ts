@@ -8,6 +8,8 @@ describe("localized public routes", () => {
     ["/portfolio", "id", "/id/portofolio"],
     ["/id/kontak", "en", "/contact"],
     ["/arrangement", "id", "/id/jasa-aransemen-lagu"],
+    ["/articles", "id", "/id/artikel"],
+    ["/id/artikel", "en", "/articles"],
     ["/", "id", "/id"],
     ["/id", "en", "/"],
   ] as const)("maps %s to %s", (pathname, language, expected) => {

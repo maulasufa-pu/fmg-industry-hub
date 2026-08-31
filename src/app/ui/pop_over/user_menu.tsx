@@ -275,6 +275,13 @@ export default function UserMenu() {
                 >
                   Settings
                 </Link>
+                <Link
+                  href="/articles"
+                  className="rounded-lg px-3 py-2 text-coolgray-90 dark:text-gray-200 hover:bg-coolgray-10 dark:hover:bg-gray-700"
+                  onClick={() => setOpen(false)}
+                >
+                  Articles
+                </Link>
 
                 {/* Dark Mode Toggle */}
                 {mounted && (
@@ -307,6 +314,13 @@ export default function UserMenu() {
                       onClick={() => setOpen(false)}
                     >
                       Admin Projects
+                    </Link>
+                    <Link
+                      href="/admin/articles"
+                      className="rounded-lg px-3 py-2 text-coolgray-90 dark:text-gray-200 hover:bg-coolgray-10 dark:hover:bg-gray-700"
+                      onClick={() => setOpen(false)}
+                    >
+                      Article Studio
                     </Link>
                     <Link
                       href="/admin/invoices"

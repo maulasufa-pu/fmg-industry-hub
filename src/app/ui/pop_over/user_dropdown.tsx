@@ -14,7 +14,10 @@ import {
   Users,
   BarChart3,
   Home, // ⬅️ ditambahkan
+  Newspaper,
+  FilePenLine,
 } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import LogoutButton from "@/app/auth/LogoutButton";
 import type { ProfileInfo } from "@/hooks/useProfile";
@@ -31,6 +34,8 @@ interface UserDropdownProps {
 export default function UserDropdown({ isOpen, onClose, profile, loading, className = "" }: UserDropdownProps) {
   const { theme, setTheme } = useTheme();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const articleHref = pathname?.startsWith("/id") ? "/id/artikel" : "/articles";
 
   // Close on outside click + Esc
   useEffect(() => {
@@ -165,6 +170,13 @@ export default function UserDropdown({ isOpen, onClose, profile, loading, classN
           >
             Login
           </Link>
+          <Link
+            href={articleHref}
+            onClick={onClose}
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-black/10 bg-white/70 font-semibold text-slate-900 transition hover:bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-100"
+          >
+            <Newspaper className="h-4 w-4" /> Articles
+          </Link>
         </div>
       ) : (
         <>
@@ -200,6 +212,17 @@ export default function UserDropdown({ isOpen, onClose, profile, loading, classN
                     <LayoutDashboard className="h-4 w-4" />
                   </span>
                   <span>Dashboard</span>
+                </Link>
+
+                <Link
+                  href={articleHref}
+                  onClick={onClose}
+                  className="group flex items-center gap-2 rounded-xl border border-black/10 bg-white/70 px-3 py-2 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-white/40 transition hover:bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-100 dark:ring-white/10"
+                >
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-teal-600/10 text-teal-600 dark:text-teal-400">
+                    <Newspaper className="h-4 w-4" />
+                  </span>
+                  <span>Articles</span>
                 </Link>
 
                 <Link
@@ -277,6 +300,17 @@ export default function UserDropdown({ isOpen, onClose, profile, loading, classN
                       <Users className="h-4 w-4" />
                     </span>
                     <span>Users</span>
+                  </Link>
+
+                  <Link
+                    href="/admin/articles"
+                    onClick={onClose}
+                    className="group flex items-center gap-2 rounded-xl border border-black/10 bg-white/70 px-3 py-2 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-white/40 transition hover:bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-100 dark:ring-white/10"
+                  >
+                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-violet-600/10 text-violet-600 dark:text-violet-400">
+                      <FilePenLine className="h-4 w-4" />
+                    </span>
+                    <span>Article Studio</span>
                   </Link>
 
                   <Link

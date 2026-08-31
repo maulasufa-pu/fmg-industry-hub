@@ -30,5 +30,7 @@ describe("UserDropdown", () => {
 
     expect(screen.getByText("Super Admin")).toBeInTheDocument();
     expect(screen.getByText("Admin Hub")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Articles" })).toHaveAttribute("href", "/articles");
+    expect(screen.getByRole("link", { name: "Article Studio" })).toHaveAttribute("href", "/admin/articles");
   });
 });

@@ -11,6 +11,7 @@ export const languageRoutePairs: readonly LanguageRoutePair[] = [
   { en: "/pricing", id: "/id/harga" },
   { en: "/portfolio", id: "/id/portofolio" },
   { en: "/contact", id: "/id/kontak" },
+  { en: "/articles", id: "/id/artikel" },
 ] as const;
 
 const routeLookup = new Map<string, LanguageRoutePair>();

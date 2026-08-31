@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { UserRole } from "@/lib/roles";
 import {
-  Layout, Clipboard, FileText, Calendar, BookOpen, Users, Settings, Package2
+  Layout, Clipboard, FileText, Calendar, BookOpen, Users, Settings, Package2, Newspaper
 } from "lucide-react";
 
 import { motion, AnimatePresence, MotionConfig } from "framer-motion";
@@ -34,6 +34,7 @@ const MENU: Partial<Record<UserRole, readonly NavItem[]>> = {
     { href: "/admin/publishing", label: "Publishing", Icon: BookOpen },
     { href: "/admin/meetings", label: "Meetings", Icon: Calendar },
     { href: "/admin/productservices", label: "Products & Services", Icon: Package2 }, // ⬅️ baru
+    { href: "/admin/articles", label: "Articles", Icon: Newspaper },
     { href: "/admin/users", label: "Users (Owner)", Icon: Users },
   ],
   owner: [
@@ -43,6 +44,7 @@ const MENU: Partial<Record<UserRole, readonly NavItem[]>> = {
     { href: "/admin/publishing", label: "Publishing", Icon: BookOpen },
     { href: "/admin/meetings", label: "Meetings", Icon: Calendar },
     { href: "/admin/productservices", label: "Products & Services", Icon: Package2 }, // ⬅️ baru
+    { href: "/admin/articles", label: "Articles", Icon: Newspaper },
     { href: "/admin/users", label: "Users", Icon: Users },
   ],
   anr: [

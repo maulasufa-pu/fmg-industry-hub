@@ -31,6 +31,12 @@ type PublishedSeoPage = {
   updated_at: string;
 };
 
+type PublishedArticle = {
+  path: string;
+  locale: "en-US" | "id-ID";
+  updated_at: string;
+};
+
 const staticPages: SitemapPage[] = [
   { path: "/", changeFrequency: "weekly", priority: 1, alternatePath: "/id", locale: "en-US" },
   { path: "/id", changeFrequency: "weekly", priority: 1, alternatePath: "/", locale: "id-ID" },
@@ -40,6 +46,8 @@ const staticPages: SitemapPage[] = [
   { path: "/id/jasa-pembuatan-lagu", changeFrequency: "weekly", priority: 0.9, alternatePath: "/song-creation-service", locale: "id-ID" },
   { path: "/learn/how-to-make-a-song", changeFrequency: "weekly", priority: 0.8, alternatePath: "/id/cara-bikin-lagu", locale: "en-US" },
   { path: "/id/cara-bikin-lagu", changeFrequency: "weekly", priority: 0.8, alternatePath: "/learn/how-to-make-a-song", locale: "id-ID" },
+  { path: "/articles", changeFrequency: "weekly", priority: 0.8, alternatePath: "/id/artikel", locale: "en-US" },
+  { path: "/id/artikel", changeFrequency: "weekly", priority: 0.8, alternatePath: "/articles", locale: "id-ID" },
   { path: "/id/biaya-pembuatan-lagu", changeFrequency: "weekly", priority: 0.8 },
   { path: "/id/cara-memilih-jasa-aransemen-lagu", changeFrequency: "weekly", priority: 0.8 },
   { path: "/id/jasa-editing-vokal", changeFrequency: "weekly", priority: 0.8 },
@@ -144,11 +152,46 @@ async function getPublishedSeoPages(): Promise<SitemapPage[]> {
   }
 }
 
+async function getPublishedArticles(): Promise<SitemapPage[]> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseKey) return [];
+
+  try {
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data, error } = await supabase
+      .from("articles")
+      .select("path, locale, updated_at")
+      .eq("status", "published");
+
+    if (error) {
+      console.error("[sitemap] Failed to load published articles:", error.message);
+      return [];
+    }
+
+    return ((data ?? []) as PublishedArticle[]).map((article) => ({
+      path: article.path,
+      locale: article.locale,
+      changeFrequency: "weekly",
+      priority: 0.8,
+      lastModified: article.updated_at,
+    }));
+  } catch (error) {
+    console.error("[sitemap] Article request failed:", error);
+    return [];
+  }
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const publishedSeoPages = await getPublishedSeoPages();
+  const [publishedSeoPages, publishedArticles] = await Promise.all([
+    getPublishedSeoPages(),
+    getPublishedArticles(),
+  ]);
   const uniquePages = new Map<string, SitemapPage>();
 
-  for (const page of [...staticPages, ...publishedSeoPages]) {
+  for (const page of [...staticPages, ...publishedSeoPages, ...publishedArticles]) {
     uniquePages.set(page.path, page);
   }
 

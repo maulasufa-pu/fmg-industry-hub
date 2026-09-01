@@ -6,6 +6,7 @@ import {
   ArrowRight,
   AudioLines,
   Check,
+  CalendarDays,
   Coins,
   CreditCard,
   Download,
@@ -13,6 +14,7 @@ import {
   Headphones,
   Layers3,
   Music2,
+  Repeat2,
   Sparkles,
   UploadCloud,
   WandSparkles,
@@ -20,11 +22,22 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { TUNEXPERT_CREDIT_PACKAGES, tuneXpertCreditsForSeconds } from "@/lib/tunexpert/billing";
+import { TUNEXPERT_CREDIT_PACKAGES, TUNEXPERT_SUBSCRIPTION_PLANS, tuneXpertCreditsForSeconds } from "@/lib/tunexpert/billing";
 
 type ToolMode = "music" | "isolate";
 type AudioResult = { url: string; filename: string };
-type WalletResponse = { balance?: number; error?: string };
+type TuneXpertSubscription = {
+  id: string;
+  plan_code: string;
+  monthly_credits: number;
+  amount_idr: number;
+  status: "pending" | "activating" | "activation_failed" | "active" | "past_due" | "cancelled";
+  payment_type?: string | null;
+  masked_payment_method?: string | null;
+  current_period_end?: string | null;
+  next_billing_at?: string | null;
+};
+type WalletResponse = { balance?: number; subscription?: TuneXpertSubscription | null; error?: string };
 
 const waveform = [34, 58, 43, 76, 48, 92, 64, 39, 83, 56, 96, 68, 44, 87, 52, 73, 41, 90, 61, 47, 79, 55, 88, 37];
 const durations = [10, 20, 30, 45, 60] as const;
@@ -55,7 +68,7 @@ function formatBytes(bytes: number): string {
   return bytes < 1024 * 1024 ? `${Math.ceil(bytes / 1024)} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-export default function TuneXpertClient({ initialBalance, paymentsLive }: { initialBalance: number; paymentsLive: boolean }) {
+export default function TuneXpertClient({ initialBalance, initialSubscription, paymentsLive }: { initialBalance: number; initialSubscription: TuneXpertSubscription | null; paymentsLive: boolean }) {
   const { pick } = useLanguage();
   const rootRef = useRef<HTMLElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -75,6 +88,9 @@ export default function TuneXpertClient({ initialBalance, paymentsLive }: { init
   const [fileDuration, setFileDuration] = useState<number | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [billingError, setBillingError] = useState<string | null>(null);
+  const [billingMode, setBillingMode] = useState<"subscription" | "topup">("subscription");
+  const [subscription, setSubscription] = useState<TuneXpertSubscription | null>(initialSubscription);
+  const [cancelBusy, setCancelBusy] = useState(false);
 
   const musicCost = tuneXpertCreditsForSeconds(duration);
   const isolationCost = fileDuration ? tuneXpertCreditsForSeconds(fileDuration) : null;
@@ -86,10 +102,12 @@ export default function TuneXpertClient({ initialBalance, paymentsLive }: { init
     if (!response.ok) return;
     const body = await response.json() as WalletResponse;
     if (typeof body.balance === "number") setBalance(body.balance);
+    if ("subscription" in body) setSubscription(body.subscription ?? null);
   };
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("payment") !== "finish") return;
+    const query = new URLSearchParams(window.location.search);
+    if (query.get("payment") !== "finish" && query.get("subscription") !== "finish") return;
     void refreshWallet();
     const timer = window.setInterval(() => void refreshWallet(), 3_000);
     const stop = window.setTimeout(() => window.clearInterval(timer), 18_000);
@@ -248,6 +266,43 @@ export default function TuneXpertClient({ initialBalance, paymentsLive }: { init
     } catch (cause) {
       setBillingError(cause instanceof Error ? cause.message : pick("Pembayaran belum dapat dibuka. Silakan coba lagi.", "Checkout could not be opened. Please try again."));
       setCheckoutLoading(null);
+    }
+  };
+
+  const startSubscriptionCheckout = async (planCode: string) => {
+    if (checkoutLoading || !paymentsLive) return;
+    const loadingKey = `subscription:${planCode}`;
+    setCheckoutLoading(loadingKey);
+    setBillingError(null);
+    try {
+      const response = await fetch("/api/tunexpert/subscriptions/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planCode }),
+      });
+      const body = await response.json() as { redirectUrl?: string; error?: string };
+      if (!response.ok || !body.redirectUrl) throw new Error(body.error || pick("Subscription belum dapat dibuka.", "Subscription checkout could not be opened."));
+      window.location.assign(body.redirectUrl);
+    } catch (checkoutError) {
+      setBillingError(checkoutError instanceof Error ? checkoutError.message : pick("Terjadi masalah saat membuka pembayaran.", "There was a problem opening checkout."));
+      setCheckoutLoading(null);
+    }
+  };
+
+  const cancelSubscription = async () => {
+    if (cancelBusy) return;
+    setCancelBusy(true);
+    setBillingError(null);
+    try {
+      const response = await fetch("/api/tunexpert/subscriptions/cancel", { method: "POST" });
+      const body = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(body.error || pick("Subscription belum dapat dihentikan.", "Subscription could not be cancelled."));
+      setSubscription(null);
+      await refreshWallet();
+    } catch (cancelError) {
+      setBillingError(cancelError instanceof Error ? cancelError.message : pick("Terjadi masalah saat menghentikan subscription.", "There was a problem cancelling the subscription."));
+    } finally {
+      setCancelBusy(false);
     }
   };
 
@@ -468,18 +523,59 @@ export default function TuneXpertClient({ initialBalance, paymentsLive }: { init
             </div>
           </div>
 
-          {paymentsLive && (
-            <div className="mt-10 grid gap-5 lg:grid-cols-3">
+          <div className="mt-10 flex w-fit rounded-full border border-white/12 bg-black/25 p-1">
+            <button type="button" onClick={() => setBillingMode("subscription")} className={`rounded-full px-5 py-3 text-sm font-black transition ${billingMode === "subscription" ? "bg-white text-[#151127]" : "text-white/55 hover:text-white"}`}>
+              {pick("Langganan bulanan", "Monthly subscription")}
+            </button>
+            <button type="button" onClick={() => setBillingMode("topup")} className={`rounded-full px-5 py-3 text-sm font-black transition ${billingMode === "topup" ? "bg-white text-[#151127]" : "text-white/55 hover:text-white"}`}>
+              {pick("Beli sekali", "One-time top-up")}
+            </button>
+          </div>
+
+          {!paymentsLive && <div className="mt-5 rounded-2xl border border-amber-300/25 bg-amber-300/10 px-5 py-4 text-sm text-amber-100">{pick("Daftar harga sudah tersedia. Checkout Midtrans akan aktif setelah kredensial production merchant dipasang.", "Pricing is ready. Midtrans checkout will activate once the production merchant credentials are installed.")}</div>}
+
+          {billingMode === "subscription" && subscription && subscription.status !== "activation_failed" ? (
+            <div className="mt-8 overflow-hidden rounded-[2rem] border border-emerald-300/25 bg-gradient-to-br from-emerald-400/15 via-white/[0.055] to-cyan-400/10 p-6 sm:p-8">
+              <div className="grid gap-7 lg:grid-cols-[1fr_auto] lg:items-center">
+                <div>
+                  <div className="flex flex-wrap items-center gap-3"><span className="rounded-full bg-emerald-300 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-950">{subscription.status}</span><span data-no-translate className="text-sm font-black uppercase tracking-[0.2em] text-white/55">{subscription.plan_code}</span></div>
+                  <h3 className="mt-4 text-3xl font-black sm:text-5xl">{subscription.monthly_credits} {pick("kredit setiap bulan", "credits every month")}</h3>
+                  <p className="mt-3 text-sm leading-6 text-white/55">{subscription.next_billing_at ? pick(`Perpanjangan berikutnya ${new Intl.DateTimeFormat("id-ID", { dateStyle: "long" }).format(new Date(subscription.next_billing_at))}.`, `Next renewal ${new Intl.DateTimeFormat("en-US", { dateStyle: "long" }).format(new Date(subscription.next_billing_at))}.`) : pick("Aktivasi pembayaran otomatis sedang diproses.", "Automatic billing activation is being processed.")}</p>
+                  {subscription.masked_payment_method && <p className="mt-1 text-xs text-white/35">Midtrans · {subscription.masked_payment_method}</p>}
+                </div>
+                <button type="button" onClick={() => void cancelSubscription()} disabled={cancelBusy || subscription.status === "pending" || subscription.status === "activating"} className="rounded-full border border-white/16 px-6 py-3 text-sm font-bold text-white/70 transition hover:border-red-300/40 hover:bg-red-400/10 hover:text-red-100 disabled:cursor-not-allowed disabled:opacity-40">{cancelBusy ? pick("Menghentikan...", "Cancelling...") : pick("Hentikan perpanjangan", "Cancel renewal")}</button>
+              </div>
+            </div>
+          ) : billingMode === "subscription" ? (
+            <>
+              {subscription?.status === "activation_failed" && <div className="mt-6 rounded-2xl border border-red-300/25 bg-red-400/10 px-5 py-4 text-sm text-red-100">{pick("Pembayaran awal masuk dan kredit tetap diberikan, tetapi perpanjangan otomatis belum aktif. Kamu dapat memilih paket lagi atau menghubungi admin.", "The initial payment was credited, but automatic renewal is not active. You can choose a plan again or contact support.")}</div>}
+              <div className="mt-8 grid gap-5 lg:grid-cols-3">
+                {TUNEXPERT_SUBSCRIPTION_PLANS.map((item) => {
+                  const loadingKey = `subscription:${item.code}`;
+                  return (
+                    <article key={item.code} className={`relative overflow-hidden rounded-[2rem] border p-6 sm:p-8 ${item.featured ? "border-pink-300/50 bg-gradient-to-br from-pink-400/20 via-purple-500/10 to-orange-400/10 shadow-[0_24px_80px_rgba(236,72,153,.16)]" : "border-white/12 bg-white/[0.045]"}`}>
+                      {item.featured && <span className="absolute right-5 top-5 rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#151127]">{pick("Paling populer", "Most popular")}</span>}
+                      <p data-no-translate className="text-xs font-black uppercase tracking-[0.24em] text-white/45">{item.name}</p>
+                      <div className="mt-8 flex items-end gap-2"><strong className="text-6xl font-black tracking-[-0.06em]">{item.credits}</strong><span className="pb-2 text-sm text-white/45">{pick("kredit/bulan", "credits/month")}</span></div>
+                      <p className="mt-4 text-2xl font-black">{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(item.amountIdr)}<span className="text-sm font-semibold text-white/40">/{pick("bulan", "month")}</span></p>
+                      <p className="mt-2 text-sm text-white/45">{pick(`Hingga sekitar ${Math.floor(item.credits / 6)} menit audio setiap bulan. Kredit yang tersisa tidak hangus.`, `Up to roughly ${Math.floor(item.credits / 6)} audio minutes each month. Unused credits do not expire.`)}</p>
+                      <button type="button" onClick={() => void startSubscriptionCheckout(item.code)} disabled={Boolean(checkoutLoading) || !paymentsLive} className={`mt-8 flex min-h-13 w-full items-center justify-center gap-2 rounded-full px-5 font-black transition disabled:cursor-not-allowed disabled:opacity-50 ${item.featured ? "bg-white text-[#151127] hover:scale-[1.01]" : "border border-white/16 bg-white/8 text-white hover:bg-white/14"}`}><Repeat2 className="h-4 w-4" />{checkoutLoading === loadingKey ? pick("Membuka Midtrans...", "Opening Midtrans...") : pick("Berlangganan", "Subscribe")}</button>
+                    </article>
+                  );
+                })}
+              </div>
+              <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-white/38"><CalendarDays className="mt-0.5 h-4 w-4 shrink-0" />{pick("Perpanjangan otomatis diproses oleh Midtrans. Untuk subscription, metode yang didukung adalah kartu dan GoPay sesuai aktivasi akun merchant.", "Automatic renewals are processed by Midtrans. Subscription supports cards and GoPay, subject to merchant activation.")}</p>
+            </>
+          ) : (
+            <div className="mt-8 grid gap-5 lg:grid-cols-3">
               {TUNEXPERT_CREDIT_PACKAGES.map((item) => (
                 <article key={item.code} className={`relative overflow-hidden rounded-[2rem] border p-6 sm:p-8 ${item.featured ? "border-pink-300/50 bg-gradient-to-br from-pink-400/20 via-purple-500/10 to-orange-400/10 shadow-[0_24px_80px_rgba(236,72,153,.16)]" : "border-white/12 bg-white/[0.045]"}`}>
                   {item.featured && <span className="absolute right-5 top-5 rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#151127]">{pick("Paling fleksibel", "Most flexible")}</span>}
-                  <p data-no-translate className="text-xs font-black uppercase tracking-[0.24em] text-white/45">{item.code}</p>
+                  <p data-no-translate className="text-xs font-black uppercase tracking-[0.24em] text-white/45">{item.name}</p>
                   <div className="mt-8 flex items-end gap-2"><strong className="text-6xl font-black tracking-[-0.06em]">{item.credits}</strong><span className="pb-2 text-sm text-white/45">{pick("kredit", "credits")}</span></div>
                   <p className="mt-4 text-2xl font-black">{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(item.amountIdr)}</p>
-                  <p className="mt-2 text-sm text-white/45">{pick(`Setara hingga sekitar ${Math.floor(item.credits / 6)} menit pemrosesan audio.`, `Equivalent to roughly ${Math.floor(item.credits / 6)} minutes of audio processing.`)}</p>
-                  <button type="button" onClick={() => void startCheckout(item.code)} disabled={Boolean(checkoutLoading)} className={`mt-8 flex min-h-13 w-full items-center justify-center gap-2 rounded-full px-5 font-black transition disabled:cursor-not-allowed disabled:opacity-50 ${item.featured ? "bg-white text-[#151127] hover:scale-[1.01]" : "border border-white/16 bg-white/8 text-white hover:bg-white/14"}`}>
-                    <CreditCard className="h-4 w-4" />{checkoutLoading === item.code ? pick("Membuka pembayaran...", "Opening checkout...") : pick("Pilih paket", "Choose package")}
-                  </button>
+                  <p className="mt-2 text-sm text-white/45">{pick(`Sekali bayar untuk sekitar ${Math.floor(item.credits / 6)} menit audio. Kredit tidak hangus.`, `One payment for roughly ${Math.floor(item.credits / 6)} audio minutes. Credits do not expire.`)}</p>
+                  <button type="button" onClick={() => void startCheckout(item.code)} disabled={Boolean(checkoutLoading) || !paymentsLive} className={`mt-8 flex min-h-13 w-full items-center justify-center gap-2 rounded-full px-5 font-black transition disabled:cursor-not-allowed disabled:opacity-50 ${item.featured ? "bg-white text-[#151127] hover:scale-[1.01]" : "border border-white/16 bg-white/8 text-white hover:bg-white/14"}`}><CreditCard className="h-4 w-4" />{checkoutLoading === item.code ? pick("Membuka Midtrans...", "Opening Midtrans...") : pick("Beli kredit", "Buy credits")}</button>
                 </article>
               ))}
             </div>

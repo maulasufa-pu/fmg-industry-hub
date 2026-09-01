@@ -25,11 +25,14 @@ export default async function TuneXpertPage() {
   if (!auth) redirect("/login?next=%2FtuneXpert");
 
   const admin = getSupabaseAdminClient();
-  const { data: wallet } = admin
-    ? await admin.from("tunexpert_wallets").select("balance").eq("user_id", auth.user.id).maybeSingle()
-    : { data: null };
+  const [{ data: wallet }, { data: subscription }] = admin
+    ? await Promise.all([
+      admin.from("tunexpert_wallets").select("balance").eq("user_id", auth.user.id).maybeSingle(),
+      admin.from("tunexpert_subscriptions").select("id,plan_code,monthly_credits,amount_idr,status,payment_type,masked_payment_method,current_period_end,next_billing_at,cancelled_at").eq("user_id", auth.user.id).in("status", ["pending", "activating", "activation_failed", "active", "past_due"]).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    ])
+    : [{ data: null }, { data: null }];
 
   const paymentsLive = Boolean(process.env.MIDTRANS_SERVER_KEY)
     && process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === "true";
-  return <TuneXpertClient initialBalance={Number(wallet?.balance ?? 0)} paymentsLive={paymentsLive} />;
+  return <TuneXpertClient initialBalance={Number(wallet?.balance ?? 0)} initialSubscription={subscription} paymentsLive={paymentsLive} />;
 }

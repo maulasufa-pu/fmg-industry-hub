@@ -75,7 +75,6 @@ const staticPages: SitemapPage[] = [
   { path: "/event", changeFrequency: "monthly", priority: 0.5 },
   { path: "/help", changeFrequency: "monthly", priority: 0.5 },
   { path: "/labs", changeFrequency: "monthly", priority: 0.5 },
-  { path: "/tuneXpert", changeFrequency: "weekly", priority: 0.7 },
   { path: "/locations", changeFrequency: "monthly", priority: 0.5 },
   { path: "/media", changeFrequency: "monthly", priority: 0.5 },
   { path: "/partners", changeFrequency: "monthly", priority: 0.5 },

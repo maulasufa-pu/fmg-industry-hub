@@ -1,6 +1,7 @@
 // src/proxy.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { safeInternalPath } from "@/lib/safe-next";
 
 export async function proxy(req: NextRequest) {
   const { pathname, origin, search } = req.nextUrl;
@@ -88,7 +89,7 @@ export async function proxy(req: NextRequest) {
     return withCookies(NextResponse.redirect(new URL("/client/dashboard", origin)));
   }
 
-  const isPrivate = pathname.startsWith("/admin/") || pathname.startsWith("/client/");
+  const isPrivate = pathname.startsWith("/admin/") || pathname.startsWith("/client/") || pathname === "/tuneXpert";
   if (isPrivate && !user) {
     const url = new URL("/login", origin);
     url.searchParams.set("next", pathname + search);
@@ -107,6 +108,7 @@ export async function proxy(req: NextRequest) {
 
   if (pathname === "/login" && user) {
     const nextParam = req.nextUrl.searchParams.get("next") ?? "";
+    const safeNext = safeInternalPath(nextParam, "");
     if (isAdmin && !hasRequiredMfa) {
       const url = new URL("/auth/mfa", origin);
       url.searchParams.set("next", nextParam.startsWith("/admin") ? nextParam : "/admin/dashboard");
@@ -115,9 +117,9 @@ export async function proxy(req: NextRequest) {
     if (nextParam.startsWith("/admin") && !isAdmin) {
       return withCookies(NextResponse.redirect(new URL("/client/dashboard?error=forbidden", origin)));
     }
-    if (nextParam.startsWith("/client") || (isAdmin && nextParam.startsWith("/admin"))) {
+    if (safeNext && (!safeNext.startsWith("/admin") || isAdmin)) {
       try {
-        return withCookies(NextResponse.redirect(new URL(nextParam, origin)));
+        return withCookies(NextResponse.redirect(new URL(safeNext, origin)));
       } catch { }
     }
     return withCookies(NextResponse.redirect(new URL(isAdmin ? "/admin/dashboard" : "/client/dashboard", origin)));
@@ -127,5 +129,5 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/login", "/admin", "/admin/:path*", "/client", "/client/:path*"],
+  matcher: ["/login", "/admin", "/admin/:path*", "/client", "/client/:path*", "/tuneXpert"],
 };

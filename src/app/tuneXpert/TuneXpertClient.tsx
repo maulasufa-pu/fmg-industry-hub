@@ -6,6 +6,8 @@ import {
   ArrowRight,
   AudioLines,
   Check,
+  Coins,
+  CreditCard,
   Download,
   Gauge,
   Headphones,
@@ -20,9 +22,11 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { TUNEXPERT_CREDIT_PACKAGES, tuneXpertCreditsForSeconds } from "@/lib/tunexpert/billing";
 
 type ToolMode = "music" | "isolate";
 type AudioResult = { url: string; filename: string };
+type WalletResponse = { balance?: number; error?: string };
 
 const waveform = [34, 58, 43, 76, 48, 92, 64, 39, 83, 56, 96, 68, 44, 87, 52, 73, 41, 90, 61, 47, 79, 55, 88, 37];
 const durations = [10, 20, 30, 45, 60] as const;
@@ -45,7 +49,7 @@ function formatBytes(bytes: number): string {
   return bytes < 1024 * 1024 ? `${Math.ceil(bytes / 1024)} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-export default function TuneXpertClient() {
+export default function TuneXpertClient({ initialBalance, paymentsLive }: { initialBalance: number; paymentsLive: boolean }) {
   const { pick } = useLanguage();
   const rootRef = useRef<HTMLElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -61,6 +65,30 @@ export default function TuneXpertClient() {
   const [authRequired, setAuthRequired] = useState(false);
   const [result, setResult] = useState<AudioResult | null>(null);
   const [sourcePreview, setSourcePreview] = useState<string | null>(null);
+  const [balance, setBalance] = useState(initialBalance);
+  const [fileDuration, setFileDuration] = useState<number | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [billingError, setBillingError] = useState<string | null>(null);
+
+  const musicCost = tuneXpertCreditsForSeconds(duration);
+  const isolationCost = fileDuration ? tuneXpertCreditsForSeconds(fileDuration) : null;
+
+  const scrollToCredits = () => document.getElementById("tunexpert-credits")?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  const refreshWallet = async () => {
+    const response = await fetch("/api/tunexpert/wallet", { cache: "no-store" });
+    if (!response.ok) return;
+    const body = await response.json() as WalletResponse;
+    if (typeof body.balance === "number") setBalance(body.balance);
+  };
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("payment") !== "finish") return;
+    void refreshWallet();
+    const timer = window.setInterval(() => void refreshWallet(), 3_000);
+    const stop = window.setTimeout(() => window.clearInterval(timer), 18_000);
+    return () => { window.clearInterval(timer); window.clearTimeout(stop); };
+  }, []);
 
   useEffect(() => {
     if (!file) {
@@ -100,6 +128,11 @@ export default function TuneXpertClient() {
 
   const generateMusic = async () => {
     if (prompt.trim().length < 20 || busy) return;
+    if (balance < musicCost) {
+      setError(pick("Kreditmu belum cukup. Pilih paket untuk melanjutkan.", "You need more credits. Choose a package to continue."));
+      scrollToCredits();
+      return;
+    }
     setBusy(true);
     setError(null);
     setAuthRequired(false);
@@ -112,8 +145,11 @@ export default function TuneXpertClient() {
       });
       if (!response.ok) {
         setAuthRequired(response.status === 401);
+        if (response.status === 402) { void refreshWallet(); scrollToCredits(); }
         throw new Error(await responseError(response, pick("Musik belum berhasil dibuat.", "Music could not be generated.")));
       }
+      const nextBalance = Number(response.headers.get("x-tunexpert-balance"));
+      if (Number.isFinite(nextBalance)) setBalance(nextBalance);
       const blob = await response.blob();
       replaceResult({
         url: URL.createObjectURL(blob),
@@ -132,6 +168,11 @@ export default function TuneXpertClient() {
       setError(pick("Ukuran file maksimal 4 MB.", "Maximum file size is 4 MB."));
       return;
     }
+    if (isolationCost !== null && balance < isolationCost) {
+      setError(pick("Kreditmu belum cukup. Pilih paket untuk melanjutkan.", "You need more credits. Choose a package to continue."));
+      scrollToCredits();
+      return;
+    }
     setBusy(true);
     setError(null);
     setAuthRequired(false);
@@ -142,8 +183,11 @@ export default function TuneXpertClient() {
       const response = await fetch("/api/tunexpert/isolate", { method: "POST", body: form });
       if (!response.ok) {
         setAuthRequired(response.status === 401);
+        if (response.status === 402) { void refreshWallet(); scrollToCredits(); }
         throw new Error(await responseError(response, pick("Audio belum berhasil dibersihkan.", "Audio could not be isolated.")));
       }
+      const nextBalance = Number(response.headers.get("x-tunexpert-balance"));
+      if (Number.isFinite(nextBalance)) setBalance(nextBalance);
       const blob = await response.blob();
       replaceResult({
         url: URL.createObjectURL(blob),
@@ -159,9 +203,38 @@ export default function TuneXpertClient() {
   const chooseFile = (next: File | null) => {
     if (!next) return;
     setFile(next);
+    setFileDuration(null);
     setError(null);
     setAuthRequired(false);
     replaceResult(null);
+    const preview = URL.createObjectURL(next);
+    const probe = new Audio();
+    probe.preload = "metadata";
+    probe.onloadedmetadata = () => {
+      if (Number.isFinite(probe.duration) && probe.duration > 0) setFileDuration(Math.ceil(probe.duration));
+      URL.revokeObjectURL(preview);
+    };
+    probe.onerror = () => URL.revokeObjectURL(preview);
+    probe.src = preview;
+  };
+
+  const startCheckout = async (packageCode: string) => {
+    if (checkoutLoading) return;
+    setCheckoutLoading(packageCode);
+    setBillingError(null);
+    try {
+      const response = await fetch("/api/tunexpert/credits/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ packageCode }),
+      });
+      const body = await response.json() as { redirectUrl?: string; error?: string };
+      if (!response.ok || !body.redirectUrl) throw new Error(body.error || pick("Checkout belum dapat dibuka.", "Checkout could not be opened."));
+      window.location.assign(body.redirectUrl);
+    } catch (cause) {
+      setBillingError(cause instanceof Error ? cause.message : pick("Checkout belum dapat dibuka.", "Checkout could not be opened."));
+      setCheckoutLoading(null);
+    }
   };
 
   return (
@@ -183,6 +256,7 @@ export default function TuneXpertClient() {
             <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="mb-8 flex flex-wrap items-center gap-3">
               <span data-no-translate className="rounded-full border border-white/15 bg-white/[0.07] px-4 py-2 text-xs font-bold uppercase tracking-[0.28em] text-white/80 backdrop-blur-xl">FMG LABS / tuneXpert</span>
               <span className="flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-xs font-semibold text-emerald-200"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-300" />{pick("Mesin kreatif aktif", "Creative engine online")}</span>
+              <button type="button" onClick={scrollToCredits} className="flex items-center gap-2 rounded-full border border-amber-200/25 bg-amber-200/10 px-4 py-2 text-xs font-black text-amber-100 transition hover:bg-amber-200/20"><Coins className="h-4 w-4" />{balance} {pick("kredit", "credits")}</button>
             </motion.div>
             <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="max-w-5xl text-[clamp(3.8rem,9vw,9rem)] font-black uppercase leading-[0.78] tracking-[-0.07em]">
               <span className="block">Shape</span>
@@ -256,7 +330,8 @@ export default function TuneXpertClient() {
                       <div><span className="text-xs font-bold uppercase tracking-[0.18em] text-white/60">{pick("Durasi", "Duration")}</span><div className="mt-2 flex flex-wrap gap-2">{durations.map((value) => <button type="button" key={value} onClick={() => setDuration(value)} className={`rounded-full px-4 py-2 text-sm font-bold transition ${duration === value ? "bg-white text-[#151127]" : "border border-white/10 bg-white/5 text-white/55 hover:bg-white/10"}`}>{value}s</button>)}</div></div>
                       <label className="flex min-w-48 items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/15 px-4 py-3"><span><strong className="block text-sm">Instrumental</strong><span className="text-xs text-white/40">{instrumental ? "ON" : "OFF"}</span></span><input type="checkbox" checked={instrumental} onChange={(event) => setInstrumental(event.target.checked)} className="h-5 w-5 accent-pink-400" /></label>
                     </div>
-                    <button type="button" onClick={() => void generateMusic()} disabled={busy || prompt.trim().length < 20} className="group mt-2 flex min-h-14 items-center justify-center gap-3 rounded-full bg-gradient-to-r from-[#ff5fa2] via-[#ff7885] to-[#ff9d49] px-6 font-black text-white shadow-[0_16px_45px_rgba(255,95,162,.28)] transition hover:scale-[1.01] hover:shadow-[0_18px_55px_rgba(255,95,162,.4)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100">{busy ? <><Sparkles className="h-5 w-5 animate-spin" />{pick("Sedang membangun track...", "Building your track...")}</> : <>{pick("Generate musik", "Generate music")}<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" /></>}</button>
+                    <div className="flex items-center justify-between gap-4 text-xs text-white/45"><span>{pick("Biaya proses", "Processing cost")}</span><strong className="text-white">{musicCost} {pick("kredit", "credits")}</strong></div>
+                    <button type="button" onClick={() => void generateMusic()} disabled={busy || prompt.trim().length < 20} className="group mt-2 flex min-h-14 items-center justify-center gap-3 rounded-full bg-gradient-to-r from-[#ff5fa2] via-[#ff7885] to-[#ff9d49] px-6 font-black text-white shadow-[0_16px_45px_rgba(255,95,162,.28)] transition hover:scale-[1.01] hover:shadow-[0_18px_55px_rgba(255,95,162,.4)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100">{busy ? <><Sparkles className="h-5 w-5 animate-spin" />{pick("Sedang membangun track...", "Building your track...")}</> : balance < musicCost ? <>{pick("Beli kredit", "Buy credits")}<Coins className="h-5 w-5" /></> : <>{pick("Generate musik", "Generate music")}<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" /></>}</button>
                   </div>
                 </motion.div>
               ) : (
@@ -269,8 +344,9 @@ export default function TuneXpertClient() {
                   <button type="button" onClick={() => fileInputRef.current?.click()} onDragEnter={(event) => { event.preventDefault(); setDragging(true); }} onDragOver={(event) => event.preventDefault()} onDragLeave={() => setDragging(false)} onDrop={(event) => { event.preventDefault(); setDragging(false); chooseFile(event.dataTransfer.files?.[0] ?? null); }} className={`mt-8 grid min-h-72 w-full place-items-center rounded-[1.75rem] border border-dashed px-6 text-center transition ${dragging ? "border-orange-300 bg-orange-300/15 scale-[1.01]" : "border-white/20 bg-black/15 hover:border-orange-300/50 hover:bg-white/[0.045]"}`}>
                     <span><span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-white text-[#151127]"><UploadCloud className="h-7 w-7" /></span><strong className="mt-5 block text-xl">{file ? file.name : pick("Tarik audio ke sini", "Drop your audio here")}</strong><span className="mt-2 block text-sm text-white/45">{file ? `${formatBytes(file.size)} · ${file.type || "audio"}` : pick("atau sentuh untuk memilih · maksimal 4 MB", "or tap to browse · maximum 4 MB")}</span></span>
                   </button>
-                  {file && <div className="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-3"><div className="min-w-0 flex-1">{sourcePreview && <audio controls src={sourcePreview} className="h-10 w-full" />}</div><button type="button" aria-label={pick("Hapus file", "Remove file")} onClick={() => setFile(null)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 hover:bg-white/10"><X className="h-4 w-4" /></button></div>}
-                  <button type="button" onClick={() => void isolateAudio()} disabled={busy || !file} className="group mt-5 flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-[#ff7a45] via-[#ff5f91] to-[#c76dff] px-6 font-black shadow-[0_16px_45px_rgba(255,122,69,.22)] transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100">{busy ? <><AudioLines className="h-5 w-5 animate-pulse" />{pick("Sedang membersihkan audio...", "Cleaning the audio...")}</> : <>{pick("Isolasi suara", "Isolate voice")}<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" /></>}</button>
+                  {file && <div className="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-3"><div className="min-w-0 flex-1">{sourcePreview && <audio controls src={sourcePreview} className="h-10 w-full" />}</div><button type="button" aria-label={pick("Hapus file", "Remove file")} onClick={() => { setFile(null); setFileDuration(null); }} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 hover:bg-white/10"><X className="h-4 w-4" /></button></div>}
+                  {file && <div className="mt-4 flex items-center justify-between gap-4 text-xs text-white/45"><span>{pick("Biaya dihitung dari durasi audio", "Cost is based on audio duration")}</span><strong className="text-white">{isolationCost ? `${isolationCost} ${pick("kredit", "credits")}` : pick("Menghitung...", "Calculating...")}</strong></div>}
+                  <button type="button" onClick={() => void isolateAudio()} disabled={busy || !file} className="group mt-5 flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-[#ff7a45] via-[#ff5f91] to-[#c76dff] px-6 font-black shadow-[0_16px_45px_rgba(255,122,69,.22)] transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100">{busy ? <><AudioLines className="h-5 w-5 animate-pulse" />{pick("Sedang membersihkan audio...", "Cleaning the audio...")}</> : isolationCost && balance < isolationCost ? <>{pick("Beli kredit", "Buy credits")}<Coins className="h-5 w-5" /></> : <>{pick("Isolasi suara", "Isolate voice")}<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" /></>}</button>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -283,6 +359,42 @@ export default function TuneXpertClient() {
               )}
             </AnimatePresence>
           </div>
+        </div>
+      </section>
+
+      <section id="tunexpert-credits" className="relative scroll-mt-24 border-t border-white/10 px-5 py-20 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-[1500px]">
+          <div className="grid gap-8 lg:grid-cols-[1fr_.7fr] lg:items-end">
+            <div>
+              <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.3em] text-amber-200"><Coins className="h-4 w-4" />{pick("KREDIT TUNEXPERT", "TUNEXPERT CREDITS")}</p>
+              <h2 className="mt-4 max-w-4xl text-4xl font-black tracking-[-0.045em] sm:text-7xl">{pick("Bayar sesuai yang kamu pakai.", "Pay for what you create.")}</h2>
+            </div>
+            <div className="rounded-[1.5rem] border border-white/12 bg-white/[0.06] p-5 backdrop-blur-xl">
+              <span className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">{pick("Saldo saat ini", "Current balance")}</span>
+              <div className="mt-2 flex items-end justify-between gap-4"><strong className="text-4xl font-black text-white">{balance}</strong><span className="pb-1 text-sm text-white/50">{pick("kredit tersedia", "credits available")}</span></div>
+            </div>
+          </div>
+
+          <p className="mt-6 max-w-3xl text-sm leading-7 text-white/55">{pick("Satu kredit memproses hingga 10 detik audio. Kredit hanya dipotong ketika proses dimulai dan otomatis kembali jika mesin gagal menghasilkan file.", "One credit processes up to 10 seconds of audio. Credits are charged only when processing begins and are automatically returned if the engine fails to produce a file.")}</p>
+
+          <div className="mt-10 grid gap-5 lg:grid-cols-3">
+            {TUNEXPERT_CREDIT_PACKAGES.map((item) => (
+              <article key={item.code} className={`relative overflow-hidden rounded-[2rem] border p-6 sm:p-8 ${item.featured ? "border-pink-300/50 bg-gradient-to-br from-pink-400/20 via-purple-500/10 to-orange-400/10 shadow-[0_24px_80px_rgba(236,72,153,.16)]" : "border-white/12 bg-white/[0.045]"}`}>
+                {item.featured && <span className="absolute right-5 top-5 rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#151127]">{pick("Paling fleksibel", "Most flexible")}</span>}
+                <p data-no-translate className="text-xs font-black uppercase tracking-[0.24em] text-white/45">{item.code}</p>
+                <div className="mt-8 flex items-end gap-2"><strong className="text-6xl font-black tracking-[-0.06em]">{item.credits}</strong><span className="pb-2 text-sm text-white/45">{pick("kredit", "credits")}</span></div>
+                <p className="mt-4 text-2xl font-black">{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(item.amountIdr)}</p>
+                <p className="mt-2 text-sm text-white/45">{pick(`Hingga ${Math.floor(item.credits / 6)} menit proses audio.`, `Up to ${Math.floor(item.credits / 6)} minutes of audio processing.`)}</p>
+                <button type="button" onClick={() => void startCheckout(item.code)} disabled={Boolean(checkoutLoading) || !paymentsLive} className={`mt-8 flex min-h-13 w-full items-center justify-center gap-2 rounded-full px-5 font-black transition disabled:cursor-not-allowed disabled:opacity-50 ${item.featured ? "bg-white text-[#151127] hover:scale-[1.01]" : "border border-white/16 bg-white/8 text-white hover:bg-white/14"}`}>
+                  <CreditCard className="h-4 w-4" />{!paymentsLive ? pick("Pembayaran segera aktif", "Payments coming online") : checkoutLoading === item.code ? pick("Membuka pembayaran...", "Opening checkout...") : pick("Beli kredit", "Buy credits")}
+                </button>
+              </article>
+            ))}
+          </div>
+
+          {!paymentsLive && <p role="status" className="mt-5 rounded-2xl border border-amber-200/25 bg-amber-200/10 px-5 py-4 text-sm font-semibold text-amber-100">{pick("Checkout sedang disiapkan. Tidak ada proses gratis yang dapat dijalankan sebelum pembayaran aktif.", "Checkout is being configured. No free processing is available before payments go live.")}</p>}
+          {billingError && <p role="alert" className="mt-5 rounded-2xl border border-red-300/25 bg-red-400/10 px-5 py-4 text-sm font-semibold text-red-100">{billingError}</p>}
+          <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-white/40"><span>{pick("Pembayaran aman melalui Midtrans", "Secure checkout by Midtrans")}</span><span>{pick("Saldo masuk setelah pembayaran terverifikasi", "Credits arrive after payment is verified")}</span><span>{pick("Tidak ada pemakaian gratis", "No free usage")}</span></div>
         </div>
       </section>
 

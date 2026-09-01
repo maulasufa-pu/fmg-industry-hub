@@ -9,6 +9,7 @@ const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY!;
 
 type MidtransNotif = {
   order_id: string;
+  transaction_id?: string;
   status_code: string;
   gross_amount: string;
   transaction_status: MidtransTransactionStatus;
@@ -17,6 +18,9 @@ type MidtransNotif = {
 };
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !MIDTRANS_SERVER_KEY) {
+    return NextResponse.json({ error: "Payment webhook is not configured" }, { status: 503 });
+  }
   const body = (await req.json()) as MidtransNotif;
 
   if (!verifyMidtransSignature({ orderId: body.order_id, statusCode: body.status_code, grossAmount: body.gross_amount, signature: body.signature_key }, MIDTRANS_SERVER_KEY)) {
@@ -24,6 +28,35 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+  if (body.order_id.startsWith("TXP-")) {
+    const { data: creditOrder, error: creditOrderError } = await admin
+      .from("tunexpert_credit_orders")
+      .select("amount_idr,currency")
+      .eq("order_no", body.order_id)
+      .maybeSingle();
+    if (creditOrderError) return NextResponse.json({ error: "Unable to verify credit order" }, { status: 500 });
+    if (!creditOrder) return NextResponse.json({ error: "Credit order not found" }, { status: 404 });
+    if (!midtransAmountMatches(body.gross_amount, creditOrder.amount_idr, creditOrder.currency)) {
+      return NextResponse.json({ error: "Credit order amount mismatch" }, { status: 400 });
+    }
+
+    if (body.transaction_status === "settlement" || (body.transaction_status === "capture" && body.fraud_status === "accept")) {
+      const { error } = await admin.rpc("tunexpert_settle_credit_order", {
+        p_order_no: body.order_id,
+        p_provider_transaction_id: body.transaction_id ?? null,
+      });
+      if (error) return NextResponse.json({ error: "Unable to settle credit order" }, { status: 500 });
+    } else if (body.transaction_status === "refund" || body.transaction_status === "partial_refund") {
+      const { error } = await admin.rpc("tunexpert_reverse_credit_order", { p_order_no: body.order_id });
+      if (error) return NextResponse.json({ error: "Unable to reverse credit order" }, { status: 500 });
+    } else if (["deny", "expire", "cancel"].includes(body.transaction_status)) {
+      const { error } = await admin.rpc("tunexpert_cancel_credit_order", { p_order_no: body.order_id });
+      if (error) return NextResponse.json({ error: "Unable to cancel credit order" }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true });
+  }
 
   const { data: invoice, error: invoiceError } = await admin
     .from("invoices")

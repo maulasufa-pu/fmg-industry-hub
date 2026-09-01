@@ -2,7 +2,7 @@ export function safeInternalPath(
   value: string | null | undefined,
   fallback = "/client/dashboard",
 ): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) return fallback;
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) return fallback;
   return value;
 }
 

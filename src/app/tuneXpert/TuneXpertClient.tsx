@@ -12,9 +12,7 @@ import {
   Gauge,
   Headphones,
   Layers3,
-  LockKeyhole,
   Music2,
-  ShieldCheck,
   Sparkles,
   UploadCloud,
   WandSparkles,
@@ -30,6 +28,14 @@ type WalletResponse = { balance?: number; error?: string };
 
 const waveform = [34, 58, 43, 76, 48, 92, 64, 39, 83, 56, 96, 68, 44, 87, 52, 73, 41, 90, 61, 47, 79, 55, 88, 37];
 const durations = [10, 20, 30, 45, 60] as const;
+
+const promptIdeas = [
+  { id: "mood", idText: "hangat, emosional, cinematic", enText: "warm, emotional, cinematic" },
+  { id: "tempo", idText: "tempo 118 BPM", enText: "118 BPM tempo" },
+  { id: "instrument", idText: "piano lembut, strings lebar, bass hangat", enText: "soft piano, wide strings, warm bass" },
+  { id: "structure", idText: "intro minimal lalu berkembang perlahan", enText: "minimal intro with a gradual build" },
+  { id: "energy", idText: "chorus terasa besar tapi tetap elegan", enText: "a big but elegant chorus" },
+];
 
 function responseFilename(response: Response, fallback: string): string {
   const disposition = response.headers.get("content-disposition") || "";
@@ -119,6 +125,14 @@ export default function TuneXpertClient({ initialBalance, paymentsLive }: { init
     replaceResult(null);
   };
 
+  const appendPromptIdea = (text: string) => {
+    setPrompt((current) => {
+      if (!current.trim()) return text;
+      if (current.trimEnd().endsWith(",")) return `${current.trimEnd()} ${text}`;
+      return `${current.trimEnd()}, ${text}`;
+    });
+  };
+
   const handlePointerMove = (event: React.PointerEvent<HTMLElement>) => {
     const rect = rootRef.current?.getBoundingClientRect();
     if (!rect || !rootRef.current) return;
@@ -129,7 +143,7 @@ export default function TuneXpertClient({ initialBalance, paymentsLive }: { init
   const generateMusic = async () => {
     if (prompt.trim().length < 20 || busy) return;
     if (balance < musicCost) {
-      setError(pick("Kreditmu belum cukup. Pilih paket untuk melanjutkan.", "You need more credits. Choose a package to continue."));
+      setError(pick("Kreditmu belum cukup untuk proses ini. Pilih paket yang sesuai lalu coba lagi.", "You need a few more credits for this process. Choose a package, then try again."));
       scrollToCredits();
       return;
     }
@@ -146,7 +160,7 @@ export default function TuneXpertClient({ initialBalance, paymentsLive }: { init
       if (!response.ok) {
         setAuthRequired(response.status === 401);
         if (response.status === 402) { void refreshWallet(); scrollToCredits(); }
-        throw new Error(await responseError(response, pick("Musik belum berhasil dibuat.", "Music could not be generated.")));
+        throw new Error(await responseError(response, pick("Track belum berhasil dibuat. Coba sesuaikan arahanmu atau ulangi beberapa saat lagi.", "Your track could not be created yet. Try refining the direction or run it again.")));
       }
       const nextBalance = Number(response.headers.get("x-tunexpert-balance"));
       if (Number.isFinite(nextBalance)) setBalance(nextBalance);
@@ -156,7 +170,7 @@ export default function TuneXpertClient({ initialBalance, paymentsLive }: { init
         filename: responseFilename(response, `${title.trim() || "tunexpert-track"}.mp3`),
       });
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : pick("Terjadi kesalahan.", "Something went wrong."));
+      setError(cause instanceof Error ? cause.message : pick("Ada kendala saat memproses track. Silakan coba lagi.", "Something interrupted the track process. Please try again."));
     } finally {
       setBusy(false);
     }
@@ -165,11 +179,11 @@ export default function TuneXpertClient({ initialBalance, paymentsLive }: { init
   const isolateAudio = async () => {
     if (!file || busy) return;
     if (file.size > 4 * 1024 * 1024) {
-      setError(pick("Ukuran file maksimal 4 MB.", "Maximum file size is 4 MB."));
+      setError(pick("File ini lebih besar dari 4 MB. Pilih versi yang lebih kecil untuk melanjutkan.", "This file is larger than 4 MB. Choose a smaller version to continue."));
       return;
     }
     if (isolationCost !== null && balance < isolationCost) {
-      setError(pick("Kreditmu belum cukup. Pilih paket untuk melanjutkan.", "You need more credits. Choose a package to continue."));
+      setError(pick("Kreditmu belum cukup untuk memproses seluruh durasi audio ini.", "You need more credits to process the full duration of this audio."));
       scrollToCredits();
       return;
     }
@@ -184,7 +198,7 @@ export default function TuneXpertClient({ initialBalance, paymentsLive }: { init
       if (!response.ok) {
         setAuthRequired(response.status === 401);
         if (response.status === 402) { void refreshWallet(); scrollToCredits(); }
-        throw new Error(await responseError(response, pick("Audio belum berhasil dibersihkan.", "Audio could not be isolated.")));
+        throw new Error(await responseError(response, pick("Suara belum berhasil dipisahkan dengan baik. Coba file lain atau ulangi prosesnya.", "The voice could not be isolated cleanly yet. Try another file or run the process again.")));
       }
       const nextBalance = Number(response.headers.get("x-tunexpert-balance"));
       if (Number.isFinite(nextBalance)) setBalance(nextBalance);
@@ -194,7 +208,7 @@ export default function TuneXpertClient({ initialBalance, paymentsLive }: { init
         filename: responseFilename(response, "tunexpert-isolated.mp3"),
       });
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : pick("Terjadi kesalahan.", "Something went wrong."));
+      setError(cause instanceof Error ? cause.message : pick("Ada kendala saat memproses audio. Silakan coba lagi.", "Something interrupted the audio process. Please try again."));
     } finally {
       setBusy(false);
     }
@@ -219,7 +233,7 @@ export default function TuneXpertClient({ initialBalance, paymentsLive }: { init
   };
 
   const startCheckout = async (packageCode: string) => {
-    if (checkoutLoading) return;
+    if (checkoutLoading || !paymentsLive) return;
     setCheckoutLoading(packageCode);
     setBillingError(null);
     try {
@@ -229,10 +243,10 @@ export default function TuneXpertClient({ initialBalance, paymentsLive }: { init
         body: JSON.stringify({ packageCode }),
       });
       const body = await response.json() as { redirectUrl?: string; error?: string };
-      if (!response.ok || !body.redirectUrl) throw new Error(body.error || pick("Checkout belum dapat dibuka.", "Checkout could not be opened."));
+      if (!response.ok || !body.redirectUrl) throw new Error(body.error || pick("Pembayaran belum dapat dibuka. Silakan coba lagi.", "Checkout could not be opened. Please try again."));
       window.location.assign(body.redirectUrl);
     } catch (cause) {
-      setBillingError(cause instanceof Error ? cause.message : pick("Checkout belum dapat dibuka.", "Checkout could not be opened."));
+      setBillingError(cause instanceof Error ? cause.message : pick("Pembayaran belum dapat dibuka. Silakan coba lagi.", "Checkout could not be opened. Please try again."));
       setCheckoutLoading(null);
     }
   };
@@ -250,21 +264,30 @@ export default function TuneXpertClient({ initialBalance, paymentsLive }: { init
         <div className="absolute inset-0 opacity-[0.055] [background-image:linear-gradient(rgba(255,255,255,.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.8)_1px,transparent_1px)] [background-size:56px_56px] [mask-image:linear-gradient(to_bottom,black,transparent_82%)]" />
       </div>
 
-      <section className="relative mx-auto max-w-[1500px] px-5 pb-24 pt-16 sm:px-8 lg:px-12 lg:pt-24">
-        <div className="grid items-end gap-12 lg:grid-cols-[1.15fr_.85fr]">
+      <section className="relative mx-auto max-w-[1500px] px-5 pb-20 pt-16 sm:px-8 lg:px-12 lg:pt-24">
+        <div className="grid items-end gap-12 lg:grid-cols-[1.12fr_.88fr]">
           <div>
             <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="mb-8 flex flex-wrap items-center gap-3">
               <span data-no-translate className="rounded-full border border-white/15 bg-white/[0.07] px-4 py-2 text-xs font-bold uppercase tracking-[0.28em] text-white/80 backdrop-blur-xl">FMG LABS / tuneXpert</span>
-              <span className="flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-xs font-semibold text-emerald-200"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-300" />{pick("Mesin kreatif aktif", "Creative engine online")}</span>
+              <span className="flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-xs font-semibold text-emerald-200"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-300" />{pick("Siap bikin sesuatu", "Ready when you are")}</span>
               <button type="button" onClick={scrollToCredits} className="flex items-center gap-2 rounded-full border border-amber-200/25 bg-amber-200/10 px-4 py-2 text-xs font-black text-amber-100 transition hover:bg-amber-200/20"><Coins className="h-4 w-4" />{balance} {pick("kredit", "credits")}</button>
             </motion.div>
+
             <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="max-w-5xl text-[clamp(3.8rem,9vw,9rem)] font-black uppercase leading-[0.78] tracking-[-0.07em]">
               <span className="block">Shape</span>
               <span className="block bg-gradient-to-r from-[#ff78b8] via-[#f6a3ff] to-[#ffb05c] bg-clip-text text-transparent">the sound.</span>
             </motion.h1>
+
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="mt-8 max-w-2xl text-lg leading-8 text-white/64 sm:text-xl">
-              {pick("Ubah arahan kreatif menjadi musik orisinal, atau bersihkan suara dari rekaman yang ramai—dalam satu ruang kerja yang fokus.", "Turn a creative direction into original music, or recover a clean voice from a noisy recording—all in one focused workspace.")}
+              {pick("Punya bayangan musik di kepala? Tulis rasanya, instrumennya, energinya, lalu biarkan tuneXpert membantumu membentuk versi pertama yang bisa langsung kamu dengar. Atau, unggah rekaman dan tarik suara utamanya lebih ke depan.", "Have a sound in your head? Describe the mood, instruments, and energy, then let tuneXpert shape a first version you can actually hear. Or upload a recording and bring the main voice forward.")}
             </motion.p>
+
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }} className="mt-8 flex flex-wrap gap-3 text-sm text-white/55">
+              <span className="rounded-full border border-white/10 bg-white/[0.045] px-4 py-2">{pick("Text → music", "Text → music")}</span>
+              <span className="rounded-full border border-white/10 bg-white/[0.045] px-4 py-2">{pick("Voice cleanup", "Voice cleanup")}</span>
+              <span className="rounded-full border border-white/10 bg-white/[0.045] px-4 py-2">{pick("Preview langsung", "Instant preview")}</span>
+              <span className="rounded-full border border-white/10 bg-white/[0.045] px-4 py-2">{pick("Unduh MP3", "MP3 download")}</span>
+            </motion.div>
           </div>
 
           <motion.div initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.15 }} className="relative mx-auto w-full max-w-xl overflow-hidden rounded-[2rem] border border-white/15 bg-[#111026]/70 p-5 shadow-[0_35px_100px_rgba(0,0,0,.55)] backdrop-blur-2xl sm:p-7">
@@ -275,42 +298,53 @@ export default function TuneXpertClient({ initialBalance, paymentsLive }: { init
               ))}
             </div>
             <div className="mt-5 flex items-center justify-between gap-5">
-              <div><p className="text-xs font-bold uppercase tracking-[0.24em] text-pink-300">LIVE AUDIO ENGINE</p><p className="mt-1 text-sm text-white/55">Music v2 · Voice Isolator</p></div>
+              <div><p className="text-xs font-bold uppercase tracking-[0.24em] text-pink-300">CREATIVE AUDIO WORKSPACE</p><p className="mt-1 text-sm text-white/55">Music Generator · Voice Isolator</p></div>
               <div className="grid h-12 w-12 place-items-center rounded-full bg-white text-[#111026]"><Headphones className="h-5 w-5" /></div>
+            </div>
+            <div className="mt-5 grid grid-cols-3 gap-2">
+              {[pick("Tulis ide", "Describe"), pick("Proses", "Create"), pick("Dengarkan", "Listen")].map((item, index) => (
+                <div key={item} className="rounded-2xl border border-white/10 bg-black/15 p-3 text-center">
+                  <span className="block text-[10px] font-black tracking-[0.2em] text-white/30">0{index + 1}</span>
+                  <span className="mt-1 block text-xs font-bold text-white/70">{item}</span>
+                </div>
+              ))}
             </div>
           </motion.div>
         </div>
 
-        <div className="mt-20 grid gap-5 border-y border-white/10 py-6 sm:grid-cols-3">
+        <div className="mt-20 grid gap-4 border-y border-white/10 py-6 sm:grid-cols-3">
           {[
-            [ShieldCheck, pick("API key aman di server", "Server-side API security")],
-            [Gauge, pick("Output MP3 siap dipreview", "Preview-ready MP3 output")],
-            [LockKeyhole, pick("Login wajib untuk melindungi kredit", "Login required to protect credits")],
+            [WandSparkles, pick("Mulai dari ide sesederhana satu kalimat", "Start with an idea as simple as one sentence")],
+            [Gauge, pick("Atur durasi dan arah hasil sebelum diproses", "Set the duration and direction before processing")],
+            [Headphones, pick("Dengarkan hasilnya langsung tanpa pindah aplikasi", "Preview the result without leaving the page")],
           ].map(([Icon, label]) => {
-            const FeatureIcon = Icon as typeof ShieldCheck;
-            return <div key={String(label)} className="flex items-center gap-3 text-sm font-medium text-white/65"><FeatureIcon className="h-5 w-5 text-pink-300" />{String(label)}</div>;
+            const FeatureIcon = Icon as typeof WandSparkles;
+            return <div key={String(label)} className="flex items-center gap-3 rounded-2xl px-2 py-2 text-sm font-medium leading-6 text-white/62"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-pink-300/20 bg-pink-300/10"><FeatureIcon className="h-4 w-4 text-pink-200" /></span>{String(label)}</div>;
           })}
         </div>
-        <p className="mt-4 max-w-4xl text-xs leading-5 text-white/35">
-          {pick("Powered by ElevenLabs. Prompt atau audio yang kamu kirim diteruskan secara aman ke ElevenLabs hanya untuk menjalankan proses yang kamu minta. FMG tidak menyimpan file hasil di servernya.", "Powered by ElevenLabs. The prompt or audio you submit is securely sent to ElevenLabs only to perform the process you request. FMG does not retain the resulting file on its servers.")}
-        </p>
       </section>
 
       <section className="relative mx-auto max-w-[1500px] px-5 pb-28 sm:px-8 lg:px-12">
         <div className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-end">
-          <div><p className="text-xs font-black uppercase tracking-[0.3em] text-pink-300">CHOOSE YOUR ENGINE</p><h2 className="mt-3 text-4xl font-black tracking-[-0.04em] sm:text-6xl">{pick("Satu studio. Dua kemampuan.", "One studio. Two engines.")}</h2></div>
-          <p className="max-w-md text-sm leading-6 text-white/50">{pick("Hasil tidak disimpan oleh FMG. Unduh sebelum meninggalkan halaman.", "FMG does not retain your result. Download it before leaving the page.")}</p>
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-pink-300">CHOOSE YOUR ENGINE</p>
+            <h2 className="mt-3 text-4xl font-black tracking-[-0.04em] sm:text-6xl">{pick("Mulai dari yang kamu butuhkan.", "Start with what you need.")}</h2>
+          </div>
+          <p className="max-w-lg text-sm leading-6 text-white/50">{pick("Bikin ide musik dari nol, atau rapikan rekaman yang sudah kamu punya. Dua alat, satu alur kerja yang tetap sederhana.", "Create music from scratch, or clean up a recording you already have. Two tools, one simple workflow.")}</p>
         </div>
 
         <div className="grid gap-5 lg:grid-cols-[.34fr_.66fr]">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
             <button type="button" onClick={() => selectMode("music")} aria-pressed={mode === "music"} className={`group relative min-h-56 overflow-hidden rounded-[1.75rem] border p-6 text-left transition duration-300 ${mode === "music" ? "border-pink-300/70 bg-gradient-to-br from-pink-400/25 to-purple-700/20 shadow-[0_22px_70px_rgba(236,72,153,.18)]" : "border-white/10 bg-white/[0.045] hover:border-white/25 hover:bg-white/[0.07]"}`}>
               <div className="flex items-start justify-between"><span className="grid h-12 w-12 place-items-center rounded-full bg-white text-[#151127]"><WandSparkles className="h-5 w-5" /></span><span className="text-xs font-bold tracking-[0.2em] text-white/40">01</span></div>
-              <h3 className="mt-12 text-2xl font-black">{pick("Buat musik", "Generate music")}</h3><p className="mt-2 text-sm leading-6 text-white/55">{pick("Dari arahan kreatif menjadi track orisinal.", "From creative direction to an original track.")}</p>
+              <h3 className="mt-10 text-2xl font-black">{pick("Buat musik", "Generate music")}</h3>
+              <p className="mt-2 text-sm leading-6 text-white/55">{pick("Cocok untuk demo, ide aransemen, konten, scoring pendek, atau eksplorasi suasana baru.", "Great for demos, arrangement ideas, content, short scoring, or exploring a new mood.")}</p>
             </button>
+
             <button type="button" onClick={() => selectMode("isolate")} aria-pressed={mode === "isolate"} className={`group relative min-h-56 overflow-hidden rounded-[1.75rem] border p-6 text-left transition duration-300 ${mode === "isolate" ? "border-orange-300/70 bg-gradient-to-br from-orange-400/25 to-fuchsia-700/20 shadow-[0_22px_70px_rgba(251,146,60,.16)]" : "border-white/10 bg-white/[0.045] hover:border-white/25 hover:bg-white/[0.07]"}`}>
               <div className="flex items-start justify-between"><span className="grid h-12 w-12 place-items-center rounded-full bg-white text-[#151127]"><AudioLines className="h-5 w-5" /></span><span className="text-xs font-bold tracking-[0.2em] text-white/40">02</span></div>
-              <h3 className="mt-12 text-2xl font-black">{pick("Isolasi suara", "Isolate voice")}</h3><p className="mt-2 text-sm leading-6 text-white/55">{pick("Kurangi noise dan musik latar dari suara.", "Reduce noise and background music around speech.")}</p>
+              <h3 className="mt-10 text-2xl font-black">{pick("Perjelas suara", "Bring out the voice")}</h3>
+              <p className="mt-2 text-sm leading-6 text-white/55">{pick("Cocok untuk voice note, dialog, wawancara, atau rekaman dengan ambience dan musik latar.", "Great for voice notes, dialogue, interviews, or recordings with ambience and background music.")}</p>
             </button>
           </div>
 
@@ -320,33 +354,62 @@ export default function TuneXpertClient({ initialBalance, paymentsLive }: { init
               {mode === "music" ? (
                 <motion.div key="music" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }}>
                   <div className="flex items-center gap-3"><Music2 className="h-5 w-5 text-pink-300" /><span className="text-xs font-black uppercase tracking-[0.26em] text-white/55">MUSIC GENERATOR</span></div>
-                  <h3 className="mt-5 text-3xl font-black tracking-[-0.03em] sm:text-5xl">{pick("Ceritakan dunia lagumu.", "Describe the world of your track.")}</h3>
-                  <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55">{pick("Jelaskan suasana, tempo, instrumen, struktur, dan energi. Hindari nama artis, judul lagu, atau lirik berhak cipta.", "Describe mood, tempo, instruments, structure, and energy. Avoid artist names, song titles, or copyrighted lyrics.")}</p>
+                  <h3 className="mt-5 text-3xl font-black tracking-[-0.03em] sm:text-5xl">{pick("Ceritakan musik yang kamu bayangkan.", "Describe the music in your head.")}</h3>
+                  <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55">{pick("Tidak perlu pakai istilah teknis. Tulis saja suasana, tempo, instrumen, bentuk lagu, atau momen yang ingin terasa. Semakin jelas arahnya, semakin mudah hasilnya mendekati bayanganmu.", "You do not need technical language. Describe the mood, tempo, instruments, structure, or the moment you want it to feel like. Clearer direction usually gives the engine more to work with.")}</p>
 
-                  <div className="mt-8 grid gap-5">
-                    <label className="grid gap-2"><span className="text-xs font-bold uppercase tracking-[0.18em] text-white/60">{pick("Judul file", "File title")}</span><input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={80} placeholder="Neon Afterglow" className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3.5 text-white outline-none transition placeholder:text-white/25 focus:border-pink-300/60 focus:ring-4 focus:ring-pink-300/10" /></label>
-                    <label className="grid gap-2"><span className="flex justify-between text-xs font-bold uppercase tracking-[0.18em] text-white/60"><span>{pick("Arahan kreatif", "Creative direction")}</span><span className="font-medium tracking-normal text-white/30">{prompt.length}/4100</span></span><textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} maxLength={4_100} rows={7} placeholder={pick("Contoh: track elektronik sinematik, 128 BPM, bass yang hangat, synth lebar, build perlahan, drop yang emosional, tanpa vokal...", "Example: cinematic electronic track, 128 BPM, warm bass, wide synths, a slow build and an emotional drop, no vocals...")} className="resize-none rounded-2xl border border-white/10 bg-black/20 px-4 py-4 leading-7 text-white outline-none transition placeholder:text-white/25 focus:border-pink-300/60 focus:ring-4 focus:ring-pink-300/10" /></label>
+                  <div className="mt-7 rounded-[1.5rem] border border-pink-300/15 bg-pink-300/[0.055] p-4 sm:p-5">
+                    <div className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-pink-200" /><strong className="text-sm">{pick("Butuh titik awal?", "Need a starting point?")}</strong></div>
+                    <p className="mt-1 text-xs leading-5 text-white/42">{pick("Klik beberapa ide di bawah untuk menyusun prompt, lalu ubah dengan bahasamu sendiri.", "Tap a few ideas below to build a prompt, then rewrite it in your own words.")}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {promptIdeas.map((idea) => {
+                        const label = pick(idea.idText, idea.enText);
+                        return <button key={idea.id} type="button" onClick={() => appendPromptIdea(label)} className="rounded-full border border-white/10 bg-black/15 px-3 py-2 text-xs font-semibold text-white/60 transition hover:border-pink-300/35 hover:bg-pink-300/10 hover:text-white">+ {label}</button>;
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="mt-7 grid gap-5">
+                    <label className="grid gap-2"><span className="text-xs font-bold uppercase tracking-[0.18em] text-white/60">{pick("Judul file", "File title")}</span><input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={80} placeholder={pick("Contoh: Midnight Bloom", "Example: Midnight Bloom")} className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3.5 text-white outline-none transition placeholder:text-white/25 focus:border-pink-300/60 focus:ring-4 focus:ring-pink-300/10" /></label>
+
+                    <label className="grid gap-2">
+                      <span className="flex justify-between text-xs font-bold uppercase tracking-[0.18em] text-white/60"><span>{pick("Arahan kreatif", "Creative direction")}</span><span className="font-medium tracking-normal text-white/30">{prompt.length}/4100</span></span>
+                      <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} maxLength={4_100} rows={7} placeholder={pick("Contoh: pop elektronik yang hangat dan sedikit nostalgic, 118 BPM, piano lembut di intro, bass bulat, synth lebar, build perlahan menuju chorus yang emosional, instrumental...", "Example: warm, slightly nostalgic electronic pop, 118 BPM, soft piano intro, rounded bass, wide synths, a gradual build into an emotional chorus, instrumental...")} className="resize-none rounded-2xl border border-white/10 bg-black/20 px-4 py-4 leading-7 text-white outline-none transition placeholder:text-white/25 focus:border-pink-300/60 focus:ring-4 focus:ring-pink-300/10" />
+                    </label>
+
                     <div className="grid gap-5 sm:grid-cols-[1fr_auto]">
                       <div><span className="text-xs font-bold uppercase tracking-[0.18em] text-white/60">{pick("Durasi", "Duration")}</span><div className="mt-2 flex flex-wrap gap-2">{durations.map((value) => <button type="button" key={value} onClick={() => setDuration(value)} className={`rounded-full px-4 py-2 text-sm font-bold transition ${duration === value ? "bg-white text-[#151127]" : "border border-white/10 bg-white/5 text-white/55 hover:bg-white/10"}`}>{value}s</button>)}</div></div>
-                      <label className="flex min-w-48 items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/15 px-4 py-3"><span><strong className="block text-sm">Instrumental</strong><span className="text-xs text-white/40">{instrumental ? "ON" : "OFF"}</span></span><input type="checkbox" checked={instrumental} onChange={(event) => setInstrumental(event.target.checked)} className="h-5 w-5 accent-pink-400" /></label>
+                      <label className="flex min-w-48 items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/15 px-4 py-3"><span><strong className="block text-sm">{pick("Instrumental", "Instrumental")}</strong><span className="text-xs text-white/40">{instrumental ? pick("Tanpa vokal", "No vocals") : pick("Vokal diperbolehkan", "Vocals allowed")}</span></span><input type="checkbox" checked={instrumental} onChange={(event) => setInstrumental(event.target.checked)} className="h-5 w-5 accent-pink-400" /></label>
                     </div>
-                    <div className="flex items-center justify-between gap-4 text-xs text-white/45"><span>{pick("Biaya proses", "Processing cost")}</span><strong className="text-white">{musicCost} {pick("kredit", "credits")}</strong></div>
-                    <button type="button" onClick={() => void generateMusic()} disabled={busy || prompt.trim().length < 20} className="group mt-2 flex min-h-14 items-center justify-center gap-3 rounded-full bg-gradient-to-r from-[#ff5fa2] via-[#ff7885] to-[#ff9d49] px-6 font-black text-white shadow-[0_16px_45px_rgba(255,95,162,.28)] transition hover:scale-[1.01] hover:shadow-[0_18px_55px_rgba(255,95,162,.4)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100">{busy ? <><Sparkles className="h-5 w-5 animate-spin" />{pick("Sedang membangun track...", "Building your track...")}</> : balance < musicCost ? <>{pick("Beli kredit", "Buy credits")}<Coins className="h-5 w-5" /></> : <>{pick("Generate musik", "Generate music")}<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" /></>}</button>
+
+                    <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/15 px-4 py-3 text-xs text-white/45"><span>{pick("Perkiraan kredit", "Estimated credits")}</span><strong className="text-white">{musicCost} {pick("kredit", "credits")}</strong></div>
+
+                    <button type="button" onClick={() => void generateMusic()} disabled={busy || prompt.trim().length < 20} className="group mt-1 flex min-h-14 items-center justify-center gap-3 rounded-full bg-gradient-to-r from-[#ff5fa2] via-[#ff7885] to-[#ff9d49] px-6 font-black text-white shadow-[0_16px_45px_rgba(255,95,162,.28)] transition hover:scale-[1.01] hover:shadow-[0_18px_55px_rgba(255,95,162,.4)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100">{busy ? <><Sparkles className="h-5 w-5 animate-spin" />{pick("Sedang merangkai trackmu...", "Shaping your track...")}</> : balance < musicCost ? <>{pick("Tambah kredit", "Add credits")}<Coins className="h-5 w-5" /></> : <>{pick("Buat track", "Create track")}<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" /></>}</button>
+
+                    <p className="text-xs leading-5 text-white/32">{pick("Tips: gunakan deskripsi gaya, suasana, instrumen, tempo, dan struktur. Hindari menyalin lirik berhak cipta atau meminta tiruan langsung dari artis tertentu.", "Tip: describe style, mood, instruments, tempo, and structure. Avoid copying copyrighted lyrics or asking for a direct imitation of a specific artist.")}</p>
                   </div>
                 </motion.div>
               ) : (
                 <motion.div key="isolate" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }}>
                   <div className="flex items-center gap-3"><Layers3 className="h-5 w-5 text-orange-300" /><span className="text-xs font-black uppercase tracking-[0.26em] text-white/55">VOICE ISOLATOR</span></div>
-                  <h3 className="mt-5 text-3xl font-black tracking-[-0.03em] sm:text-5xl">{pick("Bawa suaranya ke depan.", "Bring the voice forward.")}</h3>
-                  <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55">{pick("Unggah rekaman untuk mengurangi noise, ambience, dan musik latar. Fitur ini dioptimalkan untuk suara atau ucapan—bukan pemisahan stem penuh.", "Upload a recording to reduce noise, ambience, and background music. This is optimized for voice or speech—not full multitrack stem separation.")}</p>
+                  <h3 className="mt-5 text-3xl font-black tracking-[-0.03em] sm:text-5xl">{pick("Bikin suaranya lebih mudah didengar.", "Make the voice easier to hear.")}</h3>
+                  <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55">{pick("Unggah rekaman yang punya noise, ambience, atau musik latar. tuneXpert akan mencoba memusatkan perhatian pada suara utama. Fitur ini ditujukan untuk voice atau speech, bukan pemisahan stem multitrack.", "Upload a recording with noise, ambience, or background music. tuneXpert will try to bring the main voice forward. This tool is designed for voice or speech, not full multitrack stem separation.")}</p>
+
+                  <div className="mt-7 grid grid-cols-3 gap-2">
+                    {[pick("Voice note", "Voice note"), pick("Dialog", "Dialogue"), pick("Wawancara", "Interview")].map((item) => <div key={item} className="rounded-2xl border border-white/10 bg-black/15 px-3 py-3 text-center text-xs font-bold text-white/55">{item}</div>)}
+                  </div>
 
                   <input ref={fileInputRef} type="file" accept="audio/*,.aac,.aiff,.flac,.m4a,.mp3,.mp4,.ogg,.opus,.wav,.webm" className="sr-only" onChange={(event) => chooseFile(event.target.files?.[0] ?? null)} />
-                  <button type="button" onClick={() => fileInputRef.current?.click()} onDragEnter={(event) => { event.preventDefault(); setDragging(true); }} onDragOver={(event) => event.preventDefault()} onDragLeave={() => setDragging(false)} onDrop={(event) => { event.preventDefault(); setDragging(false); chooseFile(event.dataTransfer.files?.[0] ?? null); }} className={`mt-8 grid min-h-72 w-full place-items-center rounded-[1.75rem] border border-dashed px-6 text-center transition ${dragging ? "border-orange-300 bg-orange-300/15 scale-[1.01]" : "border-white/20 bg-black/15 hover:border-orange-300/50 hover:bg-white/[0.045]"}`}>
-                    <span><span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-white text-[#151127]"><UploadCloud className="h-7 w-7" /></span><strong className="mt-5 block text-xl">{file ? file.name : pick("Tarik audio ke sini", "Drop your audio here")}</strong><span className="mt-2 block text-sm text-white/45">{file ? `${formatBytes(file.size)} · ${file.type || "audio"}` : pick("atau sentuh untuk memilih · maksimal 4 MB", "or tap to browse · maximum 4 MB")}</span></span>
+                  <button type="button" onClick={() => fileInputRef.current?.click()} onDragEnter={(event) => { event.preventDefault(); setDragging(true); }} onDragOver={(event) => event.preventDefault()} onDragLeave={() => setDragging(false)} onDrop={(event) => { event.preventDefault(); setDragging(false); chooseFile(event.dataTransfer.files?.[0] ?? null); }} className={`mt-7 grid min-h-72 w-full place-items-center rounded-[1.75rem] border border-dashed px-6 text-center transition ${dragging ? "border-orange-300 bg-orange-300/15 scale-[1.01]" : "border-white/20 bg-black/15 hover:border-orange-300/50 hover:bg-white/[0.045]"}`}>
+                    <span><span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-white text-[#151127]"><UploadCloud className="h-7 w-7" /></span><strong className="mt-5 block text-xl">{file ? file.name : pick("Tarik audio ke sini", "Drop your audio here")}</strong><span className="mt-2 block text-sm text-white/45">{file ? `${formatBytes(file.size)} · ${file.type || "audio"}` : pick("atau klik untuk memilih file · maksimal 4 MB", "or click to choose a file · maximum 4 MB")}</span></span>
                   </button>
+
                   {file && <div className="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-3"><div className="min-w-0 flex-1">{sourcePreview && <audio controls src={sourcePreview} className="h-10 w-full" />}</div><button type="button" aria-label={pick("Hapus file", "Remove file")} onClick={() => { setFile(null); setFileDuration(null); }} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 hover:bg-white/10"><X className="h-4 w-4" /></button></div>}
-                  {file && <div className="mt-4 flex items-center justify-between gap-4 text-xs text-white/45"><span>{pick("Biaya dihitung dari durasi audio", "Cost is based on audio duration")}</span><strong className="text-white">{isolationCost ? `${isolationCost} ${pick("kredit", "credits")}` : pick("Menghitung...", "Calculating...")}</strong></div>}
-                  <button type="button" onClick={() => void isolateAudio()} disabled={busy || !file} className="group mt-5 flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-[#ff7a45] via-[#ff5f91] to-[#c76dff] px-6 font-black shadow-[0_16px_45px_rgba(255,122,69,.22)] transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100">{busy ? <><AudioLines className="h-5 w-5 animate-pulse" />{pick("Sedang membersihkan audio...", "Cleaning the audio...")}</> : isolationCost && balance < isolationCost ? <>{pick("Beli kredit", "Buy credits")}<Coins className="h-5 w-5" /></> : <>{pick("Isolasi suara", "Isolate voice")}<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" /></>}</button>
+
+                  {file && <div className="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/15 px-4 py-3 text-xs text-white/45"><span>{pick("Kredit mengikuti durasi audio", "Credits follow audio duration")}</span><strong className="text-white">{isolationCost ? `${isolationCost} ${pick("kredit", "credits")}` : pick("Membaca durasi...", "Reading duration...")}</strong></div>}
+
+                  <button type="button" onClick={() => void isolateAudio()} disabled={busy || !file} className="group mt-5 flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-[#ff7a45] via-[#ff5f91] to-[#c76dff] px-6 font-black shadow-[0_16px_45px_rgba(255,122,69,.22)] transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100">{busy ? <><AudioLines className="h-5 w-5 animate-pulse" />{pick("Sedang memusatkan suara...", "Bringing the voice forward...")}</> : isolationCost && balance < isolationCost ? <>{pick("Tambah kredit", "Add credits")}<Coins className="h-5 w-5" /></> : <>{pick("Proses audio", "Process audio")}<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" /></>}</button>
+
+                  <p className="mt-4 text-xs leading-5 text-white/32">{pick("Untuk hasil yang lebih konsisten, gunakan file dengan suara utama yang cukup terdengar dan hindari rekaman yang sudah sangat terdistorsi.", "For more consistent results, use audio where the main voice is still reasonably audible and avoid heavily distorted recordings.")}</p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -354,7 +417,7 @@ export default function TuneXpertClient({ initialBalance, paymentsLive }: { init
             <AnimatePresence>
               {(error || result) && (
                 <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className={`mt-6 rounded-[1.5rem] border p-5 ${error ? "border-red-300/25 bg-red-400/10" : "border-emerald-300/25 bg-emerald-300/10"}`}>
-                  {error ? <div><p className="font-bold text-red-100">{error}</p>{authRequired && <Link href={`/login?next=/tuneXpert`} className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-[#151127]">{pick("Masuk untuk melanjutkan", "Sign in to continue")}<ArrowRight className="h-4 w-4" /></Link>}</div> : result ? <div><div className="mb-4 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-full bg-emerald-300 text-emerald-950"><Check className="h-5 w-5" /></span><div><strong className="block">{pick("Audio siap", "Your audio is ready")}</strong><span className="text-xs text-white/45">{pick("Preview lalu unduh hasilnya.", "Preview it, then download your result.")}</span></div></div><audio controls autoPlay src={result.url} className="w-full" /><a href={result.url} download={result.filename} className="mt-4 flex items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black text-[#151127] transition hover:scale-[1.01]"><Download className="h-4 w-4" />{pick("Unduh audio", "Download audio")}</a></div> : null}
+                  {error ? <div><p className="font-bold text-red-100">{error}</p>{authRequired && <Link href={`/login?next=/tuneXpert`} className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-[#151127]">{pick("Masuk lalu lanjutkan", "Sign in and continue")}<ArrowRight className="h-4 w-4" /></Link>}</div> : result ? <div><div className="mb-4 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-full bg-emerald-300 text-emerald-950"><Check className="h-5 w-5" /></span><div><strong className="block">{pick("Sudah jadi. Coba dengarkan.", "It is ready. Give it a listen.")}</strong><span className="text-xs text-white/45">{pick("Kalau sudah pas, simpan hasilnya ke perangkatmu.", "If it feels right, save the result to your device.")}</span></div></div><audio controls autoPlay src={result.url} className="w-full" /><a href={result.url} download={result.filename} className="mt-4 flex items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black text-[#151127] transition hover:scale-[1.01]"><Download className="h-4 w-4" />{pick("Unduh hasil", "Download result")}</a></div> : null}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -362,12 +425,35 @@ export default function TuneXpertClient({ initialBalance, paymentsLive }: { init
         </div>
       </section>
 
-      <section id="tunexpert-credits" className="relative scroll-mt-24 border-t border-white/10 px-5 py-20 sm:px-8 lg:px-12">
+      <section className="relative border-y border-white/10 bg-black/10 px-5 py-20 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-[1500px]">
+          <div className="grid gap-8 lg:grid-cols-[.8fr_1.2fr] lg:items-end">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.3em] text-pink-300">A SIMPLE FLOW</p>
+              <h2 className="mt-3 text-4xl font-black tracking-[-0.04em] sm:text-6xl">{pick("Lebih sedikit teknis. Lebih cepat dengar hasil.", "Less setup. Faster first listen.")}</h2>
+            </div>
+            <p className="max-w-2xl text-sm leading-7 text-white/50">{pick("tuneXpert dibuat untuk fase eksplorasi: saat kamu butuh mendengar ide lebih cepat, mencoba arah baru, atau membersihkan bahan rekaman sebelum lanjut ke proses produksi berikutnya.", "tuneXpert is built for exploration: when you want to hear an idea sooner, test a new direction, or clean up source audio before moving into the next production stage.")}</p>
+          </div>
+
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            {[
+              { n: "01", title: pick("Mulai dari bahan yang kamu punya", "Start with what you have"), text: pick("Tulis arahan musik atau unggah rekaman. Tidak perlu menyiapkan project rumit.", "Describe the music or upload a recording. No complicated project setup needed."), icon: WandSparkles },
+              { n: "02", title: pick("Atur seperlunya", "Set what matters"), text: pick("Pilih durasi, mode instrumental, atau cek kebutuhan kredit sebelum menjalankan proses.", "Choose duration, instrumental mode, or check the credit estimate before processing."), icon: Gauge },
+              { n: "03", title: pick("Dengar, nilai, simpan", "Listen, judge, save"), text: pick("Preview langsung di halaman. Kalau cocok, unduh dan lanjutkan ke workflow musikmu.", "Preview it on the page. If it works, download it and continue in your music workflow."), icon: Headphones },
+            ].map((item) => {
+              const ItemIcon = item.icon;
+              return <article key={item.n} className="group relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.045] p-6 sm:p-7"><div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-pink-400/10 blur-3xl transition group-hover:bg-pink-400/20" /><div className="flex items-center justify-between"><span className="text-xs font-black tracking-[0.24em] text-white/30">{item.n}</span><span className="grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-white/5"><ItemIcon className="h-4 w-4 text-pink-200" /></span></div><h3 className="mt-12 text-xl font-black">{item.title}</h3><p className="mt-2 text-sm leading-6 text-white/48">{item.text}</p></article>;
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section id="tunexpert-credits" className="relative scroll-mt-24 px-5 py-20 sm:px-8 lg:px-12">
         <div className="mx-auto max-w-[1500px]">
           <div className="grid gap-8 lg:grid-cols-[1fr_.7fr] lg:items-end">
             <div>
               <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.3em] text-amber-200"><Coins className="h-4 w-4" />{pick("KREDIT TUNEXPERT", "TUNEXPERT CREDITS")}</p>
-              <h2 className="mt-4 max-w-4xl text-4xl font-black tracking-[-0.045em] sm:text-7xl">{pick("Bayar sesuai yang kamu pakai.", "Pay for what you create.")}</h2>
+              <h2 className="mt-4 max-w-4xl text-4xl font-black tracking-[-0.045em] sm:text-7xl">{pick("Pakai kredit sesuai durasi yang kamu proses.", "Use credits based on what you process.")}</h2>
             </div>
             <div className="rounded-[1.5rem] border border-white/12 bg-white/[0.06] p-5 backdrop-blur-xl">
               <span className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">{pick("Saldo saat ini", "Current balance")}</span>
@@ -375,31 +461,51 @@ export default function TuneXpertClient({ initialBalance, paymentsLive }: { init
             </div>
           </div>
 
-          <p className="mt-6 max-w-3xl text-sm leading-7 text-white/55">{pick("Satu kredit memproses hingga 10 detik audio. Kredit hanya dipotong ketika proses dimulai dan otomatis kembali jika mesin gagal menghasilkan file.", "One credit processes up to 10 seconds of audio. Credits are charged only when processing begins and are automatically returned if the engine fails to produce a file.")}</p>
-
-          <div className="mt-10 grid gap-5 lg:grid-cols-3">
-            {TUNEXPERT_CREDIT_PACKAGES.map((item) => (
-              <article key={item.code} className={`relative overflow-hidden rounded-[2rem] border p-6 sm:p-8 ${item.featured ? "border-pink-300/50 bg-gradient-to-br from-pink-400/20 via-purple-500/10 to-orange-400/10 shadow-[0_24px_80px_rgba(236,72,153,.16)]" : "border-white/12 bg-white/[0.045]"}`}>
-                {item.featured && <span className="absolute right-5 top-5 rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#151127]">{pick("Paling fleksibel", "Most flexible")}</span>}
-                <p data-no-translate className="text-xs font-black uppercase tracking-[0.24em] text-white/45">{item.code}</p>
-                <div className="mt-8 flex items-end gap-2"><strong className="text-6xl font-black tracking-[-0.06em]">{item.credits}</strong><span className="pb-2 text-sm text-white/45">{pick("kredit", "credits")}</span></div>
-                <p className="mt-4 text-2xl font-black">{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(item.amountIdr)}</p>
-                <p className="mt-2 text-sm text-white/45">{pick(`Hingga ${Math.floor(item.credits / 6)} menit proses audio.`, `Up to ${Math.floor(item.credits / 6)} minutes of audio processing.`)}</p>
-                <button type="button" onClick={() => void startCheckout(item.code)} disabled={Boolean(checkoutLoading) || !paymentsLive} className={`mt-8 flex min-h-13 w-full items-center justify-center gap-2 rounded-full px-5 font-black transition disabled:cursor-not-allowed disabled:opacity-50 ${item.featured ? "bg-white text-[#151127] hover:scale-[1.01]" : "border border-white/16 bg-white/8 text-white hover:bg-white/14"}`}>
-                  <CreditCard className="h-4 w-4" />{!paymentsLive ? pick("Pembayaran segera aktif", "Payments coming online") : checkoutLoading === item.code ? pick("Membuka pembayaran...", "Opening checkout...") : pick("Beli kredit", "Buy credits")}
-                </button>
-              </article>
-            ))}
+          <div className="mt-7 grid gap-4 lg:grid-cols-[1.15fr_.85fr]">
+            <p className="max-w-3xl text-sm leading-7 text-white/55">{pick("Satu kredit memproses hingga 10 detik audio. Sebelum kamu menjalankan proses, estimasi kebutuhan kredit selalu ditampilkan agar tidak ada kejutan di akhir.", "One credit processes up to 10 seconds of audio. Before you run anything, the estimated credit use is shown so you know what to expect.")}</p>
+            <div className="flex flex-wrap gap-2 lg:justify-end">
+              {[10, 20, 30, 60].map((seconds) => <span key={seconds} className="rounded-full border border-white/10 bg-white/[0.045] px-3 py-2 text-xs font-semibold text-white/55">{seconds}s = {tuneXpertCreditsForSeconds(seconds)} {pick("kredit", "credits")}</span>)}
+            </div>
           </div>
 
-          {!paymentsLive && <p role="status" className="mt-5 rounded-2xl border border-amber-200/25 bg-amber-200/10 px-5 py-4 text-sm font-semibold text-amber-100">{pick("Checkout sedang disiapkan. Tidak ada proses gratis yang dapat dijalankan sebelum pembayaran aktif.", "Checkout is being configured. No free processing is available before payments go live.")}</p>}
+          {paymentsLive && (
+            <div className="mt-10 grid gap-5 lg:grid-cols-3">
+              {TUNEXPERT_CREDIT_PACKAGES.map((item) => (
+                <article key={item.code} className={`relative overflow-hidden rounded-[2rem] border p-6 sm:p-8 ${item.featured ? "border-pink-300/50 bg-gradient-to-br from-pink-400/20 via-purple-500/10 to-orange-400/10 shadow-[0_24px_80px_rgba(236,72,153,.16)]" : "border-white/12 bg-white/[0.045]"}`}>
+                  {item.featured && <span className="absolute right-5 top-5 rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#151127]">{pick("Paling fleksibel", "Most flexible")}</span>}
+                  <p data-no-translate className="text-xs font-black uppercase tracking-[0.24em] text-white/45">{item.code}</p>
+                  <div className="mt-8 flex items-end gap-2"><strong className="text-6xl font-black tracking-[-0.06em]">{item.credits}</strong><span className="pb-2 text-sm text-white/45">{pick("kredit", "credits")}</span></div>
+                  <p className="mt-4 text-2xl font-black">{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(item.amountIdr)}</p>
+                  <p className="mt-2 text-sm text-white/45">{pick(`Setara hingga sekitar ${Math.floor(item.credits / 6)} menit pemrosesan audio.`, `Equivalent to roughly ${Math.floor(item.credits / 6)} minutes of audio processing.`)}</p>
+                  <button type="button" onClick={() => void startCheckout(item.code)} disabled={Boolean(checkoutLoading)} className={`mt-8 flex min-h-13 w-full items-center justify-center gap-2 rounded-full px-5 font-black transition disabled:cursor-not-allowed disabled:opacity-50 ${item.featured ? "bg-white text-[#151127] hover:scale-[1.01]" : "border border-white/16 bg-white/8 text-white hover:bg-white/14"}`}>
+                    <CreditCard className="h-4 w-4" />{checkoutLoading === item.code ? pick("Membuka pembayaran...", "Opening checkout...") : pick("Pilih paket", "Choose package")}
+                  </button>
+                </article>
+              ))}
+            </div>
+          )}
+
           {billingError && <p role="alert" className="mt-5 rounded-2xl border border-red-300/25 bg-red-400/10 px-5 py-4 text-sm font-semibold text-red-100">{billingError}</p>}
-          <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-white/40"><span>{pick("Pembayaran aman melalui Midtrans", "Secure checkout by Midtrans")}</span><span>{pick("Saldo masuk setelah pembayaran terverifikasi", "Credits arrive after payment is verified")}</span><span>{pick("Tidak ada pemakaian gratis", "No free usage")}</span></div>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            {[
+              [pick("Estimasi terlihat sebelum proses", "See the estimate before processing"), pick("Kamu bisa cek kebutuhan kredit terlebih dahulu sebelum menjalankan engine.", "You can check the credit estimate before running the engine.")],
+              [pick("Saldo diperbarui otomatis", "Balance updates automatically"), pick("Setelah proses atau pembayaran berhasil, saldo akun akan ikut diperbarui.", "After a successful process or payment, your account balance updates accordingly.")],
+              [pick("Satu saldo untuk dua alat", "One balance for both tools"), pick("Kredit yang sama dapat digunakan untuk Music Generator maupun Voice Isolator.", "The same credits can be used for both Music Generator and Voice Isolator.")],
+            ].map(([titleText, bodyText]) => <div key={titleText} className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5"><strong className="text-sm">{titleText}</strong><p className="mt-2 text-xs leading-5 text-white/42">{bodyText}</p></div>)}
+          </div>
         </div>
       </section>
 
       <section className="relative border-t border-white/10 bg-black/20 px-5 py-16 sm:px-8 lg:px-12">
-        <div className="mx-auto grid max-w-[1500px] gap-10 lg:grid-cols-[1fr_auto] lg:items-end"><div><p data-no-translate className="text-sm font-black uppercase tracking-[0.28em] text-pink-300">Beyond Sound. Built-in Intelligence.</p><h2 className="mt-4 max-w-4xl text-4xl font-black tracking-[-0.045em] sm:text-7xl">{pick("AI mempercepat ide. Keputusan musik tetap milikmu.", "AI accelerates the idea. The musical decision stays yours.")}</h2></div><Link href="/labs" className="inline-flex items-center gap-3 rounded-full border border-white/20 px-6 py-4 font-bold transition hover:border-white/50 hover:bg-white/10">FMG Labs <ArrowRight className="h-5 w-5" /></Link></div>
+        <div className="mx-auto grid max-w-[1500px] gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
+          <div>
+            <p data-no-translate className="text-sm font-black uppercase tracking-[0.28em] text-pink-300">Beyond Sound. Built-in Intelligence.</p>
+            <h2 className="mt-4 max-w-4xl text-4xl font-black tracking-[-0.045em] sm:text-7xl">{pick("AI bantu kamu sampai ke ide lebih cepat. Arah akhirnya tetap kamu yang tentukan.", "AI gets you to the idea faster. The final direction is still yours.")}</h2>
+            <p className="mt-5 max-w-2xl text-sm leading-7 text-white/45">{pick("Gunakan tuneXpert sebagai partner eksplorasi, bukan pengganti keputusan kreatifmu. Coba, dengarkan, revisi, lalu bawa hasil yang paling kuat ke proses produksi berikutnya.", "Use tuneXpert as an exploration partner, not a replacement for your creative decisions. Try, listen, revise, then take the strongest result into your next production step.")}</p>
+          </div>
+          <Link href="/labs" className="inline-flex items-center gap-3 rounded-full border border-white/20 px-6 py-4 font-bold transition hover:border-white/50 hover:bg-white/10">FMG Labs <ArrowRight className="h-5 w-5" /></Link>
+        </div>
       </section>
     </main>
   );

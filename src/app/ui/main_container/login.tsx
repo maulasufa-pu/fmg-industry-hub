@@ -32,7 +32,13 @@ const validate = (v: { email: string; password: string }): FieldErrors => {
   return next;
 };
 
-export const LoginSection = (): React.JSX.Element => {
+type LoginSectionProps = {
+  embedded?: boolean;
+  nextOverride?: string;
+  onAuthenticated?: () => void | Promise<void>;
+};
+
+export const LoginSection = ({ embedded = false, nextOverride, onAuthenticated }: LoginSectionProps = {}): React.JSX.Element => {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaKey, setCaptchaKey] = useState<number>(0); 
   const siteKey: string = process.env.NEXT_PUBLIC_HCAPTCHA_SITEKEY ?? "";
@@ -52,7 +58,7 @@ export const LoginSection = (): React.JSX.Element => {
 
   const router = useRouter();
   const qp = useSearchParams();
-  const requestedNext = qp.get("next") || qp.get("redirectedFrom");
+  const requestedNext = nextOverride || qp.get("next") || qp.get("redirectedFrom");
   const nextPath = safeInternalPath(requestedNext);
   const msg = qp.get("m");
   const callbackError = qp.get("err");
@@ -146,6 +152,12 @@ export const LoginSection = (): React.JSX.Element => {
       if (rememberMe) localStorage.setItem("remember_email", email);
       else localStorage.removeItem("remember_email");
 
+      if (onAuthenticated) {
+        await onAuthenticated();
+        router.refresh();
+        return;
+      }
+
       window.location.replace(requestedNext ? withNext("/login", nextPath) : "/login");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Login failed");
@@ -182,14 +194,14 @@ export const LoginSection = (): React.JSX.Element => {
   const emailInvalid = touched.email && !!errors.email;
   const passwordInvalid = touched.password && !!errors.password;
   return (
-    <section className="relative w-full px-4 sm:px-6 lg:px-8 py-10">
+    <section className={embedded ? "relative w-full" : "relative w-full px-4 sm:px-6 lg:px-8 py-10"}>
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-500/10 via-transparent to-transparent" />
 
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="mx-auto w-full max-w-md sm:max-w-lg lg:max-w-xl"
+        className={`mx-auto w-full ${embedded ? "max-w-lg" : "max-w-md sm:max-w-lg lg:max-w-xl"}`}
       >
         <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-black/40 backdrop-blur-xl shadow-[0_20px_60px_-20px_rgba(0,0,0,0.35)] overflow-hidden">
           <div className="px-6 sm:px-8 pt-7 pb-4">

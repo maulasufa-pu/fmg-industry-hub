@@ -89,7 +89,7 @@ export async function proxy(req: NextRequest) {
     return withCookies(NextResponse.redirect(new URL("/client/dashboard", origin)));
   }
 
-  const isPrivate = pathname.startsWith("/admin/") || pathname.startsWith("/client/") || pathname === "/tuneXpert";
+  const isPrivate = pathname.startsWith("/admin/") || pathname.startsWith("/client/");
   if (isPrivate && !user) {
     const url = new URL("/login", origin);
     url.searchParams.set("next", pathname + search);

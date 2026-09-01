@@ -2,8 +2,11 @@
 
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import Script from "next/script";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+
+const GOOGLE_ANALYTICS_ID = "G-BED00R69W0";
 
 export const CONSENT_VERSION = "2026-08-23";
 export const CONSENT_STORAGE_KEY = "fmg_cookie_consent";
@@ -45,6 +48,26 @@ function persistPreferences(value: ConsentPreferences): void {
 
 export function useConsent(): ConsentContextValue {
   return useContext(ConsentContext);
+}
+
+function GoogleAnalyticsTag() {
+  return (
+    <>
+      <Script
+        id="google-analytics-gtag"
+        src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ANALYTICS_ID}`}
+        strategy="afterInteractive"
+      />
+      <Script id="google-analytics-config" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', '${GOOGLE_ANALYTICS_ID}');
+        `}
+      </Script>
+    </>
+  );
 }
 
 export default function ConsentManager({ children }: { children: React.ReactNode }) {
@@ -117,7 +140,7 @@ export default function ConsentManager({ children }: { children: React.ReactNode
   return (
     <ConsentContext.Provider value={context}>
       {children}
-      {preferences?.analytics ? <><Analytics /><SpeedInsights /></> : null}
+      {preferences?.analytics ? <><GoogleAnalyticsTag /><Analytics /><SpeedInsights /></> : null}
       {open ? (
         <div data-no-translate ref={dialogRef} onKeyDown={onDialogKeyDown} className="fixed inset-x-3 bottom-3 z-[100] mx-auto max-w-2xl rounded-2xl border border-white/15 bg-neutral-950/95 p-5 text-white shadow-2xl backdrop-blur-xl" role="dialog" aria-modal="true" aria-labelledby="consent-title">
           <h2 id="consent-title" className="text-lg font-semibold">{pick("Pilihan privasimu", "Your privacy choices")}</h2>

@@ -56,6 +56,7 @@ export default function Footer(): React.JSX.Element {
       links: [
         { label: "Overview", href: "/company#about" },
         { label: "Products", href: "/company#features" },
+        { label: "tuneXpert", href: "/tuneXpert" },
         { label: "Client Portal", href: "/login" },
       ],
     },

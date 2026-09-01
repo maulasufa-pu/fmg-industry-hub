@@ -22,6 +22,7 @@ const scriptSrcParts = [
   "https://app.sandbox.midtrans.com",
   "https://hcaptcha.com",
   "https://*.hcaptcha.com",
+  "https://www.googletagmanager.com",
   "https://www.youtube.com",
   "https://www.youtube-nocookie.com",
 ];
@@ -32,7 +33,7 @@ const cspParts = [
   "frame-ancestors 'none'",
   `frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://w.soundcloud.com https://soundcloud.com https://open.spotify.com https://embed.spotify.com https://www.google.com https://maps.google.com https://calendar.google.com https://app.midtrans.com https://app.sandbox.midtrans.com https://hcaptcha.com https://*.hcaptcha.com`,
   `script-src ${scriptSrcParts.join(" ")} 'unsafe-inline'`,
-  `connect-src 'self' ${supabaseOrigin} ${supabaseWs} https://app.midtrans.com https://app.sandbox.midtrans.com https://api.midtrans.com https://api.sandbox.midtrans.com https://hcaptcha.com https://*.hcaptcha.com${devConnect}`,
+  `connect-src 'self' ${supabaseOrigin} ${supabaseWs} https://app.midtrans.com https://app.sandbox.midtrans.com https://api.midtrans.com https://api.sandbox.midtrans.com https://hcaptcha.com https://*.hcaptcha.com https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com${devConnect}`,
   `img-src 'self' data: blob: ${supabaseOrigin} https://i.ytimg.com https://img.youtube.com https://i.vimeocdn.com https://source.unsplash.com https://images.unsplash.com https://i.scdn.co https://cdn.sndcdn.com https://is1-ssl.mzstatic.com https://is2-ssl.mzstatic.com https://is3-ssl.mzstatic.com https://is4-ssl.mzstatic.com https://is5-ssl.mzstatic.com`,
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",

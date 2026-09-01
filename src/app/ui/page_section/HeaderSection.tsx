@@ -20,6 +20,7 @@ import {
   Briefcase,
   Mail,
   Newspaper,
+  Sparkles,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { motion, AnimatePresence, Variants, MotionConfig } from "framer-motion";
@@ -53,6 +54,7 @@ const MENU: readonly MenuItem[] = [
   { label: "Creative", href: "/creative", desc: "Production, mixing, mastering, sound design.", Icon: Wand2 },
   { label: "Talent", href: "/talent", desc: "Scouting, A&R, artist development & management.", Icon: Users2 },
   { label: "Labs (AI/tuneXpert)", href: "/labs", desc: "R&D, AI tools, workflow acceleration.", Icon: Cpu },
+  { label: "tuneXpert", href: "/tuneXpert", desc: "Generate original music and isolate clean voice with AI.", Icon: Sparkles },
   { label: "Publishing", href: "/publishing", desc: "Rights admin, licensing & royalty tracking.", Icon: BookOpen },
   { label: "Academy", href: "/academy", desc: "Workshops, mentorships, career pathways.", Icon: GraduationCap },
   { label: "Media", href: "/media", desc: "Content, MV, promos & PR distribution.", Icon: Film },
@@ -73,6 +75,7 @@ const MENU_ID: Record<string, { label: string; desc: string }> = {
   "/creative": { label: "Kreatif", desc: "Produksi, mixing, mastering, dan sound design." },
   "/talent": { label: "Talenta", desc: "Scouting, A&R, pengembangan artis, dan manajemen." },
   "/labs": { label: "Labs (AI/tuneXpert)", desc: "R&D, perangkat AI, dan percepatan workflow." },
+  "/tuneXpert": { label: "tuneXpert", desc: "Buat musik orisinal dan isolasi suara bersih dengan AI." },
   "/publishing": { label: "Publishing", desc: "Administrasi hak, lisensi, dan pelacakan royalti." },
   "/academy": { label: "Akademi", desc: "Workshop, mentoring, dan jalur karier." },
   "/media": { label: "Media", desc: "Konten, video musik, promosi, dan distribusi PR." },

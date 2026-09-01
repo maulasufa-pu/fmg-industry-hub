@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Archive, Download, ExternalLink, FileText, Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
 
 import ArticleTransferActions from "@/components/admin/articles/ArticleTransferActions";
+import ArticleDeduplicateAction from "@/components/admin/articles/ArticleDeduplicateAction";
 import type { ArticleLocale, ArticleStatus } from "@/lib/articles/types";
 
 type ArticleSummary = {
@@ -149,6 +150,7 @@ export default function ArticleManager() {
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
               <ArticleTransferActions selectedIds={[...selectedIds]} onImported={() => void load()} />
+              <ArticleDeduplicateAction onCleaned={() => void load()} />
               <select value={locale} onChange={(event) => setLocale(event.target.value as ArticleLocale)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold dark:border-white/10 dark:bg-slate-800">
                 <option value="id-ID">Bahasa Indonesia</option><option value="en-US">English</option>
               </select>

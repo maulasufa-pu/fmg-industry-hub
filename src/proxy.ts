@@ -33,6 +33,9 @@ export async function proxy(req: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
+  const { data: claimsData } = user ? await supabase.auth.getClaims() : { data: null };
+  const mfaRequired = user?.app_metadata?.mfa_required === true;
+  const hasRequiredMfa = !mfaRequired || claimsData?.claims?.aal === "aal2";
 
   let isAdmin = false;
   if (user && (pathname.startsWith("/admin") || pathname === "/login")) {
@@ -68,6 +71,11 @@ export async function proxy(req: NextRequest) {
     if (!isAdmin) {
       return withCookies(NextResponse.redirect(new URL("/client/dashboard?error=forbidden", origin)));
     }
+    if (!hasRequiredMfa) {
+      const url = new URL("/auth/mfa", origin);
+      url.searchParams.set("next", "/admin/dashboard");
+      return withCookies(NextResponse.redirect(url));
+    }
     return withCookies(NextResponse.redirect(new URL("/admin/dashboard", origin)));
   }
 
@@ -91,8 +99,19 @@ export async function proxy(req: NextRequest) {
     return withCookies(NextResponse.redirect(new URL("/client/dashboard?error=forbidden", origin)));
   }
 
+  if (pathname.startsWith("/admin/") && user && isAdmin && !hasRequiredMfa) {
+    const url = new URL("/auth/mfa", origin);
+    url.searchParams.set("next", pathname + search);
+    return withCookies(NextResponse.redirect(url));
+  }
+
   if (pathname === "/login" && user) {
     const nextParam = req.nextUrl.searchParams.get("next") ?? "";
+    if (isAdmin && !hasRequiredMfa) {
+      const url = new URL("/auth/mfa", origin);
+      url.searchParams.set("next", nextParam.startsWith("/admin") ? nextParam : "/admin/dashboard");
+      return withCookies(NextResponse.redirect(url));
+    }
     if (nextParam.startsWith("/admin") && !isAdmin) {
       return withCookies(NextResponse.redirect(new URL("/client/dashboard?error=forbidden", origin)));
     }

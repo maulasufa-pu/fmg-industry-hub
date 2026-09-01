@@ -16,5 +16,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const auth = await getServerAuthContext();
   if (!auth) redirect("/login?next=/admin/dashboard");
   if (!auth.isAdmin) redirect("/client/dashboard?error=forbidden");
+  if (auth.mfaRequired && auth.assuranceLevel !== "aal2") redirect("/auth/mfa?next=/admin/dashboard");
   return <AdminShell role={auth.effectiveRole}>{children}</AdminShell>;
 }

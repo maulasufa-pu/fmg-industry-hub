@@ -22,6 +22,8 @@ export type ServerAuthContext = {
   staffRoles: UserRole[];
   effectiveRole: UserRole;
   isAdmin: boolean;
+  mfaRequired: boolean;
+  assuranceLevel: "aal1" | "aal2" | null;
 };
 
 const ROLE_PRIORITY: UserRole[] = [
@@ -52,7 +54,7 @@ function asKnownRole(value: unknown, fallback: UserRole): UserRole {
     : fallback;
 }
 
-async function authenticatedUser(request?: Request): Promise<User | null> {
+async function authenticatedIdentity(request?: Request): Promise<{ user: User; accessToken: string } | null> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anonKey) throw new Error("Supabase authentication is not configured");
@@ -66,7 +68,7 @@ async function authenticatedUser(request?: Request): Promise<User | null> {
       global: { headers: { Authorization: `Bearer ${token}` } },
     });
     const { data, error } = await bearerClient.auth.getUser(token);
-    return error ? null : data.user;
+    return error || !data.user ? null : { user: data.user, accessToken: token };
   }
 
   const cookieStore = await cookies();
@@ -80,14 +82,18 @@ async function authenticatedUser(request?: Request): Promise<User | null> {
     },
   });
   const { data, error } = await cookieClient.auth.getUser();
-  return error ? null : data.user;
+  if (error || !data.user) return null;
+  const { data: sessionData } = await cookieClient.auth.getSession();
+  if (!sessionData.session?.access_token) return null;
+  return { user: data.user, accessToken: sessionData.session.access_token };
 }
 
 export async function getServerAuthContext(
   request?: Request,
 ): Promise<ServerAuthContext | null> {
-  const user = await authenticatedUser(request);
-  if (!user) return null;
+  const identity = await authenticatedIdentity(request);
+  if (!identity) return null;
+  const { user, accessToken } = identity;
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -116,6 +122,14 @@ export async function getServerAuthContext(
   const allRoles = [mainRole, ...staffRoles];
   const effectiveRole =
     ROLE_PRIORITY.find((role) => allRoles.includes(role)) ?? "client";
+  const mfaRequired = user.app_metadata?.mfa_required === true;
+  let assuranceLevel: "aal1" | "aal2" | null = null;
+  if (mfaRequired) {
+    const verifier = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false, autoRefreshToken: false } });
+    const { data: aal, error: aalError } = await verifier.auth.mfa.getAuthenticatorAssuranceLevel(accessToken);
+    if (aalError) throw new Error("Unable to verify authenticator assurance level");
+    assuranceLevel = aal.currentLevel === "aal2" ? "aal2" : aal.currentLevel === "aal1" ? "aal1" : null;
+  }
 
   return {
     user,
@@ -123,6 +137,8 @@ export async function getServerAuthContext(
     staffRoles,
     effectiveRole,
     isAdmin: mainRole === "admin" || mainRole === "owner",
+    mfaRequired,
+    assuranceLevel,
   };
 }
 
@@ -139,6 +155,9 @@ export async function requireAdminRequest(
 ): Promise<ServerAuthContext> {
   const auth = await requireAuthenticatedRequest(request);
   if (!auth.isAdmin) throw new ApiAuthError(403, "Administrator access required");
+  if (auth.mfaRequired && auth.assuranceLevel !== "aal2") {
+    throw new ApiAuthError(403, "Authenticator verification required");
+  }
   return auth;
 }
 

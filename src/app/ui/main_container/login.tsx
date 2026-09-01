@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import HCaptcha from '@hcaptcha/react-hcaptcha'
 import { safeInternalPath, withNext } from "@/lib/safe-next";
+import { ADMINFMG_USERNAME, resolveLoginIdentifier } from "@/lib/auth/admin-alias";
 
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -23,8 +24,8 @@ type FieldErrors = { email?: string; password?: string };
 
 const validate = (v: { email: string; password: string }): FieldErrors => {
   const next: FieldErrors = {};
-  if (!v.email.trim()) next.email = "Email is required.";
-  else if (!emailRe.test(v.email)) next.email = "Enter a valid email address.";
+  if (!v.email.trim()) next.email = "Email or username is required.";
+  else if (v.email.trim().toLowerCase() !== ADMINFMG_USERNAME && !emailRe.test(v.email)) next.email = "Enter a valid email address or username.";
 
   if (!v.password.trim()) next.password = "Password is required.";
   else if (v.password.length < 8) next.password = "Minimum 8 characters.";
@@ -109,8 +110,9 @@ export const LoginSection = (): React.JSX.Element => {
     try {
       
       const supabase = getSupabaseClient()
+      const loginIdentity = resolveLoginIdentifier(email);
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: loginIdentity.email,
         password,
         options: { captchaToken: captchaToken! }, 
       });
@@ -132,6 +134,13 @@ export const LoginSection = (): React.JSX.Element => {
         let m = "Failed to set server session";
         try { m = (await resp.json())?.error || m; } catch {}
         throw new Error(m);
+      }
+
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      const requiresMfa = data.user?.app_metadata?.mfa_required === true;
+      if (requiresMfa && aal?.currentLevel !== "aal2") {
+        window.location.replace(withNext("/auth/mfa", nextPath));
+        return;
       }
 
       if (rememberMe) localStorage.setItem("remember_email", email);
@@ -201,7 +210,7 @@ export const LoginSection = (): React.JSX.Element => {
 
           <form onSubmit={handleSubmit} className="px-6 sm:px-8 pb-6 sm:pb-8">
             <label htmlFor="email" className="block text-[13px] font-medium text-neutral-800 dark:text-neutral-200">
-              Email address
+              Email or username
             </label>
             <div
               className={`mt-1.5 flex items-center rounded-xl border bg-white/70 dark:bg-white/[0.06]
@@ -217,14 +226,14 @@ export const LoginSection = (): React.JSX.Element => {
               <input
                 ref={emailRef}
                 id="email"
-                type="email"
-                autoComplete="email"
+                type="text"
+                autoComplete="username"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onBlur={() => setTouched((t) => ({ ...t, email: true }))}
                 disabled={loading}
-                placeholder="you@company.com"
+                placeholder="you@company.com or adminfmg"
                 className="w-full bg-transparent px-3 py-3 text-[15px] text-neutral-900 placeholder:text-neutral-400 outline-none disabled:opacity-60 dark:text-white"
                 aria-invalid={emailInvalid}
                 aria-describedby={emailInvalid ? "email-error" : undefined}

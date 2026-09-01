@@ -233,7 +233,7 @@ export const LoginSection = (): React.JSX.Element => {
                 onChange={(e) => setEmail(e.target.value)}
                 onBlur={() => setTouched((t) => ({ ...t, email: true }))}
                 disabled={loading}
-                placeholder="you@company.com or adminfmg"
+                placeholder="you@company.com"
                 className="w-full bg-transparent px-3 py-3 text-[15px] text-neutral-900 placeholder:text-neutral-400 outline-none disabled:opacity-60 dark:text-white"
                 aria-invalid={emailInvalid}
                 aria-describedby={emailInvalid ? "email-error" : undefined}

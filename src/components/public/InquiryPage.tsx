@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
+import { trackConversion } from "@/lib/conversion-tracking";
 import { ArrowRight, CheckCircle2, Loader2, Send } from "lucide-react";
 
 type ContactReason = "project" | "partnership" | "publishing" | "press" | "support" | "other";
@@ -36,7 +37,8 @@ export default function InquiryPage({
     event.preventDefault();
     setStatus("sending");
     setError("");
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const response = await fetch("/api/contact", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -56,7 +58,8 @@ export default function InquiryPage({
       setStatus("error");
       return;
     }
-    event.currentTarget.reset();
+    formElement.reset();
+    trackConversion(reason === "project" ? "submit_project" : "submit_contact", { form_type: reason });
     setStatus("sent");
   }
 

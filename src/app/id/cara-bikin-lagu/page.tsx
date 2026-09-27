@@ -44,6 +44,12 @@ export default function Page() {
       ]}
       sections={[
         {
+          title: "Cara mengubah voice note menjadi lagu utuh",
+          paragraphs: ["Rekam satu ide utama terlebih dahulu, misalnya melodi chorus sambil menyebutkan lirik sementara. Tidak harus bernyanyi sempurna; pilih tempat cukup tenang dan hindari menutup mikrofon ponsel. Simpan rekaman asli agar detail melodi tidak hilang, lalu beri nama file yang membedakan bagian verse, chorus, dan alternatif.", "Dengarkan ulang dan tandai bagian paling kuat. Jika belum tahu chord, jelaskan suasana dan berikan satu atau dua referensi dengan catatan spesifik, misalnya ingin dinamika chorus atau warna gitar tertentu. Pisahkan referensi karakter dari permintaan meniru melodi. Voice note berfungsi sebagai panduan ide, bukan jaminan kualitas vokal untuk rekaman final.", "Susun bentuk dasar: bagian pembuka, verse, chorus, dan penutup. Coba nyanyikan urutannya sebelum menambahkan banyak instrumen. Melodi yang sulit diulang atau lirik yang terlalu padat sebaiknya diperbaiki pada tahap ini. Setelah fondasi terasa jelas, buat draft aransemen dan evaluasi apakah instrumen mendukung vokal.", "Untuk konsultasi, kirim voice note asli, lirik yang sudah ada, chord jika tersedia, referensi, serta tujuan lagu. Jelaskan bagian yang harus dipertahankan dan bagian yang masih boleh dikembangkan. Bila ide sudah memiliki inti melodi, aransemen bisa menjadi langkah berikutnya; bila baru berupa tema atau cerita, mulailah dari songwriting."],
+          links: [{"href": "/id/jasa-aransemen-lagu", "label": "Kirim demo sederhana untuk konsultasi aransemen."}, {"href": "/id/jasa-pembuatan-lagu", "label": "Kembangkan cerita atau tema melalui jasa pembuatan lagu."}],
+        },
+
+        {
           title: "1. Tentukan cerita dan perasaan lagunya",
           paragraphs: [
             "Mulailah dengan menulis satu kalimat sederhana tentang apa yang ingin kamu ceritakan atau rasakan melalui lagu tersebut. Kalimat ini akan membantumu menentukan lirik, melodi, tempo, harmoni, dan pilihan instrumen agar semuanya bergerak ke arah yang sama.",

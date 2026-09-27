@@ -1,0 +1,17 @@
+{
+  "build": "PASS npm run build; Next.js 16.3.2; TypeScript and 90 generated pages completed",
+  "typecheck": "PASS standalone npm run typecheck and production build TypeScript",
+  "targeted_lint": "PASS changed implementation files, zero warnings",
+  "global_lint": "FAIL pre-existing 6 errors and 22 warnings in CompanyPageClient.tsx, portfolio/PortfolioClient.tsx, ui/main_container/signup.tsx",
+  "tests": "PASS conversion-tracking.test.ts: 3 tests",
+  "browser": "PASS 7 changed pages at 390 and 1440 px; status 200; no horizontal overflow",
+  "conversion": "PASS current consent gating and WhatsApp prefill on 3 money pages; zero browser page errors",
+  "redirect": "PASS 308 producer spelling to produser article",
+  "links": "PASS 42 local destinations, no >=400 responses",
+  "cms_articles": "PASS 3 representative CMS articles: proper service links and mobile layout",
+  "git_diff_check": "PASS",
+  "deployment": "Attempted; Vercel BLOCKED commit author permission. Previous production release remains live.",
+  "real_submissions": "Not performed",
+  "field_core_web_vitals": "Unavailable without production field dashboard access",
+  "analytics_delivery": "Local gtag event emission verified; GA4 DebugView/key events not verified in account"
+}

@@ -1,0 +1,108 @@
+[
+  {
+    "path": "/",
+    "status": 200,
+    "url": "https://flemmomusic.com/",
+    "title": "Professional Music Arrangement & Song Production",
+    "description": "Turn lyrics, melodies, chords, or a simple recording into a release-ready song with professional arrangement, production, vocal editing, mixing, and mastering.",
+    "canonical": "https://flemmomusic.com",
+    "h1": [
+      "Bring your song idea. We will help shape it into a release-ready production."
+    ],
+    "robots": "index, follow",
+    "schema": 3
+  },
+  {
+    "path": "/id",
+    "status": 200,
+    "url": "https://flemmomusic.com/id",
+    "title": "Jasa Aransemen dan Produksi Musik Profesional — FMG Universe",
+    "description": "Ubah lirik, melodi, chord, atau rekaman sederhana menjadi lagu siap rilis melalui jasa aransemen, produksi musik, editing vokal, mixing, dan mastering.",
+    "canonical": "https://flemmomusic.com/id",
+    "h1": [
+      "Punya ide lagu? Kami bantu menggarapnya sampai siap dirilis."
+    ],
+    "robots": "index, follow",
+    "schema": 3
+  },
+  {
+    "path": "/id/jasa-aransemen-lagu",
+    "status": 200,
+    "url": "https://flemmomusic.com/id/jasa-aransemen-lagu",
+    "title": "Jasa Aransemen Lagu Profesional Online | FMG Universe",
+    "description": "Jasa aransemen lagu profesional secara online, mulai dari pengembangan demo, produksi, dan vocal directing hingga mixing dan mastering. Paket proyek pertama Rp6 juta.",
+    "canonical": "https://flemmomusic.com/id/jasa-aransemen-lagu",
+    "h1": [
+      "Bawa ide lagumu menjadi produksi yang terdengar utuh."
+    ],
+    "robots": "index, follow",
+    "schema": 3
+  },
+  {
+    "path": "/id/jasa-pembuatan-lagu",
+    "status": 200,
+    "url": "https://flemmomusic.com/id/jasa-pembuatan-lagu",
+    "title": "Jasa Pembuatan Lagu Profesional | FMG Universe — FMG Universe",
+    "description": "Bikin lagu original dari ide, lirik, melodi, atau voice note hingga aransemen, produksi, vocal directing, mixing, dan mastering.",
+    "canonical": "https://flemmomusic.com/id/jasa-pembuatan-lagu",
+    "h1": [
+      "Jasa Pembuatan Lagu dari Ide Awal hingga Siap Dirilis"
+    ],
+    "robots": "index, follow",
+    "schema": 3
+  },
+  {
+    "path": "/id/jasa-produksi-musik",
+    "status": 200,
+    "url": "https://flemmomusic.com/id/jasa-produksi-musik",
+    "title": "Jasa Produksi Musik Profesional | FMG Universe — FMG Universe",
+    "description": "Jasa produksi musik untuk mengembangkan lagu dari demo menjadi rekaman yang utuh, mulai dari aransemen, sound design, editing, mixing, hingga mastering.",
+    "canonical": "https://flemmomusic.com/id/jasa-produksi-musik",
+    "h1": [
+      "Bangun Karakter Lagumu melalui Produksi Musik yang Tepat"
+    ],
+    "robots": "index, follow",
+    "schema": 3
+  },
+  {
+    "path": "/id/perbedaan-komposer-arranger-producer-musik",
+    "status": 404,
+    "url": "https://flemmomusic.com/id/perbedaan-komposer-arranger-producer-musik",
+    "title": "FMG Universe — Beyond Sound. Built-in Intelligence.",
+    "description": "FMG Universe is a global music company & platform—uniting creation, distribution, publishing, media, R&D, live, and education. We help artists, labels, and brands produce faster, grow royalties, and scale catalogs with technology.",
+    "h1": [
+      "Page not found."
+    ],
+    "robots": "noindex",
+    "schema": 2
+  },
+  {
+    "path": "/id/perbedaan-komposer-arranger-produser-musik",
+    "status": 200,
+    "url": "https://flemmomusic.com/id/perbedaan-komposer-arranger-produser-musik",
+    "title": "Perbedaan Komposer, Arranger, dan Produser Musik — FMG Universe",
+    "description": "Pahami perbedaan tugas komposer, arranger, dan produser musik agar kamu tahu bantuan yang dibutuhkan untuk menulis, mengaransemen, atau memproduksi lagu.",
+    "canonical": "https://flemmomusic.com/id/perbedaan-komposer-arranger-produser-musik",
+    "h1": [
+      "Apa Bedanya Komposer, Arranger, dan Produser Musik?"
+    ],
+    "robots": "index, follow",
+    "schema": 3
+  },
+  {
+    "path": "/robots.txt",
+    "status": 200,
+    "url": "https://flemmomusic.com/robots.txt",
+    "h1": [],
+    "schema": 0,
+    "body": "User-Agent: *\nAllow: /\n\nHost: https://flemmomusic.com\nSitemap: https://flemmomusic.com/sitemap.xml\n"
+  },
+  {
+    "path": "/sitemap.xml",
+    "status": 200,
+    "url": "https://flemmomusic.com/sitemap.xml",
+    "h1": [],
+    "schema": 0,
+    "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\">\n<url>\n<loc>https://flemmomusic.com</loc>\n<xhtml:link rel=\"alternate\" hreflang=\"en-US\" href=\"https://flemmomusic.com\" />\n<xhtml:link rel=\"alternate\" hreflang=\"id-ID\" href=\"https://flemmomusic.com/id\" />\n<xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://flemmomusic.com\" />\n<changefreq>weekly</changefreq>\n<priority>1</priority>\n</url>\n<url>\n<loc>https://flemmomusic.com/about</loc>\n<changefreq>monthly</changefreq>\n<priority>0.5</priority>\n</url>\n<url>\n<loc>https://flemmomusic.com/academy</loc>\n<changefreq>monthly</changefreq>\n<priority>0.5</priority>\n</url>\n<url>\n<loc>https://flemmomusic.com/arrangement</loc>\n<xhtml:link rel=\"alternate\" hreflang=\"en-US\" href=\"https://flemmomusic.com/arrangement\" />\n<xhtml:link rel=\"alternate\" hreflang=\"id-ID\" href=\"https://flemmomusic.com/id/jasa-aransemen-lagu\" />\n<xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://flemmomusic.com/arrangement\" />\n<changefreq>weekly</changefreq>\n<priority>0.95</priority>\n</url>\n<url>\n<loc>https://flemmomusic.com/articles</loc>\n<xhtml:link rel=\"alternate\" hreflang=\"en-US\" href=\"https://flemmomusic.com/articles\" />\n<xhtml:link rel=\"alternate\" hreflang=\"id-ID\" href=\"https://flemmomusic.com/id/artikel\" />\n<xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://flemmomusic.com/articles\" />\n<changefreq>weekly</changefreq>\n<priority>0.8</priority>\n<"
+  }
+]

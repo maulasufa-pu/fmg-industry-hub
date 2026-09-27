@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { arrangementFaqs } from "@/lib/arrangement-faqs";
 import { JsonLd, type Json } from "@/components/JsonLd";
 import ArrangementServiceLanding from "@/components/seo/ArrangementServiceLanding";
 import { NEW_CUSTOMER_PROMO_IDR } from "@/lib/arrangement";
@@ -8,11 +9,11 @@ const path = "/id/jasa-aransemen-lagu";
 const pageUrl = `${siteConfig.url}${path}`;
 
 const description =
-  "Jasa aransemen lagu profesional secara online, mulai dari pengembangan demo, produksi, dan vocal directing hingga mixing dan mastering. Paket proyek pertama Rp6 juta.";
+  "Kirim voice note, demo, melodi, chord, atau vokal. Flemmo Music mengembangkan materi lagumu menjadi aransemen profesional. Konsultasikan kebutuhanmu via WhatsApp.";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Jasa Aransemen Lagu Profesional Online | FMG Universe",
+    absolute: "Jasa Aransemen Lagu Profesional Online | Flemmo Music",
   },
   description,
   alternates: {
@@ -42,7 +43,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Jasa Aransemen Lagu Profesional Online | FMG Universe",
+    title: "Jasa Aransemen Lagu Profesional Online | Flemmo Music",
     description,
     images: [`${pageUrl}/opengraph-image`],
   },
@@ -59,32 +60,7 @@ export const metadata: Metadata = {
   },
 };
 
-const faqs = [
-  [
-    "Apa yang perlu saya kirim untuk memulai?",
-    "Tidak harus berupa demo yang sudah rapi. Kirim saja materi yang kamu punya, seperti voice note, rekaman vokal, melodi, chord, lirik, atau gambaran struktur lagunya. Dua atau tiga lagu referensi juga akan membantu kami memahami karakter musik yang kamu inginkan.",
-  ],
-  [
-    "Apakah FMG akan membeli atau mengambil lagu saya?",
-    "Tidak. FMG membantu mengaransemen dan memproduksi lagumu, bukan mengambil alih karya tersebut. Ketentuan mengenai credit, kepemilikan, file sesi produksi, lisensi, atau pengalihan hak hanya berlaku jika tertulis dalam dokumen proyek yang kamu setujui.",
-  ],
-  [
-    "Berapa biaya jasa aransemen lagu?",
-    "Untuk klien baru, Paket Proyek Pertama tersedia dengan harga Rp6.000.000 sesuai layanan yang tercantum di dalam paket. Jika lagumu membutuhkan pengerjaan tambahan di luar paket, kami akan membicarakannya terlebih dahulu sebelum proses dimulai.",
-  ],
-  [
-    "Berapa lama proses pengerjaannya?",
-    "Setiap lagu memiliki kebutuhan dan tingkat kerumitan yang berbeda. Setelah materimu kami pelajari, kamu akan mendapatkan informasi mengenai jadwal mulai, tahapan review, dan perkiraan waktu penyelesaian sebelum produksi berjalan.",
-  ],
-  [
-    "Apakah seluruh proses bisa dilakukan secara online?",
-    "Bisa. Kamu dapat mengirim materi, mendiskusikan arah musik, memantau perkembangan proyek, memberikan revisi, dan menerima hasil akhirnya secara online melalui sistem FMG.",
-  ],
-  [
-    "Apakah mixing dan mastering sudah termasuk?",
-    "Sudah. Editing, mixing, dan mastering termasuk dalam Paket Proyek Pertama. Format serta jenis file akhir yang kamu terima akan mengikuti kebutuhan dan kesepakatan proyek.",
-  ],
-] as const;
+const faqs = arrangementFaqs.map(({ q, a }) => [q.id, a.id] as const);
 
 const schema: Json = [
   {
@@ -95,7 +71,7 @@ const schema: Json = [
         "@type": "ListItem",
         position: 1,
         name: "Beranda",
-        item: siteConfig.url,
+        item: `${siteConfig.url}/id`,
       },
       {
         "@type": "ListItem",
@@ -109,13 +85,13 @@ const schema: Json = [
     "@context": "https://schema.org",
     "@type": "Service",
     "@id": `${pageUrl}/#service`,
-    name: "Jasa Aransemen dan Produksi Lagu Profesional",
+    name: "Jasa Aransemen Lagu Profesional",
     alternateName: [
       "Jasa aransemen musik",
       "Jasa produksi lagu",
       "Music arrangement service",
     ],
-    serviceType: "Jasa aransemen dan produksi musik",
+    serviceType: "Jasa aransemen lagu",
     description,
     url: pageUrl,
     inLanguage: "id-ID",

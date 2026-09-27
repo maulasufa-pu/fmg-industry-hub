@@ -8,8 +8,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 const GOOGLE_ANALYTICS_ID = "G-BED00R69W0";
 
-export const CONSENT_VERSION = "2026-08-23";
-export const CONSENT_STORAGE_KEY = "fmg_cookie_consent";
+import { CONSENT_VERSION, CONSENT_STORAGE_KEY } from "@/lib/privacy-consent";
+export { CONSENT_VERSION, CONSENT_STORAGE_KEY } from "@/lib/privacy-consent";
 export const OPEN_CONSENT_EVENT = "fmg:open-consent";
 export const SET_CONSENT_EVENT = "fmg:set-consent";
 

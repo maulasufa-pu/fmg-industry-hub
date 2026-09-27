@@ -37,6 +37,12 @@ export default function Page() {
       ]}
       sections={[
         {
+          title: "Perbedaan arranger dan music producer dalam satu proyek",
+          paragraphs: ["Bayangkan kamu sudah memiliki melodi dan chord untuk sebuah ballad. Arranger menentukan bagaimana piano membuka lagu, kapan bass dan drum masuk, serta bagaimana chorus terakhir berkembang. Music producer menilai arah suara keseluruhan: apakah performa vokal mendukung cerita, tekstur instrumen sesuai, dan hasil rekaman konsisten dengan identitas artis.", "Jika hanya membutuhkan pengembangan demo menjadi susunan musik, mulai dengan brief aransemen. Jika perlu mengarahkan rekaman, vocal production, editing, mixing, dan mastering sebagai rangkaian, diskusikan scope produksi. Jika belum memiliki fondasi melodi atau struktur, pembuatan lagu menjadi langkah sebelumnya. Satu orang dapat menjalankan beberapa peran, sehingga nama jabatan saja tidak menjelaskan isi layanan.", "Tulis siapa yang mengambil keputusan kreatif, siapa yang menyetujui draft, dan bagaimana credit dicantumkan. Kontribusi komposisi baru perlu dibahas terpisah dari jasa teknis; jangan menyimpulkan pembagian hak hanya berdasarkan istilah arranger atau producer."],
+          links: [{"href": "/id/jasa-aransemen-lagu", "label": "Sudah punya melodi atau demo? Pelajari layanan aransemen lagu."}, {"href": "/id/jasa-pembuatan-lagu", "label": "Mulai dari ide dan komposisi dengan layanan pembuatan lagu."}, {"href": "/id/jasa-produksi-musik", "label": "Diskusikan proses rekaman hingga hasil akhir lewat layanan produksi musik."}],
+        },
+
+        {
           title: "Komposer membentuk dasar musikal lagu",
           paragraphs: [
             "Komposer umumnya membuat unsur utama seperti melodi, harmoni, dan bentuk dasar komposisi. Dalam lagu populer, peran ini dapat berdekatan dengan songwriter, terutama jika musik dan lirik dikembangkan bersama.",

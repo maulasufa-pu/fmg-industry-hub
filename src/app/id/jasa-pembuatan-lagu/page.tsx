@@ -3,9 +3,8 @@ import type { Metadata } from "next";
 import SalesSeoLanding from "@/components/seo/SalesSeoLanding";
 
 export const metadata: Metadata = {
-  title: "Jasa Pembuatan Lagu Profesional | FMG Universe",
-  description:
-    "Bikin lagu original dari ide, lirik, melodi, atau voice note hingga aransemen, produksi, vocal directing, mixing, dan mastering.",
+  title: { absolute: "Jasa Pembuatan Lagu dari Ide & Lirik | Flemmo Music" },
+  description: "Punya ide, cerita, lirik, atau potongan melodi? Kembangkan menjadi lagu original bersama Flemmo Music. Konsultasikan konsep dan kebutuhan proyekmu.",
 
   alternates: {
     canonical: "/id/jasa-pembuatan-lagu",
@@ -32,8 +31,8 @@ export default function Page() {
       lang="id"
       path="/id/jasa-pembuatan-lagu"
       eyebrow="Jasa pembuatan lagu original"
-      title="Jasa Pembuatan Lagu dari Ide Awal hingga Siap Dirilis"
-      intro="Punya cerita, lirik, melodi, voice note, atau membutuhkan lagu khusus untuk brand? FMG akan membantumu mengembangkan materi tersebut menjadi lagu yang utuh melalui proses komposisi, aransemen, produksi, vocal directing, editing, mixing, dan mastering."
+      title="Jasa Pembuatan Lagu Original dari Ide, Lirik, dan Melodi"
+      intro="Punya cerita, ide, lirik, atau potongan melodi? Flemmo Music membantu membangun konsep, songwriting, komposisi, dan struktur lagu original. Setelah fondasi lagunya terbentuk, kebutuhan aransemen dan produksi disepakati sesuai tujuan karyamu."
       serviceName="Jasa pembuatan lagu profesional"
       benefits={[
         "Pengembangan konsep dan arah lagu",
@@ -44,6 +43,7 @@ export default function Page() {
         "Kesepakatan hak dan file akhir yang jelas",
       ]}
       sections={[
+        { title: "Pembuatan lagu atau aransemen: mulai dari kondisi materimu", paragraphs: ["Pembuatan lagu berfokus pada fondasi kreatif: konsep, lirik, melodi, harmoni, dan struktur. Cocok untuk penyanyi, songwriter, atau brand yang belum memiliki lagu lengkap. Jika melodi dan bentuk lagu sudah jelas, kebutuhanmu bisa lebih tepat ditangani sebagai aransemen.", "Hasil tiap tahap dan file akhir mengikuti scope proyek. Konfirmasikan draft komposisi, versi audio, revisi, estimasi waktu, credit, serta hak penggunaan sebelum pengerjaan. Aransemen, produksi, dan mixing-mastering dapat dibahas sebagai tahap berikutnya; semuanya tidak otomatis termasuk dalam setiap penawaran."], links: [{"href": "/id/jasa-aransemen-lagu", "label": "Sudah punya lagu? Kembangkan susunan musiknya lewat aransemen."}, {"href": "/id/jasa-produksi-musik", "label": "Siapkan tahap produksi setelah komposisi terbentuk."}] },
         {
           title: "Setiap lagu dibuat sesuai tujuanmu",
           paragraphs: [
@@ -100,7 +100,8 @@ export default function Page() {
             "Tergantung paket dan kebutuhan lagu yang kamu pilih. Semua layanan yang termasuk, biaya, jumlah revisi, dan file akhir yang akan diterima akan dijelaskan sebelum produksi dimulai.",
         },
       ]}
-      primaryCta="Mulai buat lagumu"
+      primaryCta="Konsultasikan Ide Lagumu"
+      primaryHref="/services/inquiry"
       secondaryCta="Lihat jasa aransemen"
       secondaryHref="/id/jasa-aransemen-lagu"
       related={[

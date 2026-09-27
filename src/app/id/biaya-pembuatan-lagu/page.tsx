@@ -35,6 +35,12 @@ export default function Page() {
       ]}
       sections={[
         {
+          title: "Berapa harga jasa aransemen lagu?",
+          paragraphs: ["Harga aransemen perlu dibandingkan berdasarkan pekerjaan yang termasuk. Menyusun instrumen dari demo yang sudah jelas berbeda kebutuhannya dari membangun komposisi, merekam pemain, dan menyelesaikan produksi. Mintalah rincian aransemen, recording, editing, mixing, mastering, versi tambahan, serta revisi secara terpisah agar dua penawaran bisa dibandingkan secara adil.", "Di Flemmo Music, Paket Proyek Pertama yang tercantum pada halaman aransemen adalah Rp6.000.000 untuk klien baru sesuai scope paket. Ini bukan tarif universal untuk setiap lagu atau setiap layanan. Kebutuhan studio, musisi sesi, stems, atau pengerjaan tambahan perlu dikonfirmasi dalam penawaran. Harga global dapat ditampilkan dalam mata uang lain; gunakan rincian penawaran proyek sebagai acuan pembayaran.", "Sebelum meminta harga, kirim demo, referensi, tujuan penggunaan, target waktu, dan daftar file yang dibutuhkan. Tanyakan juga apa yang terjadi jika arah musik berubah setelah draft disetujui. Anggaran yang jelas membantu memilih scope yang realistis, tanpa harus memilih hanya berdasarkan harga terendah."],
+          links: [{"href": "/id/jasa-aransemen-lagu", "label": "Lihat scope dan harga paket aransemen Flemmo Music"}],
+        },
+
+        {
           title: "Kondisi awal lagu sangat memengaruhi biaya",
           paragraphs: [
             "Jika kamu baru memiliki cerita atau beberapa baris lirik, prosesnya mungkin mencakup penulisan, komposisi, struktur, aransemen, dan produksi. Jika demo sudah lengkap, pekerjaan dapat lebih berfokus pada penyempurnaan aransemen, recording, editing, mixing, atau mastering.",

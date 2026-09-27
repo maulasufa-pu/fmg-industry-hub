@@ -2,6 +2,7 @@
 "use client";
 
 import React from "react";
+import ConversionTracking from "@/components/ConversionTracking";
 import { usePathname } from "next/navigation";
 import Footer from "@/app/ui/page_section/FooterSection";
 import { HeaderSection } from "@/app/ui/page_section/HeaderSection";
@@ -47,6 +48,7 @@ function FooterWrapper() {
 export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
+      <ConversionTracking />
       <Header />
       <MainContainer>{children}</MainContainer>
       <FooterWrapper />

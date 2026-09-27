@@ -34,6 +34,7 @@ export default function Page() {
         "Menghindari harapan yang keliru",
       ]}
       sections={[
+        { title: "Jika rekamanmu bagian dari proyek yang lebih besar", paragraphs: ["Tentukan bagian yang sudah selesai dan bagian yang masih memerlukan bantuan sebelum memilih layanan. Untuk kebutuhan beberapa tahap sekaligus, diskusikan scope produksi secara menyeluruh agar hasil tiap tahap saling mendukung."], links: [{ href: "/id/jasa-produksi-musik", label: "Lihat proses produksi yang dapat mencakup mixing dan mastering." }] },
         {
           title: "Mixing mengolah setiap elemen di dalam lagu",
           paragraphs: [

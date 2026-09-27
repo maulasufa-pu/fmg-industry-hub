@@ -1,5 +1,7 @@
 // src/app/client/projects/CreateProjectPopover.tsx
 "use client";
+
+import { trackConversion } from "@/lib/conversion-tracking";
 import React, { useEffect, useMemo, useRef, useState, useLayoutEffect, useCallback } from "react";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { Close, Check } from "@/icons";
@@ -729,6 +731,7 @@ export default function CreateProjectPopover({
 
       if (!res.ok) throw new Error(json?.error || `Request failed (${res.status})`);
 
+      trackConversion("submit_project");
       const newProjectId = json.project_id ?? null;
 
       onSaved?.();

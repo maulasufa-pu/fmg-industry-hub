@@ -89,6 +89,7 @@ const nextConfig: NextConfig = {
   // ✅ REDIRECT DOMAIN VERCEL → CUSTOM DOMAIN
   async redirects() {
     return [
+      { source: "/id/perbedaan-komposer-arranger-producer-musik", destination: "/id/perbedaan-komposer-arranger-produser-musik", permanent: true },
       {
         source: "/reel",
         destination: "https://flemmomusic.com/portfolio",

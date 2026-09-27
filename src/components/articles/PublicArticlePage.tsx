@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { articleServiceLink } from "@/lib/article-service-links";
 import { ArrowLeft, CalendarDays, Clock3 } from "lucide-react";
 
 import { JsonLd } from "@/components/JsonLd";
@@ -15,6 +16,8 @@ const ACCENT_BG = {
 
 export default function PublicArticlePage({ article }: { article: ArticleRow }) {
   const isId = article.locale === "id-ID";
+  const serviceLink = isId ? articleServiceLink(article.slug) : undefined;
+  const alreadyLinked = serviceLink && article.content.some((block) => block.type === "cta" && block.href === serviceLink.href);
   const headings = article.content
     .map((block, index) => block.type === "heading" ? { id: headingAnchor(block.text, index), text: block.text, level: block.level } : null)
     .filter((heading): heading is NonNullable<typeof heading> => Boolean(heading));
@@ -43,7 +46,7 @@ export default function PublicArticlePage({ article }: { article: ArticleRow }) 
   };
 
   return (
-    <article className="-mx-4 min-h-screen bg-white text-slate-950 dark:bg-black dark:text-white sm:-mx-6 lg:-mx-8">
+    <article data-no-translate lang={isId ? "id" : "en"} className="-mx-4 min-h-screen bg-white text-slate-950 dark:bg-black dark:text-white sm:-mx-6 lg:-mx-8">
       <JsonLd id={`article-${article.id}`} data={schema} />
       <header className={`relative overflow-hidden ${heroBackground} px-5 pb-16 pt-12 sm:px-8 sm:pb-20 sm:pt-16 lg:px-12`}>
         {imageHero ? <>
@@ -78,7 +81,9 @@ export default function PublicArticlePage({ article }: { article: ArticleRow }) 
           <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">{isId ? "Daftar isi" : "Contents"}</div>
           <ol className="mt-4 space-y-3">{headings.map((heading) => <li key={heading.id} className={heading.level === 3 ? "pl-3" : ""}><a href={`#${heading.id}`} className="text-sm leading-5 text-slate-600 transition hover:text-violet-700 dark:text-slate-300 dark:hover:text-violet-300">{heading.text}</a></li>)}</ol>
         </nav></aside> : <div className="hidden lg:block" />}
-        <ArticleRenderer blocks={article.content} design={article.design} />
+        <div className="min-w-0"><ArticleRenderer blocks={article.content} design={article.design} />
+          {serviceLink && !alreadyLinked && <aside className="mx-auto mt-10 max-w-3xl rounded-2xl border border-violet-200 p-6 dark:border-white/15"><h2 className="text-2xl font-bold">Langkah berikutnya untuk lagumu</h2><p className="mt-4 leading-8 text-slate-600 dark:text-slate-300">{serviceLink.context}</p><Link href={serviceLink.href} className="mt-4 inline-flex min-h-12 items-center font-semibold text-violet-700 underline underline-offset-4 dark:text-violet-300">{serviceLink.label}</Link></aside>}
+        </div>
       </div>
     </article>
   );

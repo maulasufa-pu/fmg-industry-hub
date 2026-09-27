@@ -13,6 +13,12 @@ export default function ArticleIndexPage({ articles, locale }: { articles: Artic
         <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-300">{isId ? "Panduan praktis tentang aransemen, produksi musik, rekaman, dan cara membawa ide lagu menjadi karya yang utuh." : "Practical guidance on arrangement, music production, recording, and turning a song idea into a complete work."}</p>
       </header>
 
+      {isId && <nav aria-label="Panduan aransemen dan produksi" className="mx-auto mt-10 max-w-7xl rounded-2xl border border-violet-200 p-6 dark:border-white/15"><h2 className="text-2xl font-bold">Panduan sebelum memulai proyek lagu</h2><ul className="mt-4 grid gap-4 sm:grid-cols-2">{[
+        ["/id/biaya-pembuatan-lagu", "Biaya dan scope aransemen lagu"],
+        ["/id/perbedaan-komposer-arranger-produser-musik", "Perbedaan arranger dan music producer"],
+        ["/id/cara-bikin-lagu", "Dari voice note menjadi lagu utuh"],
+        ["/id/cara-memilih-jasa-aransemen-lagu", "Memilih arranger dan memastikan file hasil"],
+      ].map(([href, label]) => <li key={href}><Link href={href} className="font-semibold text-violet-700 underline underline-offset-4 dark:text-violet-300">{label}</Link></li>)}</ul></nav>}
       <section className="mx-auto mt-14 grid max-w-7xl gap-6 md:grid-cols-2 xl:grid-cols-3">
         {articles.map((article) => (
           <article key={article.id} className={`group overflow-hidden rounded-[2rem] border border-black/10 bg-white shadow-lg shadow-black/5 transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-slate-900 ${article.is_featured ? "md:col-span-2" : ""}`}>

@@ -34,6 +34,7 @@ export default function Page() {
         "Energi dapat difokuskan pada emosi",
       ]}
       sections={[
+        { title: "Jika rekamanmu bagian dari proyek yang lebih besar", paragraphs: ["Tentukan bagian yang sudah selesai dan bagian yang masih memerlukan bantuan sebelum memilih layanan. Untuk kebutuhan beberapa tahap sekaligus, diskusikan scope produksi secara menyeluruh agar hasil tiap tahap saling mendukung."], links: [{ href: "/id/jasa-produksi-musik", label: "Siapkan tahap vokal dalam proyek produksi musik." }] },
         {
           title: "Kuasai lagu sebelum hari rekaman",
           paragraphs: [

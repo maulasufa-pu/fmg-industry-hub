@@ -1,0 +1,1942 @@
+[
+  {
+    "path": "/id/jasa-aransemen-lagu",
+    "width": 390,
+    "status": 200,
+    "title": "Jasa Aransemen Lagu Profesional Online | Flemmo Music",
+    "h1": [
+      "Jasa Aransemen Lagu Profesional untuk Lagu Siap Rilis"
+    ],
+    "canonical": "https://flemmomusic.com/id/jasa-aransemen-lagu",
+    "overflow": false,
+    "links": [
+      "/",
+      "https://wa.me/6282298288188?text=Halo%20Flemmo%20Music%2C%20saya%20ingin%20konsultasi%20mengenai%20jasa%20aransemen%20lagu.",
+      "/portfolio?work=arrangement",
+      "https://wa.me/6282298288188?text=Halo%20Flemmo%20Music%2C%20saya%20ingin%20konsultasi%20mengenai%20jasa%20aransemen%20lagu.",
+      "/portfolio?work=arrangement",
+      "/pricing",
+      "/order/arrangement",
+      "/services/inquiry",
+      "/order/arrangement",
+      "/id/jasa-pembuatan-lagu",
+      "/legal/terms",
+      "/portfolio?work=arrangement",
+      "/services/inquiry",
+      "/order/arrangement",
+      "/services/inquiry",
+      "/id/jasa-pembuatan-lagu",
+      "/id/biaya-pembuatan-lagu",
+      "/id/cara-memilih-jasa-aransemen-lagu",
+      "/id/jasa-produksi-musik",
+      "/id/cara-bikin-lagu",
+      "/pricing",
+      "/portfolio",
+      "/about"
+    ],
+    "schemas": [
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://flemmomusic.com/#organization",
+        "name": "FMG Universe",
+        "legalName": "PT. Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "logo": "https://flemmomusic.com/icon.png",
+        "sameAs": [
+          "https://instagram.com/fmg_universe",
+          "https://youtube.com/@fmg_universe"
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://flemmomusic.com/#website",
+        "name": "FMG Universe",
+        "alternateName": "Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "inLanguage": [
+          "en-US",
+          "id-ID"
+        ],
+        "publisher": {
+          "@id": "https://flemmomusic.com/#organization"
+        }
+      },
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Beranda",
+              "item": "https://flemmomusic.com/id"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Jasa Aransemen Lagu",
+              "item": "https://flemmomusic.com/id/jasa-aransemen-lagu"
+            }
+          ]
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "Service",
+          "@id": "https://flemmomusic.com/id/jasa-aransemen-lagu/#service",
+          "name": "Jasa Aransemen Lagu Profesional",
+          "alternateName": [
+            "Jasa aransemen musik",
+            "Jasa produksi lagu",
+            "Music arrangement service"
+          ],
+          "serviceType": "Jasa aransemen lagu",
+          "description": "Kirim voice note, demo, melodi, chord, atau vokal. Flemmo Music mengembangkan materi lagumu menjadi aransemen profesional. Konsultasikan kebutuhanmu via WhatsApp.",
+          "url": "https://flemmomusic.com/id/jasa-aransemen-lagu",
+          "inLanguage": "id-ID",
+          "provider": {
+            "@type": "Organization",
+            "@id": "https://flemmomusic.com/#organization",
+            "name": "FMG Universe",
+            "url": "https://flemmomusic.com"
+          },
+          "areaServed": [
+            {
+              "@type": "Country",
+              "name": "Indonesia"
+            },
+            {
+              "@type": "Place",
+              "name": "Worldwide"
+            }
+          ],
+          "availableChannel": {
+            "@type": "ServiceChannel",
+            "serviceUrl": "https://flemmomusic.com/order/arrangement",
+            "availableLanguage": [
+              "Indonesian",
+              "English"
+            ]
+          },
+          "offers": {
+            "@type": "Offer",
+            "name": "Paket Proyek Pertama",
+            "price": 6000000,
+            "priceCurrency": "IDR",
+            "availability": "https://schema.org/InStock",
+            "url": "https://flemmomusic.com/order/arrangement",
+            "category": "Paket aransemen dan produksi lagu untuk klien baru",
+            "eligibleCustomerType": "Klien baru"
+          }
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Apa yang perlu saya kirim untuk memulai?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Kirim materi yang paling jelas menggambarkan lagumu: voice note, vokal, melodi, chord, lirik, struktur kasar, serta dua atau tiga referensi. Beri tahu kami bagian mana yang paling kamu suka."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah lagu saya akan dibeli atau diambil FMG?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Tidak. Di sini kamu membeli jasa aransemen dan produksi. Credit, ownership, session assets, material pihak ketiga, serta lisensi atau pengalihan apa pun hanya berlaku jika tertulis dalam dokumen project yang kamu setujui."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Berapa harga jasa aransemen lagu?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Paket project pertama tersedia seharga Rp6.000.000 untuk scope yang tercantum. Musisi sesi, rekaman studio, orkestrasi khusus, versi tambahan, kebutuhan rush, atau pekerjaan di luar scope akan dikonfirmasi terlebih dahulu."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Berapa lama prosesnya?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Timeline ditentukan setelah materi dan kompleksitas lagu diperiksa. Tanggal mulai, milestone review, dan target delivery ditulis sebelum produksi agar tidak ada janji waktu yang abstrak."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Berapa kali revisi yang saya dapatkan?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Jumlah revisi mengikuti paket atau quote yang disetujui. Feedback dikumpulkan per milestone supaya setiap ronde revisi punya tujuan dan tidak mengulang keputusan yang sudah disetujui."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah bisa dikerjakan sepenuhnya online?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Bisa. Brief, referensi, komunikasi, review, revisi, status project, dan delivery dapat dijalankan secara online melalui flow FMG."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah mixing dan mastering sudah termasuk?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Ya, keduanya termasuk dalam Paket Project Pertama bersama editing. Detail format dan versi file akhir tetap mengikuti scope yang disetujui."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apa bedanya aransemen dan pembuatan lagu?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Aransemen cocok jika identitas inti lagunya—seperti melodi atau lirik—sudah ada dan perlu dikembangkan menjadi musik yang utuh. Kalau kamu baru punya cerita, tema, atau brief dan ingin membangun lagu dari awal, pilih jasa pembuatan lagu."
+              }
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "path": "/id/jasa-aransemen-lagu",
+    "width": 1440,
+    "status": 200,
+    "title": "Jasa Aransemen Lagu Profesional Online | Flemmo Music",
+    "h1": [
+      "Jasa Aransemen Lagu Profesional untuk Lagu Siap Rilis"
+    ],
+    "canonical": "https://flemmomusic.com/id/jasa-aransemen-lagu",
+    "overflow": false,
+    "links": [
+      "/",
+      "https://wa.me/6282298288188?text=Halo%20Flemmo%20Music%2C%20saya%20ingin%20konsultasi%20mengenai%20jasa%20aransemen%20lagu.",
+      "/portfolio?work=arrangement",
+      "https://wa.me/6282298288188?text=Halo%20Flemmo%20Music%2C%20saya%20ingin%20konsultasi%20mengenai%20jasa%20aransemen%20lagu.",
+      "/portfolio?work=arrangement",
+      "/pricing",
+      "/order/arrangement",
+      "/services/inquiry",
+      "/order/arrangement",
+      "/id/jasa-pembuatan-lagu",
+      "/legal/terms",
+      "/portfolio?work=arrangement",
+      "/services/inquiry",
+      "/order/arrangement",
+      "/services/inquiry",
+      "/id/jasa-pembuatan-lagu",
+      "/id/biaya-pembuatan-lagu",
+      "/id/cara-memilih-jasa-aransemen-lagu",
+      "/id/jasa-produksi-musik",
+      "/id/cara-bikin-lagu",
+      "/pricing",
+      "/portfolio",
+      "/about"
+    ],
+    "schemas": [
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://flemmomusic.com/#organization",
+        "name": "FMG Universe",
+        "legalName": "PT. Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "logo": "https://flemmomusic.com/icon.png",
+        "sameAs": [
+          "https://instagram.com/fmg_universe",
+          "https://youtube.com/@fmg_universe"
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://flemmomusic.com/#website",
+        "name": "FMG Universe",
+        "alternateName": "Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "inLanguage": [
+          "en-US",
+          "id-ID"
+        ],
+        "publisher": {
+          "@id": "https://flemmomusic.com/#organization"
+        }
+      },
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Beranda",
+              "item": "https://flemmomusic.com/id"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Jasa Aransemen Lagu",
+              "item": "https://flemmomusic.com/id/jasa-aransemen-lagu"
+            }
+          ]
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "Service",
+          "@id": "https://flemmomusic.com/id/jasa-aransemen-lagu/#service",
+          "name": "Jasa Aransemen Lagu Profesional",
+          "alternateName": [
+            "Jasa aransemen musik",
+            "Jasa produksi lagu",
+            "Music arrangement service"
+          ],
+          "serviceType": "Jasa aransemen lagu",
+          "description": "Kirim voice note, demo, melodi, chord, atau vokal. Flemmo Music mengembangkan materi lagumu menjadi aransemen profesional. Konsultasikan kebutuhanmu via WhatsApp.",
+          "url": "https://flemmomusic.com/id/jasa-aransemen-lagu",
+          "inLanguage": "id-ID",
+          "provider": {
+            "@type": "Organization",
+            "@id": "https://flemmomusic.com/#organization",
+            "name": "FMG Universe",
+            "url": "https://flemmomusic.com"
+          },
+          "areaServed": [
+            {
+              "@type": "Country",
+              "name": "Indonesia"
+            },
+            {
+              "@type": "Place",
+              "name": "Worldwide"
+            }
+          ],
+          "availableChannel": {
+            "@type": "ServiceChannel",
+            "serviceUrl": "https://flemmomusic.com/order/arrangement",
+            "availableLanguage": [
+              "Indonesian",
+              "English"
+            ]
+          },
+          "offers": {
+            "@type": "Offer",
+            "name": "Paket Proyek Pertama",
+            "price": 6000000,
+            "priceCurrency": "IDR",
+            "availability": "https://schema.org/InStock",
+            "url": "https://flemmomusic.com/order/arrangement",
+            "category": "Paket aransemen dan produksi lagu untuk klien baru",
+            "eligibleCustomerType": "Klien baru"
+          }
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Apa yang perlu saya kirim untuk memulai?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Kirim materi yang paling jelas menggambarkan lagumu: voice note, vokal, melodi, chord, lirik, struktur kasar, serta dua atau tiga referensi. Beri tahu kami bagian mana yang paling kamu suka."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah lagu saya akan dibeli atau diambil FMG?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Tidak. Di sini kamu membeli jasa aransemen dan produksi. Credit, ownership, session assets, material pihak ketiga, serta lisensi atau pengalihan apa pun hanya berlaku jika tertulis dalam dokumen project yang kamu setujui."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Berapa harga jasa aransemen lagu?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Paket project pertama tersedia seharga Rp6.000.000 untuk scope yang tercantum. Musisi sesi, rekaman studio, orkestrasi khusus, versi tambahan, kebutuhan rush, atau pekerjaan di luar scope akan dikonfirmasi terlebih dahulu."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Berapa lama prosesnya?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Timeline ditentukan setelah materi dan kompleksitas lagu diperiksa. Tanggal mulai, milestone review, dan target delivery ditulis sebelum produksi agar tidak ada janji waktu yang abstrak."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Berapa kali revisi yang saya dapatkan?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Jumlah revisi mengikuti paket atau quote yang disetujui. Feedback dikumpulkan per milestone supaya setiap ronde revisi punya tujuan dan tidak mengulang keputusan yang sudah disetujui."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah bisa dikerjakan sepenuhnya online?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Bisa. Brief, referensi, komunikasi, review, revisi, status project, dan delivery dapat dijalankan secara online melalui flow FMG."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah mixing dan mastering sudah termasuk?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Ya, keduanya termasuk dalam Paket Project Pertama bersama editing. Detail format dan versi file akhir tetap mengikuti scope yang disetujui."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apa bedanya aransemen dan pembuatan lagu?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Aransemen cocok jika identitas inti lagunya—seperti melodi atau lirik—sudah ada dan perlu dikembangkan menjadi musik yang utuh. Kalau kamu baru punya cerita, tema, atau brief dan ingin membangun lagu dari awal, pilih jasa pembuatan lagu."
+              }
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "path": "/id/jasa-pembuatan-lagu",
+    "width": 390,
+    "status": 200,
+    "title": "Jasa Pembuatan Lagu dari Ide & Lirik | Flemmo Music",
+    "h1": [
+      "Jasa Pembuatan Lagu Original dari Ide, Lirik, dan Melodi"
+    ],
+    "canonical": "https://flemmomusic.com/id/jasa-pembuatan-lagu",
+    "overflow": false,
+    "links": [
+      "/id",
+      "/services/inquiry",
+      "https://wa.me/6282298288188?text=Halo%20Flemmo%20Music%2C%20saya%20ingin%20konsultasi%20mengenai%20jasa%20pembuatan%20lagu%20profesional.",
+      "/id/jasa-aransemen-lagu",
+      "/id/portofolio",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-produksi-musik",
+      "/services/inquiry",
+      "/id/jasa-aransemen-lagu",
+      "/id/cara-bikin-lagu",
+      "/portfolio",
+      "/song-creation-service"
+    ],
+    "schemas": [
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://flemmomusic.com/#organization",
+        "name": "FMG Universe",
+        "legalName": "PT. Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "logo": "https://flemmomusic.com/icon.png",
+        "sameAs": [
+          "https://instagram.com/fmg_universe",
+          "https://youtube.com/@fmg_universe"
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://flemmomusic.com/#website",
+        "name": "FMG Universe",
+        "alternateName": "Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "inLanguage": [
+          "en-US",
+          "id-ID"
+        ],
+        "publisher": {
+          "@id": "https://flemmomusic.com/#organization"
+        }
+      },
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Beranda",
+              "item": "https://flemmomusic.com/id"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Jasa Pembuatan Lagu Original dari Ide, Lirik, dan Melodi",
+              "item": "https://flemmomusic.com/id/jasa-pembuatan-lagu"
+            }
+          ]
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "Service",
+          "name": "Jasa pembuatan lagu profesional",
+          "description": "Punya cerita, ide, lirik, atau potongan melodi? Flemmo Music membantu membangun konsep, songwriting, komposisi, dan struktur lagu original. Setelah fondasi lagunya terbentuk, kebutuhan aransemen dan produksi disepakati sesuai tujuan karyamu.",
+          "url": "https://flemmomusic.com/id/jasa-pembuatan-lagu",
+          "inLanguage": "id-ID",
+          "provider": {
+            "@type": "Organization",
+            "@id": "https://flemmomusic.com/#organization",
+            "name": "FMG Universe",
+            "url": "https://flemmomusic.com"
+          },
+          "areaServed": [
+            "Indonesia",
+            "Worldwide"
+          ],
+          "availableChannel": {
+            "@type": "ServiceChannel",
+            "serviceUrl": "https://flemmomusic.com/services/inquiry"
+          }
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Bisa membuat lagu kalau saya baru punya ide?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Bisa. Kamu tidak harus datang dengan materi yang sudah lengkap. Kita bisa mulai dari cerita, tema, suasana, atau gambaran lagu yang kamu inginkan, lalu mengembangkannya menjadi lirik, melodi, struktur, aransemen, dan produksi."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Bisa menggunakan lirik atau melodi buatan saya?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Bisa. Lirik atau melodi yang kamu kirim akan menjadi fondasi utama dalam proses kreatifnya. Pencantuman nama dan ketentuan hak atas karya akan dibicarakan serta dikonfirmasi secara tertulis."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah seluruh prosesnya bisa dilakukan secara online?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Bisa. Mulai dari konsultasi, pengiriman materi, pembahasan referensi, review, revisi, hingga penyerahan file akhir dapat dilakukan secara online."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah sudah termasuk mixing dan mastering?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Tergantung paket dan kebutuhan lagu yang kamu pilih. Semua layanan yang termasuk, biaya, jumlah revisi, dan file akhir yang akan diterima akan dijelaskan sebelum produksi dimulai."
+              }
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "path": "/id/jasa-pembuatan-lagu",
+    "width": 1440,
+    "status": 200,
+    "title": "Jasa Pembuatan Lagu dari Ide & Lirik | Flemmo Music",
+    "h1": [
+      "Jasa Pembuatan Lagu Original dari Ide, Lirik, dan Melodi"
+    ],
+    "canonical": "https://flemmomusic.com/id/jasa-pembuatan-lagu",
+    "overflow": false,
+    "links": [
+      "/id",
+      "/services/inquiry",
+      "https://wa.me/6282298288188?text=Halo%20Flemmo%20Music%2C%20saya%20ingin%20konsultasi%20mengenai%20jasa%20pembuatan%20lagu%20profesional.",
+      "/id/jasa-aransemen-lagu",
+      "/id/portofolio",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-produksi-musik",
+      "/services/inquiry",
+      "/id/jasa-aransemen-lagu",
+      "/id/cara-bikin-lagu",
+      "/portfolio",
+      "/song-creation-service"
+    ],
+    "schemas": [
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://flemmomusic.com/#organization",
+        "name": "FMG Universe",
+        "legalName": "PT. Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "logo": "https://flemmomusic.com/icon.png",
+        "sameAs": [
+          "https://instagram.com/fmg_universe",
+          "https://youtube.com/@fmg_universe"
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://flemmomusic.com/#website",
+        "name": "FMG Universe",
+        "alternateName": "Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "inLanguage": [
+          "en-US",
+          "id-ID"
+        ],
+        "publisher": {
+          "@id": "https://flemmomusic.com/#organization"
+        }
+      },
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Beranda",
+              "item": "https://flemmomusic.com/id"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Jasa Pembuatan Lagu Original dari Ide, Lirik, dan Melodi",
+              "item": "https://flemmomusic.com/id/jasa-pembuatan-lagu"
+            }
+          ]
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "Service",
+          "name": "Jasa pembuatan lagu profesional",
+          "description": "Punya cerita, ide, lirik, atau potongan melodi? Flemmo Music membantu membangun konsep, songwriting, komposisi, dan struktur lagu original. Setelah fondasi lagunya terbentuk, kebutuhan aransemen dan produksi disepakati sesuai tujuan karyamu.",
+          "url": "https://flemmomusic.com/id/jasa-pembuatan-lagu",
+          "inLanguage": "id-ID",
+          "provider": {
+            "@type": "Organization",
+            "@id": "https://flemmomusic.com/#organization",
+            "name": "FMG Universe",
+            "url": "https://flemmomusic.com"
+          },
+          "areaServed": [
+            "Indonesia",
+            "Worldwide"
+          ],
+          "availableChannel": {
+            "@type": "ServiceChannel",
+            "serviceUrl": "https://flemmomusic.com/services/inquiry"
+          }
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Bisa membuat lagu kalau saya baru punya ide?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Bisa. Kamu tidak harus datang dengan materi yang sudah lengkap. Kita bisa mulai dari cerita, tema, suasana, atau gambaran lagu yang kamu inginkan, lalu mengembangkannya menjadi lirik, melodi, struktur, aransemen, dan produksi."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Bisa menggunakan lirik atau melodi buatan saya?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Bisa. Lirik atau melodi yang kamu kirim akan menjadi fondasi utama dalam proses kreatifnya. Pencantuman nama dan ketentuan hak atas karya akan dibicarakan serta dikonfirmasi secara tertulis."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah seluruh prosesnya bisa dilakukan secara online?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Bisa. Mulai dari konsultasi, pengiriman materi, pembahasan referensi, review, revisi, hingga penyerahan file akhir dapat dilakukan secara online."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah sudah termasuk mixing dan mastering?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Tergantung paket dan kebutuhan lagu yang kamu pilih. Semua layanan yang termasuk, biaya, jumlah revisi, dan file akhir yang akan diterima akan dijelaskan sebelum produksi dimulai."
+              }
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "path": "/id/jasa-produksi-musik",
+    "width": 390,
+    "status": 200,
+    "title": "Jasa Produksi Musik Profesional | Flemmo Music",
+    "h1": [
+      "Jasa Produksi Musik untuk Demo hingga Hasil Akhir"
+    ],
+    "canonical": "https://flemmomusic.com/id/jasa-produksi-musik",
+    "overflow": false,
+    "links": [
+      "/id",
+      "/services/inquiry",
+      "https://wa.me/6282298288188?text=Halo%20Flemmo%20Music%2C%20saya%20ingin%20konsultasi%20mengenai%20jasa%20produksi%20musik%20profesional.",
+      "/id/jasa-pembuatan-lagu",
+      "/id/portofolio",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-pembuatan-lagu",
+      "/services/inquiry",
+      "/id/jasa-pembuatan-lagu",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-mixing-mastering-lagu",
+      "/portfolio"
+    ],
+    "schemas": [
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://flemmomusic.com/#organization",
+        "name": "FMG Universe",
+        "legalName": "PT. Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "logo": "https://flemmomusic.com/icon.png",
+        "sameAs": [
+          "https://instagram.com/fmg_universe",
+          "https://youtube.com/@fmg_universe"
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://flemmomusic.com/#website",
+        "name": "FMG Universe",
+        "alternateName": "Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "inLanguage": [
+          "en-US",
+          "id-ID"
+        ],
+        "publisher": {
+          "@id": "https://flemmomusic.com/#organization"
+        }
+      },
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Beranda",
+              "item": "https://flemmomusic.com/id"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Jasa Produksi Musik untuk Demo hingga Hasil Akhir",
+              "item": "https://flemmomusic.com/id/jasa-produksi-musik"
+            }
+          ]
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "Service",
+          "name": "Jasa produksi musik profesional",
+          "description": "Sudah punya lagu atau demo, tetapi hasilnya belum terdengar seperti yang kamu bayangkan? FMG membantu mengembangkan materi tersebut menjadi produksi yang utuh, berkarakter, dan tetap terasa sebagai karyamu.",
+          "url": "https://flemmomusic.com/id/jasa-produksi-musik",
+          "inLanguage": "id-ID",
+          "provider": {
+            "@type": "Organization",
+            "@id": "https://flemmomusic.com/#organization",
+            "name": "FMG Universe",
+            "url": "https://flemmomusic.com"
+          },
+          "areaServed": [
+            "Indonesia",
+            "Worldwide"
+          ],
+          "availableChannel": {
+            "@type": "ServiceChannel",
+            "serviceUrl": "https://flemmomusic.com/services/inquiry"
+          }
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Apa bedanya produksi musik dan aransemen?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Aransemen berfokus pada susunan bagian, instrumen, dinamika, dan perjalanan musik. Produksi mencakup proses yang lebih luas untuk mewujudkan aransemen tersebut menjadi rekaman, termasuk pemilihan suara, recording, editing, mixing, dan tahap akhir lainnya sesuai kebutuhan."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah demo dari ponsel bisa digunakan?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Bisa. Demo ponsel cukup untuk menunjukkan melodi, chord, lirik, tempo, dan suasana dasar. Kualitas rekamannya tidak harus sempurna selama idenya masih bisa dipahami."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah saya boleh memberikan referensi lagu?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Boleh, bahkan sangat membantu. Jelaskan bagian yang kamu sukai dari setiap referensi agar kami memahami apakah kamu tertarik pada energinya, instrumennya, karakter vokalnya, atau warna produksinya."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah mixing dan mastering termasuk?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Keduanya dapat dimasukkan sesuai paket produksi yang dipilih. Rincian layanan dan file akhir akan dijelaskan sebelum pengerjaan dimulai."
+              }
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "path": "/id/jasa-produksi-musik",
+    "width": 1440,
+    "status": 200,
+    "title": "Jasa Produksi Musik Profesional | Flemmo Music",
+    "h1": [
+      "Jasa Produksi Musik untuk Demo hingga Hasil Akhir"
+    ],
+    "canonical": "https://flemmomusic.com/id/jasa-produksi-musik",
+    "overflow": false,
+    "links": [
+      "/id",
+      "/services/inquiry",
+      "https://wa.me/6282298288188?text=Halo%20Flemmo%20Music%2C%20saya%20ingin%20konsultasi%20mengenai%20jasa%20produksi%20musik%20profesional.",
+      "/id/jasa-pembuatan-lagu",
+      "/id/portofolio",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-pembuatan-lagu",
+      "/services/inquiry",
+      "/id/jasa-pembuatan-lagu",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-mixing-mastering-lagu",
+      "/portfolio"
+    ],
+    "schemas": [
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://flemmomusic.com/#organization",
+        "name": "FMG Universe",
+        "legalName": "PT. Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "logo": "https://flemmomusic.com/icon.png",
+        "sameAs": [
+          "https://instagram.com/fmg_universe",
+          "https://youtube.com/@fmg_universe"
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://flemmomusic.com/#website",
+        "name": "FMG Universe",
+        "alternateName": "Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "inLanguage": [
+          "en-US",
+          "id-ID"
+        ],
+        "publisher": {
+          "@id": "https://flemmomusic.com/#organization"
+        }
+      },
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Beranda",
+              "item": "https://flemmomusic.com/id"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Jasa Produksi Musik untuk Demo hingga Hasil Akhir",
+              "item": "https://flemmomusic.com/id/jasa-produksi-musik"
+            }
+          ]
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "Service",
+          "name": "Jasa produksi musik profesional",
+          "description": "Sudah punya lagu atau demo, tetapi hasilnya belum terdengar seperti yang kamu bayangkan? FMG membantu mengembangkan materi tersebut menjadi produksi yang utuh, berkarakter, dan tetap terasa sebagai karyamu.",
+          "url": "https://flemmomusic.com/id/jasa-produksi-musik",
+          "inLanguage": "id-ID",
+          "provider": {
+            "@type": "Organization",
+            "@id": "https://flemmomusic.com/#organization",
+            "name": "FMG Universe",
+            "url": "https://flemmomusic.com"
+          },
+          "areaServed": [
+            "Indonesia",
+            "Worldwide"
+          ],
+          "availableChannel": {
+            "@type": "ServiceChannel",
+            "serviceUrl": "https://flemmomusic.com/services/inquiry"
+          }
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Apa bedanya produksi musik dan aransemen?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Aransemen berfokus pada susunan bagian, instrumen, dinamika, dan perjalanan musik. Produksi mencakup proses yang lebih luas untuk mewujudkan aransemen tersebut menjadi rekaman, termasuk pemilihan suara, recording, editing, mixing, dan tahap akhir lainnya sesuai kebutuhan."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah demo dari ponsel bisa digunakan?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Bisa. Demo ponsel cukup untuk menunjukkan melodi, chord, lirik, tempo, dan suasana dasar. Kualitas rekamannya tidak harus sempurna selama idenya masih bisa dipahami."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah saya boleh memberikan referensi lagu?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Boleh, bahkan sangat membantu. Jelaskan bagian yang kamu sukai dari setiap referensi agar kami memahami apakah kamu tertarik pada energinya, instrumennya, karakter vokalnya, atau warna produksinya."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah mixing dan mastering termasuk?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Keduanya dapat dimasukkan sesuai paket produksi yang dipilih. Rincian layanan dan file akhir akan dijelaskan sebelum pengerjaan dimulai."
+              }
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "path": "/id/biaya-pembuatan-lagu",
+    "width": 390,
+    "status": 200,
+    "title": "Biaya Pembuatan Lagu dan Faktor Harganya — FMG Universe",
+    "h1": [
+      "Berapa Biaya Pembuatan Lagu dan Apa Saja yang Kamu Bayar?"
+    ],
+    "canonical": "https://flemmomusic.com/id/biaya-pembuatan-lagu",
+    "overflow": false,
+    "links": [
+      "/id",
+      "/order/arrangement",
+      "/id/jasa-pembuatan-lagu",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-pembuatan-lagu",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-produksi-musik",
+      "/id/cara-memilih-jasa-aransemen-lagu"
+    ],
+    "schemas": [
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://flemmomusic.com/#organization",
+        "name": "FMG Universe",
+        "legalName": "PT. Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "logo": "https://flemmomusic.com/icon.png",
+        "sameAs": [
+          "https://instagram.com/fmg_universe",
+          "https://youtube.com/@fmg_universe"
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://flemmomusic.com/#website",
+        "name": "FMG Universe",
+        "alternateName": "Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "inLanguage": [
+          "en-US",
+          "id-ID"
+        ],
+        "publisher": {
+          "@id": "https://flemmomusic.com/#organization"
+        }
+      },
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Beranda",
+              "item": "https://flemmomusic.com/id"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Berapa Biaya Pembuatan Lagu dan Apa Saja yang Kamu Bayar?",
+              "item": "https://flemmomusic.com/id/biaya-pembuatan-lagu"
+            }
+          ]
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": "Berapa Biaya Pembuatan Lagu dan Apa Saja yang Kamu Bayar?",
+          "description": "Harga pembuatan lagu tidak hanya ditentukan oleh durasinya. Lagu tiga menit yang dibuat dari ide awal bisa membutuhkan pekerjaan lebih banyak daripada lagu lima menit yang demo, aransemen, dan rekamannya sudah siap. Karena itu, bandingkan isi layanan sebelum membandingkan angka.",
+          "url": "https://flemmomusic.com/id/biaya-pembuatan-lagu",
+          "inLanguage": "id-ID",
+          "author": {
+            "@type": "Organization",
+            "@id": "https://flemmomusic.com/#organization",
+            "name": "FMG Universe"
+          },
+          "mainEntityOfPage": "https://flemmomusic.com/id/biaya-pembuatan-lagu"
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Kenapa harga pembuatan lagu bisa sangat berbeda?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Setiap penyedia dapat menawarkan pekerjaan, pengalaman, jumlah revisi, musisi, fasilitas, hak penggunaan, dan jenis file akhir yang berbeda. Harga baru dapat dibandingkan secara adil jika isi layanannya juga dibandingkan."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah harga dihitung berdasarkan durasi lagu?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Durasi dapat menjadi salah satu pertimbangan, tetapi bukan satu-satunya. Kompleksitas aransemen, kondisi materi awal, jumlah instrumen, recording, editing, revisi, dan penggunaan akhirnya sering lebih menentukan."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apa yang perlu ditanyakan sebelum membayar?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Tanyakan layanan yang termasuk, jadwal, tahapan review, jumlah revisi, biaya tambahan, hak atas karya, penggunaan materi pihak lain, serta format file yang akan diterima."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Bagaimana cara mendapatkan perkiraan biaya yang tepat?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Kirim materi yang sudah kamu punya dan jelaskan hasil akhir yang diinginkan. Semakin jelas tujuan, referensi, tenggat, serta kebutuhan file dan hak penggunaan, semakin tepat perkiraan yang dapat diberikan."
+              }
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "path": "/id/biaya-pembuatan-lagu",
+    "width": 1440,
+    "status": 200,
+    "title": "Biaya Pembuatan Lagu dan Faktor Harganya — FMG Universe",
+    "h1": [
+      "Berapa Biaya Pembuatan Lagu dan Apa Saja yang Kamu Bayar?"
+    ],
+    "canonical": "https://flemmomusic.com/id/biaya-pembuatan-lagu",
+    "overflow": false,
+    "links": [
+      "/id",
+      "/order/arrangement",
+      "/id/jasa-pembuatan-lagu",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-pembuatan-lagu",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-produksi-musik",
+      "/id/cara-memilih-jasa-aransemen-lagu"
+    ],
+    "schemas": [
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://flemmomusic.com/#organization",
+        "name": "FMG Universe",
+        "legalName": "PT. Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "logo": "https://flemmomusic.com/icon.png",
+        "sameAs": [
+          "https://instagram.com/fmg_universe",
+          "https://youtube.com/@fmg_universe"
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://flemmomusic.com/#website",
+        "name": "FMG Universe",
+        "alternateName": "Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "inLanguage": [
+          "en-US",
+          "id-ID"
+        ],
+        "publisher": {
+          "@id": "https://flemmomusic.com/#organization"
+        }
+      },
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Beranda",
+              "item": "https://flemmomusic.com/id"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Berapa Biaya Pembuatan Lagu dan Apa Saja yang Kamu Bayar?",
+              "item": "https://flemmomusic.com/id/biaya-pembuatan-lagu"
+            }
+          ]
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": "Berapa Biaya Pembuatan Lagu dan Apa Saja yang Kamu Bayar?",
+          "description": "Harga pembuatan lagu tidak hanya ditentukan oleh durasinya. Lagu tiga menit yang dibuat dari ide awal bisa membutuhkan pekerjaan lebih banyak daripada lagu lima menit yang demo, aransemen, dan rekamannya sudah siap. Karena itu, bandingkan isi layanan sebelum membandingkan angka.",
+          "url": "https://flemmomusic.com/id/biaya-pembuatan-lagu",
+          "inLanguage": "id-ID",
+          "author": {
+            "@type": "Organization",
+            "@id": "https://flemmomusic.com/#organization",
+            "name": "FMG Universe"
+          },
+          "mainEntityOfPage": "https://flemmomusic.com/id/biaya-pembuatan-lagu"
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Kenapa harga pembuatan lagu bisa sangat berbeda?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Setiap penyedia dapat menawarkan pekerjaan, pengalaman, jumlah revisi, musisi, fasilitas, hak penggunaan, dan jenis file akhir yang berbeda. Harga baru dapat dibandingkan secara adil jika isi layanannya juga dibandingkan."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah harga dihitung berdasarkan durasi lagu?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Durasi dapat menjadi salah satu pertimbangan, tetapi bukan satu-satunya. Kompleksitas aransemen, kondisi materi awal, jumlah instrumen, recording, editing, revisi, dan penggunaan akhirnya sering lebih menentukan."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apa yang perlu ditanyakan sebelum membayar?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Tanyakan layanan yang termasuk, jadwal, tahapan review, jumlah revisi, biaya tambahan, hak atas karya, penggunaan materi pihak lain, serta format file yang akan diterima."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Bagaimana cara mendapatkan perkiraan biaya yang tepat?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Kirim materi yang sudah kamu punya dan jelaskan hasil akhir yang diinginkan. Semakin jelas tujuan, referensi, tenggat, serta kebutuhan file dan hak penggunaan, semakin tepat perkiraan yang dapat diberikan."
+              }
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "path": "/id/perbedaan-komposer-arranger-produser-musik",
+    "width": 390,
+    "status": 200,
+    "title": "Perbedaan Komposer, Arranger, dan Produser Musik — FMG Universe",
+    "h1": [
+      "Apa Bedanya Komposer, Arranger, dan Produser Musik?"
+    ],
+    "canonical": "https://flemmomusic.com/id/perbedaan-komposer-arranger-produser-musik",
+    "overflow": false,
+    "links": [
+      "/id",
+      "/order/arrangement",
+      "/id/jasa-produksi-musik",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-pembuatan-lagu",
+      "/id/jasa-produksi-musik",
+      "/id/jasa-pembuatan-lagu",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-produksi-musik",
+      "/id/cara-memilih-jasa-aransemen-lagu"
+    ],
+    "schemas": [
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://flemmomusic.com/#organization",
+        "name": "FMG Universe",
+        "legalName": "PT. Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "logo": "https://flemmomusic.com/icon.png",
+        "sameAs": [
+          "https://instagram.com/fmg_universe",
+          "https://youtube.com/@fmg_universe"
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://flemmomusic.com/#website",
+        "name": "FMG Universe",
+        "alternateName": "Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "inLanguage": [
+          "en-US",
+          "id-ID"
+        ],
+        "publisher": {
+          "@id": "https://flemmomusic.com/#organization"
+        }
+      },
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Beranda",
+              "item": "https://flemmomusic.com/id"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Apa Bedanya Komposer, Arranger, dan Produser Musik?",
+              "item": "https://flemmomusic.com/id/perbedaan-komposer-arranger-produser-musik"
+            }
+          ]
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": "Apa Bedanya Komposer, Arranger, dan Produser Musik?",
+          "description": "Ketiganya sama-sama terlibat dalam pembuatan musik, tetapi tidak selalu mengerjakan hal yang sama. Memahami perannya akan membantu kamu menjelaskan kebutuhan, menyusun anggaran, dan memilih orang yang tepat untuk menyelesaikan lagumu.",
+          "url": "https://flemmomusic.com/id/perbedaan-komposer-arranger-produser-musik",
+          "inLanguage": "id-ID",
+          "author": {
+            "@type": "Organization",
+            "@id": "https://flemmomusic.com/#organization",
+            "name": "FMG Universe"
+          },
+          "mainEntityOfPage": "https://flemmomusic.com/id/perbedaan-komposer-arranger-produser-musik"
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Apakah produser musik sama dengan pembuat beat?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Tidak selalu. Pembuat beat berfokus membuat dasar instrumental atau beat, sedangkan produser dapat menangani arah produksi yang lebih luas. Namun, dalam praktiknya satu orang sering menjalankan kedua peran tersebut."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Kalau sudah punya melodi dan chord, saya butuh siapa?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Jika kamu ingin mengembangkan susunan instrumen dan dinamika, arranger dapat membantu. Jika membutuhkan proses lengkap sampai rekaman dan hasil akhir, kamu mungkin memerlukan produser atau layanan produksi musik."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah arranger mendapatkan kredit?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Pencantuman kredit sebaiknya dibicarakan secara tertulis sesuai kontribusi dan kesepakatan proyek. Jangan menunggu lagu selesai untuk membahasnya."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Bisakah satu orang mengerjakan semuanya?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Bisa, terutama dalam produksi musik modern. Yang terpenting adalah memastikan orang tersebut memang memiliki kemampuan yang sesuai dan setiap bagian pekerjaannya tercantum dengan jelas."
+              }
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "path": "/id/perbedaan-komposer-arranger-produser-musik",
+    "width": 1440,
+    "status": 200,
+    "title": "Perbedaan Komposer, Arranger, dan Produser Musik — FMG Universe",
+    "h1": [
+      "Apa Bedanya Komposer, Arranger, dan Produser Musik?"
+    ],
+    "canonical": "https://flemmomusic.com/id/perbedaan-komposer-arranger-produser-musik",
+    "overflow": false,
+    "links": [
+      "/id",
+      "/order/arrangement",
+      "/id/jasa-produksi-musik",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-pembuatan-lagu",
+      "/id/jasa-produksi-musik",
+      "/id/jasa-pembuatan-lagu",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-produksi-musik",
+      "/id/cara-memilih-jasa-aransemen-lagu"
+    ],
+    "schemas": [
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://flemmomusic.com/#organization",
+        "name": "FMG Universe",
+        "legalName": "PT. Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "logo": "https://flemmomusic.com/icon.png",
+        "sameAs": [
+          "https://instagram.com/fmg_universe",
+          "https://youtube.com/@fmg_universe"
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://flemmomusic.com/#website",
+        "name": "FMG Universe",
+        "alternateName": "Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "inLanguage": [
+          "en-US",
+          "id-ID"
+        ],
+        "publisher": {
+          "@id": "https://flemmomusic.com/#organization"
+        }
+      },
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Beranda",
+              "item": "https://flemmomusic.com/id"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Apa Bedanya Komposer, Arranger, dan Produser Musik?",
+              "item": "https://flemmomusic.com/id/perbedaan-komposer-arranger-produser-musik"
+            }
+          ]
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": "Apa Bedanya Komposer, Arranger, dan Produser Musik?",
+          "description": "Ketiganya sama-sama terlibat dalam pembuatan musik, tetapi tidak selalu mengerjakan hal yang sama. Memahami perannya akan membantu kamu menjelaskan kebutuhan, menyusun anggaran, dan memilih orang yang tepat untuk menyelesaikan lagumu.",
+          "url": "https://flemmomusic.com/id/perbedaan-komposer-arranger-produser-musik",
+          "inLanguage": "id-ID",
+          "author": {
+            "@type": "Organization",
+            "@id": "https://flemmomusic.com/#organization",
+            "name": "FMG Universe"
+          },
+          "mainEntityOfPage": "https://flemmomusic.com/id/perbedaan-komposer-arranger-produser-musik"
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Apakah produser musik sama dengan pembuat beat?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Tidak selalu. Pembuat beat berfokus membuat dasar instrumental atau beat, sedangkan produser dapat menangani arah produksi yang lebih luas. Namun, dalam praktiknya satu orang sering menjalankan kedua peran tersebut."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Kalau sudah punya melodi dan chord, saya butuh siapa?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Jika kamu ingin mengembangkan susunan instrumen dan dinamika, arranger dapat membantu. Jika membutuhkan proses lengkap sampai rekaman dan hasil akhir, kamu mungkin memerlukan produser atau layanan produksi musik."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah arranger mendapatkan kredit?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Pencantuman kredit sebaiknya dibicarakan secara tertulis sesuai kontribusi dan kesepakatan proyek. Jangan menunggu lagu selesai untuk membahasnya."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Bisakah satu orang mengerjakan semuanya?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Bisa, terutama dalam produksi musik modern. Yang terpenting adalah memastikan orang tersebut memang memiliki kemampuan yang sesuai dan setiap bagian pekerjaannya tercantum dengan jelas."
+              }
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "path": "/id/cara-bikin-lagu",
+    "width": 390,
+    "status": 200,
+    "title": "Cara Bikin Lagu dari Ide hingga Siap Dirilis — FMG Universe",
+    "h1": [
+      "Cara Bikin Lagu: Dari Ide Pertama hingga Siap Dirilis"
+    ],
+    "canonical": "https://flemmomusic.com/id/cara-bikin-lagu",
+    "overflow": false,
+    "links": [
+      "/id",
+      "/order/arrangement",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-pembuatan-lagu",
+      "/id/jasa-pembuatan-lagu",
+      "/id/jasa-aransemen-lagu",
+      "/portfolio",
+      "/learn/how-to-make-a-song"
+    ],
+    "schemas": [
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://flemmomusic.com/#organization",
+        "name": "FMG Universe",
+        "legalName": "PT. Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "logo": "https://flemmomusic.com/icon.png",
+        "sameAs": [
+          "https://instagram.com/fmg_universe",
+          "https://youtube.com/@fmg_universe"
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://flemmomusic.com/#website",
+        "name": "FMG Universe",
+        "alternateName": "Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "inLanguage": [
+          "en-US",
+          "id-ID"
+        ],
+        "publisher": {
+          "@id": "https://flemmomusic.com/#organization"
+        }
+      },
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Beranda",
+              "item": "https://flemmomusic.com/id"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Cara Bikin Lagu: Dari Ide Pertama hingga Siap Dirilis",
+              "item": "https://flemmomusic.com/id/cara-bikin-lagu"
+            }
+          ]
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": "Cara Bikin Lagu: Dari Ide Pertama hingga Siap Dirilis",
+          "description": "Kamu tidak perlu menunggu punya alat mahal atau rekaman yang sempurna untuk mulai membuat lagu. Sebuah lagu bisa berawal dari satu kalimat, potongan melodi, beberapa chord, pola ritme, atau voice note sederhana. Hal yang paling penting adalah menangkap ide tersebut, lalu mengembangkannya sedikit demi sedikit sampai menjadi lagu yang utuh.",
+          "url": "https://flemmomusic.com/id/cara-bikin-lagu",
+          "inLanguage": "id-ID",
+          "author": {
+            "@type": "Organization",
+            "@id": "https://flemmomusic.com/#organization",
+            "name": "FMG Universe"
+          },
+          "mainEntityOfPage": "https://flemmomusic.com/id/cara-bikin-lagu"
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Apakah membuat lagu harus mengerti teori musik?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Tidak harus. Teori musik dapat membantu kamu mengambil keputusan dengan lebih cepat, tetapi kemampuan mendengar, memahami referensi, mencoba berbagai kemungkinan, dan menyampaikan ide juga sangat penting."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Bagaimana kalau saya baru punya lirik?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Tidak masalah. Lirik tersebut bisa menjadi titik awal untuk mengembangkan melodi dan chord. Setelah arah lagunya terbentuk, proses dapat dilanjutkan ke aransemen dan produksi."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah voice note saja sudah cukup?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Cukup untuk memulai. Voice note dapat membantu menjelaskan melodi, ritme, cara pengucapan, atau suasana yang kamu bayangkan. Tambahkan sedikit cerita tentang genre dan lagu referensi agar arah pengembangannya lebih mudah dipahami."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Kapan saya perlu menggunakan jasa arranger atau produser?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Bantuan arranger atau produser akan berguna ketika kamu sudah memiliki ide utama, tetapi masih kesulitan menyusun struktur, memilih instrumen, menentukan karakter suara, merekam, atau menyelesaikan lagunya hingga siap dirilis."
+              }
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "path": "/id/cara-bikin-lagu",
+    "width": 1440,
+    "status": 200,
+    "title": "Cara Bikin Lagu dari Ide hingga Siap Dirilis — FMG Universe",
+    "h1": [
+      "Cara Bikin Lagu: Dari Ide Pertama hingga Siap Dirilis"
+    ],
+    "canonical": "https://flemmomusic.com/id/cara-bikin-lagu",
+    "overflow": false,
+    "links": [
+      "/id",
+      "/order/arrangement",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-pembuatan-lagu",
+      "/id/jasa-pembuatan-lagu",
+      "/id/jasa-aransemen-lagu",
+      "/portfolio",
+      "/learn/how-to-make-a-song"
+    ],
+    "schemas": [
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://flemmomusic.com/#organization",
+        "name": "FMG Universe",
+        "legalName": "PT. Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "logo": "https://flemmomusic.com/icon.png",
+        "sameAs": [
+          "https://instagram.com/fmg_universe",
+          "https://youtube.com/@fmg_universe"
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://flemmomusic.com/#website",
+        "name": "FMG Universe",
+        "alternateName": "Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "inLanguage": [
+          "en-US",
+          "id-ID"
+        ],
+        "publisher": {
+          "@id": "https://flemmomusic.com/#organization"
+        }
+      },
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Beranda",
+              "item": "https://flemmomusic.com/id"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Cara Bikin Lagu: Dari Ide Pertama hingga Siap Dirilis",
+              "item": "https://flemmomusic.com/id/cara-bikin-lagu"
+            }
+          ]
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": "Cara Bikin Lagu: Dari Ide Pertama hingga Siap Dirilis",
+          "description": "Kamu tidak perlu menunggu punya alat mahal atau rekaman yang sempurna untuk mulai membuat lagu. Sebuah lagu bisa berawal dari satu kalimat, potongan melodi, beberapa chord, pola ritme, atau voice note sederhana. Hal yang paling penting adalah menangkap ide tersebut, lalu mengembangkannya sedikit demi sedikit sampai menjadi lagu yang utuh.",
+          "url": "https://flemmomusic.com/id/cara-bikin-lagu",
+          "inLanguage": "id-ID",
+          "author": {
+            "@type": "Organization",
+            "@id": "https://flemmomusic.com/#organization",
+            "name": "FMG Universe"
+          },
+          "mainEntityOfPage": "https://flemmomusic.com/id/cara-bikin-lagu"
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Apakah membuat lagu harus mengerti teori musik?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Tidak harus. Teori musik dapat membantu kamu mengambil keputusan dengan lebih cepat, tetapi kemampuan mendengar, memahami referensi, mencoba berbagai kemungkinan, dan menyampaikan ide juga sangat penting."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Bagaimana kalau saya baru punya lirik?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Tidak masalah. Lirik tersebut bisa menjadi titik awal untuk mengembangkan melodi dan chord. Setelah arah lagunya terbentuk, proses dapat dilanjutkan ke aransemen dan produksi."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah voice note saja sudah cukup?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Cukup untuk memulai. Voice note dapat membantu menjelaskan melodi, ritme, cara pengucapan, atau suasana yang kamu bayangkan. Tambahkan sedikit cerita tentang genre dan lagu referensi agar arah pengembangannya lebih mudah dipahami."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Kapan saya perlu menggunakan jasa arranger atau produser?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Bantuan arranger atau produser akan berguna ketika kamu sudah memiliki ide utama, tetapi masih kesulitan menyusun struktur, memilih instrumen, menentukan karakter suara, merekam, atau menyelesaikan lagunya hingga siap dirilis."
+              }
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "path": "/id/cara-memilih-jasa-aransemen-lagu",
+    "width": 390,
+    "status": 200,
+    "title": "Cara Memilih Jasa Aransemen Lagu yang Tepat — FMG Universe",
+    "h1": [
+      "Cara Memilih Jasa Aransemen Lagu tanpa Mengorbankan Identitas Karyamu"
+    ],
+    "canonical": "https://flemmomusic.com/id/cara-memilih-jasa-aransemen-lagu",
+    "overflow": false,
+    "links": [
+      "/id",
+      "/order/arrangement",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-aransemen-lagu",
+      "/id/biaya-pembuatan-lagu",
+      "/id/perbedaan-komposer-arranger-produser-musik",
+      "/portfolio"
+    ],
+    "schemas": [
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://flemmomusic.com/#organization",
+        "name": "FMG Universe",
+        "legalName": "PT. Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "logo": "https://flemmomusic.com/icon.png",
+        "sameAs": [
+          "https://instagram.com/fmg_universe",
+          "https://youtube.com/@fmg_universe"
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://flemmomusic.com/#website",
+        "name": "FMG Universe",
+        "alternateName": "Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "inLanguage": [
+          "en-US",
+          "id-ID"
+        ],
+        "publisher": {
+          "@id": "https://flemmomusic.com/#organization"
+        }
+      },
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Beranda",
+              "item": "https://flemmomusic.com/id"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Cara Memilih Jasa Aransemen Lagu tanpa Mengorbankan Identitas Karyamu",
+              "item": "https://flemmomusic.com/id/cara-memilih-jasa-aransemen-lagu"
+            }
+          ]
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": "Cara Memilih Jasa Aransemen Lagu tanpa Mengorbankan Identitas Karyamu",
+          "description": "Arranger yang tepat bukan hanya mampu membuat musik terdengar ramai atau modern. Ia perlu memahami inti lagumu, menjelaskan prosesnya dengan jujur, dan mampu mengembangkan karya tanpa menghilangkan hal yang membuatnya terasa personal.",
+          "url": "https://flemmomusic.com/id/cara-memilih-jasa-aransemen-lagu",
+          "inLanguage": "id-ID",
+          "author": {
+            "@type": "Organization",
+            "@id": "https://flemmomusic.com/#organization",
+            "name": "FMG Universe"
+          },
+          "mainEntityOfPage": "https://flemmomusic.com/id/cara-memilih-jasa-aransemen-lagu"
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Apa yang perlu saya kirim kepada arranger?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Kirim demo, lirik, chord jika ada, referensi, target pendengar, tujuan rilis, tenggat, serta catatan tentang bagian yang paling penting bagimu."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Berapa banyak referensi yang sebaiknya diberikan?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Dua atau tiga referensi yang disertai alasan biasanya lebih berguna daripada daftar panjang tanpa penjelasan. Sebutkan apakah kamu menyukai energinya, groove, instrumen, karakter vokal, atau suasananya."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah arranger boleh mengubah chord dan struktur?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Boleh jika perubahan tersebut dibutuhkan dan kamu menyetujuinya. Batas keputusan arranger sebaiknya dibicarakan sebelum pengerjaan agar identitas lagu tetap terjaga."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah saya perlu meminta file sesi produksi?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Tergantung kebutuhan. Jika kamu hanya memerlukan master untuk dirilis, file sesi mungkin tidak dibutuhkan. Jika ingin melanjutkan produksi dengan pihak lain, tanyakan sejak awal apakah stems atau file sesi tersedia dan apakah ada biaya atau ketentuan tambahan."
+              }
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "path": "/id/cara-memilih-jasa-aransemen-lagu",
+    "width": 1440,
+    "status": 200,
+    "title": "Cara Memilih Jasa Aransemen Lagu yang Tepat — FMG Universe",
+    "h1": [
+      "Cara Memilih Jasa Aransemen Lagu tanpa Mengorbankan Identitas Karyamu"
+    ],
+    "canonical": "https://flemmomusic.com/id/cara-memilih-jasa-aransemen-lagu",
+    "overflow": false,
+    "links": [
+      "/id",
+      "/order/arrangement",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-aransemen-lagu",
+      "/id/jasa-aransemen-lagu",
+      "/id/biaya-pembuatan-lagu",
+      "/id/perbedaan-komposer-arranger-produser-musik",
+      "/portfolio"
+    ],
+    "schemas": [
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://flemmomusic.com/#organization",
+        "name": "FMG Universe",
+        "legalName": "PT. Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "logo": "https://flemmomusic.com/icon.png",
+        "sameAs": [
+          "https://instagram.com/fmg_universe",
+          "https://youtube.com/@fmg_universe"
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://flemmomusic.com/#website",
+        "name": "FMG Universe",
+        "alternateName": "Flemmo Music Global",
+        "url": "https://flemmomusic.com",
+        "inLanguage": [
+          "en-US",
+          "id-ID"
+        ],
+        "publisher": {
+          "@id": "https://flemmomusic.com/#organization"
+        }
+      },
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Beranda",
+              "item": "https://flemmomusic.com/id"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Cara Memilih Jasa Aransemen Lagu tanpa Mengorbankan Identitas Karyamu",
+              "item": "https://flemmomusic.com/id/cara-memilih-jasa-aransemen-lagu"
+            }
+          ]
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": "Cara Memilih Jasa Aransemen Lagu tanpa Mengorbankan Identitas Karyamu",
+          "description": "Arranger yang tepat bukan hanya mampu membuat musik terdengar ramai atau modern. Ia perlu memahami inti lagumu, menjelaskan prosesnya dengan jujur, dan mampu mengembangkan karya tanpa menghilangkan hal yang membuatnya terasa personal.",
+          "url": "https://flemmomusic.com/id/cara-memilih-jasa-aransemen-lagu",
+          "inLanguage": "id-ID",
+          "author": {
+            "@type": "Organization",
+            "@id": "https://flemmomusic.com/#organization",
+            "name": "FMG Universe"
+          },
+          "mainEntityOfPage": "https://flemmomusic.com/id/cara-memilih-jasa-aransemen-lagu"
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Apa yang perlu saya kirim kepada arranger?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Kirim demo, lirik, chord jika ada, referensi, target pendengar, tujuan rilis, tenggat, serta catatan tentang bagian yang paling penting bagimu."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Berapa banyak referensi yang sebaiknya diberikan?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Dua atau tiga referensi yang disertai alasan biasanya lebih berguna daripada daftar panjang tanpa penjelasan. Sebutkan apakah kamu menyukai energinya, groove, instrumen, karakter vokal, atau suasananya."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah arranger boleh mengubah chord dan struktur?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Boleh jika perubahan tersebut dibutuhkan dan kamu menyetujuinya. Batas keputusan arranger sebaiknya dibicarakan sebelum pengerjaan agar identitas lagu tetap terjaga."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah saya perlu meminta file sesi produksi?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Tergantung kebutuhan. Jika kamu hanya memerlukan master untuk dirilis, file sesi mungkin tidak dibutuhkan. Jika ingin melanjutkan produksi dengan pihak lain, tanyakan sejak awal apakah stems atau file sesi tersedia dan apakah ada biaya atau ketentuan tambahan."
+              }
+            }
+          ]
+        }
+      ]
+    ]
+  }
+]

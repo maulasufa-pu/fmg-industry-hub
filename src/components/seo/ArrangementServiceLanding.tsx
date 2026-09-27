@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { arrangementFaqs as faqs } from "@/lib/arrangement-faqs";
+import { serviceWhatsApp } from "@/lib/service-whatsapp";
 import {
   ArrowRight,
   Check,
@@ -83,40 +85,7 @@ const process = [
 
 const genres = ["Pop", "R&B", "Rock", "Electronic", "Acoustic", "Ballad", "Hip-hop", "Religious", "Cinematic", "Jingle", "Theme Song", "Custom"];
 
-const faqs = [
-  {
-    q: copy("Apa yang perlu saya kirim untuk memulai?", "What do I need to send to get started?"),
-    a: copy("Kirim materi yang paling jelas menggambarkan lagumu: voice note, vokal, melodi, chord, lirik, struktur kasar, serta dua atau tiga referensi. Beri tahu kami bagian mana yang paling kamu suka.", "Send whatever communicates the song best: a voice note, vocal, melody, chords, lyrics, a rough structure, and two or three references with notes about what you like."),
-  },
-  {
-    q: copy("Apakah lagu saya akan dibeli atau diambil FMG?", "Will FMG buy or take my song?"),
-    a: copy("Tidak. Di sini kamu membeli jasa aransemen dan produksi. Credit, ownership, session assets, material pihak ketiga, serta lisensi atau pengalihan apa pun hanya berlaku jika tertulis dalam dokumen project yang kamu setujui.", "No. This page sells arrangement and production services to you. Credits, ownership, session assets, third-party material, and any license or transfer only apply when written into the project documents you approve."),
-  },
-  {
-    q: copy("Berapa harga jasa aransemen lagu?", "How much does music arrangement cost?"),
-    a: copy("Paket project pertama tersedia seharga Rp6.000.000 untuk scope yang tercantum. Musisi sesi, rekaman studio, orkestrasi khusus, versi tambahan, kebutuhan rush, atau pekerjaan di luar scope akan dikonfirmasi terlebih dahulu.", "The first-project package is IDR 6,000,000 for the listed scope. Session musicians, studio recording, custom orchestration, additional versions, rush work, or anything outside the scope is confirmed separately."),
-  },
-  {
-    q: copy("Berapa lama prosesnya?", "How long does the process take?"),
-    a: copy("Timeline ditentukan setelah materi dan kompleksitas lagu diperiksa. Tanggal mulai, milestone review, dan target delivery ditulis sebelum produksi agar tidak ada janji waktu yang abstrak.", "The timeline is set after reviewing the material and complexity. The start date, review milestones, and target delivery are written down before production so there are no vague timing promises."),
-  },
-  {
-    q: copy("Berapa kali revisi yang saya dapatkan?", "How many revision rounds do I receive?"),
-    a: copy("Jumlah revisi mengikuti paket atau quote yang disetujui. Feedback dikumpulkan per milestone supaya setiap ronde revisi punya tujuan dan tidak mengulang keputusan yang sudah disetujui.", "The number of revisions follows the approved package or quote. Feedback is consolidated at each milestone so every revision round has a clear purpose."),
-  },
-  {
-    q: copy("Apakah bisa dikerjakan sepenuhnya online?", "Can the project be completed fully online?"),
-    a: copy("Bisa. Brief, referensi, komunikasi, review, revisi, status project, dan delivery dapat dijalankan secara online melalui flow FMG.", "Yes. The brief, references, communication, reviews, revisions, project status, and delivery can all run online through the FMG workflow."),
-  },
-  {
-    q: copy("Apakah mixing dan mastering sudah termasuk?", "Are mixing and mastering included?"),
-    a: copy("Ya, keduanya termasuk dalam Paket Project Pertama bersama editing. Detail format dan versi file akhir tetap mengikuti scope yang disetujui.", "Yes. Both are included in the First Project Package together with editing. Final file formats and versions still follow the approved scope."),
-  },
-  {
-    q: copy("Apa bedanya aransemen dan pembuatan lagu?", "What is the difference between arrangement and song creation?"),
-    a: copy("Aransemen cocok jika identitas inti lagunya—seperti melodi atau lirik—sudah ada dan perlu dikembangkan menjadi musik yang utuh. Kalau kamu baru punya cerita, tema, atau brief dan ingin membangun lagu dari awal, pilih jasa pembuatan lagu.", "Arrangement is ideal when the song's core identity—such as its melody or lyrics—already exists and needs to become a complete production. If you only have a story, theme, or brief and need the song built from the ground up, choose song creation."),
-  },
-];
+
 
 export default function ArrangementServiceLanding() {
   const { language } = useLanguage();
@@ -124,7 +93,7 @@ export default function ArrangementServiceLanding() {
   const isId = language === "id";
 
   return (
-    <main lang={language} data-performance-page className="overflow-hidden bg-[#050505] text-white">
+    <main data-no-translate lang={language} data-performance-page className="overflow-hidden bg-[#050505] text-white">
       <section className="relative border-b border-white/10">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_18%,rgba(124,58,237,0.28),transparent_30%),radial-gradient(circle_at_88%_30%,rgba(225,29,72,0.16),transparent_28%)]" />
         <div className="relative mx-auto max-w-7xl px-5 pb-20 pt-14 sm:pb-28 sm:pt-20">
@@ -141,16 +110,16 @@ export default function ArrangementServiceLanding() {
                 {isId ? "Jasa aransemen lagu profesional" : "Professional music arrangement service"}
               </p>
               <h1 className="mt-6 max-w-5xl text-balance text-4xl font-black leading-[1.04] tracking-[-0.04em] sm:text-6xl lg:text-7xl">
-                {isId ? "Bawa ide lagumu menjadi produksi yang terdengar utuh." : "Turn your song idea into a production that feels complete."}
+                {isId ? "Jasa Aransemen Lagu Profesional untuk Lagu Siap Rilis" : "Turn your song idea into a production that feels complete."}
               </h1>
               <p className="mt-7 max-w-3xl text-lg leading-8 text-white/70 sm:text-xl">
                 {isId
-                  ? "FMG mengembangkan melodi, chord, lirik, atau rekaman panduanmu menjadi aransemen dengan struktur, dinamika, instrumen, dan arah sound yang dibangun khusus untuk karakter lagumu."
+                  ? "Kirim voice note, demo sederhana, melodi, chord, vokal, atau referensi musik. Flemmo Music mengembangkan materi lagumu menjadi aransemen lengkap dengan struktur, dinamika, dan instrumen yang mendukung karakter lagumu."
                   : "FMG develops your melody, chords, lyrics, or guide recording into an arrangement with structure, dynamics, instrumentation, and a sound direction intentionally built around the song."}
               </p>
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-                <Link href={ARRANGEMENT_ORDER_PATH} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-6 py-3 font-bold text-black transition hover:-translate-y-0.5 hover:bg-violet-100">
-                  {isId ? "Mulai aransemen lagu" : "Start my arrangement"} <ArrowRight className="h-4 w-4" />
+                <Link href={isId ? serviceWhatsApp("Jasa aransemen lagu") : ARRANGEMENT_ORDER_PATH} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-6 py-3 font-bold text-black transition hover:-translate-y-0.5 hover:bg-violet-100">
+                  {isId ? "Kirim Demo Lagumu" : "Start my arrangement"} <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link href={ARRANGEMENT_PORTFOLIO_PATH} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/20 px-6 py-3 font-bold transition hover:border-white/50 hover:bg-white/5">
                   {isId ? "Dengarkan portofolio" : "Hear the portfolio"} <Headphones className="h-4 w-4" />
@@ -174,6 +143,8 @@ export default function ArrangementServiceLanding() {
           </div>
         </div>
       </section>
+
+      {isId && <section className="bg-white px-5 py-12 text-slate-950"><div className="mx-auto max-w-7xl"><h2 className="text-3xl font-bold">Apa itu jasa aransemen lagu?</h2><p className="mt-5 max-w-3xl leading-8">Aransemen mengembangkan lagu yang sudah memiliki materi dasar menjadi susunan musik yang lebih lengkap: instrumen, groove, dinamika, dan transisi. Layanan ini cocok untuk penyanyi independen, songwriter, atau band yang ingin mengembangkan demo tanpa kehilangan identitas lagunya.</p><p className="mt-4 max-w-3xl leading-8">Bisa mulai hanya dari voice note. Rekam melodi yang jelas, tambahkan chord jika ada, lalu beri referensi dan bagian yang ingin dipertahankan. Untuk genre, diskusikan karakter pop, rock, jazz, elektronik, atau orkestral yang kamu tuju dan cocokkan dengan contoh karya di portofolio.</p><p className="mt-4 max-w-3xl leading-8">File akhir, versi instrumental, stems, dan file sesi perlu dikonfirmasi dalam scope tertulis; jangan menganggap semuanya otomatis termasuk. Jumlah revisi dan estimasi waktu mengikuti paket atau penawaran yang disetujui.</p><Link href={serviceWhatsApp("Jasa aransemen lagu")} className="mt-6 inline-flex min-h-12 items-center font-bold text-violet-700">Konsultasikan Aransemen via WhatsApp</Link><Link href={ARRANGEMENT_PORTFOLIO_PATH} className="ml-6 inline-flex min-h-12 items-center font-bold text-violet-700">Dengarkan contoh aransemen</Link></div></section>}
 
       <section className="bg-white py-20 text-slate-950 sm:py-28" aria-labelledby="outcomes-title">
         <div className="mx-auto max-w-7xl px-5">
@@ -337,7 +308,7 @@ export default function ArrangementServiceLanding() {
             <div className="max-w-3xl">
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-violet-700">{isId ? "Portofolio aransemen" : "Arrangement portfolio"}</p>
               <h2 id="portfolio-title" className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">{isId ? "Dengarkan pekerjaannya, bukan sekadar klaimnya." : "Hear the work, not just the claims."}</h2>
-              <p className="mt-5 leading-7 text-slate-600">{isId ? "Filter portofolio berdasarkan pekerjaan aransemen agar release, publishing, mixing, dan layanan lain tidak tercampur sebagai bukti yang sama." : "Filter the portfolio by arrangement work so releases, publishing, mixing, and other services are not presented as the same kind of proof."}</p>
+              <p className="mt-5 leading-7 text-slate-600">{isId ? "Dengarkan contoh karya aransemen yang tersedia. Perhatikan karakter instrumen, dinamika, dan ruang vokal, lalu bagikan contoh yang paling dekat dengan arah lagumu saat konsultasi." : "Filter the portfolio by arrangement work so releases, publishing, mixing, and other services are not presented as the same kind of proof."}</p>
             </div>
             <Link href={ARRANGEMENT_PORTFOLIO_PATH} className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 font-bold text-white transition hover:bg-violet-700">{isId ? "Buka portofolio" : "Open portfolio"}<ArrowRight className="h-4 w-4" /></Link>
           </div>
@@ -381,6 +352,9 @@ export default function ArrangementServiceLanding() {
           </div>
           <nav aria-label={isId ? "Halaman terkait" : "Related pages"} className="mt-12 flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm font-semibold text-violet-100">
             <Link href="/id/jasa-pembuatan-lagu" className="hover:text-white">{isId ? "Jasa pembuatan lagu" : "Song creation"}</Link>
+            <Link href="/id/biaya-pembuatan-lagu" className="hover:text-white">Biaya &amp; scope</Link>
+            <Link href="/id/cara-memilih-jasa-aransemen-lagu" className="hover:text-white">{isId ? "Panduan memilih arranger" : "Choosing an arranger"}</Link>
+            <Link href="/id/jasa-produksi-musik" className="hover:text-white">{isId ? "Jasa produksi musik" : "Music production"}</Link>
             <Link href="/id/cara-bikin-lagu" className="hover:text-white">{isId ? "Cara bikin lagu" : "How to make a song"}</Link>
             <Link href="/pricing" className="hover:text-white">{isId ? "Harga" : "Pricing"}</Link>
             <Link href="/portfolio" className="hover:text-white">{isId ? "Portofolio" : "Portfolio"}</Link>

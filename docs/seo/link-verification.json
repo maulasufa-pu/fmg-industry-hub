@@ -1,0 +1,257 @@
+[
+  {
+    "path": "/id/jasa-aransemen-lagu",
+    "status": 200,
+    "title": "Jasa Aransemen Lagu Profesional Online | Flemmo Music"
+  },
+  {
+    "path": "/id/jasa-pembuatan-lagu",
+    "status": 200,
+    "title": "Jasa Pembuatan Lagu dari Ide & Lirik | Flemmo Music"
+  },
+  {
+    "path": "/id/jasa-produksi-musik",
+    "status": 200,
+    "title": "Jasa Produksi Musik Profesional | Flemmo Music"
+  },
+  {
+    "path": "/id/biaya-pembuatan-lagu",
+    "status": 200,
+    "title": "Biaya Pembuatan Lagu dan Faktor Harganya — FMG Universe"
+  },
+  {
+    "path": "/id/cara-bikin-lagu",
+    "status": 200,
+    "title": "Cara Bikin Lagu dari Ide hingga Siap Dirilis — FMG Universe"
+  },
+  {
+    "path": "/id/cara-memilih-jasa-aransemen-lagu",
+    "status": 200,
+    "title": "Cara Memilih Jasa Aransemen Lagu yang Tepat — FMG Universe"
+  },
+  {
+    "path": "/id/perbedaan-komposer-arranger-produser-musik",
+    "status": 200,
+    "title": "Perbedaan Komposer, Arranger, dan Produser Musik — FMG Universe"
+  },
+  {
+    "path": "/id/artikel/apa-yang-didapat-dari-jasa-aransemen-lagu",
+    "status": 200,
+    "title": "Isi Jasa Aransemen Lagu Profesional — FMG Universe"
+  },
+  {
+    "path": "/id/artikel/cara-membuat-lagu-dari-voice-note-atau-demo-sederhana",
+    "status": 200,
+    "title": "Cara Membuat Lagu dari Voice Note atau Demo Sederhana — FMG Universe"
+  },
+  {
+    "path": "/id/jasa-aransemen-lagu",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/id/jasa-aransemen-lagu"
+  },
+  {
+    "path": "/id/jasa-pembuatan-lagu",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/id/jasa-pembuatan-lagu"
+  },
+  {
+    "path": "/id/jasa-produksi-musik",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/id/jasa-produksi-musik"
+  },
+  {
+    "path": "/id/biaya-pembuatan-lagu",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/id/biaya-pembuatan-lagu"
+  },
+  {
+    "path": "/id/cara-bikin-lagu",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/id/cara-bikin-lagu"
+  },
+  {
+    "path": "/id/cara-memilih-jasa-aransemen-lagu",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/id/cara-memilih-jasa-aransemen-lagu"
+  },
+  {
+    "path": "/id/perbedaan-komposer-arranger-produser-musik",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/id/perbedaan-komposer-arranger-produser-musik"
+  },
+  {
+    "path": "/id/artikel/apa-yang-didapat-dari-jasa-aransemen-lagu",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/id/artikel/apa-yang-didapat-dari-jasa-aransemen-lagu"
+  },
+  {
+    "path": "/id/artikel/cara-membuat-lagu-dari-voice-note-atau-demo-sederhana",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/id/artikel/cara-membuat-lagu-dari-voice-note-atau-demo-sederhana"
+  },
+  {
+    "path": "/id",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/id"
+  },
+  {
+    "path": "/company",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/company"
+  },
+  {
+    "path": "/id/layanan",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/id/layanan"
+  },
+  {
+    "path": "/id/harga",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/id/harga"
+  },
+  {
+    "path": "/id/portofolio?work=arrangement",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/id/portofolio?work=arrangement"
+  },
+  {
+    "path": "/id/artikel",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/id/artikel"
+  },
+  {
+    "path": "/id/portofolio",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/id/portofolio"
+  },
+  {
+    "path": "/careers",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/careers"
+  },
+  {
+    "path": "/id/kontak",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/id/kontak"
+  },
+  {
+    "path": "/locations",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/locations"
+  },
+  {
+    "path": "/tuneXpert",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/tuneXpert"
+  },
+  {
+    "path": "/login",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/login"
+  },
+  {
+    "path": "/legal/terms",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/legal/terms"
+  },
+  {
+    "path": "/legal/privacy",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/legal/privacy"
+  },
+  {
+    "path": "/legal/cookies",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/legal/cookies"
+  },
+  {
+    "path": "/legal/dmca",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/legal/dmca"
+  },
+  {
+    "path": "/creative",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/creative"
+  },
+  {
+    "path": "/talent",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/talent"
+  },
+  {
+    "path": "/labs",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/labs"
+  },
+  {
+    "path": "/publishing",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/publishing"
+  },
+  {
+    "path": "/academy",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/academy"
+  },
+  {
+    "path": "/media",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/media"
+  },
+  {
+    "path": "/event",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/event"
+  },
+  {
+    "path": "/",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/"
+  },
+  {
+    "path": "/portfolio?work=arrangement",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/portfolio?work=arrangement"
+  },
+  {
+    "path": "/pricing",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/pricing"
+  },
+  {
+    "path": "/order/arrangement",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/order/arrangement"
+  },
+  {
+    "path": "/services/inquiry",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/services/inquiry"
+  },
+  {
+    "path": "/portfolio",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/portfolio"
+  },
+  {
+    "path": "/about",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/about"
+  },
+  {
+    "path": "/song-creation-service",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/song-creation-service"
+  },
+  {
+    "path": "/id/jasa-mixing-mastering-lagu",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/id/jasa-mixing-mastering-lagu"
+  },
+  {
+    "path": "/learn/how-to-make-a-song",
+    "status": 200,
+    "finalUrl": "http://localhost:3000/learn/how-to-make-a-song"
+  }
+]

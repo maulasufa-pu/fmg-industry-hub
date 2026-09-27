@@ -3,9 +3,8 @@ import type { Metadata } from "next";
 import SalesSeoLanding from "@/components/seo/SalesSeoLanding";
 
 export const metadata: Metadata = {
-  title: "Jasa Produksi Musik Profesional | FMG Universe",
-  description:
-    "Jasa produksi musik untuk mengembangkan lagu dari demo menjadi rekaman yang utuh, mulai dari aransemen, sound design, editing, mixing, hingga mastering.",
+  title: { absolute: "Jasa Produksi Musik Profesional | Flemmo Music" },
+  description: "Kembangkan demo menjadi produksi musik utuh: aransemen, vocal production, editing, mixing dan mastering sesuai scope. Diskusikan proyekmu dengan Flemmo Music.",
   alternates: { canonical: "/id/jasa-produksi-musik" },
   openGraph: {
     title: "Jasa Produksi Musik Profesional",
@@ -23,7 +22,7 @@ export default function Page() {
       lang="id"
       path="/id/jasa-produksi-musik"
       eyebrow="Jasa produksi musik"
-      title="Bangun Karakter Lagumu melalui Produksi Musik yang Tepat"
+      title="Jasa Produksi Musik untuk Demo hingga Hasil Akhir"
       intro="Sudah punya lagu atau demo, tetapi hasilnya belum terdengar seperti yang kamu bayangkan? FMG membantu mengembangkan materi tersebut menjadi produksi yang utuh, berkarakter, dan tetap terasa sebagai karyamu."
       serviceName="Jasa produksi musik profesional"
       benefits={[
@@ -35,6 +34,7 @@ export default function Page() {
         "Proses review yang jelas",
       ]}
       sections={[
+        { title: "Dari aransemen hingga final delivery", paragraphs: ["Produksi menyatukan arah suara dan kebutuhan teknis: aransemen, pemilihan sound, vocal production atau pengarahan vokal, editing, mixing, dan mastering sesuai paket. Cocok untuk artis, band, atau songwriter yang ingin membawa demo ke hasil rekaman yang lebih utuh.", "Jika proyek membutuhkan rekaman studio atau musisi sesi, ketersediaan, lokasi, jadwal, dan biaya tambahannya perlu dikonfirmasi terlebih dahulu. Jangan menganggap semua sesi recording sudah termasuk. Rekaman vokal yang kamu miliki dapat diperiksa untuk menentukan apakah cukup untuk produksi atau memerlukan pengambilan ulang.", "Sebelum mulai, sepakati tahapan review, revisi, jadwal, dan final delivery. Format file, instrumental, stems, file sesi, credit, dan ownership mengikuti dokumen proyek. Beri tahu rencana rilis atau penggunaan agar spesifikasi akhir dapat ditentukan dengan tepat."], links: [{"href": "/id/jasa-aransemen-lagu", "label": "Fokus pada pengembangan instrumen dan dinamika? Lihat layanan aransemen."}, {"href": "/id/jasa-pembuatan-lagu", "label": "Belum memiliki komposisi lengkap? Mulai dari pembuatan lagu."}] },
         {
           title: "Produksi musik bukan sekadar menambah instrumen",
           paragraphs: [
@@ -92,7 +92,8 @@ export default function Page() {
             "Keduanya dapat dimasukkan sesuai paket produksi yang dipilih. Rincian layanan dan file akhir akan dijelaskan sebelum pengerjaan dimulai.",
         },
       ]}
-      primaryCta="Diskusikan produksi lagumu"
+      primaryCta="Mulai Project Musik"
+      primaryHref="/services/inquiry"
       secondaryCta="Jasa pembuatan lagu"
       secondaryHref="/id/jasa-pembuatan-lagu"
       related={[

@@ -37,6 +37,12 @@ export default function Page() {
       ]}
       sections={[
         {
+          title: "Apa saja yang didapat dari jasa aransemen lagu?",
+          paragraphs: ["Hasil layanan aransemen dapat berupa draft susunan musik dan file audio akhir, tetapi nama layanan tidak otomatis menjamin semua versi file. Minta daftar tertulis yang menyebut format, versi instrumental, apakah vokal panduan termasuk, serta apakah mixing dan mastering berada dalam scope yang sama.", "Stems adalah kelompok audio terpisah, misalnya drum, bass, dan instrumen harmoni. Multitrack biasanya memisahkan lebih banyak track individual. File sesi DAW berbeda lagi karena bisa membutuhkan software, plugin, sample, atau lisensi tertentu. Jika akan memakai lagu untuk tampil langsung atau melanjutkan mixing di tempat lain, jelaskan kebutuhan ini sebelum menyetujui penawaran.", "Tanyakan jumlah ronde revisi, kapan feedback diberikan, dan apakah perubahan komposisi atau referensi setelah persetujuan draft termasuk revisi. Kumpulkan masukan dengan timestamp dan tujuan musikal, misalnya vokal tertutup pada chorus pertama. Ini lebih membantu daripada meminta lagu dibuat lebih bagus tanpa konteks.", "Estimasi pengerjaan dipengaruhi kelengkapan materi, kompleksitas instrumen, kebutuhan rekaman, dan waktu respons saat review. Jangan menganggap semua lagu memiliki durasi pengerjaan yang sama. Mintalah tanggal mulai, jadwal draft, batas feedback, dan target file akhir; jika ada tenggat rilis, sampaikan sejak konsultasi."],
+          links: [{"href": "/id/jasa-aransemen-lagu", "label": "Konfirmasikan file akhir, revisi, dan jadwal pada layanan aransemen."}],
+        },
+
+        {
           title: "Dengarkan portofolio, jangan hanya melihat daftar genre",
           paragraphs: [
             "Daftar genre menunjukkan pengalaman, tetapi portofolio memperlihatkan bagaimana arranger mengambil keputusan. Dengarkan apakah vokal tetap memiliki ruang, perpindahan bagian terasa alami, dinamika berkembang, dan pilihan instrumennya mendukung cerita lagu.",

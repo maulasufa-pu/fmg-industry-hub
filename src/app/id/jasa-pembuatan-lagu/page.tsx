@@ -4,8 +4,8 @@ import SalesSeoLanding from "@/components/seo/SalesSeoLanding";
 
 export const metadata: Metadata = {
   title: { absolute: "Jasa Pembuatan Lagu dari Ide & Lirik | Flemmo Music" },
-  description: "Punya ide, cerita, lirik, atau potongan melodi? Kembangkan menjadi lagu original bersama Flemmo Music. Konsultasikan konsep dan kebutuhan proyekmu.",
-
+  description:
+    "Punya cerita, lirik, atau potongan melodi? Ceritakan lagumu kepada Flemmo Music. Kami bantu menyusun lirik, melodi, dan bentuk lagunya dari awal.",
   alternates: {
     canonical: "/id/jasa-pembuatan-lagu",
     languages: {
@@ -14,11 +14,10 @@ export const metadata: Metadata = {
       "x-default": "/song-creation-service",
     },
   },
-
   openGraph: {
     title: "Jasa Pembuatan Lagu Profesional",
     description:
-      "Wujudkan ide, lirik, atau melodi menjadi lagu original dengan proses pengerjaan, hak penggunaan, dan hasil akhir yang dibicarakan secara jelas sejak awal.",
+      "Mulai dari cerita, lirik, atau potongan melodi. Kami bantu membentuknya menjadi lagu yang bisa kamu kembangkan lebih lanjut.",
     url: "/id/jasa-pembuatan-lagu",
     locale: "id_ID",
     type: "website",
@@ -30,97 +29,95 @@ export default function Page() {
     <SalesSeoLanding
       lang="id"
       path="/id/jasa-pembuatan-lagu"
-      eyebrow="Jasa pembuatan lagu original"
-      title="Jasa Pembuatan Lagu Original dari Ide, Lirik, dan Melodi"
-      intro="Punya cerita, ide, lirik, atau potongan melodi? Flemmo Music membantu membangun konsep, songwriting, komposisi, dan struktur lagu original. Setelah fondasi lagunya terbentuk, kebutuhan aransemen dan produksi disepakati sesuai tujuan karyamu."
-      serviceName="Jasa pembuatan lagu profesional"
+      eyebrow="Jasa pembuatan lagu"
+      title="Jasa Pembuatan Lagu dari Cerita, Lirik, atau Melodi"
+      intro="Mungkin kamu baru punya cerita, beberapa baris lirik, atau melodi yang direkam di ponsel. Kirim saja yang ada. Kami bantu mencari bentuk lagunya, lalu membicarakan apakah kamu juga membutuhkan aransemen dan produksi."
+      serviceName="Jasa pembuatan lagu"
       benefits={[
-        "Pengembangan konsep dan arah lagu",
-        "Komposisi dan aransemen musik",
-        "Produksi musik dari awal hingga akhir",
-        "Vocal directing dan editing",
-        "Mixing dan mastering",
-        "Kesepakatan hak dan file akhir yang jelas",
+        "Arah lagu yang sesuai dengan ceritamu",
+        "Pengembangan lirik dan melodi sesuai kebutuhan",
+        "Harmoni dan struktur lagu yang lebih jelas",
+        "Ruang untuk mendengar dan memberi masukan",
+        "Rencana tahap aransemen dan produksi bila diperlukan",
+        "Kesepakatan tertulis soal revisi, hak, dan file akhir",
       ]}
       sections={[
-        { title: "Pembuatan lagu atau aransemen: mulai dari kondisi materimu", paragraphs: ["Pembuatan lagu berfokus pada fondasi kreatif: konsep, lirik, melodi, harmoni, dan struktur. Cocok untuk penyanyi, songwriter, atau brand yang belum memiliki lagu lengkap. Jika melodi dan bentuk lagu sudah jelas, kebutuhanmu bisa lebih tepat ditangani sebagai aransemen.", "Hasil tiap tahap dan file akhir mengikuti scope proyek. Konfirmasikan draft komposisi, versi audio, revisi, estimasi waktu, credit, serta hak penggunaan sebelum pengerjaan. Aransemen, produksi, dan mixing-mastering dapat dibahas sebagai tahap berikutnya; semuanya tidak otomatis termasuk dalam setiap penawaran."], links: [{"href": "/id/jasa-aransemen-lagu", "label": "Sudah punya lagu? Kembangkan susunan musiknya lewat aransemen."}, {"href": "/id/jasa-produksi-musik", "label": "Siapkan tahap produksi setelah komposisi terbentuk."}] },
         {
-          title: "Setiap lagu dibuat sesuai tujuanmu",
+          title: "Kita mulai dari materi yang kamu punya",
           paragraphs: [
-            "Single artis, soundtrack, jingle, lagu kampanye, mars, hymne, dan lagu personal tentu membutuhkan pendekatan yang berbeda. Karena itu, kami akan mempelajari tujuan, calon pendengar, pesan, referensi, dan rencana penggunaan lagumu sebelum menentukan arah musiknya.",
-            "Kamu bisa memulai dari materi apa pun yang sudah tersedia. Jika baru memiliki ide, kita dapat mengembangkannya bersama dari konsep awal. Jika lirik atau melodinya sudah ada, FMG akan membantu menyempurnakannya tanpa menghilangkan identitas utama dari karyamu.",
+            "Belum punya lagu utuh? Kita bisa mulai dari tema, lirik, atau melodi pendek. Kalau lagu dan strukturnya sudah terbentuk, mungkin yang kamu butuhkan justru aransemen, bukan menulis lagu dari awal.",
+            "Setelah mendengar materimu, kami jelaskan bagian mana yang akan dikerjakan dan hasil apa yang akan kamu terima. Aransemen, rekaman, mixing, dan mastering bisa dibicarakan bila diperlukan. Semuanya perlu disepakati lebih dulu, termasuk jumlah revisi dan waktu pengerjaan.",
+          ],
+          links: [
+            { href: "/id/jasa-aransemen-lagu", label: "Lagunya sudah ada? Lihat jasa aransemen." },
+            { href: "/id/jasa-produksi-musik", label: "Butuh bantuan merekam dan memproduksinya? Lihat jasa produksi musik." },
           ],
         },
         {
-          title: "Semua kesepakatan dibicarakan sejak awal",
+          title: "Lagu ini dibuat untuk siapa?",
           paragraphs: [
-            "Sebelum produksi dimulai, kita akan membahas layanan yang dikerjakan, jadwal, revisi, pembayaran, pencantuman nama, hak atas karya, file produksi, penggunaan materi dari pihak lain, dan file akhir yang akan kamu terima. Menggunakan jasa FMG tidak berarti lagumu otomatis menjadi milik FMG.",
+            "Lagu untuk dirilis sendiri tentu berbeda dari jingle merek atau lagu pernikahan. Ceritakan siapa yang akan mendengarnya, suasana yang ingin kamu bangun, dan bagian mana dari referensimu yang kamu suka. Dari situ kita bisa mencari arah musik yang pas.",
+            "Kalau kamu sudah menulis lirik atau melodi, materi itu menjadi titik berangkatnya. Kami akan membahas apa yang perlu dipertahankan dan apa yang masih bisa dikembangkan, supaya lagu akhirnya tetap terasa milikmu.",
           ],
         },
         {
-          title: "Satu tim untuk seluruh proses pembuatan lagu",
+          title: "Soal hak lagu, kita bicarakan di awal",
           paragraphs: [
-            "Kamu tidak perlu mengatur banyak pihak secara terpisah. Mulai dari membahas ide, mengirim referensi, mendengarkan perkembangan lagu, memberikan masukan, hingga menerima hasil akhir dapat dilakukan dalam satu proses pengerjaan bersama FMG.",
+            "Sebelum mulai, kita sepakati siapa yang mengerjakan apa, siapa yang dicantumkan sebagai pencipta atau kontributor, dan bagaimana lagu ini boleh digunakan. Biaya, jadwal, revisi, serta file yang kamu terima juga dicatat. Memakai jasa kami tidak otomatis memindahkan hak atas lagumu ke FMG.",
+          ],
+        },
+        {
+          title: "Kamu ikut mendengar prosesnya",
+          paragraphs: [
+            "Pengerjaan lagu bukan proses sekali kirim lalu tiba-tiba jadi. Pada tahap yang disepakati, kamu bisa mendengar perkembangannya dan memberi masukan. Kami ingin tahu bagian yang sudah terasa tepat dan bagian yang masih perlu dicari bersama.",
           ],
         },
       ]}
       steps={[
         {
-          title: "Ceritakan lagu yang ingin kamu buat",
-          text: "Kirim tujuan lagu, calon pendengar, lirik atau melodi yang sudah tersedia, referensi musik, serta waktu penyelesaian yang kamu butuhkan.",
+          title: "Ceritakan idenya",
+          text: "Kirim lirik, rekaman melodi, referensi, atau cukup cerita tentang lagu yang ingin kamu buat. Sebutkan juga kalau ada tenggat waktu.",
         },
         {
-          title: "Tentukan arah pengerjaannya",
-          text: "Kita akan menyepakati arah komposisi, aransemen, produksi, jumlah revisi, hak atas karya, jadwal pengerjaan, dan pembayarannya.",
+          title: "Sepakati pekerjaannya",
+          text: "Kami bahas arah lagu, tahap yang diperlukan, biaya, jadwal, revisi, serta hak atas karya sebelum mulai.",
         },
         {
-          title: "Dengarkan dan berikan masukan",
-          text: "Kamu dapat mendengarkan perkembangan lagu pada tahap yang telah disepakati, memberikan masukan, lalu menerima file akhir setelah pengerjaan selesai.",
+          title: "Dengar dan beri masukan",
+          text: "Kamu mendengar hasil pada tahap yang disepakati, memberi masukan, lalu menerima file akhir sesuai kesepakatan.",
         },
       ]}
       faqs={[
         {
-          question: "Bisa membuat lagu kalau saya baru punya ide?",
+          question: "Kalau baru punya ide, bisa mulai?",
           answer:
-            "Bisa. Kamu tidak harus datang dengan materi yang sudah lengkap. Kita bisa mulai dari cerita, tema, suasana, atau gambaran lagu yang kamu inginkan, lalu mengembangkannya menjadi lirik, melodi, struktur, aransemen, dan produksi.",
+            "Bisa. Ceritakan tema, suasana, atau pesan yang ingin kamu sampaikan. Kalau ada rekaman suara atau potongan lirik, kirim juga. Dari sana kita tentukan bagian lagu yang perlu dibuat.",
         },
         {
-          question: "Bisa menggunakan lirik atau melodi buatan saya?",
+          question: "Boleh memakai lirik atau melodi buatan saya?",
           answer:
-            "Bisa. Lirik atau melodi yang kamu kirim akan menjadi fondasi utama dalam proses kreatifnya. Pencantuman nama dan ketentuan hak atas karya akan dibicarakan serta dikonfirmasi secara tertulis.",
+            "Tentu. Kami akan memakai materi itu sebagai titik awal dan membahas bagian mana yang ingin kamu pertahankan. Pencantuman nama dan hak atas karya disepakati secara tertulis.",
         },
         {
-          question: "Apakah seluruh prosesnya bisa dilakukan secara online?",
+          question: "Bisakah prosesnya dilakukan secara online?",
           answer:
-            "Bisa. Mulai dari konsultasi, pengiriman materi, pembahasan referensi, review, revisi, hingga penyerahan file akhir dapat dilakukan secara online.",
+            "Bisa. Kamu dapat mengirim materi, mendengar perkembangan lagu, memberi masukan, dan menerima file akhir secara online.",
         },
         {
-          question: "Apakah sudah termasuk mixing dan mastering?",
+          question: "Apakah mixing dan mastering sudah termasuk?",
           answer:
-            "Tergantung paket dan kebutuhan lagu yang kamu pilih. Semua layanan yang termasuk, biaya, jumlah revisi, dan file akhir yang akan diterima akan dijelaskan sebelum produksi dimulai.",
+            "Tergantung pekerjaan yang kita sepakati. Kami akan menjelaskan apakah lagu ini perlu sampai tahap mixing dan mastering, berapa biayanya, dan file apa yang kamu terima sebelum mulai.",
         },
       ]}
-      primaryCta="Konsultasikan Ide Lagumu"
+      primaryCta="Ceritakan Ide Lagumu"
       primaryHref="/services/inquiry"
       secondaryCta="Lihat jasa aransemen"
       secondaryHref="/id/jasa-aransemen-lagu"
       related={[
-        {
-          href: "/id/jasa-aransemen-lagu",
-          label: "Jasa aransemen lagu",
-        },
-        {
-          href: "/id/cara-bikin-lagu",
-          label: "Cara bikin lagu",
-        },
-        {
-          href: "/portfolio",
-          label: "Portofolio produksi",
-        },
-        {
-          href: "/song-creation-service",
-          label: "English version",
-        },
+        { href: "/id/jasa-aransemen-lagu", label: "Jasa aransemen lagu" },
+        { href: "/id/cara-bikin-lagu", label: "Cara bikin lagu" },
+        { href: "/portfolio", label: "Dengarkan karya kami" },
+        { href: "/song-creation-service", label: "English version" },
       ]}
     />
   );

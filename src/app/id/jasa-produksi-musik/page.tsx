@@ -4,12 +4,13 @@ import SalesSeoLanding from "@/components/seo/SalesSeoLanding";
 
 export const metadata: Metadata = {
   title: { absolute: "Jasa Produksi Musik Profesional | Flemmo Music" },
-  description: "Kembangkan demo menjadi produksi musik utuh: aransemen, vocal production, editing, mixing dan mastering sesuai scope. Diskusikan proyekmu dengan Flemmo Music.",
+  description:
+    "Punya demo tapi hasilnya belum sesuai bayangan? Flemmo Music membantu mengembangkan aransemen, rekaman, editing, mixing, dan mastering sesuai kebutuhan lagumu.",
   alternates: { canonical: "/id/jasa-produksi-musik" },
   openGraph: {
     title: "Jasa Produksi Musik Profesional",
     description:
-      "Kembangkan demo atau rancangan lagumu menjadi produksi musik yang utuh dan sesuai dengan karakter artis.",
+      "Bawa demo atau rancangan lagumu ke tahap produksi. Ceritakan suara yang kamu cari dan dengarkan perkembangannya bersama kami.",
     url: "/id/jasa-produksi-musik",
     locale: "id_ID",
     type: "website",
@@ -22,77 +23,88 @@ export default function Page() {
       lang="id"
       path="/id/jasa-produksi-musik"
       eyebrow="Jasa produksi musik"
-      title="Jasa Produksi Musik untuk Demo hingga Hasil Akhir"
-      intro="Sudah punya lagu atau demo, tetapi hasilnya belum terdengar seperti yang kamu bayangkan? FMG membantu mengembangkan materi tersebut menjadi produksi yang utuh, berkarakter, dan tetap terasa sebagai karyamu."
-      serviceName="Jasa produksi musik profesional"
+      title="Jasa Produksi Musik untuk Lagu yang Sudah Kamu Mulai"
+      intro="Lagunya sudah ada, tapi rekamannya belum terdengar seperti yang kamu inginkan? Kirim demo dan ceritakan bagian yang masih mengganjal. Kami bantu mencari suara, susunan, dan cara produksi yang cocok untuk lagumu."
+      serviceName="Jasa produksi musik"
       benefits={[
-        "Arah produksi yang sesuai dengan identitas artis",
-        "Aransemen dan pemilihan instrumen",
-        "Sound design dan programming",
-        "Editing vokal dan instrumen",
-        "Mixing dan mastering",
-        "Proses review yang jelas",
+        "Arah suara yang dibahas bersama",
+        "Pilihan instrumen dan aransemen sesuai kebutuhan",
+        "Pengolahan vokal dan instrumen bila diperlukan",
+        "Kesempatan mendengar hasil di tahap yang disepakati",
+        "Mixing dan mastering sesuai penawaran",
+        "Kejelasan biaya, revisi, dan file yang diterima",
       ]}
       sections={[
-        { title: "Dari aransemen hingga final delivery", paragraphs: ["Produksi menyatukan arah suara dan kebutuhan teknis: aransemen, pemilihan sound, vocal production atau pengarahan vokal, editing, mixing, dan mastering sesuai paket. Cocok untuk artis, band, atau songwriter yang ingin membawa demo ke hasil rekaman yang lebih utuh.", "Jika proyek membutuhkan rekaman studio atau musisi sesi, ketersediaan, lokasi, jadwal, dan biaya tambahannya perlu dikonfirmasi terlebih dahulu. Jangan menganggap semua sesi recording sudah termasuk. Rekaman vokal yang kamu miliki dapat diperiksa untuk menentukan apakah cukup untuk produksi atau memerlukan pengambilan ulang.", "Sebelum mulai, sepakati tahapan review, revisi, jadwal, dan final delivery. Format file, instrumental, stems, file sesi, credit, dan ownership mengikuti dokumen proyek. Beri tahu rencana rilis atau penggunaan agar spesifikasi akhir dapat ditentukan dengan tepat."], links: [{"href": "/id/jasa-aransemen-lagu", "label": "Fokus pada pengembangan instrumen dan dinamika? Lihat layanan aransemen."}, {"href": "/id/jasa-pembuatan-lagu", "label": "Belum memiliki komposisi lengkap? Mulai dari pembuatan lagu."}] },
         {
-          title: "Produksi musik bukan sekadar menambah instrumen",
+          title: "Apa yang perlu dikerjakan pada lagumu?",
           paragraphs: [
-            "Produser membantu menentukan bagaimana sebuah lagu sebaiknya terdengar dan dirasakan. Keputusan tentang tempo, groove, pilihan instrumen, tekstur, dinamika, serta cara vokal ditempatkan perlu mendukung pesan utama lagunya.",
-            "Karena itu, kami memulai dengan memahami siapa kamu sebagai artis, siapa yang ingin kamu ajak bicara, dan pengalaman seperti apa yang ingin kamu berikan kepada pendengar. Referensi tetap penting, tetapi hasil akhirnya tidak harus menjadi tiruan dari lagu lain.",
+            "Ada lagu yang cukup dibantu dengan aransemen. Ada yang perlu rekaman vokal ulang, perbaikan suara instrumen, atau mixing yang lebih rapi. Setelah mendengar demomu, kami akan membahas pekerjaan yang masuk akal untuk lagu itu. Tidak semua tahap harus diambil sekaligus.",
+            "Kalau perlu rekaman studio atau musisi tambahan, kami cek dulu ketersediaan, lokasi, jadwal, dan biayanya. Rekaman vokal yang sudah kamu punya juga bisa kami dengar untuk menentukan apakah masih bisa dipakai.",
+            "Sebelum mulai, kita sepakati kapan kamu bisa mendengar hasil sementara, berapa kali revisi, dan file apa yang akan diserahkan. Kalau kamu membutuhkan versi instrumental, stems, atau file sesi, sebutkan sejak awal agar bisa masuk dalam penawaran.",
+          ],
+          links: [
+            { href: "/id/jasa-aransemen-lagu", label: "Ingin mengembangkan susunan musiknya? Lihat jasa aransemen." },
+            { href: "/id/jasa-pembuatan-lagu", label: "Lagunya belum terbentuk? Mulai dari pembuatan lagu." },
           ],
         },
         {
-          title: "Bisa dimulai dari demo sederhana",
+          title: "Kita cari suara yang cocok untuk lagunya",
           paragraphs: [
-            "Kamu dapat mengirim demo gitar dan vokal, piano dan vokal, rekaman dari ponsel, MIDI, stems, atau sesi produksi yang sudah berjalan. Materi tersebut akan kami pelajari untuk menentukan bagian yang perlu dipertahankan, dikembangkan, direkam ulang, atau disederhanakan.",
-            "Jika struktur lagu belum mantap, kita dapat membahas bentuk verse, pre-chorus, chorus, bridge, intro, dan outro sebelum masuk lebih jauh ke tahap produksi.",
+            "Pilihan tempo, instrumen, bunyi drum, dan cara menempatkan vokal bisa mengubah rasa sebuah lagu. Kami mendengar apa yang sudah bekerja dalam demomu, lalu membahas bagian yang perlu dibuat lebih kuat atau justru lebih sederhana.",
+            "Referensi membantu, terutama kalau kamu bisa menunjuk bagian yang kamu suka. Mungkin drum-nya, ruang vokalnya, atau energi di bagian reff. Itu memberi kami arah tanpa harus membuat lagumu terdengar seperti salinan karya lain.",
           ],
         },
         {
-          title: "Setiap keputusan dibicarakan bersama",
+          title: "Rekaman ponsel pun boleh dikirim",
           paragraphs: [
-            "Sebelum pengerjaan dimulai, kamu akan mengetahui layanan yang termasuk, jadwal review, jumlah revisi, biaya, dan file akhir yang akan diterima. Dengan begitu, kamu tidak perlu menebak-nebak perkembangan proyek atau arah pengerjaannya.",
+            "Demo gitar dan vokal, rekaman piano, MIDI, atau lagu yang produksinya sudah setengah jalan sama-sama bisa jadi bahan awal. Kami dengarkan dulu sebelum menyarankan apa yang perlu dipertahankan, diperbaiki, atau direkam ulang.",
+            "Kalau bentuk lagunya masih berubah-ubah, kita bisa rapikan bagian bait, reff, atau jembatannya sebelum sibuk memilih suara dan efek.",
+          ],
+        },
+        {
+          title: "Kamu tahu apa yang sedang dikerjakan",
+          paragraphs: [
+            "Di awal proyek, kami jelaskan tahap kerja, jadwal untuk mendengar hasil, jumlah revisi, biaya, dan file akhirnya. Kalau ada kebutuhan baru di tengah jalan, kita bicarakan dampaknya pada biaya dan waktu sebelum dikerjakan.",
           ],
         },
       ]}
       steps={[
         {
-          title: "Kirim lagu dan referensimu",
-          text: "Bagikan demo, lirik, catatan, referensi, dan ceritakan hasil akhir yang ingin kamu capai.",
+          title: "Kirim demomu",
+          text: "Bagikan lagu, lirik, dan referensi. Ceritakan bagian yang sudah kamu suka dan bagian yang menurutmu belum pas.",
         },
         {
-          title: "Tentukan arah produksi",
-          text: "Kita menyepakati karakter musik, susunan instrumen, tahapan pengerjaan, revisi, dan jadwalnya.",
+          title: "Tentukan pekerjaannya",
+          text: "Kami dengarkan materinya, lalu sepakati arah suara, tahap produksi, biaya, revisi, dan jadwal.",
         },
         {
-          title: "Dengarkan perkembangannya",
-          text: "Berikan masukan pada tahap review, lalu terima hasil akhir sesuai kesepakatan proyek.",
+          title: "Dengar hasilnya",
+          text: "Kamu memberi masukan pada tahap yang disepakati. Setelah selesai, kami serahkan file sesuai penawaran.",
         },
       ]}
       faqs={[
         {
           question: "Apa bedanya produksi musik dan aransemen?",
           answer:
-            "Aransemen berfokus pada susunan bagian, instrumen, dinamika, dan perjalanan musik. Produksi mencakup proses yang lebih luas untuk mewujudkan aransemen tersebut menjadi rekaman, termasuk pemilihan suara, recording, editing, mixing, dan tahap akhir lainnya sesuai kebutuhan.",
+            "Aransemen mengatur susunan lagu dan pilihan instrumennya. Produksi bisa mencakup pekerjaan sesudah itu, seperti rekaman, pengolahan suara, editing, mixing, dan mastering. Tahap yang kamu perlukan ditentukan setelah kami mendengar lagunya.",
         },
         {
           question: "Apakah demo dari ponsel bisa digunakan?",
           answer:
-            "Bisa. Demo ponsel cukup untuk menunjukkan melodi, chord, lirik, tempo, dan suasana dasar. Kualitas rekamannya tidak harus sempurna selama idenya masih bisa dipahami.",
+            "Bisa. Rekamannya cukup untuk menunjukkan melodi, lirik, dan suasana lagu. Kalau ada bagian yang sulit terdengar, kami akan bertanya atau meminta rekaman panduan tambahan.",
         },
         {
-          question: "Apakah saya boleh memberikan referensi lagu?",
+          question: "Bolehkah saya mengirim lagu referensi?",
           answer:
-            "Boleh, bahkan sangat membantu. Jelaskan bagian yang kamu sukai dari setiap referensi agar kami memahami apakah kamu tertarik pada energinya, instrumennya, karakter vokalnya, atau warna produksinya.",
+            "Boleh. Akan lebih membantu kalau kamu menyebut bagian yang kamu suka, misalnya karakter vokal, permainan drum, atau suasana lagunya.",
         },
         {
           question: "Apakah mixing dan mastering termasuk?",
           answer:
-            "Keduanya dapat dimasukkan sesuai paket produksi yang dipilih. Rincian layanan dan file akhir akan dijelaskan sebelum pengerjaan dimulai.",
+            "Bisa termasuk, tergantung pekerjaan yang kita sepakati. Kami akan menyebutkannya dengan jelas dalam penawaran, bersama format file yang akan kamu terima.",
         },
       ]}
-      primaryCta="Mulai Project Musik"
+      primaryCta="Ceritakan Proyek Musikmu"
       primaryHref="/services/inquiry"
       secondaryCta="Jasa pembuatan lagu"
       secondaryHref="/id/jasa-pembuatan-lagu"
@@ -100,7 +112,7 @@ export default function Page() {
         { href: "/id/jasa-pembuatan-lagu", label: "Jasa pembuatan lagu" },
         { href: "/id/jasa-aransemen-lagu", label: "Jasa aransemen lagu" },
         { href: "/id/jasa-mixing-mastering-lagu", label: "Jasa mixing dan mastering" },
-        { href: "/portfolio", label: "Dengarkan portofolio" },
+        { href: "/portfolio", label: "Dengarkan karya kami" },
       ]}
     />
   );

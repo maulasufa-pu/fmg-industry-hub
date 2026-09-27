@@ -9,7 +9,7 @@ const path = "/id/jasa-aransemen-lagu";
 const pageUrl = `${siteConfig.url}${path}`;
 
 const description =
-  "Kirim voice note, demo, melodi, chord, atau vokal. Flemmo Music mengembangkan materi lagumu menjadi aransemen profesional. Konsultasikan kebutuhanmu via WhatsApp.";
+  "Sudah punya melodi, lirik, atau demo? Kirim rekaman seadanya. Flemmo Music membantu menyusun instrumen dan dinamika yang cocok untuk lagumu.";
 
 export const metadata: Metadata = {
   title: {

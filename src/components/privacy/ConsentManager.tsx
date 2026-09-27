@@ -6,7 +6,7 @@ import Script from "next/script";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-const GOOGLE_ANALYTICS_ID = "G-BED00R69W0";
+const GOOGLE_ANALYTICS_ID = "G-X4VLVQS6BC";
 
 import { CONSENT_VERSION, CONSENT_STORAGE_KEY } from "@/lib/privacy-consent";
 export { CONSENT_VERSION, CONSENT_STORAGE_KEY } from "@/lib/privacy-consent";

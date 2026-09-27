@@ -627,7 +627,7 @@ function PricingCard({
         </MagneticButton>
 
         <a
-          href={serviceWhatsApp("Konsultasi layanan musik", "/")}
+          href={serviceWhatsApp("Konsultasi layanan musik")}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex h-11 w-11 items-center justify-center rounded-full
@@ -1781,7 +1781,7 @@ function CTA() {
           <div className="mt-6 flex flex-wrap gap-3">
             <MagneticButton href={ARRANGEMENT_ORDER_PATH}>Order Music Arrangement</MagneticButton>
             <Link
-              href={serviceWhatsApp("Konsultasi layanan musik", "/")}
+              href={serviceWhatsApp("Konsultasi layanan musik")}
               className="inline-flex items-center gap-2 rounded-2xl border border-black/10 px-5 py-3 text-sm font-semibold hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
             >
               Talk with us <ArrowRight className="h-4 w-4" />

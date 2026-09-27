@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion, useAnimation, Variants, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Sparkles, PlayCircle } from "lucide-react";
 import CinematicVideoHeroHLS from "@/components/CinematicVideoHeroHLS";
+import { serviceWhatsApp } from "@/lib/service-whatsapp";
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 24 },
@@ -155,7 +156,7 @@ export default function Hero(): React.JSX.Element {
                 heading="Let’s Create Your Music."
                 subheading="End-to-end production: composition, recording, mixing, mastering, and distribution — plus anamorphic music videos."
                 ctaPrimary={{ label: "Start My Project", href: "/client/dashboard" }}
-                ctaSecondary={{ label: "Free Consultation", href: "https://wa.me/6282298288188" }}
+                ctaSecondary={{ label: "Free Consultation", href: serviceWhatsApp() }}
                 credit="Viokichi — You Are Enough"
                 revealDelayMs={3000}  
                 />

@@ -13,6 +13,7 @@ import {
   useReducedMotion,
 } from "framer-motion";
 import { Volume2, VolumeX, ArrowRight } from "lucide-react";
+import { serviceWhatsApp } from "@/lib/service-whatsapp";
 
 type FrameShape = "keystone" | "octagon" | "hex" | "ticket" | "rounded";
 type Align = "left" | "center" | "right";
@@ -123,7 +124,7 @@ export default function CinematicVideoHeroHLS({
   subheading = "Composition, recording, mixing, mastering, and distribution — plus anamorphic music videos.",
   align = "left",
   ctaPrimary = { label: "Start My Project", href: "/contact" },
-  ctaSecondary = { label: "Free Consultation", href: "https://wa.me/6282298288188" },
+  ctaSecondary = { label: "Free Consultation", href: serviceWhatsApp() },
   credit = "Viokichi — You Are Enough",
 
   revealDelayMs = 3000,

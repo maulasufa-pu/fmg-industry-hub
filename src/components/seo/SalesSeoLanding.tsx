@@ -78,7 +78,7 @@ export default function SalesSeoLanding({ lang, path, eyebrow, title, intro, sec
           <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-700 dark:text-slate-300">{intro}</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href={primaryHref} className="inline-flex items-center gap-2 rounded-xl bg-violet-700 px-6 py-3 font-bold text-white hover:bg-violet-800">{primaryCta}<ArrowRight className="h-4 w-4" /></Link>
-            {isId && serviceName && <a href={serviceWhatsApp(serviceName)} className="inline-flex min-h-12 items-center rounded-xl border border-violet-300 px-6 py-3 font-bold text-violet-700 dark:text-violet-300">Chat via WhatsApp</a>}
+            {isId && serviceName && <a href={serviceWhatsApp(serviceName, path)} className="inline-flex min-h-12 items-center rounded-xl border border-violet-300 px-6 py-3 font-bold text-violet-700 dark:text-violet-300">Chat via WhatsApp</a>}
             <Link href={secondaryHref} className="rounded-xl border border-slate-300 px-6 py-3 font-bold dark:border-white/20">{secondaryCta}</Link>
           </div>
         </div>

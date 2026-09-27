@@ -9,6 +9,7 @@ import { ArrowRight, Star, Check, Music, Sparkles, PlayCircle, Mic2, MessageCirc
 import { Users, Share2, Cpu, BookOpen, Calendar, GraduationCap, type LucideIcon } from "lucide-react";
 import { JsonLd } from "@/components/JsonLd";
 import { siteConfig } from "@/lib/site";
+import { serviceWhatsApp } from "@/lib/service-whatsapp";
 import { compact } from "@/lib/arrays";
 import Image from "next/image";
 import InnovationBadge from "./ui/InnovationBadge";
@@ -622,7 +623,7 @@ function PricingCard({
         </MagneticButton>
 
         <a
-          href="https://wa.me/6282298288188?text=Halo%2C%20saya%20dapat%20informasi%20dari%20website%20FMG%20Universe%2C%20ingin%20order%20jasa%20musik."
+          href={serviceWhatsApp("Konsultasi layanan musik", "/company")}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex h-11 w-11 items-center justify-center rounded-full
@@ -1813,7 +1814,7 @@ function CTA() {
           <div className="mt-6 flex flex-wrap gap-3">
             <MagneticButton href="/client/dashboard">Start My Project</MagneticButton>
             <Link
-              href="https://wa.me/6282298288188"
+              href={serviceWhatsApp("Konsultasi layanan musik", "/company")}
               className="inline-flex items-center gap-2 rounded-2xl border border-black/10 px-5 py-3 text-sm font-semibold hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
             >
               Talk with us <ArrowRight className="h-4 w-4" />

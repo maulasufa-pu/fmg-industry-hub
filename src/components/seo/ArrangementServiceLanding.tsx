@@ -198,7 +198,7 @@ export default function ArrangementServiceLanding() {
               <Link href={ARRANGEMENT_ORDER_PATH} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-white px-6 py-3 font-bold text-black transition hover:bg-violet-100">
                 {isId ? "Pesan paket ini" : "Order this package"} <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link href="/services/inquiry" className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border border-white/20 px-6 py-3 font-bold transition hover:bg-white/5">
+              <Link href={isId ? serviceWhatsApp("Jasa aransemen lagu", "/id/jasa-aransemen-lagu") : "/services/inquiry"} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border border-white/20 px-6 py-3 font-bold transition hover:bg-white/5">
                 <MessageCircle className="h-4 w-4" /> {isId ? "Tanya dulu" : "Ask first"}
               </Link>
             </div>
@@ -348,7 +348,7 @@ export default function ArrangementServiceLanding() {
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-violet-100">{isId ? "Kirim demo yang ada. Kami akan mendengarnya dan membantu menentukan pekerjaan apa yang paling dibutuhkan lagumu." : "Start with the material you have. We will help define the next step with a clear scope."}</p>
           <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
             <Link href={ARRANGEMENT_ORDER_PATH} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-7 py-3 font-bold text-violet-800 transition hover:-translate-y-0.5 hover:bg-violet-50">{isId ? "Mulai proyek saya" : "Start my project"}<ArrowRight className="h-4 w-4" /></Link>
-            <Link href="/services/inquiry" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/35 px-7 py-3 font-bold text-white transition hover:bg-white/10">{isId ? "Tanya dulu" : "Discuss the scope"}</Link>
+            <Link href={isId ? serviceWhatsApp("Jasa aransemen lagu", "/id/jasa-aransemen-lagu") : "/services/inquiry"} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/35 px-7 py-3 font-bold text-white transition hover:bg-white/10">{isId ? "Tanya dulu" : "Discuss the scope"}</Link>
           </div>
           <nav aria-label={isId ? "Halaman terkait" : "Related pages"} className="mt-12 flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm font-semibold text-violet-100">
             <Link href="/id/jasa-pembuatan-lagu" className="hover:text-white">{isId ? "Jasa pembuatan lagu" : "Song creation"}</Link>

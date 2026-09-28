@@ -6,7 +6,7 @@ import Script from "next/script";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-const GOOGLE_ANALYTICS_ID = "G-X4VLVQS6BC";
+import { GOOGLE_ANALYTICS_ID, GOOGLE_ADS_ID } from "@/lib/google-tag-config";
 
 import { CONSENT_VERSION, CONSENT_STORAGE_KEY } from "@/lib/privacy-consent";
 export { CONSENT_VERSION, CONSENT_STORAGE_KEY } from "@/lib/privacy-consent";
@@ -62,8 +62,15 @@ function GoogleAnalyticsTag() {
         {`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
+          gtag('consent', 'default', {
+            analytics_storage: 'granted',
+            ad_storage: 'granted',
+            ad_user_data: 'granted',
+            ad_personalization: 'denied'
+          });
           gtag('js', new Date());
           gtag('config', '${GOOGLE_ANALYTICS_ID}');
+          gtag('config', '${GOOGLE_ADS_ID}', { allow_ad_personalization_signals: false });
         `}
       </Script>
     </>
@@ -85,6 +92,15 @@ export default function ConsentManager({ children }: { children: React.ReactNode
       ...next,
     };
     persistPreferences(value);
+    const trackingWindow = window as typeof window & {
+      gtag?: (command: string, action: string, values: Record<string, string>) => void;
+    };
+    trackingWindow.gtag?.("consent", "update", {
+      analytics_storage: value.analytics ? "granted" : "denied",
+      ad_storage: value.analytics ? "granted" : "denied",
+      ad_user_data: value.analytics ? "granted" : "denied",
+      ad_personalization: "denied",
+    });
     setPreferences(value);
     setAnalytics(value.analytics);
     setEmbeds(value.embeds);
@@ -146,7 +162,7 @@ export default function ConsentManager({ children }: { children: React.ReactNode
           <h2 id="consent-title" className="text-lg font-semibold">{pick("Pilihan privasimu", "Your privacy choices")}</h2>
           <p className="mt-2 text-sm leading-6 text-white/75">{pick("Cookie esensial menjaga akun dan keamanan tetap berfungsi. Analytics dan media pihak ketiga tetap nonaktif sampai kamu mengizinkannya.", "Essential cookies keep accounts and security working. Analytics and third-party embeds stay off until you allow them.")}</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <label className="flex items-center justify-between gap-4 rounded-xl border border-white/15 p-3 text-sm"><span><strong className="block">Analytics</strong><span className="text-white/60">{pick("Data penggunaan anonim dan performa", "Anonymous usage and performance")}</span></span><input aria-label={pick("Izinkan analytics", "Allow analytics")} type="checkbox" checked={analytics} onChange={(event) => setAnalytics(event.target.checked)} className="h-5 w-5" /></label>
+            <label className="flex items-center justify-between gap-4 rounded-xl border border-white/15 p-3 text-sm"><span><strong className="block">Analytics</strong><span className="text-white/60">{pick("Pengukuran kunjungan, performa, dan hasil iklan", "Visit, performance, and advertising measurement")}</span></span><input aria-label={pick("Izinkan analytics", "Allow analytics")} type="checkbox" checked={analytics} onChange={(event) => setAnalytics(event.target.checked)} className="h-5 w-5" /></label>
             <label className="flex items-center justify-between gap-4 rounded-xl border border-white/15 p-3 text-sm"><span><strong className="block">{pick("Media eksternal", "External media")}</strong><span className="text-white/60">{pick("Peta dan media dari platform lain", "Maps and media embeds")}</span></span><input aria-label={pick("Izinkan media eksternal", "Allow external media")} type="checkbox" checked={embeds} onChange={(event) => setEmbeds(event.target.checked)} className="h-5 w-5" /></label>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">

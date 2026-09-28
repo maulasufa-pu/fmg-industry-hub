@@ -1,6 +1,6 @@
 "use client";
 
-import { trackConversion } from "@/lib/conversion-tracking";
+import { trackLeadSubmission } from "@/lib/conversion-tracking";
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
@@ -196,7 +196,7 @@ export default function ContactPage(): React.JSX.Element {
         setState({ status: "error", message: msg });
         return;
       }
-      trackConversion("submit_contact");
+      trackLeadSubmission("submit_contact");
       setState({ status: "success", message: "Thank you! Our team will review and get back to you shortly." });
       setValues(defaultValues);
       setTouched({

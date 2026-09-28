@@ -1,0 +1,3 @@
+export const GOOGLE_ANALYTICS_ID = "G-X4VLVQS6BC";
+export const GOOGLE_ADS_ID = "AW-18459548993";
+export const GOOGLE_ADS_LEAD_CONVERSION = `${GOOGLE_ADS_ID}/hyf2CJDsgvwcEMG6meJE`;

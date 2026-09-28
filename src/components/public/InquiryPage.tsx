@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { trackConversion } from "@/lib/conversion-tracking";
+import { trackLeadSubmission } from "@/lib/conversion-tracking";
 import { ArrowRight, CheckCircle2, Loader2, Send } from "lucide-react";
 
 type ContactReason = "project" | "partnership" | "publishing" | "press" | "support" | "other";
@@ -59,7 +59,7 @@ export default function InquiryPage({
       return;
     }
     formElement.reset();
-    trackConversion(reason === "project" ? "submit_project" : "submit_contact", { form_type: reason });
+    trackLeadSubmission(reason === "project" ? "submit_project" : "submit_contact", { form_type: reason });
     setStatus("sent");
   }
 
